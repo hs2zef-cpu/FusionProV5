@@ -1,0 +1,24 @@
+# MQL5 compiled artifacts
+*.ex5
+
+# Runtime and temporary output
+*.log
+*.tmp
+*.bak
+*.cache
+*.csv
+
+# MetaTrader tester and agent data
+Tester/
+Agent/
+Profiles/Tester/
+MQL5/Logs/
+MQL5/Files/*.csv
+MQL5/Files/*.log
+
+# Tooling caches and local editor state
+**pycache**/
+__pycache__/
+.vscode/
+.idea/
+
