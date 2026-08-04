@@ -32,7 +32,7 @@ The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 do
 
 Project:
 
-`C:\Users\Nutthakrit\Documents\Codex\2026-07-31\you-are-implementing-sprint-1-of\SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE`
+`C:\Users\Nutthakrit\Documents\FusionProV5`
 
 Main source:
 

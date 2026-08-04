@@ -4,6 +4,16 @@
 
 Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 4 defines contracts only and contains no production broker execution.
 
+## Repository Location
+
+Canonical repository root:
+
+`C:\Users\Nutthakrit\Documents\FusionProV5`
+
+GitHub remote:
+
+`https://github.com/hs2zef-cpu/FusionProV5.git`
+
 ## Repository Structure
 
 - `FusionProV5/`: Project modules and supporting material.
