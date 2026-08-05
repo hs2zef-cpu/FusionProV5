@@ -1,0 +1,29 @@
+{
+  "classification": "TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS",
+  "schema": "SWV5-CONTRACT-TEST-RESULT-V1",
+  "contract_policy": "SWV5-PRODUCTION-V2",
+  "manifest": "SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_2_CONTRACT_TESTS.mq5",
+  "runner": "MetaTrader 5 Strategy Tester, X64 Regular",
+  "run_1": {
+    "total": 162,
+    "passed": 162,
+    "failed": 0,
+    "skipped": 0,
+    "signature": "402491285275147483",
+    "deterministic_internal_replay": true,
+    "verdict": "PASS"
+  },
+  "run_2": {
+    "total": 162,
+    "passed": 162,
+    "failed": 0,
+    "skipped": 0,
+    "signature": "402491285275147483",
+    "deterministic_internal_replay": true,
+    "verdict": "PASS"
+  },
+  "cross_run_signature_match": true,
+  "basket_state_pairs_covered": 49,
+  "contract_defects_found": 0,
+  "recommendation": "READY FOR FORMAL APPROVAL"
+}
