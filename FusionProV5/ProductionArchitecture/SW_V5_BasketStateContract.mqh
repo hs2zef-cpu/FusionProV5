@@ -29,7 +29,10 @@ enum SWV5_BasketTransitionCause
    SWV5_TRANSITION_RECONCILIATION_CONFIRMED = 10,
    SWV5_TRANSITION_OPERATOR_HALT = 11,
    SWV5_TRANSITION_OPERATOR_RESET = 12,
-   SWV5_TRANSITION_CONTRACT_VIOLATION = 13
+   SWV5_TRANSITION_CONTRACT_VIOLATION = 13,
+   SWV5_TRANSITION_OWNERSHIP_LOST = 14,
+   SWV5_TRANSITION_BROKER_STATE_UNCERTAIN = 15,
+   SWV5_TRANSITION_MANDATORY_RISK_REDUCTION = 16
 };
 
 const ulong SWV5_INVARIANT_BASKET_ID_REQUIRED = 1;
@@ -44,40 +47,54 @@ const ulong SWV5_INVARIANT_HALTED_FORBIDS_NEW_EXPOSURE = 256;
 const ulong SWV5_INVARIANT_ERROR_REQUIRES_RECONCILIATION = 512;
 const ulong SWV5_INVARIANT_ZERO_RESIDUAL_BEFORE_IDLE = 1024;
 const ulong SWV5_INVARIANT_CONFIRMED_TRANSACTION_REQUIRED = 2048;
+const ulong SWV5_INVARIANT_ZERO_POSITIONS_BEFORE_IDLE = 4096;
+const ulong SWV5_INVARIANT_ZERO_ORDERS_BEFORE_IDLE = 8192;
+const ulong SWV5_INVARIANT_BROKER_QUERY_COMPLETE = 16384;
+const ulong SWV5_INVARIANT_SAME_STATE_VERSION_STABLE = 32768;
 
 struct SWV5_BasketLifecycleSnapshot
 {
+   SWV5_ContractVersion contract_version;
    SWV5_BasketID    basket_id;
+   SWV5_OwnershipFence ownership_fence;
    SWV5_BasketState state;
    ulong            state_version;
    ulong            cumulative_recovery_attempts;
    uint             current_recovery_layer;
    double           aggregate_open_volume;
    double           residual_volume;
+   uint             live_position_count;
+   uint             live_order_count;
    uint             pending_request_count;
-   bool             owner_confirmed;
-   bool             reconciliation_required;
+   SWV5_ReconciliationState reconciliation_state;
+   SWV5_AuthoritativeQuerySet broker_queries;
    datetime         state_entered_at;
 };
 
 struct SWV5_BasketTransitionRequest
 {
+   SWV5_ContractVersion       contract_version;
    SWV5_BasketID              basket_id;
+   SWV5_OwnershipFence        ownership_fence;
    SWV5_BasketState           from_state;
    SWV5_BasketState           to_state;
    SWV5_BasketTransitionCause cause;
    ulong                      expected_state_version;
-   SWV5_RequestID             request_id;
+   SWV5_ExecutionCorrelation  correlation;
    datetime                   evidence_time;
-   bool                       ownership_confirmed;
-   bool                       risk_authorization_valid;
-   bool                       broker_state_reconciled;
+   SWV5_ContractDecision      risk_decision;
+   SWV5_ReconciliationState   reconciliation_state;
    double                     residual_volume;
+   uint                       live_position_count;
+   uint                       live_order_count;
    uint                       pending_request_count;
+   SWV5_AuthoritativeQuerySet broker_queries;
+   SWV5_AuthoritySource       confirmation_authority;
 };
 
 struct SWV5_BasketInvariantReport
 {
+   SWV5_ContractVersion contract_version;
    SWV5_ContractStatus status;
    ulong               satisfied_flags;
    ulong               violated_flags;
@@ -86,6 +103,7 @@ struct SWV5_BasketInvariantReport
 
 struct SWV5_BasketTransitionDecision
 {
+   SWV5_ContractVersion     contract_version;
    SWV5_ContractDecision     decision;
    SWV5_BasketState          resulting_state;
    ulong                     resulting_state_version;
@@ -96,9 +114,11 @@ class ISWV5BasketStateMachineContract
 {
 public:
    virtual string ContractName() = 0;
-   virtual bool ValidateState(const SWV5_BasketLifecycleSnapshot &snapshot,
+   virtual bool ValidateState(const SWV5_ContractValidationContext &context,
+                              const SWV5_BasketLifecycleSnapshot &snapshot,
                               SWV5_BasketInvariantReport &report) = 0;
-   virtual bool ValidateTransition(const SWV5_BasketLifecycleSnapshot &snapshot,
+   virtual bool ValidateTransition(const SWV5_ContractValidationContext &context,
+                                   const SWV5_BasketLifecycleSnapshot &snapshot,
                                    const SWV5_BasketTransitionRequest &request,
                                    SWV5_BasketTransitionDecision &decision) = 0;
 };

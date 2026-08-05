@@ -16,21 +16,11 @@ enum SWV5_CloseVerificationState
 struct SWV5_BasketAggregate
 {
    SWV5_ContractVersion         contract_version;
-   SWV5_BasketID                basket_id;
-   SWV5_OwnerIdentity           owner;
-   ulong                        magic;
-   string                       symbol;
+   SWV5_PersistenceNamespace    persistence_namespace;
    SWV5_AccountPositionMode     account_mode;
    SWV5_BasketLifecycleSnapshot lifecycle;
-   ulong                        recovery_attempt;
-   uint                         recovery_layer;
    double                       initial_volume;
-   double                       aggregate_open_volume;
    double                       aggregate_closed_volume;
-   double                       residual_volume;
-   uint                         live_position_count;
-   uint                         live_order_count;
-   uint                         pending_request_count;
    SWV5_CloseVerificationState  close_verification;
    datetime                     opened_at;
    datetime                     updated_at;
@@ -38,48 +28,52 @@ struct SWV5_BasketAggregate
 
 struct SWV5_PartialCloseEvidence
 {
-   SWV5_BasketID basket_id;
-   ulong         deal_ticket;
-   ulong         position_identifier;
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_OwnershipFence ownership_fence;
+   SWV5_ExecutionCorrelation correlation;
    double        volume_before;
    double        closed_volume;
    double        residual_volume;
    datetime      confirmed_at;
-   bool          authoritative;
+   SWV5_AuthoritySource authority;
 };
 
 struct SWV5_CloseVerificationEvidence
 {
-   SWV5_BasketID               basket_id;
+   SWV5_ContractVersion        contract_version;
+   SWV5_PersistenceNamespace   persistence_namespace;
+   SWV5_OwnershipFence         ownership_fence;
    SWV5_CloseVerificationState state;
    double                      broker_residual_volume;
    uint                        broker_position_count;
    uint                        broker_order_count;
    uint                        pending_request_count;
+   SWV5_AuthoritativeQuerySet  broker_queries;
    datetime                    verified_at;
    SWV5_AuthoritySource        authority;
 };
 
 struct SWV5_BasketValidationResult
 {
+   SWV5_ContractVersion      contract_version;
    SWV5_ContractDecision      decision;
    SWV5_BasketInvariantReport lifecycle_invariants;
-   bool                       recovery_attempt_valid;
-   bool                       recovery_layer_valid;
-   bool                       residual_volume_valid;
-   bool                       close_verified;
 };
 
 class ISWV5BasketContract
 {
 public:
    virtual string ContractName() = 0;
-   virtual bool ValidateAggregate(const SWV5_BasketAggregate &basket,
+   virtual bool ValidateAggregate(const SWV5_ContractValidationContext &context,
+                                  const SWV5_BasketAggregate &basket,
                                   SWV5_BasketValidationResult &result) = 0;
-   virtual bool ValidatePartialClose(const SWV5_BasketAggregate &basket,
+   virtual bool ValidatePartialClose(const SWV5_ContractValidationContext &context,
+                                     const SWV5_BasketAggregate &basket,
                                      const SWV5_PartialCloseEvidence &evidence,
                                      SWV5_ContractDecision &decision) = 0;
-   virtual bool ValidateCloseCompletion(const SWV5_BasketAggregate &basket,
+   virtual bool ValidateCloseCompletion(const SWV5_ContractValidationContext &context,
+                                        const SWV5_BasketAggregate &basket,
                                         const SWV5_CloseVerificationEvidence &evidence,
                                         SWV5_ContractDecision &decision) = 0;
 };

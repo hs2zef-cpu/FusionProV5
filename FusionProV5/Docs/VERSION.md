@@ -4,21 +4,21 @@
 
 ### Current Version
 
-Sprint 4 Architecture
+Sprint 4.1 Contract Hardening
 
 ### Date
 
-2026-08-03
+2026-08-05
 
 ### Status
 
-**ARCHITECTURE CANDIDATE**
+**CONTRACT HARDENING CANDIDATE**
 
 ## Current Authorized Project
 
-`SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE`
+`SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_1_CONTRACT_HARDENING`
 
-Main compile manifest:
+Contract compile baseline:
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE.mq5`
 
@@ -34,7 +34,14 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Current State
 
-- Production contract version 1
+- Production contract version 2 candidate
+- Deterministic validation context required by every contract interface
+- Contract compatibility and migration policy documented
+- Execution host and Hedging-only initial account-mode decisions recorded
+- Persistence/lease compare-and-set and authoritative clock rules recorded
+- Transaction idempotency and raw-retcode mapping ownership recorded
+- Pip/unit and Hard Kill governance decisions recorded
+- Table-driven validation specification complete
 - Basket state machine contract complete
 - Persistence and restart reconciliation contract complete
 - Execution request and confirmation contract complete
@@ -45,10 +52,11 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Unit and normalization contract complete
 - No concrete production implementation
 - No broker command path
-- MetaEditor compile target: 0 errors, 0 warnings
+- Sprint 4.1 MetaEditor X64 Regular compile: 0 errors, 0 warnings
+- Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action
 
-Review and lock the Sprint 4 Architecture contracts.
+Review and approve the Sprint 4.1 Contract Hardening candidate.
 
-No runtime implementation is authorized. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.
+Do not commit, merge, or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.

@@ -5,10 +5,10 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.0 |
-| Date | 2026-08-03 |
+| Version | 2.1 |
+| Date | 2026-08-05 |
 | Status | **ACTIVE** |
-| Authorized Baseline | **Sprint 4 Architecture** |
+| Authorized Baseline | **Sprint 4.1 Contract Hardening Candidate** |
 
 ## Revision History
 
@@ -17,6 +17,7 @@
 | 1.0 | 2026-08-02 | Initial official Architecture Constitution after Sprint 3.2 Patch 1. |
 | 1.1 | 2026-08-03 | Authorized Sprint 3.2.1 history-token hardening baseline and runtime evidence gate. |
 | 2.0 | 2026-08-03 | Authorized isolated Sprint 4 production contracts; Sprint 3.2.1 frozen as Signal Engine baseline. |
+| 2.1 | 2026-08-05 | Hardened production contract version 2, deterministic validation context, ADR governance, and table-driven verification requirements. |
 
 ## Purpose
 
@@ -26,7 +27,7 @@ It exists to prevent unauthorized implementation, baseline confusion, Signal Eng
 
 ## Authoritative Baseline
 
-The current authorized architecture project is **Fusion Pro V5 Sprint 4 Architecture**.
+The current authorized architecture project is **Fusion Pro V5 Sprint 4.1 Contract Hardening**.
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
@@ -43,8 +44,10 @@ Latest verified MetaEditor compilation:
 - Errors: `0`
 - Warnings: `0`
 - Target: X64 Regular
-- Production contract version: V1
+- Production contract version: V2 candidate
 - Frozen Signal snapshot schema: V5
+
+The compilation result above is the verified Sprint 4.1 result from the unchanged Sprint 4 Architecture manifest. Static scans also confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -83,11 +86,13 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 | Sprint 3.2.1 | Nonpositive history-token hardening, explicit fail-closed diagnostics, preserved last-valid baseline, and expanded CSV decision evidence. |
 | Sprint 4 Architecture | Isolated production Basket, Persistence, Execution, Risk, Statistics, Instance Ownership, and Unit System contracts. No runtime implementation. |
 
+Sprint 4.1 Contract Hardening is the active review candidate. It is not listed as completed until contract review, compilation, and approval are complete.
+
 ## Architecture Boundary
 
 Fusion Pro V5 Sprint 3.2.1 remains the frozen **MT5 Indicator and Signal Engine**.
 
-Fusion Pro V5 Sprint 4 Architecture is an isolated **production contract layer**. It defines types, ownership, interfaces, lifecycle rules, and evidence requirements only. It is not an automated trading system and is not connected to the Signal Engine at runtime.
+Fusion Pro V5 Sprint 4.1 is an isolated **production contract hardening layer** based on Sprint 4 Architecture. It defines types, ownership, interfaces, lifecycle rules, deterministic validation requirements, and evidence specifications only. It is not an automated trading system and is not connected to the Signal Engine at runtime.
 
 It is not an automated trading EA.
 
@@ -197,7 +202,7 @@ The current `ExecutionPolicy` name refers to an advisory signal-policy gate insi
 | AR-011 | Any v17 concept must be independently validated and tested before adoption. | A useful idea may still be incorrectly implemented or architecturally incompatible. | Reusing adaptive regime scoring without lockout tests. | New specification, independent implementation, and regression fixtures. |
 | AR-012 | No implementation may begin without an approved Sprint scope and Definition of Done. | Prevents speculative or unauthorized project changes. | Creating execution interfaces from a context-only request. | Explicit user approval recorded before file modification. |
 | AR-013 | Unauthorized experimental folders are not baselines and must never be merged automatically. | Prevents accidental adoption of unreviewed work. | Continuing from `SPRINT4_SAFETY_FOUNDATION`. | Baseline confirmation before every task. |
-| AR-014 | Sprint 4 Architecture is the authorized architecture project; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains two explicit, non-conflicting ownership boundaries. | Treating contracts as implemented execution or modifying the frozen signal baseline. | State both paths before future implementation. |
+| AR-014 | Sprint 4.1 Contract Hardening is the authorized architecture candidate; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains two explicit, non-conflicting ownership boundaries. | Treating contracts as implemented execution or modifying the frozen signal baseline. | State both paths before future implementation. |
 
 ## Intentional Current Limitations
 
@@ -235,6 +240,7 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2 Patch 1 |
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
+| Authorized / In Review | Sprint 4.1 Contract Hardening |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -253,7 +259,7 @@ Its existence does not authorize Sprint 4 and does not change the current archit
 
 Sprint 3.2.1 is frozen by explicit user decision. Its remaining runtime evidence limitations remain historical context and do not authorize source changes.
 
-Sprint 4 Architecture cannot be locked until review confirms:
+Sprint 4.1 Contract Hardening cannot be locked until review confirms:
 
 - Every required production domain has a typed contract and sole owner
 - Basket transitions and invariants are complete and fail-closed
@@ -263,6 +269,10 @@ Sprint 4 Architecture cannot be locked until review confirms:
 - Statistics use authoritative deal history
 - Duplicate ownership conflicts halt readiness
 - Unit normalization rules are explicit
+- Contract versioning and compatibility rules are explicit
+- Every contract evaluation receives deterministic time, sequence, and tolerance context
+- Accepted ADRs resolve execution boundary, account mode, ownership, confirmation, units, and Hard Kill governance
+- Every safety-critical rule has a table-driven validation case
 - No runtime execution or recovery algorithm is present
 - MetaEditor compilation remains zero errors and zero warnings
 
@@ -303,9 +313,11 @@ CSV generation is enabled by default in Patch 1. Experts-log regression output r
 - Per-snapshot regression PASS does not prove full historical equivalence.
 - Candidate-direction scoring, macro penalties, confirmation additions, and final V4.2 arbitration remain unmigrated.
 
-## Sprint 4 Architecture Authorization
+## Sprint 4 And Sprint 4.1 Architecture Authorization
 
 Sprint 4 Architecture is explicitly authorized as an isolated production-contract project.
+
+Sprint 4.1 is authorized to harden those contracts, add deterministic validation requirements, resolve Architecture Decision Records, and define table-driven test specifications. It does not authorize broker execution or concrete production services.
 
 Authorized scope:
 
@@ -408,15 +420,15 @@ No v17 source code may be reproduced or copied. The audit is used only to identi
 
 - Should the next authorized Sprint remain purely inside the Signal Engine?
 - Which V4.2 domain should be migrated next?
-- Should execution live in a separate repository, sibling project, or EA host?
-- Should future execution support Hedging only or separate Hedging and Netting models?
+- Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
+- Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
 - What external datasets qualify as golden regression fixtures?
 - What score model will eventually replace or reproduce the V4.2 composite model?
 - How should final Price Action scoring be specified?
 - What evidence threshold is required to lock each Sprint?
 - Should result validation become completely non-mutating?
 - Should history generation move beyond the current `Bars()` token?
-- What Architecture Decision Record process will authorize boundary changes?
+- What review authority and evidence threshold will accept future Architecture Decision Record changes?
 - Which exact files may be modified in the next Sprint?
 
 ## Future Recommendations
@@ -449,7 +461,7 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 Before performing any future work, every AI agent must:
 
 1. Read this Master Context completely.
-2. Confirm that Sprint 4 Architecture is the authorized architecture project and Sprint 3.2.1 is the frozen Signal Engine baseline.
+2. Confirm that Sprint 4.1 Contract Hardening is the authorized architecture candidate and Sprint 3.2.1 is the frozen Signal Engine baseline.
 3. Ignore `SPRINT4_SAFETY_FOUNDATION` unless the user explicitly requests inspection of discarded experimental material.
 4. Classify the request as documentation, design, audit, runtime verification, or implementation.
 5. Confirm the approved Sprint scope and Definition of Done before implementation.
@@ -466,4 +478,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Review and lock Sprint 4 Architecture. No runtime implementation is currently authorized."
+"Review and approve Sprint 4.1 Contract Hardening. Compile, commit, merge, and runtime implementation require separate approval."

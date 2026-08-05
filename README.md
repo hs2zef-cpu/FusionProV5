@@ -29,9 +29,9 @@ GitHub remote:
 
 ## Current Sprint
 
-The current authoritative project is `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE`.
+The current authoritative architecture candidate is `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_1_CONTRACT_HARDENING`.
 
-Sprint 4 Architecture is an architecture-contract project. Sprint 3.2.1 remains the frozen Signal Engine baseline.
+Sprint 4.1 hardens the isolated Sprint 4 contracts with versioning, deterministic validation requirements, Architecture Decision Records, and table-driven test specifications. Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4.1 contains no broker execution or runtime wiring.
 
 ## Repository Workflow
 
@@ -42,4 +42,3 @@ Sprint 4 Architecture is an architecture-contract project. Sprint 3.2.1 remains 
 5. Merge only reviewed and approved changes into the primary branch.
 
 Generated binaries, logs, temporary files, and CSV evidence remain local and are excluded from version control.
-

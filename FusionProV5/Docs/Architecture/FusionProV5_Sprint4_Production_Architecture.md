@@ -6,6 +6,23 @@ Sprint 4 defines production contracts only. It contains no broker command path, 
 
 The frozen Signal Engine remains Sprint 3.2.1. Its `DecisionEngine` produces the final signal DTO. A future execution host may consume that DTO only through a separately approved ingress contract. Sprint 4 does not connect the two layers at runtime.
 
+## Sprint 4.1 Hardening Overlay
+
+Sprint 4.1 advances the contract candidate to schema version 2 and minimum compatible version 2. It adds deterministic validation context, explicit compatibility policy, complete authoritative-query evidence, transaction idempotency identity, lease compare-and-set evidence, Risk authorization binding, and symbol-specification sequencing.
+
+Every contract operation receives an explicit validation context containing expected version identity, one clock ID/authority/time/sequence, evaluation sequence, and numeric tolerances. Contract validators may not obtain hidden wall-clock, broker, account, symbol, file, or random input. Fail-closed behavior is mandatory and cannot be disabled by a caller.
+
+The accepted ADR set fixes these boundaries:
+
+- Execution remains outside the indicator.
+- Initial future execution support is Hedging-only; Netting is rejected until separately modeled.
+- Persistence and leases require compare-and-set evidence and authoritative time.
+- Raw retcodes are mapped by policy; acknowledgements never confirm Basket state.
+- Pip is explicit and normalization is bound to a symbol-specification sequence.
+- Hard Kill is durable and release requires independent auditable operator evidence.
+
+Sprint 4.1 still contains no concrete production implementation.
+
 ## Ownership Model
 
 | Domain | Sole future owner | Authority consumed | Forbidden ownership |
@@ -219,6 +236,8 @@ The ownership key is account login + server + symbol + strategy ID + Magic.
 
 These are abstract contracts. Sprint 4 provides no concrete implementation.
 
+In Sprint 4.1, every method also consumes `const SWV5_ContractValidationContext &context`. The context is part of the version 2 interface contract and makes expiry, freshness, ordering, and floating-point decisions reproducible in table-driven fixtures.
+
 ## Data Flow
 
 ```text
@@ -263,14 +282,16 @@ No arrow in this diagram is connected at runtime in Sprint 4.
 
 ## Known Design Risks
 
-- The physical persistence and atomic-lock mechanisms are not selected.
-- Hedging and Netting support policy remains an explicit future decision.
-- Broker-specific transaction ordering and duplicate event behavior require fixtures.
-- Retcode classification needs a broker/platform mapping table before implementation.
-- Pip semantics may require symbol-specific configuration.
-- Risk thresholds and Hard Kill release governance are not configured.
-- Contract interfaces compile but have no behavioral tests until concrete implementations are authorized.
+- The physical persistence and atomic-lock technologies are not selected; required compare-and-set semantics are defined.
+- Initial future support is Hedging-only. Netting remains explicitly unsupported.
+- Broker-specific transaction ordering and duplicate behavior have specified fixtures but no broker evidence.
+- Retcode classification requires a versioned broker/platform mapping table before implementation.
+- Pip semantics require explicit symbol-specific configuration or authoritative metadata.
+- Risk thresholds remain unconfigured; Hard Kill release governance is defined but not implemented.
+- Contract interfaces have table-driven specifications but no implemented or executed behavioral test suite.
 
 ## Sprint Boundary
 
 Sprint 4 stops at architecture. Implementation of adapters, stores, locks, risk calculations, broker requests, recovery behavior, basket execution, or signal-to-execution wiring requires a new explicitly authorized Sprint.
+
+Sprint 4.1 stops at contract hardening and verification specification. Approval of version 2 does not authorize runtime implementation.
