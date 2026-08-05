@@ -1,5 +1,7 @@
 # Sprint 4.1 Deterministic Contract Validation Specification
 
+Governance status: **CANDIDATE / IN REVIEW**. This specification is pending formal approval, is not Architecture Locked, and grants no runtime authorization. Sprint 4 remains the authorized baseline.
+
 ## Purpose
 
 This document defines executable, table-driven requirements for Production Architecture contract version 2. It specifies expected behavior; Sprint 4.1 does not implement broker execution, stores, locks, or trading algorithms.

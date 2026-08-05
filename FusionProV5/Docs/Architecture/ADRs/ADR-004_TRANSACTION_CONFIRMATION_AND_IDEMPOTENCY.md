@@ -4,6 +4,8 @@
 
 Accepted.
 
+Governance note: this technical decision is part of the Sprint 4.1 Candidate / In Review package. It does not Architecture Lock Sprint 4.1, replace the Sprint 4 authorized baseline, or authorize runtime implementation.
+
 ## Decision
 
 Request acknowledgement never confirms Basket state. A synchronous result that reports a deal remains pending until authoritative transaction or deal-history evidence is correlated to the request, Basket, expected state version, and normalized volume.

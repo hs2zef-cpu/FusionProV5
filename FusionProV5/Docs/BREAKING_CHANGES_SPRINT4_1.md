@@ -1,5 +1,7 @@
 # Breaking Changes: Sprint 4.1 Contract Hardening
 
+Governance status: **CANDIDATE / IN REVIEW**. These proposed version 2 changes are pending formal approval and are not Architecture Locked. Sprint 4 remains the authorized baseline.
+
 ## Version Change
 
 Production contract schema changes from version 1 to version 2. Version 2 has minimum compatible version 2.

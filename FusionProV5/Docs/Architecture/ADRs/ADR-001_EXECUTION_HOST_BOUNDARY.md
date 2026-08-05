@@ -4,6 +4,8 @@
 
 Accepted for Sprint 4.1 contract hardening.
 
+Governance note: this technical decision is part of the Sprint 4.1 Candidate / In Review package. It does not Architecture Lock Sprint 4.1, replace the Sprint 4 authorized baseline, or authorize runtime implementation.
+
 ## Decision
 
 Future broker execution must live in a separate EA host or separately approved execution project. The frozen Sprint 3.2.1 indicator may publish an immutable Signal DTO through a future ingress contract, but it cannot own orders, positions, `OnTradeTransaction`, Basket state, Persistence, Risk, or Statistics.
@@ -16,4 +18,3 @@ Sprint 4.1 defines and verifies contracts only. It does not create the ingress, 
 - The EA host will be the sole owner of the platform transaction callback.
 - A future integration Sprint requires an explicit DTO ingress specification and failure policy.
 - No Production Architecture header may include a Signal Engine header.
-

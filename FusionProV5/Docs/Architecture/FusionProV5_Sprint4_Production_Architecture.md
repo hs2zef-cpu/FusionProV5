@@ -8,6 +8,8 @@ The frozen Signal Engine remains Sprint 3.2.1. Its `DecisionEngine` produces the
 
 ## Sprint 4.1 Hardening Overlay
 
+Governance status: **CANDIDATE / IN REVIEW**. Sprint 4 remains the authorized architecture baseline. This overlay is pending formal approval, is not Architecture Locked, and grants no runtime authorization.
+
 Sprint 4.1 advances the contract candidate to schema version 2 and minimum compatible version 2. It adds deterministic validation context, explicit compatibility policy, complete authoritative-query evidence, transaction idempotency identity, lease compare-and-set evidence, Risk authorization binding, and symbol-specification sequencing.
 
 Every contract operation receives an explicit validation context containing expected version identity, one clock ID/authority/time/sequence, evaluation sequence, and numeric tolerances. Contract validators may not obtain hidden wall-clock, broker, account, symbol, file, or random input. Fail-closed behavior is mandatory and cannot be disabled by a caller.
@@ -294,4 +296,4 @@ No arrow in this diagram is connected at runtime in Sprint 4.
 
 Sprint 4 stops at architecture. Implementation of adapters, stores, locks, risk calculations, broker requests, recovery behavior, basket execution, or signal-to-execution wiring requires a new explicitly authorized Sprint.
 
-Sprint 4.1 stops at contract hardening and verification specification. Approval of version 2 does not authorize runtime implementation.
+Sprint 4.1 stops at contract hardening and verification specification. It remains Candidate / In Review until formal approval; even approval of version 2 does not authorize runtime implementation.

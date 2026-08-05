@@ -6,6 +6,8 @@ This file records the authorized evolution of Fusion Pro V5.
 
 ## Sprint 4.1 Contract Hardening
 
+Governance status: **CANDIDATE / IN REVIEW**. Pending formal approval; not Architecture Locked; no runtime authorization.
+
 - Advanced the Production Architecture contract candidate to schema version 2.
 - Added deterministic validation context and explicit compatibility policy.
 - Hardened Basket, Execution, Persistence, Risk, Statistics, Ownership, and Unit evidence boundaries.

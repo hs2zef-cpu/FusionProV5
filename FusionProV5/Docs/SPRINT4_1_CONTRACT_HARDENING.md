@@ -2,7 +2,9 @@
 
 ## Status
 
-Contract hardening candidate. Review and approval are required before commit or lock.
+**CANDIDATE / IN REVIEW**
+
+Pending formal approval. Sprint 4 Architecture remains the authorized baseline. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
 
 ## Scope
 
@@ -78,6 +80,7 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 
 ## Definition Of Done
 
+- Formal approval promotes Sprint 4.1 from Candidate / In Review; until then Sprint 4 remains the authorized baseline.
 - All contract changes are reviewed and approved.
 - Contract version policy is accepted.
 - All unresolved decisions in Sprint 4.1 scope have ADRs.

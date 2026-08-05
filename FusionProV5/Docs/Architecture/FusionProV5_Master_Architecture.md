@@ -5,10 +5,12 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.1 |
+| Version | 2.2 |
 | Date | 2026-08-05 |
-| Status | **ACTIVE** |
-| Authorized Baseline | **Sprint 4.1 Contract Hardening Candidate** |
+| Status | **CANDIDATE / IN REVIEW** |
+| Authorized Baseline | **Sprint 4 Architecture** |
+| Review Candidate | **Sprint 4.1 Contract Hardening** |
+| Architecture Lock | **NOT LOCKED — PENDING FORMAL APPROVAL** |
 
 ## Revision History
 
@@ -18,6 +20,7 @@
 | 1.1 | 2026-08-03 | Authorized Sprint 3.2.1 history-token hardening baseline and runtime evidence gate. |
 | 2.0 | 2026-08-03 | Authorized isolated Sprint 4 production contracts; Sprint 3.2.1 frozen as Signal Engine baseline. |
 | 2.1 | 2026-08-05 | Hardened production contract version 2, deterministic validation context, ADR governance, and table-driven verification requirements. |
+| 2.2 | 2026-08-05 | Corrected governance wording: Sprint 4 remains the authorized baseline; Sprint 4.1 is Candidate / In Review pending formal approval. |
 
 ## Purpose
 
@@ -27,7 +30,9 @@ It exists to prevent unauthorized implementation, baseline confusion, Signal Eng
 
 ## Authoritative Baseline
 
-The current authorized architecture project is **Fusion Pro V5 Sprint 4.1 Contract Hardening**.
+The current authorized architecture baseline is **Fusion Pro V5 Sprint 4 Architecture**.
+
+**Fusion Pro V5 Sprint 4.1 Contract Hardening** is the **Candidate / In Review**. It is pending formal approval, is not Architecture Locked, and grants no runtime authorization.
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
@@ -65,6 +70,8 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 ## Status Vocabulary
 
 - **Implemented:** Present in the authorized baseline and compile-verified.
+- **Candidate / In Review:** Proposed architecture changes under formal review; not part of the authorized baseline and not Architecture Locked.
+- **Architecture Locked:** Formally approved architecture baseline. Sprint 4.1 does not currently have this status.
 - **Evidence pending:** Implemented, but required MT5 runtime artifacts have not been inspected.
 - **Deferred by design:** Intentionally outside the current Sprint or Signal Engine boundary.
 - **Unauthorized:** Created without an approved Sprint scope and must not be treated as project work.
@@ -86,7 +93,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 | Sprint 3.2.1 | Nonpositive history-token hardening, explicit fail-closed diagnostics, preserved last-valid baseline, and expanded CSV decision evidence. |
 | Sprint 4 Architecture | Isolated production Basket, Persistence, Execution, Risk, Statistics, Instance Ownership, and Unit System contracts. No runtime implementation. |
 
-Sprint 4.1 Contract Hardening is the active review candidate. It is not listed as completed until contract review, compilation, and approval are complete.
+Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
 ## Architecture Boundary
 
@@ -202,7 +209,7 @@ The current `ExecutionPolicy` name refers to an advisory signal-policy gate insi
 | AR-011 | Any v17 concept must be independently validated and tested before adoption. | A useful idea may still be incorrectly implemented or architecturally incompatible. | Reusing adaptive regime scoring without lockout tests. | New specification, independent implementation, and regression fixtures. |
 | AR-012 | No implementation may begin without an approved Sprint scope and Definition of Done. | Prevents speculative or unauthorized project changes. | Creating execution interfaces from a context-only request. | Explicit user approval recorded before file modification. |
 | AR-013 | Unauthorized experimental folders are not baselines and must never be merged automatically. | Prevents accidental adoption of unreviewed work. | Continuing from `SPRINT4_SAFETY_FOUNDATION`. | Baseline confirmation before every task. |
-| AR-014 | Sprint 4.1 Contract Hardening is the authorized architecture candidate; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains two explicit, non-conflicting ownership boundaries. | Treating contracts as implemented execution or modifying the frozen signal baseline. | State both paths before future implementation. |
+| AR-014 | Sprint 4 Architecture is the authorized architecture baseline; Sprint 4.1 Contract Hardening is Candidate / In Review; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains explicit, non-conflicting governance and ownership boundaries. | Treating the Sprint 4.1 candidate as Architecture Locked, treating contracts as implemented execution, or modifying the frozen signal baseline. | State the authorized baseline, review candidate, and frozen Signal Engine before future work. |
 
 ## Intentional Current Limitations
 
@@ -240,7 +247,7 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2 Patch 1 |
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
-| Authorized / In Review | Sprint 4.1 Contract Hardening |
+| Candidate / In Review — Pending Approval — Not Architecture Locked | Sprint 4.1 Contract Hardening |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -313,13 +320,13 @@ CSV generation is enabled by default in Patch 1. Experts-log regression output r
 - Per-snapshot regression PASS does not prove full historical equivalence.
 - Candidate-direction scoring, macro penalties, confirmation additions, and final V4.2 arbitration remain unmigrated.
 
-## Sprint 4 And Sprint 4.1 Architecture Authorization
+## Sprint 4 Authorization And Sprint 4.1 Review State
 
 Sprint 4 Architecture is explicitly authorized as an isolated production-contract project.
 
-Sprint 4.1 is authorized to harden those contracts, add deterministic validation requirements, resolve Architecture Decision Records, and define table-driven test specifications. It does not authorize broker execution or concrete production services.
+Sprint 4.1 is the Candidate / In Review package for hardening those contracts, adding deterministic validation requirements, recording Architecture Decision Records, and defining table-driven test specifications. It is pending formal approval, is not Architecture Locked, and does not replace the Sprint 4 authorized baseline. It does not authorize broker execution or concrete production services.
 
-Authorized scope:
+Review-candidate scope:
 
 - Basket lifecycle states, transitions, and invariants
 - Versioned persistence and restart reconciliation contracts
@@ -461,7 +468,7 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 Before performing any future work, every AI agent must:
 
 1. Read this Master Context completely.
-2. Confirm that Sprint 4.1 Contract Hardening is the authorized architecture candidate and Sprint 3.2.1 is the frozen Signal Engine baseline.
+2. Confirm that Sprint 4 Architecture is the authorized architecture baseline, Sprint 4.1 Contract Hardening is Candidate / In Review, and Sprint 3.2.1 is the frozen Signal Engine baseline.
 3. Ignore `SPRINT4_SAFETY_FOUNDATION` unless the user explicitly requests inspection of discarded experimental material.
 4. Classify the request as documentation, design, audit, runtime verification, or implementation.
 5. Confirm the approved Sprint scope and Definition of Done before implementation.
@@ -478,4 +485,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Review and approve Sprint 4.1 Contract Hardening. Compile, commit, merge, and runtime implementation require separate approval."
+"Review and formally approve or reject Sprint 4.1 Contract Hardening. Until approval, Sprint 4 remains the authorized baseline, Sprint 4.1 is not Architecture Locked, and runtime implementation remains unauthorized."

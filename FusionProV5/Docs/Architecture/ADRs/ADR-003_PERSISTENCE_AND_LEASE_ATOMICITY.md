@@ -4,6 +4,8 @@
 
 Accepted as a technology-neutral contract requirement.
 
+Governance note: this technical decision is part of the Sprint 4.1 Candidate / In Review package. It does not Architecture Lock Sprint 4.1, replace the Sprint 4 authorized baseline, or authorize runtime implementation.
+
 ## Decision
 
 Persistence publication and instance ownership use compare-and-set semantics against an observed version and store revision. The lease clock must be identified and authoritative. A missed heartbeat alone never authorizes takeover.

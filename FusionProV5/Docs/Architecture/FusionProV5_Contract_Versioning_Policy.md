@@ -2,7 +2,7 @@
 
 ## Status
 
-Authoritative for Production Architecture contracts from Sprint 4.1 onward.
+Candidate policy for the Sprint 4.1 review package. Pending formal approval; not Architecture Locked. Sprint 4 remains the authorized architecture baseline.
 
 ## Current Contract
 

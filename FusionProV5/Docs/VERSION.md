@@ -12,13 +12,21 @@ Sprint 4.1 Contract Hardening
 
 ### Status
 
-**CONTRACT HARDENING CANDIDATE**
+**CANDIDATE / IN REVIEW**
 
-## Current Authorized Project
+Pending formal approval. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
+
+## Current Authorized Baseline
+
+Sprint 4 Architecture
+
+`SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE`
+
+## Current Review Candidate
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_1_CONTRACT_HARDENING`
 
-Contract compile baseline:
+Review-candidate compile manifest:
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE.mq5`
 
@@ -57,6 +65,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Review and approve the Sprint 4.1 Contract Hardening candidate.
+Review and formally approve or reject the Sprint 4.1 Contract Hardening candidate. Sprint 4 Architecture remains the authorized baseline until approval.
 
-Do not commit, merge, or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.
+Do not merge or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.

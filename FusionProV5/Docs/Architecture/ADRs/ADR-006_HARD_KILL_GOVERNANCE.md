@@ -4,6 +4,8 @@
 
 Accepted.
 
+Governance note: this technical decision is part of the Sprint 4.1 Candidate / In Review package. It does not Architecture Lock Sprint 4.1, replace the Sprint 4 authorized baseline, or authorize runtime implementation.
+
 ## Decision
 
 Hard Kill is a durable latch. Restart, reattachment, ownership takeover, or a new signal cannot clear it. While latched, only reconciliation and explicitly authorized risk-reducing or close-only actions are eligible.
