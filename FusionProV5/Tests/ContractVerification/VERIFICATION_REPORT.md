@@ -10,14 +10,14 @@ Sprint 4 remains the authorized baseline. Sprint 4.1 remains Candidate / In Revi
 
 ## Generated evidence
 
-- Exported at UTC: `2026-08-06T17:47:23Z`
-- Tested source commit: `dd262f294c6a3b711f8a2f9771b9c3c6f5d3eb6f`
-- Evidence exporter SHA-256: `a5743c64b1aec0bd1f841748cf53fc0bedbc82ee075e938788280126f2847cde`
+- Exported at UTC: `2026-08-06T18:20:21Z`
+- Tested source commit: `c1367aff5eb6d86f8ccd002c6ad72c037f92052f`
+- Evidence exporter SHA-256: `e7621870a707037873efb5cc793759018e87bcaf850ac2b2fc2ccac88d8cc9bb`
 - Manifest SHA-256: `0e19eaaa1b0b0275806f14c98e66f841339a6a901b3cd1116650ab9823d6b72a`
-- Verification source digest: `8ea2bebe811ae48f09d5af33a715611eee917c92762d06bb1297ee60a106754b`
+- Verification source digest: `7ca6d7059e311dbd6f1a7bbeec85237a3a98027dfdf77b73a248e41a3d187185`
 - Compile: 0 errors, 0 warnings, X64 Regular
-- Tests: 202 total, 202 passed, 0 failed, 0 skipped
-- Deterministic signature: `9897499331444689043`
+- Tests: 213 total, 213 passed, 0 failed, 0 skipped
+- Deterministic signature: `5208572328653077586`
 - Independent runs: 2; signatures and counts identical
 - Terminal build: 6090
 - Broker/server evidence: Exness-MT5Trial6 (Demo/Trial Strategy Tester)
@@ -30,4 +30,5 @@ Sprint 4 remains the authorized baseline. Sprint 4.1 remains Candidate / In Revi
 - The 30 corrective interface cases cover the ten final-review findings.
 - Ten interface-conformance cases directly invoke every remaining production interface method.
 - The original 162-case domain matrix remains present as regression coverage, with authoritative domain operations routed through interface implementations.
+- Eleven persistence round-trip cases prove field-preserving deep-copy behavior and fail-closed namespace/header validation through `ISWV5PersistenceContract`.
 - No broker command, runtime implementation, live account mutation, file/network validator dependency, Signal Engine change, or frozen baseline change is present.
