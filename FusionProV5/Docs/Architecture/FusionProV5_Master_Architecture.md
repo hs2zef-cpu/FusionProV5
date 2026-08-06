@@ -21,6 +21,7 @@
 | 2.0 | 2026-08-03 | Authorized isolated Sprint 4 production contracts; Sprint 3.2.1 frozen as Signal Engine baseline. |
 | 2.1 | 2026-08-05 | Hardened production contract version 2, deterministic validation context, ADR governance, and table-driven verification requirements. |
 | 2.2 | 2026-08-05 | Corrected governance wording: Sprint 4 remains the authorized baseline; Sprint 4.1 is Candidate / In Review pending formal approval. |
+| 2.3 | 2026-08-06 | Recorded Sprint 4.2 as an authorized verification sub-sprint and Sprint 4.3 as corrective interface-level verification; advanced the breaking candidate contracts to V3 without Architecture Lock or runtime authorization. |
 
 ## Purpose
 
@@ -49,10 +50,10 @@ Latest verified MetaEditor compilation:
 - Errors: `0`
 - Warnings: `0`
 - Target: X64 Regular
-- Production contract version: V2 candidate
+- Production contract version: V3 corrective candidate; minimum compatible version 3
 - Frozen Signal snapshot schema: V5
 
-The compilation result above is the verified Sprint 4.1 result from the unchanged Sprint 4 Architecture manifest. Static scans also confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
+The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings; its 202 interface-level/regression cases passed twice on MT5 Demo Strategy Tester with identical signature. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -94,6 +95,8 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 | Sprint 4 Architecture | Isolated production Basket, Persistence, Execution, Risk, Statistics, Instance Ownership, and Unit System contracts. No runtime implementation. |
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
+
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 is corrective verification responding to final-review findings. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
 
 ## Architecture Boundary
 

@@ -19,6 +19,16 @@ enum SWV5_PricePurpose
    SWV5_PRICE_TRIGGER = 4
 };
 
+enum SWV5_TradeOperationKind
+{
+   SWV5_OPERATION_MARKET_ENTRY = 0,
+   SWV5_OPERATION_PENDING_ENTRY = 1,
+   SWV5_OPERATION_MODIFY_STOP = 2,
+   SWV5_OPERATION_MODIFY_LIMIT = 3,
+   SWV5_OPERATION_REDUCE = 4,
+   SWV5_OPERATION_CLOSE = 5
+};
+
 const ulong SWV5_UNIT_POINT_VALID = 1;
 const ulong SWV5_UNIT_TICK_VALID = 2;
 const ulong SWV5_UNIT_PIP_EXPLICIT = 4;
@@ -51,6 +61,7 @@ struct SWV5_SymbolUnitSpecification
    string account_currency;
    string tick_value_currency;
    datetime observed_at;
+   datetime valid_until;
    bool   complete;
 };
 
@@ -60,14 +71,14 @@ struct SWV5_UnitNormalizationRequest
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence       ownership_fence;
    SWV5_PricePurpose          purpose;
-   SWV5_NormalizationDirection price_rounding;
-   SWV5_NormalizationDirection volume_rounding;
+   SWV5_TradeOperationKind    operation_kind;
    int                        direction;
    double                     raw_price;
    double                     raw_stop_price;
    double                     raw_limit_price;
    double                     raw_volume;
    double                     reference_market_price;
+   double                     operation_price;
    double                     market_bid;
    double                     market_ask;
    ulong                      expected_specification_sequence;
@@ -90,7 +101,9 @@ struct SWV5_NormalizedUnits
    double monetary_tick_value_per_volume_unit;
    string monetary_value_currency;
    ulong  specification_sequence;
-   SWV5_NormalizationDirection applied_price_rounding;
+   SWV5_NormalizationDirection applied_entry_rounding;
+   SWV5_NormalizationDirection applied_stop_rounding;
+   SWV5_NormalizationDirection applied_limit_rounding;
    SWV5_NormalizationDirection applied_volume_rounding;
    bool   price_aligned_to_tick;
    bool   volume_aligned_to_step;

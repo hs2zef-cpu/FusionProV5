@@ -1,7 +1,7 @@
 #ifndef SW_V5_PERSISTENCE_CONTRACT_MQH
 #define SW_V5_PERSISTENCE_CONTRACT_MQH
 
-#include "SW_V5_BasketContract.mqh"
+#include "SW_V5_ExecutionContract.mqh"
 
 enum SWV5_PersistenceLoadStatus
 {
@@ -37,6 +37,15 @@ enum SWV5_CorruptionDisposition
    SWV5_CORRUPTION_REQUIRE_OPERATOR = 3
 };
 
+enum SWV5_RestartReadinessDisposition
+{
+   SWV5_RESTART_SAFE_TO_RESUME = 0,
+   SWV5_RESTART_RECONCILIATION_REQUIRED = 1,
+   SWV5_RESTART_RETRY_FORBIDDEN = 2,
+   SWV5_RESTART_CLOSE_ONLY = 3,
+   SWV5_RESTART_HALTED = 4
+};
+
 struct SWV5_PersistenceRecordHeader
 {
    SWV5_ContractVersion contract_version;
@@ -51,18 +60,22 @@ struct SWV5_PersistenceRecordHeader
 
 struct SWV5_PersistedRequestEvidence
 {
-   SWV5_ContractVersion      contract_version;
-   SWV5_PersistenceNamespace persistence_namespace;
-   SWV5_OwnershipFence       ownership_fence;
-   SWV5_ExecutionCorrelation correlation;
-   SWV5_ConfirmationStatus   confirmation_status;
-   ulong                     symbol_specification_sequence;
-   ulong                     expected_basket_version;
-   double                    normalized_volume;
-   double                    normalized_price;
-   double                    normalized_stop_price;
-   double                    normalized_limit_price;
-   datetime                  recorded_at;
+   SWV5_ContractVersion       contract_version;
+   SWV5_PersistenceNamespace  persistence_namespace;
+   SWV5_OwnershipFence        ownership_fence;
+   SWV5_PendingRequest        pending_request;
+   SWV5_AccountPositionMode   account_mode;
+   ulong                      record_sequence;
+   datetime                   recorded_at;
+};
+
+struct SWV5_PersistedRequestSetHeader
+{
+   SWV5_ContractVersion contract_version;
+   uint                 request_count;
+   string               request_set_digest;
+   string               request_index_revision;
+   ulong                record_sequence;
 };
 
 struct SWV5_PersistedCheckpoint
@@ -70,8 +83,7 @@ struct SWV5_PersistedCheckpoint
    SWV5_PersistenceRecordHeader header;
    SWV5_BasketAggregate         basket;
    SWV5_ExecutionCorrelation    last_confirmed_correlation;
-   uint                         persisted_pending_request_count;
-   string                       pending_request_set_digest;
+   SWV5_PersistedRequestSetHeader pending_request_set;
    SWV5_PersistedRequestEvidence latest_pending_request;
    SWV5_HardKillState           hard_kill_state;
    bool                         clean_shutdown;
@@ -115,6 +127,7 @@ struct SWV5_RestartReconciliationResult
 {
    SWV5_ContractVersion     contract_version;
    SWV5_ReconciliationStatus status;
+   SWV5_RestartReadinessDisposition readiness_disposition;
    SWV5_BasketState          required_state;
    ulong                     reason_flags;
    string                    diagnostic;
@@ -135,6 +148,11 @@ public:
                                     const SWV5_PersistenceNamespace &persistence_namespace,
                                     SWV5_PersistedRequestEvidence &requests[],
                                     SWV5_PersistenceLoadResult &result) = 0;
+   virtual bool SavePendingRequests(const SWV5_ContractValidationContext &context,
+                                    const SWV5_PersistenceNamespace &persistence_namespace,
+                                    const SWV5_PersistedRequestEvidence &requests[],
+                                    const SWV5_PersistedRequestSetHeader &set_header,
+                                    SWV5_ContractDecision &decision) = 0;
    virtual bool SaveCheckpoint(const SWV5_ContractValidationContext &context,
                                const SWV5_PersistedCheckpoint &checkpoint,
                                SWV5_ContractDecision &decision) = 0;

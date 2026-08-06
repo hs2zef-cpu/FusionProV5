@@ -23,7 +23,7 @@ GitHub remote:
 - `FusionProV5/ProductionArchitecture/`: Sprint 4 production architecture contracts.
 - `FusionProV5/Tools/`: Repository and development tools.
 - `FusionProV5/Scripts/`: Repeatable project scripts.
-- `FusionProV5/Tests/`: Test assets and future verification suites.
+- `FusionProV5/Tests/`: Deterministic, test-only contract verification assets.
 - `FusionProV5/Archive/`: Retained historical project material.
 - Root `*.mq5`: Sprint manifests and preserved source baselines.
 
@@ -34,6 +34,8 @@ Sprint 4 Architecture remains the current authorized architecture baseline.
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_1_CONTRACT_HARDENING` is the Sprint 4.1 **Candidate / In Review**. It is pending formal approval, is not Architecture Locked, and grants no runtime authorization.
 
 Sprint 4.1 hardens the isolated Sprint 4 contracts with versioning, deterministic validation requirements, Architecture Decision Records, and table-driven test specifications. Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4.1 contains no broker execution or runtime wiring.
+
+Sprint 4.2 is an authorized verification sub-sprint within the Sprint 4.1 candidate branch. Its executable suite exists under `FusionProV5/Tests/ContractVerification/`; Sprint 4.3 corrects the ten final-review findings and verifies Production Contract V3 through deterministic `ISWV5*` interface implementations. Neither verification sprint changes the authorized baseline, declares Architecture Lock, grants runtime authorization, or establishes production readiness.
 
 ## Repository Workflow
 

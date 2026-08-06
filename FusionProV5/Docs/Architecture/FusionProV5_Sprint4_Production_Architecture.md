@@ -10,7 +10,9 @@ The frozen Signal Engine remains Sprint 3.2.1. Its `DecisionEngine` produces the
 
 Governance status: **CANDIDATE / IN REVIEW**. Sprint 4 remains the authorized architecture baseline. This overlay is pending formal approval, is not Architecture Locked, and grants no runtime authorization.
 
-Sprint 4.1 advances the contract candidate to schema version 2 and minimum compatible version 2. It adds deterministic validation context, explicit compatibility policy, complete authoritative-query evidence, transaction idempotency identity, lease compare-and-set evidence, Risk authorization binding, and symbol-specification sequencing.
+Sprint 4.1 introduced contract schema version 2. Sprint 4.3 corrects proven breaking findings and advances the candidate to schema version 3 with minimum compatible version 3. V3 adds monotonic recovery evidence, phase-specific execution identity, reconstructible pending requests, full account namespace/epoch and mode binding, typed takeover and Hard Kill release evidence, durable identity indexes, and non-caller-controlled unit safety.
+
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. The executable suite exists. Sprint 4.3 replaces its helper-only verification claim with interface-level implementations and test invocation. Neither sub-sprint declares Architecture Lock, grants runtime authorization, or changes Sprint 4 as the authorized baseline.
 
 Every contract operation receives an explicit validation context containing expected version identity, one clock ID/authority/time/sequence, evaluation sequence, and numeric tolerances. Contract validators may not obtain hidden wall-clock, broker, account, symbol, file, or random input. Fail-closed behavior is mandatory and cannot be disabled by a caller.
 
@@ -141,7 +143,9 @@ An incompatible, truncated, checksum-failed, regressed, or foreign-owner record 
 
 Alternative terminal states are `PARTIALLY_CONFIRMED`, `REJECTED`, `EXPIRED`, `RECONCILIATION_REQUIRED`, and `CANCELLED`.
 
-Each logical intent has a correlation ID. Each submission attempt has a unique attempt ID and links to its parent. Basket version, normalized units, risk authorization, and authorization expiry are bound to the intent.
+Each logical intent has a pre-submission request identity containing correlation ID, attempt ID, parent attempt, idempotency key, and monotonic sequence. It contains no broker-generated future identity. Broker order, deal, position, event, and transaction identities enter only at acknowledgement or authoritative evidence phases. Basket version, normalized units, risk authorization, account mode, and authorization expiry are bound to the intent.
+
+Execution phases are `Intent`, `Submission`, `Acknowledgement`, `Authoritative Confirmation`, `Partial Fill`, and terminal `Completed`, `Rejected`, or `Uncertain`. Acknowledgement never confirms Basket state.
 
 ### ResultRetcode Policy
 
@@ -238,7 +242,7 @@ The ownership key is account login + server + symbol + strategy ID + Magic.
 
 These are abstract contracts. Sprint 4 provides no concrete implementation.
 
-In Sprint 4.1, every method also consumes `const SWV5_ContractValidationContext &context`. The context is part of the version 2 interface contract and makes expiry, freshness, ordering, and floating-point decisions reproducible in table-driven fixtures.
+Every method consumes `const SWV5_ContractValidationContext &context`. The context is part of the version 3 interface contract and makes expiry, freshness, ordering, and floating-point decisions reproducible in table-driven fixtures.
 
 ## Data Flow
 
@@ -290,10 +294,10 @@ No arrow in this diagram is connected at runtime in Sprint 4.
 - Retcode classification requires a versioned broker/platform mapping table before implementation.
 - Pip semantics require explicit symbol-specific configuration or authoritative metadata.
 - Risk thresholds remain unconfigured; Hard Kill release governance is defined but not implemented.
-- Contract interfaces have table-driven specifications but no implemented or executed behavioral test suite.
+- Contract interfaces have an implemented, executed, deterministic test-only suite. It is verification evidence, not production implementation.
 
 ## Sprint Boundary
 
 Sprint 4 stops at architecture. Implementation of adapters, stores, locks, risk calculations, broker requests, recovery behavior, basket execution, or signal-to-execution wiring requires a new explicitly authorized Sprint.
 
-Sprint 4.1 stops at contract hardening and verification specification. It remains Candidate / In Review until formal approval; even approval of version 2 does not authorize runtime implementation.
+Sprint 4.1 remains Candidate / In Review until formal approval. Sprint 4.2 and Sprint 4.3 provide verification evidence only; even approval of version 3 does not authorize runtime implementation.

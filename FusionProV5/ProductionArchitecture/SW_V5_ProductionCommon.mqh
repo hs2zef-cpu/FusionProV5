@@ -1,9 +1,9 @@
 #ifndef SW_V5_PRODUCTION_COMMON_MQH
 #define SW_V5_PRODUCTION_COMMON_MQH
 
-#define SWV5_PRODUCTION_CONTRACT_VERSION 2
-#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 2
-#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V2"
+#define SWV5_PRODUCTION_CONTRACT_VERSION 3
+#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 3
+#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V3"
 
 enum SWV5_AccountPositionMode
 {
@@ -82,6 +82,29 @@ enum SWV5_TimeAuthority
    SWV5_TIME_AUTHORITY_TEST_FIXTURE = 4
 };
 
+enum SWV5_ExecutionLifecyclePhase
+{
+   SWV5_EXECUTION_PHASE_INTENT = 0,
+   SWV5_EXECUTION_PHASE_SUBMISSION = 1,
+   SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT = 2,
+   SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION = 3,
+   SWV5_EXECUTION_PHASE_PARTIAL_FILL = 4,
+   SWV5_EXECUTION_PHASE_COMPLETED = 5,
+   SWV5_EXECUTION_PHASE_REJECTED = 6,
+   SWV5_EXECUTION_PHASE_UNCERTAIN = 7
+};
+
+enum SWV5_ComponentAuthority
+{
+   SWV5_COMPONENT_AUTHORITY_NONE = 0,
+   SWV5_COMPONENT_AUTHORITY_EXECUTION = 1,
+   SWV5_COMPONENT_AUTHORITY_PERSISTENCE = 2,
+   SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER = 3,
+   SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE = 4,
+   SWV5_COMPONENT_AUTHORITY_OPERATOR = 5,
+   SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE = 6
+};
+
 struct SWV5_ContractVersion
 {
    string contract_name;
@@ -124,16 +147,40 @@ struct SWV5_RequestID
    datetime created_at;
 };
 
-struct SWV5_ExecutionCorrelation
+struct SWV5_ExecutionRequestIdentity
 {
    SWV5_ContractVersion contract_version;
    SWV5_RequestID       request_id;
+   string               idempotency_key;
+};
+
+struct SWV5_BrokerExecutionIdentity
+{
+   SWV5_ContractVersion contract_version;
    ulong                order_ticket;
    ulong                deal_ticket;
    ulong                position_identifier;
-   string               event_id;
-   string               idempotency_key;
+   string               broker_event_id;
    ulong                transaction_sequence;
+};
+
+struct SWV5_ExecutionCorrelation
+{
+   SWV5_ContractVersion        contract_version;
+   SWV5_ExecutionLifecyclePhase phase;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_BrokerExecutionIdentity  broker_identity;
+};
+
+struct SWV5_DurableEventIdentitySet
+{
+   SWV5_ContractVersion contract_version;
+   string               canonical_event_index;
+   string               identity_set_digest;
+   uint                 accepted_identity_count;
+   ulong                highest_transaction_sequence;
+   ulong                index_revision;
+   ulong                compaction_generation;
 };
 
 struct SWV5_OwnershipKey
@@ -180,6 +227,46 @@ struct SWV5_OperatorIdentity
    datetime authenticated_at;
 };
 
+struct SWV5_AccountRiskNamespace
+{
+   SWV5_ContractVersion     contract_version;
+   string                   broker_identity;
+   string                   server;
+   long                     account_login;
+   string                   account_currency;
+   string                   strategy_id;
+   ulong                    magic;
+   SWV5_AccountPositionMode account_mode;
+   SWV5_AuthoritySource     authoritative_source;
+   ulong                    snapshot_epoch;
+   ulong                    snapshot_sequence;
+};
+
+struct SWV5_TypedReconciliationEvidence
+{
+   SWV5_ContractVersion   contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   string                 evidence_id;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource   authority_source;
+   ulong                  evidence_sequence;
+   datetime               observed_at;
+   string                 state_digest;
+};
+
+struct SWV5_ExposureReductionEvidence
+{
+   SWV5_ContractVersion   contract_version;
+   string                 evidence_id;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource   authority_source;
+   double                 observed_exposure_volume;
+   double                 prior_exposure_volume;
+   bool                   zero_or_reducing;
+   ulong                  evidence_sequence;
+   datetime               observed_at;
+};
+
 enum SWV5_HardKillLatchState
 {
    SWV5_HARD_KILL_INACTIVE = 0,
@@ -197,9 +284,10 @@ struct SWV5_HardKillReleaseEvidence
    ulong                 latch_generation;
    ulong                 release_generation;
    SWV5_OperatorIdentity operator_identity;
-   bool                  broker_state_reconciled;
-   bool                  persistence_reconciled;
-   bool                  zero_or_reducing_exposure_confirmed;
+   SWV5_ComponentAuthority approving_component;
+   SWV5_TypedReconciliationEvidence broker_evidence;
+   SWV5_TypedReconciliationEvidence persistence_evidence;
+   SWV5_ExposureReductionEvidence exposure_evidence;
    datetime              approved_at;
    datetime              expires_at;
    string                audit_reference;
@@ -209,6 +297,7 @@ struct SWV5_HardKillState
 {
    SWV5_ContractVersion         contract_version;
    SWV5_PersistenceNamespace    persistence_namespace;
+   SWV5_AccountRiskNamespace    account_namespace;
    string                       latch_id;
    ulong                        latch_generation;
    SWV5_HardKillLatchState      state;

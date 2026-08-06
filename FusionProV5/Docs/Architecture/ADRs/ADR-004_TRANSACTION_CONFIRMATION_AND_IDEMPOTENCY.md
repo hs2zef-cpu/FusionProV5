@@ -12,7 +12,9 @@ Request acknowledgement never confirms Basket state. A synchronous result that r
 
 Transaction evidence has a stable event ID and monotonic transaction sequence. Duplicate evidence is idempotent. Out-of-order, conflicting, unknown, or cross-Basket evidence requires reconciliation and cannot increase confirmed volume twice.
 
-`SWV5_ExecutionCorrelation` is the canonical cross-domain envelope for request correlation ID, attempt ID, parent attempt, order ticket, deal ticket, position identifier, event ID, idempotency key, and transaction sequence. Partial closes, confirmations, persisted request evidence, and Statistics deals use the same envelope.
+`SWV5_ExecutionRequestIdentity` is the pre-submission identity and contains only logical request, attempt, parent-attempt, idempotency, and monotonic identity. `SWV5_BrokerExecutionIdentity` is populated only after broker acknowledgement or authoritative evidence. `SWV5_ExecutionCorrelation` combines them with an explicit lifecycle phase for post-submission evidence. Partial closes, confirmations, persisted request evidence, and Statistics deals use the phase-appropriate identity.
+
+Accepted event membership is durable and reconstructible through a versioned canonical identity index plus digest, revision, highest sequence, and compaction generation. Remembering only the last event is insufficient; replaying event A after event B remains duplicate when A is already a member.
 
 Retcode classification is derived from a versioned mapping policy. Callers supply raw evidence, not trusted classifications.
 

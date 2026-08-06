@@ -82,9 +82,7 @@ struct SWV5_RiskLimits
 struct SWV5_AccountRiskSnapshot
 {
    SWV5_ContractVersion contract_version;
-   ulong    snapshot_sequence;
-   long     account_login;
-   string   currency;
+   SWV5_AccountRiskNamespace account_namespace;
    double   balance;
    double   equity;
    double   margin;
@@ -99,7 +97,7 @@ struct SWV5_AccountRiskSnapshot
 struct SWV5_ExposureRiskSnapshot
 {
    SWV5_ContractVersion contract_version;
-   ulong    snapshot_sequence;
+   SWV5_AccountRiskNamespace account_namespace;
    string   symbol;
    double   symbol_long_volume;
    double   symbol_short_volume;
@@ -114,7 +112,7 @@ struct SWV5_ExposureRiskSnapshot
 struct SWV5_BasketRiskSnapshot
 {
    SWV5_ContractVersion contract_version;
-   ulong         snapshot_sequence;
+   SWV5_AccountRiskNamespace account_namespace;
    SWV5_BasketLifecycleSnapshot lifecycle;
    double        realized_net;
    double        unrealized_net;
@@ -142,7 +140,7 @@ struct SWV5_RiskMonetaryBasis
 struct SWV5_ProjectedRequestRisk
 {
    SWV5_ContractVersion contract_version;
-   ulong    snapshot_sequence;
+   SWV5_AccountRiskNamespace account_namespace;
    string   symbol;
    double   projected_volume;
    double   projected_symbol_volume;
@@ -159,6 +157,8 @@ struct SWV5_RiskEvaluationInput
 {
    SWV5_ContractVersion     contract_version;
    SWV5_ExecutionIntent      intent;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_AccountPositionMode  account_mode;
    SWV5_RiskLimits           limits;
    SWV5_AccountRiskSnapshot  account;
    SWV5_ExposureRiskSnapshot exposure;
@@ -173,9 +173,11 @@ struct SWV5_RiskAuthorization
    SWV5_ContractVersion contract_version;
    string                authorization_id;
    string                limits_contract_id;
-   SWV5_ExecutionCorrelation correlation;
+   SWV5_ExecutionRequestIdentity request_identity;
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence  ownership_fence;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_AccountPositionMode account_mode;
    SWV5_RiskDisposition  disposition;
    SWV5_RiskDomain       blocking_domain;
    ulong                 reason_flags;
@@ -187,10 +189,7 @@ struct SWV5_RiskAuthorization
    double                authorized_price;
    double                authorized_stop_price;
    double                authorized_limit_price;
-   ulong                 account_risk_snapshot_sequence;
-   ulong                 exposure_risk_snapshot_sequence;
-   ulong                 basket_risk_snapshot_sequence;
-   ulong                 projected_risk_snapshot_sequence;
+   ulong                 risk_snapshot_epoch;
    string                hard_kill_latch_id;
    ulong                 hard_kill_latch_generation;
    SWV5_RiskMonetaryBasis monetary_basis;
@@ -214,6 +213,7 @@ public:
                                       const SWV5_ExecutionIntent &intent,
                                       SWV5_ContractDecision &decision) = 0;
    virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &current_state,
                                         const SWV5_HardKillReleaseEvidence &evidence,
                                         SWV5_ContractDecision &decision) = 0;
 };

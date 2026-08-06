@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 4.1 Contract Hardening
+Sprint 4.3 Contract Correction and Interface-Level Verification
 
 ### Date
 
-2026-08-05
+2026-08-06
 
 ### Status
 
 **CANDIDATE / IN REVIEW**
 
-Pending formal approval. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
+Corrective verification is part of the Sprint 4.1 candidate branch and remains pending independent review. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
 
 ## Current Authorized Baseline
 
@@ -28,7 +28,9 @@ Sprint 4 Architecture
 
 Review-candidate compile manifest:
 
-`SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_ARCHITECTURE.mq5`
+`SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5` (test only)
+
+Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 is the corrective verification package responding to final-review findings. Neither is a production or runtime authorization.
 
 ## Frozen Signal Baseline
 
@@ -42,14 +44,14 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Current State
 
-- Production contract version 2 candidate
+- Production contract version 3 corrective candidate (minimum compatible version 3)
 - Deterministic validation context required by every contract interface
 - Contract compatibility and migration policy documented
 - Execution host and Hedging-only initial account-mode decisions recorded
 - Persistence/lease compare-and-set and authoritative clock rules recorded
 - Transaction idempotency and raw-retcode mapping ownership recorded
 - Pip/unit and Hard Kill governance decisions recorded
-- Table-driven validation specification complete
+- Table-driven validation specification and executable interface-level suite complete
 - Basket state machine contract complete
 - Persistence and restart reconciliation contract complete
 - Execution request and confirmation contract complete
@@ -60,7 +62,8 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Unit and normalization contract complete
 - No concrete production implementation
 - No broker command path
-- Sprint 4.1 MetaEditor X64 Regular compile: 0 errors, 0 warnings
+- Sprint 4.3 MetaEditor X64 Regular compile: 0 errors, 0 warnings
+- Sprint 4.3 MT5 Demo Strategy Tester: 202 passed, 0 failed, 0 skipped, repeated twice with signature `9897499331444689043`
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action

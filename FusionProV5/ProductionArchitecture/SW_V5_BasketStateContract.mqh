@@ -61,6 +61,7 @@ struct SWV5_BasketLifecycleSnapshot
    ulong            state_version;
    ulong            cumulative_recovery_attempts;
    uint             current_recovery_layer;
+   SWV5_DurableEventIdentitySet accepted_recovery_evidence;
    double           aggregate_open_volume;
    double           residual_volume;
    uint             live_position_count;
@@ -69,6 +70,20 @@ struct SWV5_BasketLifecycleSnapshot
    SWV5_ReconciliationState reconciliation_state;
    SWV5_AuthoritativeQuerySet broker_queries;
    datetime         state_entered_at;
+};
+
+struct SWV5_RecoveryTransitionEvidence
+{
+   SWV5_ContractVersion         contract_version;
+   SWV5_ExecutionRequestIdentity request_identity;
+   ulong                        prior_cumulative_recovery_attempts;
+   ulong                        proposed_cumulative_recovery_attempts;
+   uint                         prior_recovery_layer;
+   uint                         proposed_recovery_layer;
+   string                       authorization_id;
+   string                       evidence_identity;
+   ulong                        evidence_sequence;
+   datetime                     evidenced_at;
 };
 
 struct SWV5_BasketTransitionRequest
@@ -81,6 +96,7 @@ struct SWV5_BasketTransitionRequest
    SWV5_BasketTransitionCause cause;
    ulong                      expected_state_version;
    SWV5_ExecutionCorrelation  correlation;
+   SWV5_RecoveryTransitionEvidence recovery_evidence;
    datetime                   evidence_time;
    SWV5_ContractDecision      risk_decision;
    SWV5_ReconciliationState   reconciliation_state;
@@ -107,6 +123,8 @@ struct SWV5_BasketTransitionDecision
    SWV5_ContractDecision     decision;
    SWV5_BasketState          resulting_state;
    ulong                     resulting_state_version;
+   ulong                     resulting_cumulative_recovery_attempts;
+   uint                      resulting_recovery_layer;
    SWV5_BasketInvariantReport invariants;
 };
 

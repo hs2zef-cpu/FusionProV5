@@ -127,31 +127,59 @@ bool SWV5_TestRequestEqual(const SWV5_RequestID &left,const SWV5_RequestID &righ
           left.created_at==right.created_at;
 }
 
-bool SWV5_TestCorrelationEqual(const SWV5_ExecutionCorrelation &left,const SWV5_ExecutionCorrelation &right)
+bool SWV5_TestRequestIdentityEqual(const SWV5_ExecutionRequestIdentity &left,
+                                   const SWV5_ExecutionRequestIdentity &right)
 {
    return SWV5_TestVersionEqual(left.contract_version,right.contract_version) &&
           SWV5_TestRequestEqual(left.request_id,right.request_id) &&
-          left.order_ticket==right.order_ticket &&
-          left.deal_ticket==right.deal_ticket &&
-          left.position_identifier==right.position_identifier &&
-          left.event_id==right.event_id &&
-          left.idempotency_key==right.idempotency_key &&
-          left.transaction_sequence==right.transaction_sequence;
+          left.idempotency_key==right.idempotency_key;
+}
+
+bool SWV5_TestRequestIdentityComplete(const SWV5_ExecutionRequestIdentity &identity)
+{
+   return SWV5_TestVersionValid(identity.contract_version) &&
+          identity.request_id.correlation_id!="" && identity.request_id.attempt_id!="" &&
+          identity.request_id.monotonic_sequence>0 && identity.request_id.created_at>0 &&
+          identity.idempotency_key!="";
+}
+
+bool SWV5_TestCorrelationEqual(const SWV5_ExecutionCorrelation &left,const SWV5_ExecutionCorrelation &right)
+{
+   return SWV5_TestVersionEqual(left.contract_version,right.contract_version) &&
+          left.phase==right.phase &&
+          SWV5_TestRequestIdentityEqual(left.request_identity,right.request_identity) &&
+          SWV5_TestVersionEqual(left.broker_identity.contract_version,right.broker_identity.contract_version) &&
+          left.broker_identity.order_ticket==right.broker_identity.order_ticket &&
+          left.broker_identity.deal_ticket==right.broker_identity.deal_ticket &&
+          left.broker_identity.position_identifier==right.broker_identity.position_identifier &&
+          left.broker_identity.broker_event_id==right.broker_identity.broker_event_id &&
+          left.broker_identity.transaction_sequence==right.broker_identity.transaction_sequence;
 }
 
 bool SWV5_TestCorrelationComplete(const SWV5_ExecutionCorrelation &correlation)
 {
-   return SWV5_TestVersionValid(correlation.contract_version) &&
-          correlation.request_id.correlation_id!="" &&
-          correlation.request_id.attempt_id!="" &&
-          correlation.request_id.monotonic_sequence>0 &&
-          correlation.request_id.created_at>0 &&
-          correlation.order_ticket>0 &&
-          correlation.deal_ticket>0 &&
-          correlation.position_identifier>0 &&
-          correlation.event_id!="" &&
-          correlation.idempotency_key!="" &&
-          correlation.transaction_sequence>0;
+   if(!SWV5_TestVersionValid(correlation.contract_version) ||
+      !SWV5_TestRequestIdentityComplete(correlation.request_identity))
+      return false;
+   if(correlation.phase==SWV5_EXECUTION_PHASE_INTENT || correlation.phase==SWV5_EXECUTION_PHASE_SUBMISSION)
+      return correlation.broker_identity.order_ticket==0 && correlation.broker_identity.deal_ticket==0 &&
+             correlation.broker_identity.position_identifier==0 && correlation.broker_identity.broker_event_id=="" &&
+             correlation.broker_identity.transaction_sequence==0;
+   if(!SWV5_TestVersionValid(correlation.broker_identity.contract_version))
+      return false;
+   if(correlation.phase==SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT)
+      return correlation.broker_identity.order_ticket>0;
+   return correlation.broker_identity.broker_event_id!="" &&
+          correlation.broker_identity.transaction_sequence>0 &&
+          (correlation.broker_identity.order_ticket>0 || correlation.broker_identity.deal_ticket>0 ||
+           correlation.broker_identity.position_identifier>0);
+}
+
+bool SWV5_TestEventIdentitySetContains(const SWV5_DurableEventIdentitySet &set,
+                                       const SWV5_BrokerExecutionIdentity &identity)
+{
+   const string token=identity.broker_event_id+"|"+IntegerToString((long)identity.transaction_sequence);
+   return token!="|0" && StringFind(";"+set.canonical_event_index+";",";"+token+";")>=0;
 }
 
 bool SWV5_TestQueriesComplete(const SWV5_AuthoritativeQuerySet &queries)
@@ -248,6 +276,18 @@ bool SWV5_TestBasketEvidenceValid(const SWV5_BasketLifecycleSnapshot &snapshot,
              request.reconciliation_state==SWV5_RECONCILIATION_STATE_MATCHED;
    if(request.from_state==SWV5_BASKET_HALTED && request.to_state==SWV5_BASKET_CLOSING)
       return request.residual_volume>0.0 && request.reconciliation_state==SWV5_RECONCILIATION_STATE_MATCHED;
+   if(request.from_state==SWV5_BASKET_ACTIVE && request.to_state==SWV5_BASKET_RECOVERY)
+   {
+      const string recovery_token=request.recovery_evidence.evidence_identity+"|"+IntegerToString((long)request.recovery_evidence.evidence_sequence);
+      return SWV5_TestRequestIdentityEqual(request.recovery_evidence.request_identity,request.correlation.request_identity) &&
+             request.recovery_evidence.prior_cumulative_recovery_attempts==snapshot.cumulative_recovery_attempts &&
+             request.recovery_evidence.proposed_cumulative_recovery_attempts==snapshot.cumulative_recovery_attempts+1 &&
+             request.recovery_evidence.prior_recovery_layer==snapshot.current_recovery_layer &&
+             request.recovery_evidence.proposed_recovery_layer==snapshot.current_recovery_layer+1 &&
+             request.recovery_evidence.authorization_id!="" && request.recovery_evidence.evidence_identity!="" &&
+             request.recovery_evidence.evidence_sequence>0 && request.recovery_evidence.evidenced_at<=request.evidence_time &&
+             StringFind(";"+snapshot.accepted_recovery_evidence.canonical_event_index+";",";"+recovery_token+";")<0;
+   }
    return true;
 }
 
@@ -296,7 +336,8 @@ bool SWV5_TestCloseComplete(const SWV5_CloseVerificationEvidence &evidence)
           evidence.pending_request_count==0 && SWV5_TestQueriesComplete(evidence.broker_queries);
 }
 
-bool SWV5_TestSpecificationValid(const SWV5_SymbolUnitSpecification &specification)
+bool SWV5_TestSpecificationValid(const SWV5_ContractValidationContext &context,
+                                 const SWV5_SymbolUnitSpecification &specification)
 {
    return SWV5_TestVersionValid(specification.contract_version) && specification.complete &&
           specification.symbol!="" && specification.specification_sequence>0 &&
@@ -305,7 +346,8 @@ bool SWV5_TestSpecificationValid(const SWV5_SymbolUnitSpecification &specificati
           specification.tick_value_basis_volume>0.0 && specification.contract_size>0.0 &&
           specification.volume_minimum>0.0 && specification.volume_maximum>=specification.volume_minimum &&
           specification.volume_step>0.0 && specification.account_currency!="" &&
-          specification.tick_value_currency==specification.account_currency;
+          specification.tick_value_currency==specification.account_currency &&
+          specification.observed_at<=context.clock_time && specification.valid_until>=context.clock_time;
 }
 
 double SWV5_TestRoundToStep(const double value,const double step,const SWV5_NormalizationDirection direction)
@@ -323,36 +365,46 @@ bool SWV5_TestNormalize(const SWV5_ContractValidationContext &context,
                         const SWV5_UnitNormalizationRequest &request,
                         SWV5_NormalizedUnits &normalized)
 {
-   if(!SWV5_TestContextValid(context) || !SWV5_TestSpecificationValid(specification) ||
+   if(!SWV5_TestContextValid(context) || !SWV5_TestSpecificationValid(context,specification) ||
       request.expected_specification_sequence!=specification.specification_sequence ||
       request.market_bid<=0.0 || request.market_ask<=0.0 || request.market_ask<request.market_bid)
       return false;
    normalized.contract_version=request.contract_version;
    normalized.persistence_namespace=request.persistence_namespace;
    normalized.ownership_fence=request.ownership_fence;
-   normalized.price=SWV5_TestRoundToStep(request.raw_price,specification.tick_size,request.price_rounding);
-   normalized.stop_price=SWV5_TestRoundToStep(request.raw_stop_price,specification.tick_size,request.price_rounding);
-   normalized.limit_price=SWV5_TestRoundToStep(request.raw_limit_price,specification.tick_size,request.price_rounding);
-   normalized.volume=SWV5_TestRoundToStep(request.raw_volume,specification.volume_step,request.volume_rounding);
-   normalized.stop_distance_price=MathAbs(request.reference_market_price-normalized.stop_price);
+   const SWV5_NormalizationDirection entry_rounding=(request.direction>0 ? SWV5_NORMALIZE_UP : SWV5_NORMALIZE_DOWN);
+   const SWV5_NormalizationDirection stop_rounding=(request.direction>0 ? SWV5_NORMALIZE_DOWN : SWV5_NORMALIZE_UP);
+   const SWV5_NormalizationDirection limit_rounding=(request.direction>0 ? SWV5_NORMALIZE_DOWN : SWV5_NORMALIZE_UP);
+   const SWV5_NormalizationDirection volume_rounding=(request.exposure_increasing ? SWV5_NORMALIZE_DOWN :
+                                                       (request.protective_operation ? SWV5_NORMALIZE_UP : SWV5_NORMALIZE_NEAREST));
+   normalized.price=SWV5_TestRoundToStep(request.raw_price,specification.tick_size,entry_rounding);
+   normalized.stop_price=SWV5_TestRoundToStep(request.raw_stop_price,specification.tick_size,stop_rounding);
+   normalized.limit_price=SWV5_TestRoundToStep(request.raw_limit_price,specification.tick_size,limit_rounding);
+   normalized.volume=SWV5_TestRoundToStep(request.raw_volume,specification.volume_step,volume_rounding);
+   normalized.stop_distance_price=MathAbs(request.operation_price-normalized.stop_price);
    normalized.stop_distance_points=normalized.stop_distance_price/specification.point_size;
    normalized.stop_distance_ticks=normalized.stop_distance_price/specification.tick_size;
    normalized.monetary_tick_value_per_volume_unit=specification.tick_value_profit/specification.tick_value_basis_volume;
    normalized.monetary_value_currency=specification.tick_value_currency;
    normalized.specification_sequence=specification.specification_sequence;
-   normalized.applied_price_rounding=request.price_rounding;
-   normalized.applied_volume_rounding=request.volume_rounding;
+   normalized.applied_entry_rounding=entry_rounding;
+   normalized.applied_stop_rounding=stop_rounding;
+   normalized.applied_limit_rounding=limit_rounding;
+   normalized.applied_volume_rounding=volume_rounding;
    normalized.price_aligned_to_tick=SWV5_TestNear(normalized.price/specification.tick_size,
                                                   MathRound(normalized.price/specification.tick_size),context.price_tolerance);
    normalized.volume_aligned_to_step=SWV5_TestNear(normalized.volume/specification.volume_step,
                                                    MathRound(normalized.volume/specification.volume_step),context.volume_tolerance);
    normalized.stops_level_satisfied=normalized.stop_distance_points+context.price_tolerance>=specification.stops_level_points;
-   const double market_distance_points=MathAbs(request.reference_market_price-(request.direction>0 ? request.market_ask : request.market_bid))/specification.point_size;
+   const bool stop_side_valid=(request.raw_stop_price<=0.0) ||
+                              (request.direction>0 ? normalized.stop_price<request.operation_price : normalized.stop_price>request.operation_price);
+   const double operation_market_side=(request.direction>0 ? request.market_bid : request.market_ask);
+   const double market_distance_points=MathAbs(request.operation_price-operation_market_side)/specification.point_size;
    normalized.freeze_level_satisfied=!request.protective_operation || market_distance_points+context.price_tolerance>=specification.freeze_level_points;
    return normalized.volume>=specification.volume_minimum-context.volume_tolerance &&
           normalized.volume<=specification.volume_maximum+context.volume_tolerance &&
           normalized.price_aligned_to_tick && normalized.volume_aligned_to_step &&
-          normalized.stops_level_satisfied && normalized.freeze_level_satisfied;
+          stop_side_valid && normalized.stops_level_satisfied && normalized.freeze_level_satisfied;
 }
 
 bool SWV5_TestCanTakeover(const SWV5_ContractValidationContext &context,
@@ -361,10 +413,25 @@ bool SWV5_TestCanTakeover(const SWV5_ContractValidationContext &context,
 {
    return SWV5_TestContextValid(context) && observed.status==SWV5_LOCK_EXPIRED &&
           observed.clock_id==context.clock_id && context.clock_sequence>=observed.expiry_clock_sequence &&
-          context.clock_time>=observed.expires_at && claim.broker_state_reconciled &&
-          claim.persistence_reconciled && claim.broker_reconciliation_id!="" &&
-          claim.persistence_reconciliation_id!="" &&
-          SWV5_TestOwnershipKeyEqual(claim.claimant.key,observed.fence.ownership_namespace) &&
+           context.clock_time>=observed.expires_at && claim.takeover_evidence.lease_expiry.expired &&
+           claim.takeover_evidence.lease_expiry.clock_id==context.clock_id &&
+           claim.takeover_evidence.lease_expiry.observed_clock_sequence>=observed.expiry_clock_sequence &&
+           claim.takeover_evidence.observed_lease_version==observed.fence.lease_version &&
+           claim.takeover_evidence.observed_store_revision==observed.fence.store_revision &&
+           claim.takeover_evidence.proposed_takeover_generation==observed.fence.takeover_generation+1 &&
+           claim.takeover_evidence.broker_reconciliation.evidence_id!="" &&
+           claim.takeover_evidence.persistence_reconciliation.evidence_id!="" &&
+           claim.takeover_evidence.authority!=SWV5_COMPONENT_AUTHORITY_EXECUTION &&
+           claim.takeover_evidence.evidence_sequence>0 && claim.takeover_evidence.evidenced_at<=context.clock_time &&
+           claim.takeover_evidence.broker_reconciliation.issuing_component==SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER &&
+           claim.takeover_evidence.persistence_reconciliation.issuing_component==SWV5_COMPONENT_AUTHORITY_PERSISTENCE &&
+           claim.takeover_evidence.broker_reconciliation.evidence_sequence>0 &&
+           claim.takeover_evidence.persistence_reconciliation.evidence_sequence>0 &&
+           claim.takeover_evidence.broker_reconciliation.observed_at<=context.clock_time &&
+           claim.takeover_evidence.persistence_reconciliation.observed_at<=context.clock_time &&
+           SWV5_TestOwnershipKeyEqual(claim.takeover_evidence.broker_reconciliation.persistence_namespace.ownership_namespace,observed.fence.ownership_namespace) &&
+           SWV5_TestOwnershipKeyEqual(claim.takeover_evidence.persistence_reconciliation.persistence_namespace.ownership_namespace,observed.fence.ownership_namespace) &&
+           SWV5_TestOwnershipKeyEqual(claim.claimant.key,observed.fence.ownership_namespace) &&
           SWV5_TestFenceEqual(claim.expected_fence,observed.fence);
 }
 
@@ -380,7 +447,8 @@ bool SWV5_TestHeartbeatValid(const SWV5_ContractValidationContext &context,
 bool SWV5_TestIntentValid(const SWV5_ContractValidationContext &context,const SWV5_ExecutionIntent &intent)
 {
    return SWV5_TestContextValid(context) && SWV5_TestVersionValid(intent.contract_version) &&
-          SWV5_TestNamespaceComplete(intent.persistence_namespace) && SWV5_TestCorrelationComplete(intent.correlation) &&
+          SWV5_TestNamespaceComplete(intent.persistence_namespace) && SWV5_TestRequestIdentityComplete(intent.request_identity) &&
+          intent.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
           intent.normalized_volume>0.0 && intent.normalized_price>0.0 &&
           intent.symbol_specification_sequence>0 && intent.expected_basket_version>0 &&
           intent.risk_authorization_id!="" && intent.authorization_expires_at>=context.clock_time;
@@ -405,20 +473,18 @@ SWV5_ConfirmationStatus SWV5_TestConfirmExecution(const SWV5_PendingRequest &pen
                                                    double &confirmed_volume,
                                                    double &residual_volume)
 {
-   confirmed_volume=pending.confirmed_volume;
+   confirmed_volume=pending.cumulative_confirmed_volume;
    residual_volume=pending.residual_requested_volume;
    if(!SWV5_TestNamespaceEqual(pending.intent.persistence_namespace,evidence.persistence_namespace) ||
       !SWV5_TestFenceEqual(pending.intent.ownership_fence,evidence.ownership_fence) ||
-      !SWV5_TestRequestEqual(pending.intent.correlation.request_id,evidence.correlation.request_id) ||
+       !SWV5_TestRequestIdentityEqual(pending.intent.request_identity,evidence.correlation.request_identity) ||
+       pending.account_mode!=pending.intent.account_mode || pending.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
       evidence.expected_basket_version!=pending.intent.expected_basket_version ||
       evidence.symbol_specification_sequence!=pending.intent.symbol_specification_sequence ||
       !SWV5_TestCorrelationComplete(evidence.correlation))
       return SWV5_CONFIRMATION_CONFLICT;
-   if(evidence.correlation.event_id==pending.last_accepted_correlation.event_id ||
-      evidence.correlation.idempotency_key==pending.last_accepted_correlation.idempotency_key)
+   if(SWV5_TestEventIdentitySetContains(pending.accepted_event_identities,evidence.correlation.broker_identity))
       return pending.state==SWV5_REQUEST_PARTIALLY_CONFIRMED ? SWV5_CONFIRMATION_PARTIAL : SWV5_CONFIRMATION_CONFIRMED;
-   if(evidence.correlation.transaction_sequence<pending.last_accepted_correlation.transaction_sequence)
-      return SWV5_CONFIRMATION_CONFLICT;
    confirmed_volume+=evidence.confirmed_volume;
    residual_volume=MathMax(0.0,pending.intent.normalized_volume-confirmed_volume);
    if(residual_volume>0.0000001)
@@ -456,16 +522,21 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_RestartReconcil
       return SWV5_RECONCILIATION_BROKER_AHEAD_HALT;
    if(persisted_volume>broker_volume+0.0000001)
       return SWV5_RECONCILIATION_PERSISTENCE_AHEAD_HALT;
-   if(engineInput.persisted.persisted_pending_request_count!=engineInput.broker.pending_request_count ||
-      (engineInput.persisted.persisted_pending_request_count>0 && engineInput.persisted.pending_request_set_digest==""))
+   if(engineInput.persisted.pending_request_set.request_count!=engineInput.broker.pending_request_count ||
+      (engineInput.persisted.pending_request_set.request_count>0 &&
+       (engineInput.persisted.pending_request_set.request_set_digest=="" ||
+        engineInput.persisted.pending_request_set.request_index_revision=="")))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
-   if(engineInput.persisted.persisted_pending_request_count>0 &&
-      (engineInput.persisted.latest_pending_request.confirmation_status==SWV5_CONFIRMATION_NOT_STARTED ||
-       engineInput.persisted.latest_pending_request.confirmation_status==SWV5_CONFIRMATION_PENDING ||
-       engineInput.persisted.latest_pending_request.confirmation_status==SWV5_CONFIRMATION_CONFLICT ||
+   if(engineInput.persisted.pending_request_set.request_count>0 &&
+      (engineInput.persisted.latest_pending_request.pending_request.lifecycle_phase==SWV5_EXECUTION_PHASE_INTENT ||
+       engineInput.persisted.latest_pending_request.pending_request.lifecycle_phase==SWV5_EXECUTION_PHASE_UNCERTAIN ||
+       engineInput.persisted.latest_pending_request.pending_request.accepted_event_identities.identity_set_digest=="" ||
+       engineInput.persisted.latest_pending_request.pending_request.authorization_identity=="" ||
+       engineInput.persisted.latest_pending_request.pending_request.normalization_identity=="" ||
+       engineInput.persisted.latest_pending_request.account_mode!=engineInput.broker.account_mode ||
        !SWV5_TestNamespaceEqual(engineInput.persisted.latest_pending_request.persistence_namespace,engineInput.persistence_namespace) ||
        !SWV5_TestFenceEqual(engineInput.persisted.latest_pending_request.ownership_fence,engineInput.claimant_fence) ||
-       !SWV5_TestCorrelationComplete(engineInput.persisted.latest_pending_request.correlation)))
+       !SWV5_TestRequestIdentityComplete(engineInput.persisted.latest_pending_request.pending_request.intent.request_identity)))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    return SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED;
 }
@@ -476,6 +547,18 @@ bool SWV5_TestMonetaryBasisComplete(const SWV5_RiskMonetaryBasis &basis)
           basis.conversion_rate_to_account_currency>0.0 && basis.conversion_source!="" && basis.valuation_at>0 &&
           basis.calculation_basis!=SWV5_RISK_BASIS_UNDEFINED && basis.sign_convention!=SWV5_RISK_SIGN_UNDEFINED &&
           basis.includes_realized && basis.includes_unrealized && basis.includes_commission && basis.includes_swap && basis.includes_fee;
+}
+
+bool SWV5_TestAccountNamespaceEqual(const SWV5_AccountRiskNamespace &left,
+                                    const SWV5_AccountRiskNamespace &right,
+                                    const bool require_sequence=true)
+{
+   return SWV5_TestVersionEqual(left.contract_version,right.contract_version) &&
+          left.broker_identity==right.broker_identity && left.server==right.server &&
+          left.account_login==right.account_login && left.account_currency==right.account_currency &&
+          left.strategy_id==right.strategy_id && left.magic==right.magic &&
+          left.account_mode==right.account_mode && left.authoritative_source==right.authoritative_source &&
+          left.snapshot_epoch==right.snapshot_epoch && (!require_sequence || left.snapshot_sequence==right.snapshot_sequence);
 }
 
 SWV5_RiskDisposition SWV5_TestRiskPrecheck(const SWV5_HardKillState &hard_kill,
@@ -495,9 +578,16 @@ bool SWV5_TestAuthorizationMatches(const SWV5_ContractValidationContext &context
 {
    return SWV5_TestContextValid(context) && authorization.disposition==SWV5_RISK_ALLOW &&
           authorization.expires_at>=context.clock_time &&
-          SWV5_TestCorrelationEqual(authorization.correlation,intent.correlation) &&
-          SWV5_TestNamespaceEqual(authorization.persistence_namespace,intent.persistence_namespace) &&
-          SWV5_TestFenceEqual(authorization.ownership_fence,intent.ownership_fence) &&
+           SWV5_TestRequestIdentityEqual(authorization.request_identity,intent.request_identity) &&
+           SWV5_TestNamespaceEqual(authorization.persistence_namespace,intent.persistence_namespace) &&
+           SWV5_TestFenceEqual(authorization.ownership_fence,intent.ownership_fence) &&
+           authorization.account_mode==intent.account_mode && authorization.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
+           authorization.account_namespace.account_mode==authorization.account_mode &&
+           authorization.account_namespace.broker_identity==intent.persistence_namespace.ownership_namespace.broker_identity &&
+           authorization.account_namespace.server==intent.persistence_namespace.ownership_namespace.server &&
+           authorization.account_namespace.account_login==intent.persistence_namespace.ownership_namespace.account_login &&
+           authorization.account_namespace.strategy_id==intent.persistence_namespace.ownership_namespace.strategy_id &&
+           authorization.account_namespace.magic==intent.persistence_namespace.ownership_namespace.magic &&
           authorization.basket_state_version==intent.expected_basket_version &&
           authorization.symbol_specification_sequence==intent.symbol_specification_sequence &&
           authorization.authorized_intent_type==intent.intent_type &&
@@ -506,8 +596,7 @@ bool SWV5_TestAuthorizationMatches(const SWV5_ContractValidationContext &context
           SWV5_TestNear(authorization.authorized_price,intent.normalized_price,context.price_tolerance) &&
           SWV5_TestNear(authorization.authorized_stop_price,intent.normalized_stop_price,context.price_tolerance) &&
           SWV5_TestNear(authorization.authorized_limit_price,intent.normalized_limit_price,context.price_tolerance) &&
-          authorization.account_risk_snapshot_sequence>0 && authorization.exposure_risk_snapshot_sequence>0 &&
-          authorization.basket_risk_snapshot_sequence>0 && authorization.projected_risk_snapshot_sequence>0 &&
+           authorization.risk_snapshot_epoch>0 && authorization.risk_snapshot_epoch==authorization.account_namespace.snapshot_epoch &&
           authorization.hard_kill_latch_id!="" && authorization.hard_kill_latch_generation>0 &&
           SWV5_TestMonetaryBasisComplete(authorization.monetary_basis);
 }
@@ -520,9 +609,25 @@ bool SWV5_TestHardKillReleaseValid(const SWV5_ContractValidationContext &context
           evidence.latch_id==state.latch_id && evidence.latch_generation==state.latch_generation &&
           evidence.release_generation==state.release_generation+1 &&
           evidence.operator_identity.operator_id!="" && evidence.operator_identity.authority_role!="" &&
-          evidence.operator_identity.authentication_reference!="" &&
-          evidence.broker_state_reconciled && evidence.persistence_reconciled &&
-          evidence.zero_or_reducing_exposure_confirmed && evidence.audit_reference!="" &&
+           evidence.operator_identity.authentication_reference!="" &&
+           evidence.approving_component!=SWV5_COMPONENT_AUTHORITY_NONE &&
+           evidence.approving_component!=SWV5_COMPONENT_AUTHORITY_EXECUTION &&
+           evidence.broker_evidence.evidence_id!="" && evidence.broker_evidence.state_digest!="" &&
+           evidence.broker_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER &&
+           evidence.broker_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
+           evidence.broker_evidence.evidence_sequence>0 && evidence.broker_evidence.observed_at<=context.clock_time &&
+           SWV5_TestNamespaceEqual(evidence.broker_evidence.persistence_namespace,evidence.persistence_namespace) &&
+           evidence.persistence_evidence.evidence_id!="" && evidence.persistence_evidence.state_digest!="" &&
+           evidence.persistence_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_PERSISTENCE &&
+           evidence.persistence_evidence.authority_source==SWV5_AUTHORITY_PERSISTED_CHECKPOINT &&
+           evidence.persistence_evidence.evidence_sequence>0 && evidence.persistence_evidence.observed_at<=context.clock_time &&
+           SWV5_TestNamespaceEqual(evidence.persistence_evidence.persistence_namespace,evidence.persistence_namespace) &&
+           evidence.exposure_evidence.evidence_id!="" && evidence.exposure_evidence.zero_or_reducing &&
+           evidence.exposure_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
+           evidence.exposure_evidence.evidence_sequence>0 && evidence.exposure_evidence.observed_at<=context.clock_time &&
+           evidence.exposure_evidence.observed_exposure_volume>=0.0 && evidence.exposure_evidence.prior_exposure_volume>=0.0 &&
+           evidence.exposure_evidence.observed_exposure_volume<=evidence.exposure_evidence.prior_exposure_volume+context.volume_tolerance &&
+           evidence.audit_reference!="" &&
           evidence.approved_at<=context.clock_time && evidence.expires_at>=context.clock_time;
 }
 
@@ -539,10 +644,10 @@ bool SWV5_TestDealValid(const SWV5_AuthoritativeDeal &deal,const SWV5_Statistics
 bool SWV5_TestDedupEvidenceValid(const SWV5_StatisticsDeduplicationEvidence &evidence,
                                  const SWV5_StatisticsDeduplicationState &state)
 {
-   if(evidence.prior_identity_set_digest!=state.identity_set_digest || evidence.identity_index_sequence!=state.identity_index_sequence+1)
+   if(evidence.prior_identity_index_revision!=state.identities.index_revision)
       return false;
    if(evidence.disposition==SWV5_STAT_IDENTITY_DUPLICATE)
-      return evidence.membership_proof!="";
+      return evidence.membership_proof!="" && SWV5_TestEventIdentitySetContains(state.identities,evidence.correlation.broker_identity);
    if(evidence.disposition==SWV5_STAT_IDENTITY_NEW || evidence.disposition==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW)
       return evidence.membership_proof=="" && SWV5_TestCorrelationComplete(evidence.correlation);
    return false;

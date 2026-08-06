@@ -134,7 +134,7 @@ public:
 
    string SummaryJson(const bool deterministic) const
    {
-      return StringFormat("{\"schema\":\"SWV5-CONTRACT-TEST-RESULT-V1\",\"contract_policy\":\"SWV5-PRODUCTION-V2\",\"total\":%d,\"passed\":%d,\"failed\":%d,\"skipped\":%d,\"signature\":\"%I64u\",\"deterministic\":%s}",
+      return StringFormat("{\"schema\":\"SWV5-CONTRACT-TEST-RESULT-V2\",\"contract_policy\":\"SWV5-PRODUCTION-V3\",\"implementation\":\"ISWV5-INTERFACE-LEVEL\",\"total\":%d,\"passed\":%d,\"failed\":%d,\"skipped\":%d,\"signature\":\"%I64u\",\"deterministic\":%s}",
                           m_total,m_passed,m_failed,m_skipped,m_signature,deterministic ? "true" : "false");
    }
 };

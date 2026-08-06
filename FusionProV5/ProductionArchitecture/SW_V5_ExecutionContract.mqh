@@ -66,7 +66,8 @@ struct SWV5_ExecutionIntent
    SWV5_ContractVersion     contract_version;
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence      ownership_fence;
-   SWV5_ExecutionCorrelation correlation;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_AccountPositionMode account_mode;
    SWV5_ExecutionIntentType intent_type;
    int                      direction;
    double                   normalized_volume;
@@ -77,6 +78,15 @@ struct SWV5_ExecutionIntent
    ulong                    expected_basket_version;
    string                   risk_authorization_id;
    datetime                 authorization_expires_at;
+};
+
+struct SWV5_SubmissionEvidence
+{
+   SWV5_ContractVersion         contract_version;
+   SWV5_ExecutionRequestIdentity request_identity;
+   uint                         submission_attempt_count;
+   datetime                     submitted_at;
+   SWV5_AuthoritySource         authority;
 };
 
 struct SWV5_ResultRetcodeEvidence
@@ -116,17 +126,36 @@ struct SWV5_TransactionEvidence
    bool                  history_cross_checked;
 };
 
+struct SWV5_AuthoritativeConfirmationEvidence
+{
+   SWV5_ContractVersion      contract_version;
+   SWV5_ExecutionCorrelation correlation;
+   SWV5_ConfirmationStatus   status;
+   double                    cumulative_confirmed_volume;
+   double                    residual_volume;
+   SWV5_AuthoritySource      authority;
+   ulong                     confirmation_sequence;
+   datetime                  confirmed_at;
+};
+
 struct SWV5_PendingRequest
 {
    SWV5_ContractVersion    contract_version;
    SWV5_ExecutionIntent    intent;
+   SWV5_AccountPositionMode account_mode;
+   SWV5_ExecutionLifecyclePhase lifecycle_phase;
    SWV5_PendingRequestState state;
    uint                    submission_attempt_count;
+   SWV5_SubmissionEvidence latest_submission;
    SWV5_ResultRetcodeEvidence latest_retcode;
    SWV5_ResultRetcodeClassification latest_retcode_classification;
-   double                  confirmed_volume;
+   SWV5_AuthoritativeConfirmationEvidence latest_authoritative_confirmation;
+   double                  cumulative_confirmed_volume;
    double                  residual_requested_volume;
-   SWV5_ExecutionCorrelation last_accepted_correlation;
+   SWV5_DurableEventIdentitySet accepted_event_identities;
+   SWV5_RetryDisposition   retry_disposition;
+   string                  authorization_identity;
+   string                  normalization_identity;
    datetime                last_changed_at;
 };
 
@@ -164,6 +193,10 @@ public:
    virtual bool ValidateIntent(const SWV5_ContractValidationContext &context,
                                const SWV5_ExecutionIntent &intent,
                                SWV5_ContractDecision &decision) = 0;
+   virtual bool ValidatePhaseTransition(const SWV5_ContractValidationContext &context,
+                                        const SWV5_ExecutionLifecyclePhase current_phase,
+                                        const SWV5_ExecutionLifecyclePhase proposed_phase,
+                                        SWV5_ContractDecision &decision) = 0;
    virtual bool ClassifyResultRetcode(const SWV5_ContractValidationContext &context,
                                       const SWV5_ResultRetcodeEvidence &evidence,
                                       SWV5_ResultRetcodeClassification &classification) = 0;

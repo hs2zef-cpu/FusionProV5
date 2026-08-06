@@ -52,20 +52,17 @@ struct SWV5_StatisticsDeduplicationEvidence
 {
    SWV5_ContractVersion contract_version;
    SWV5_ExecutionCorrelation correlation;
-   string               prior_identity_set_digest;
+   ulong                prior_identity_index_revision;
    string               membership_proof;
-   ulong                identity_index_sequence;
    SWV5_StatisticsIdentityDisposition disposition;
 };
 
 struct SWV5_StatisticsDeduplicationState
 {
    SWV5_ContractVersion contract_version;
-   string               identity_set_digest;
+   SWV5_DurableEventIdentitySet identities;
    uint                 unique_deal_count;
    uint                 duplicate_deal_count;
-   ulong                highest_transaction_sequence;
-   ulong                identity_index_sequence;
 };
 
 struct SWV5_BasketStatistics

@@ -12,7 +12,7 @@ Hard Kill is a durable latch. Restart, reattachment, ownership takeover, or a ne
 
 The canonical `SWV5_HardKillState` contains persistence namespace, latch identity, latch generation, activation state/reason/authority/time, release generation, and release evidence. It is stored in every persisted checkpoint and its generation is bound into Risk Authorization.
 
-Release requires identified operator authority, broker and persistence reconciliation, confirmed zero or reducing exposure, an expiry, and an auditable reference. Release evidence cannot be created or approved by the execution component that consumes it.
+Release requires an independent approving component, identified operator authority, typed and versioned broker-state evidence, typed persistence evidence, typed zero-or-reducing exposure evidence, an expiry, a monotonic generation, and an auditable reference. Self-attested booleans are not evidence. Release evidence cannot be created or approved by the execution component that consumes it.
 
 ## Consequences
 

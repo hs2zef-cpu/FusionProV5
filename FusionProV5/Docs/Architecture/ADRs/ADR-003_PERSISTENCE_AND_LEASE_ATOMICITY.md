@@ -14,7 +14,7 @@ Persistence publication and instance ownership use compare-and-set semantics aga
 
 Persistence is addressed by `SWV5_PersistenceNamespace`: broker/server, account, strategy, symbol, Magic scope, and BasketID. BasketID alone is never a persistence key.
 
-Takeover requires lease expiry according to the authoritative clock, a matching ownership key, broker reconciliation, persistence reconciliation, and a new monotonic takeover generation. Writes from a non-owner or stale store revision are rejected.
+Takeover requires typed, versioned lease-expiry, broker-reconciliation, and persistence-reconciliation evidence; the observed lease version and store revision; an independent authority source; and a new monotonic takeover generation. Self-attested reconciliation booleans are not evidence. Writes from a non-owner or stale store revision are rejected.
 
 Sprint 4.1 does not select or implement a physical store.
 

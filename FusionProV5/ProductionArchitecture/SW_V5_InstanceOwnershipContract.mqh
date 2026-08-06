@@ -30,16 +30,39 @@ struct SWV5_InstanceLease
    datetime               expires_at;
 };
 
+struct SWV5_LeaseExpiryEvidence
+{
+   SWV5_ContractVersion contract_version;
+   string               clock_id;
+   SWV5_TimeAuthority   clock_authority;
+   ulong                observed_clock_sequence;
+   datetime             observed_at;
+   ulong                observed_lease_version;
+   string               observed_store_revision;
+   bool                 expired;
+};
+
+struct SWV5_OwnershipTakeoverEvidence
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_TypedReconciliationEvidence broker_reconciliation;
+   SWV5_TypedReconciliationEvidence persistence_reconciliation;
+   SWV5_LeaseExpiryEvidence lease_expiry;
+   ulong                observed_lease_version;
+   string               observed_store_revision;
+   ulong                proposed_takeover_generation;
+   SWV5_ComponentAuthority authority;
+   ulong                evidence_sequence;
+   datetime             evidenced_at;
+};
+
 struct SWV5_OwnershipClaim
 {
    SWV5_ContractVersion contract_version;
    SWV5_OwnerIdentity claimant;
    SWV5_OwnershipFence expected_fence;
    uint               lease_duration_seconds;
-   bool               broker_state_reconciled;
-   bool               persistence_reconciled;
-   string             broker_reconciliation_id;
-   string             persistence_reconciliation_id;
+   SWV5_OwnershipTakeoverEvidence takeover_evidence;
 };
 
 struct SWV5_OwnershipConflict

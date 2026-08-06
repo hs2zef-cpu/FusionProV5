@@ -14,9 +14,9 @@ Sprint 3.2.1 remains frozen.
 
 ## Contract Version
 
-Production contract schema advances from version 1 to version 2. Minimum compatible version is 2 because interface signatures and required evidence changed.
+Sprint 4.1 advanced the schema from version 1 to version 2. Sprint 4.3 corrects proven breaking findings and advances the candidate to version 3 with minimum compatible version 3.
 
-Version 2 adds:
+Version 2 introduced the original hardening. Version 3 adds:
 
 - Deterministic validation context
 - Explicit contract policy ID and compatibility result
@@ -34,7 +34,12 @@ Version 2 adds:
 - Canonical immutable ownership fence propagated across all authoritative domains
 - Composite persistence namespace replacing BasketID-only lookup
 - Durable persisted Hard Kill latch and release state
-- Canonical request/order/deal/position/event correlation envelope
+- Phase-specific request identity and broker-generated correlation
+- Explicit recovery proposal/evidence and resulting counters
+- Reconstructible pending-request and durable event identity indexes
+- Canonical Risk account namespace, coherent epoch, and account-mode binding
+- Typed ownership takeover and Hard Kill release evidence
+- Contract-derived unit rounding, directional stop validation, actual-price freeze checks, and specification expiry
 - Canonical Basket lifecycle values and restart disposition
 - Arbitrary-order Statistics identity-set evidence
 - Complete projected-Risk currency and calculation basis
@@ -66,6 +71,8 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 - ADR-004: Transactions, not acknowledgements, confirm Basket state.
 - ADR-005: Pip is explicit; tick/point/volume units remain separate.
 - ADR-006: Hard Kill is durable and operator release is audited.
+- ADR-007: Recovery counters are monotonic and evidence-idempotent.
+- ADR-008: Risk uses one canonical account namespace and epoch.
 
 ## Verification Status
 
@@ -76,7 +83,8 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 - Frozen `.mq5` and Signal Engine diff check: complete; no changes
 - Repository whitespace and line-ending policy check: complete
 - MetaEditor X64 Regular compilation of the unchanged Sprint 4 Architecture manifest: `0 errors, 0 warnings`
-- Behavioral fixture implementation/execution: not part of this hardening change
+- Sprint 4.2 executable verification sub-sprint: authorized and present
+- Sprint 4.3 interface-level corrective suite: 202 passed, 0 failed, 0 skipped in two MT5 Demo Strategy Tester runs; identical signature
 
 ## Definition Of Done
 
@@ -87,4 +95,4 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 - Every safety-critical rule has table-driven cases.
 - No broker execution or Signal Engine dependency exists.
 - Sprint 3.2.1 remains unchanged.
-- Future fixture implementation and execution occur only after separate approval.
+- Verification evidence remains test-only and does not authorize runtime implementation.

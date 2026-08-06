@@ -6,12 +6,12 @@ Candidate policy for the Sprint 4.1 review package. Pending formal approval; not
 
 ## Current Contract
 
-- Schema version: `2`
-- Minimum compatible version: `2`
-- Policy ID: `SWV5-PRODUCTION-V2`
+- Schema version: `3`
+- Minimum compatible version: `3`
+- Policy ID: `SWV5-PRODUCTION-V3`
 - Sprint 4 version 1 records are architecture artifacts, not production persistence records.
 
-Version 2 is intentionally incompatible with version 1 because deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence were added to the contracts.
+Version 3 is intentionally incompatible with versions 1 and 2. Version 2 added deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence. Version 3 corrects proven final-review defects by making recovery state explicit, splitting pre- and post-submission identity, making pending requests reconstructible, binding Risk to a canonical account namespace/epoch and account mode, replacing self-attested evidence, making idempotency membership reconstructible, and enforcing non-caller-controlled unit safety.
 
 ## Version Fields
 

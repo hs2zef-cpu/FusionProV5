@@ -4,6 +4,24 @@ This file records the authorized evolution of Fusion Pro V5.
 
 ## Unreleased
 
+## Sprint 4.3 Contract Correction and Interface Verification
+
+Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; no Architecture Lock or runtime authorization is claimed.
+
+- Corrected all ten verified CRITICAL and MAJOR contract findings.
+- Advanced the breaking candidate schema from version 2 to version 3.
+- Split pre-submission request identity from broker-generated identity and added explicit execution phases.
+- Added reconstructible pending-request, durable event-set, account namespace/epoch, account-mode, recovery, takeover, Hard Kill, and unit-safety evidence.
+- Replaced helper-only claims with deterministic implementations and invocation of every `ISWV5*` interface.
+- Verified 202 cases twice on MT5 Demo Strategy Tester with identical output.
+
+## Sprint 4.2 Executable Verification
+
+Governance status: authorized verification sub-sprint within the Sprint 4.1 candidate branch. It did not Architecture Lock the candidate or authorize runtime.
+
+- Added the executable contract test manifest and deterministic test-only fixtures.
+- Established the initial 162-case regression matrix; Sprint 4.3 supersedes its helper-only verification claim with interface-level evidence.
+
 ## Sprint 4.1 Contract Hardening
 
 Governance status: **CANDIDATE / IN REVIEW**. Pending formal approval; not Architecture Locked; no runtime authorization.

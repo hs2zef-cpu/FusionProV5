@@ -4,7 +4,7 @@ Governance status: **CANDIDATE / IN REVIEW**. This specification is pending form
 
 ## Purpose
 
-This document defines executable, table-driven requirements for Production Architecture contract version 2. It specifies expected behavior; Sprint 4.1 does not implement broker execution, stores, locks, or trading algorithms.
+This document defines executable, table-driven requirements for Production Architecture contract version 3. The original 162-case matrix remains regression coverage. Sprint 4.3 adds 30 interface-level corrective cases (`IFC-01` through `IFC-30`) that supersede any V2 field wording affected by the ten verified findings. The specification contains no broker execution, stores, locks, or trading algorithms.
 
 ## Determinism Rules
 
@@ -245,3 +245,20 @@ Each future fixture records:
 - Pass, fail, or inconclusive status
 
 No case is considered verified by compilation alone.
+
+## Sprint 4.3 Corrective Interface Requirements
+
+| Test IDs | Requirement | Interface and authoritative output |
+|---|---|---|
+| IFC-01–IFC-03 | Recovery attempts/layers increment once, never regress, survive restart, and reject duplicate evidence | `ISWV5BasketStateMachineContract::ValidateTransition`; resulting attempt, layer, state, and version |
+| IFC-04–IFC-06 | Pre-submission identity excludes broker IDs and lifecycle phases cannot skip authoritative confirmation | `ISWV5ExecutionContract::ValidateIntent/ValidatePhaseTransition` |
+| IFC-07–IFC-08 | Restart emits one canonical readiness disposition and uncertain requests halt | `ISWV5PersistenceContract::ReconcileRestart` |
+| IFC-09–IFC-11 | Risk inputs share broker/server/account/currency/strategy/Magic/mode/authority/epoch | `ISWV5RiskContract::Evaluate` |
+| IFC-12–IFC-13, IFC-28 | Account mode is bound through intent, authorization, persistence, and restart | Execution, Risk, and Persistence interfaces |
+| IFC-14–IFC-18 | Directional stop, actual-price freeze, contract-derived rounding, residual close, and freshness | `ISWV5UnitSystemContract::Normalize` |
+| IFC-19–IFC-21 | Typed takeover evidence, CAS identity, independent authority, stale revision rejection | `ISWV5InstanceOwnershipContract::Acquire` |
+| IFC-22–IFC-23 | Typed independent Hard Kill release evidence; execution self-approval rejected | `ISWV5RiskContract::ValidateHardKillRelease` |
+| IFC-24–IFC-27 | Durable duplicate membership, out-of-order unseen evidence, acknowledgement boundary, partial fill | `ISWV5ExecutionContract::AcceptTransactionEvidence/ClassifyResultRetcode` |
+| IFC-29 | Durable Statistics membership prevents double monetary accumulation | `ISWV5StatisticsContract::AccumulateDeal` |
+| IFC-30 | Identical interface input/context yields identical DTO output | Basket interface replay comparison |
+| IFC-31–IFC-40 | Every remaining production interface method is invoked through a conforming implementation | Basket state, Execution retry, Persistence load/save, Risk limits, Statistics finalize, Ownership heartbeat/conflict/release |

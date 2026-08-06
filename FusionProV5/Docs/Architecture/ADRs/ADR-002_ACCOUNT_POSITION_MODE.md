@@ -12,6 +12,8 @@ The first future execution implementation will support Hedging accounts only. Ne
 
 Contract DTOs retain explicit `SWV5_AccountPositionMode` values so unsupported or unknown modes cannot be inferred.
 
+The account mode is bound explicitly into Execution Intent, Risk input, Risk Authorization, pending request, persisted request evidence, and restart reconciliation. A mode change at any boundary invalidates readiness and authorization.
+
 ## Consequences
 
 - Position count is never used as Recovery layer or attempt count.
