@@ -1,29 +1,56 @@
-{
-  "classification": "TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS",
-  "schema": "SWV5-CONTRACT-TEST-RESULT-V1",
-  "contract_policy": "SWV5-PRODUCTION-V2",
-  "manifest": "SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_2_CONTRACT_TESTS.mq5",
-  "runner": "MetaTrader 5 Strategy Tester, X64 Regular",
-  "run_1": {
-    "total": 162,
-    "passed": 162,
-    "failed": 0,
-    "skipped": 0,
-    "signature": "402491285275147483",
-    "deterministic_internal_replay": true,
-    "verdict": "PASS"
-  },
-  "run_2": {
-    "total": 162,
-    "passed": 162,
-    "failed": 0,
-    "skipped": 0,
-    "signature": "402491285275147483",
-    "deterministic_internal_replay": true,
-    "verdict": "PASS"
-  },
-  "cross_run_signature_match": true,
-  "basket_state_pairs_covered": 49,
-  "contract_defects_found": 0,
-  "recommendation": "READY FOR FORMAL APPROVAL"
+﻿{
+    "schema":  "SWV5-CONTRACT-TEST-EVIDENCE-V2",
+    "generated_by":  "Export-Sprint43Evidence.ps1",
+    "exporter_sha256":  "a5743c64b1aec0bd1f841748cf53fc0bedbc82ee075e938788280126f2847cde",
+    "generated_at_utc":  "2026-08-06T17:47:23Z",
+    "source_commit_sha":  "dd262f294c6a3b711f8a2f9771b9c3c6f5d3eb6f",
+    "manifest":  "SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5",
+    "manifest_sha256":  "0e19eaaa1b0b0275806f14c98e66f841339a6a901b3cd1116650ab9823d6b72a",
+    "verification_source_digest":  "8ea2bebe811ae48f09d5af33a715611eee917c92762d06bb1297ee60a106754b",
+    "contract_policy":  "SWV5-PRODUCTION-V3",
+    "implementation_under_test":  "ISWV5 interface implementations",
+    "compile":  {
+                    "errors":  0,
+                    "warnings":  0,
+                    "elapsed_ms":  3556,
+                    "cpu":  "X64 Regular"
+                },
+    "deterministic":  true,
+    "signature":  "9897499331444689043",
+    "total":  202,
+    "passed":  202,
+    "failed":  0,
+    "skipped":  0,
+    "runs":  [
+                 {
+                     "run":  1,
+                     "journal_time":  "00:46:17.831",
+                     "total":  202,
+                     "passed":  202,
+                     "failed":  0,
+                     "skipped":  0,
+                     "signature":  "9897499331444689043",
+                     "internal_replay_deterministic":  true,
+                     "terminal_build":  6090,
+                     "broker_server":  "Exness-MT5Trial6",
+                     "account_mode":  "HEDGING (deterministic fixture)",
+                     "demo_strategy_tester":  true,
+                     "harness_metadata":  "CS\t0\t00:46:17.828\tSOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS (EURUSD,M1)\t2026.01.05 00:00:00   SWV5_RUN_METADATA suite=SPRINT4.3 fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false"
+                 },
+                 {
+                     "run":  2,
+                     "journal_time":  "00:47:01.104",
+                     "total":  202,
+                     "passed":  202,
+                     "failed":  0,
+                     "skipped":  0,
+                     "signature":  "9897499331444689043",
+                     "internal_replay_deterministic":  true,
+                     "terminal_build":  6090,
+                     "broker_server":  "Exness-MT5Trial6",
+                     "account_mode":  "HEDGING (deterministic fixture)",
+                     "demo_strategy_tester":  true,
+                     "harness_metadata":  "CS\t0\t00:47:01.101\tSOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS (EURUSD,M1)\t2026.01.05 00:00:00   SWV5_RUN_METADATA suite=SPRINT4.3 fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false"
+                 }
+             ]
 }
