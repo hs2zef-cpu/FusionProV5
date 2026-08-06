@@ -1403,6 +1403,223 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
    }
 }
 
+void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=11;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_TestPersistenceContract persistence;
+      SWV5_ContractDecision decision;
+      SWV5_PersistenceLoadResult result;
+      bool passed=false;
+      string expected="fail_closed";
+      switch(number)
+      {
+         case 1:
+         {
+            SWV5_PersistedCheckpoint checkpoint;
+            SWV5_TestMakeCheckpoint(checkpoint);
+            SWV5_PersistedRequestEvidence configured[];
+            ArrayResize(configured,1);
+            SWV5_TestMakePersistedRequest(configured[0],1);
+            SWV5_PersistedRequestEvidence expected_record=configured[0];
+            SWV5_TestMakeRequestSetHeader(checkpoint.pending_request_set,1,31);
+            checkpoint.latest_pending_request=configured[0];
+            persistence.Configure(checkpoint,configured);
+            configured[0].pending_request.intent.request_identity.request_id.correlation_id="CALLER-MUTATED";
+            SWV5_PersistedRequestEvidence loaded[];
+            passed=persistence.LoadPendingRequests(context,checkpoint.header.persistence_namespace,loaded,result) &&
+                   ArraySize(loaded)==1 && SWV5_TestPersistedRequestEqual(expected_record,loaded[0]);
+            expected="configure_load_field_equal";
+            break;
+         }
+         case 2:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],2);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,1,32);
+            SWV5_PersistedRequestEvidence loaded[];
+            ArrayResize(loaded,2);
+            ArrayResize(loaded,0);
+            passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                   persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) &&
+                   ArraySize(loaded)==1 && SWV5_TestPersistedRequestEqual(saved[0],loaded[0]);
+            expected="save_clear_load_field_equal";
+            break;
+         }
+         case 3:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,3);
+            for(int index=0;index<3;index++) SWV5_TestMakePersistedRequest(saved[index],index+3);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,3,33);
+            SWV5_PersistedRequestEvidence loaded[];
+            bool ordered=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                         persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==3;
+            for(int index=0;ordered && index<3;index++) ordered=SWV5_TestPersistedRequestEqual(saved[index],loaded[index]);
+            passed=ordered;
+            expected="multiple_records_order_and_content";
+            break;
+         }
+         case 4:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],6);
+            saved[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_PARTIAL_FILL;
+            saved[0].pending_request.state=SWV5_REQUEST_PARTIALLY_CONFIRMED;
+            saved[0].pending_request.cumulative_confirmed_volume=0.04;
+            saved[0].pending_request.residual_requested_volume=0.06;
+            saved[0].pending_request.latest_authoritative_confirmation.correlation.phase=SWV5_EXECUTION_PHASE_PARTIAL_FILL;
+            saved[0].pending_request.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_PARTIAL;
+            saved[0].pending_request.latest_authoritative_confirmation.cumulative_confirmed_volume=0.04;
+            saved[0].pending_request.latest_authoritative_confirmation.residual_volume=0.06;
+            saved[0].pending_request.latest_authoritative_confirmation.authority=SWV5_AUTHORITY_TRANSACTION_EVENT;
+            saved[0].pending_request.latest_authoritative_confirmation.confirmation_sequence=401;
+            saved[0].pending_request.latest_authoritative_confirmation.confirmed_at=SWV5_TEST_TIME;
+            SWV5_TestMakeEventIdentitySet(saved[0].pending_request.accepted_event_identities,true);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,1,34);
+            SWV5_PersistedRequestEvidence loaded[];
+            passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                   persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==1 &&
+                   SWV5_TestPersistedRequestEqual(saved[0],loaded[0]) &&
+                   loaded[0].pending_request.cumulative_confirmed_volume==0.04 &&
+                   loaded[0].pending_request.residual_requested_volume==0.06 &&
+                   loaded[0].pending_request.latest_authoritative_confirmation.status==SWV5_CONFIRMATION_PARTIAL &&
+                   loaded[0].pending_request.accepted_event_identities.accepted_identity_count==1;
+            expected="partial_fill_payload_preserved";
+            break;
+         }
+         case 5:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],7);
+            saved[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
+            saved[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+            saved[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,1,35);
+            SWV5_PersistedRequestEvidence loaded[];
+            passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                   persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==1 &&
+                   SWV5_TestPersistedRequestEqual(saved[0],loaded[0]) &&
+                   loaded[0].pending_request.lifecycle_phase==SWV5_EXECUTION_PHASE_UNCERTAIN &&
+                   loaded[0].pending_request.state==SWV5_REQUEST_RECONCILIATION_REQUIRED &&
+                   loaded[0].pending_request.retry_disposition==SWV5_RETRY_REQUIRES_RECONCILIATION;
+            expected="uncertain_reconciliation_payload_preserved";
+            break;
+         }
+         case 6:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],8);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,1,36);
+            SWV5_PersistenceNamespace foreign=saved[0].persistence_namespace;
+            foreign.ownership_namespace.server="FOREIGN-SERVER";
+            SWV5_PersistedRequestEvidence loaded[];
+            ArrayResize(loaded,1);
+            passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                   !persistence.LoadPendingRequests(context,foreign,loaded,result) && ArraySize(loaded)==0 &&
+                   result.status==SWV5_PERSISTENCE_OWNER_CONFLICT;
+            expected="foreign_namespace_rejected";
+            break;
+         }
+         case 7:
+         {
+            SWV5_PersistedCheckpoint checkpoint;
+            SWV5_TestMakeCheckpoint(checkpoint);
+            SWV5_PersistedRequestEvidence configured[];
+            ArrayResize(configured,1);
+            SWV5_TestMakePersistedRequest(configured[0],9);
+            SWV5_TestMakeRequestSetHeader(checkpoint.pending_request_set,2,37);
+            persistence.Configure(checkpoint,configured);
+            SWV5_PersistedRequestEvidence loaded[];
+            const bool configured_rejected=!persistence.LoadPendingRequests(context,checkpoint.header.persistence_namespace,loaded,result) && ArraySize(loaded)==0;
+            SWV5_PersistedRequestSetHeader mismatched=checkpoint.pending_request_set;
+            const bool save_rejected=!persistence.SavePendingRequests(context,configured[0].persistence_namespace,configured,mismatched,decision);
+            passed=configured_rejected && save_rejected;
+            expected="count_header_mismatch_rejected";
+            break;
+         }
+         case 8:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],10);
+            SWV5_PersistedRequestSetHeader missing_digest;
+            SWV5_TestMakeRequestSetHeader(missing_digest,1,38);
+            missing_digest.request_set_digest="";
+            SWV5_PersistedRequestSetHeader missing_revision;
+            SWV5_TestMakeRequestSetHeader(missing_revision,1,38);
+            missing_revision.request_index_revision="";
+            passed=!persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,missing_digest,decision) &&
+                   !persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,missing_revision,decision);
+            expected="missing_digest_and_revision_rejected";
+            break;
+         }
+         case 9:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,2);
+            SWV5_TestMakePersistedRequest(saved[0],11);
+            SWV5_TestMakePersistedRequest(saved[1],12);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,2,39);
+            SWV5_PersistedRequestEvidence first[];
+            SWV5_PersistedRequestEvidence second[];
+            bool same=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
+                      persistence.LoadPendingRequests(context,saved[0].persistence_namespace,first,result) &&
+                      persistence.LoadPendingRequests(context,saved[0].persistence_namespace,second,result) &&
+                      ArraySize(first)==2 && ArraySize(second)==2;
+            for(int index=0;same && index<2;index++)
+               same=SWV5_TestPersistedRequestEqual(first[index],second[index]) && SWV5_TestPersistedRequestEqual(saved[index],second[index]);
+            passed=same;
+            expected="repeat_load_deterministic";
+            break;
+         }
+         case 10:
+         {
+            SWV5_PersistedRequestEvidence saved[];
+            ArrayResize(saved,1);
+            SWV5_TestMakePersistedRequest(saved[0],13);
+            SWV5_PersistedRequestEvidence immutable=saved[0];
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestMakeRequestSetHeader(header,1,40);
+            const bool stored=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision);
+            saved[0].pending_request.intent.request_identity.idempotency_key="MUTATED-AFTER-SAVE";
+            saved[0].pending_request.cumulative_confirmed_volume=99.0;
+            saved[0].record_sequence=999;
+            header.request_set_digest="MUTATED-HEADER";
+            SWV5_PersistedRequestEvidence loaded[];
+            passed=stored && persistence.LoadPendingRequests(context,immutable.persistence_namespace,loaded,result) &&
+                   ArraySize(loaded)==1 && SWV5_TestPersistedRequestEqual(immutable,loaded[0]);
+            expected="save_deep_copy_isolated_from_caller";
+            break;
+         }
+         case 11:
+         {
+            SWV5_PersistenceNamespace persistence_namespace;
+            SWV5_TestMakeNamespace(persistence_namespace);
+            SWV5_PersistedRequestEvidence loaded[];
+            ArrayResize(loaded,1);
+            passed=!persistence.LoadPendingRequests(context,persistence_namespace,loaded,result) &&
+                   ArraySize(loaded)==0 && result.status==SWV5_PERSISTENCE_TRUNCATED;
+            expected="unconfigured_storage_rejected";
+            break;
+         }
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("PRT",number),"PERSISTENCE_ROUND_TRIP",passed,expected);
+   }
+}
+
 void SWV5_RunContractSuite(SWV5_TestCollector &collector)
 {
    SWV5_RunCommonTests(collector);
@@ -1416,6 +1633,7 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunStatisticsTests(collector);
    SWV5_RunCrossDomainTests(collector);
    SWV5_RunInterfaceCorrectionTests(collector);
+   SWV5_RunPersistenceRoundTripTests(collector);
 }
 
 bool SWV5_RunContractVerification()
@@ -1429,7 +1647,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==202;
+   const bool complete=first.Total()==213;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),

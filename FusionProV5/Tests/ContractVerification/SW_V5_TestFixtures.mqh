@@ -587,6 +587,14 @@ void SWV5_TestMakePending(SWV5_PendingRequest &pending)
    pending.latest_retcode_classification.classification=SWV5_RETCODE_ACCEPTED_PENDING_CONFIRMATION;
    pending.latest_retcode_classification.retry_disposition=SWV5_RETRY_FORBIDDEN;
    pending.latest_retcode_classification.mapping_policy_id="TEST-RETCODE-MAP-V1";
+   SWV5_TestMakeVersion(pending.latest_retcode_classification.decision.contract_version);
+   pending.latest_retcode_classification.decision.disposition=SWV5_DISPOSITION_DENY;
+   pending.latest_retcode_classification.decision.reason_flags=1;
+   pending.latest_retcode_classification.decision.reason_code="AWAIT_AUTHORITATIVE_CONFIRMATION";
+   pending.latest_retcode_classification.decision.reason_text="AWAIT_AUTHORITATIVE_CONFIRMATION";
+   pending.latest_retcode_classification.decision.evaluated_schema_version=SWV5_PRODUCTION_CONTRACT_VERSION;
+   pending.latest_retcode_classification.decision.evaluation_sequence=2000;
+   pending.latest_retcode_classification.decision.evaluated_at=SWV5_TEST_TIME;
    SWV5_TestMakeVersion(pending.latest_authoritative_confirmation.contract_version);
    SWV5_TestMakeCorrelation(pending.latest_authoritative_confirmation.correlation);
    pending.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_NOT_STARTED;
@@ -602,6 +610,40 @@ void SWV5_TestMakePending(SWV5_PendingRequest &pending)
    pending.authorization_identity=pending.intent.risk_authorization_id;
    pending.normalization_identity="NORMALIZATION-50-2400.00-0.10";
    pending.last_changed_at=SWV5_TEST_TIME;
+}
+
+void SWV5_TestMakePersistedRequest(SWV5_PersistedRequestEvidence &record,const int ordinal=1)
+{
+   SWV5_TestMakeVersion(record.contract_version);
+   SWV5_TestMakeNamespace(record.persistence_namespace);
+   SWV5_TestMakeFence(record.ownership_fence);
+   SWV5_TestMakePending(record.pending_request);
+   const string suffix=StringFormat("%04d",ordinal);
+   record.pending_request.intent.request_identity.request_id.correlation_id="REQ-"+suffix;
+   record.pending_request.intent.request_identity.request_id.attempt_id="ATTEMPT-"+suffix;
+   record.pending_request.intent.request_identity.request_id.monotonic_sequence=300+(ulong)ordinal;
+   record.pending_request.intent.request_identity.idempotency_key="IDEMPOTENCY-"+suffix;
+   record.pending_request.latest_submission.request_identity=record.pending_request.intent.request_identity;
+   record.pending_request.latest_retcode.correlation.request_identity=record.pending_request.intent.request_identity;
+   record.pending_request.latest_authoritative_confirmation.correlation.request_identity=record.pending_request.intent.request_identity;
+   record.pending_request.authorization_identity="RISK-AUTH-"+suffix;
+   record.pending_request.intent.risk_authorization_id=record.pending_request.authorization_identity;
+   record.pending_request.normalization_identity="NORMALIZATION-"+suffix;
+   record.pending_request.last_changed_at=SWV5_TEST_TIME+ordinal;
+   record.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   record.record_sequence=20+(ulong)ordinal;
+   record.recorded_at=SWV5_TEST_TIME+ordinal;
+}
+
+void SWV5_TestMakeRequestSetHeader(SWV5_PersistedRequestSetHeader &header,
+                                   const uint request_count,
+                                   const ulong record_sequence=30)
+{
+   SWV5_TestMakeVersion(header.contract_version);
+   header.request_count=request_count;
+   header.request_set_digest=StringFormat("REQUEST-SET-DIGEST-%u-%I64u",request_count,record_sequence);
+   header.request_index_revision=StringFormat("REQUEST-INDEX-%I64u",record_sequence);
+   header.record_sequence=record_sequence;
 }
 
 void SWV5_TestMakeTransaction(const SWV5_PendingRequest &pending,SWV5_TransactionEvidence &evidence,const double volume=0.10)

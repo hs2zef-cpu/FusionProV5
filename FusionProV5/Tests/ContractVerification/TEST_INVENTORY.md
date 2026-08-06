@@ -16,6 +16,7 @@
 | Cross-domain | XDM-01–XDM-12 | 12 | Ordered interface gates and negative scenarios |
 | Corrective interface cases | IFC-01–IFC-30 | 30 | All ten Sprint 4.3 findings through actual `ISWV5*` methods |
 | Interface method conformance | IFC-31–IFC-40 | 10 | Direct invocation of remaining production interface methods |
-| **Total** |  | **202** | Two in-process replays and two independent Demo tester runs |
+| Persistence round trip | PRT-01–PRT-11 | 11 | Full-record deep-copy Save/Load through `ISWV5PersistenceContract` |
+| **Total** |  | **213** | Two in-process replays and two independent Demo tester runs |
 
 All test implementations are deterministic, in-memory, and test-only. Pure validators sit behind interface methods; assertions consume interface outputs. No validator queries terminal time, account, positions, orders, history, symbols, files, network, or randomness.

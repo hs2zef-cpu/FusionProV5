@@ -20,6 +20,7 @@ if ($resultIndexes.Count -lt 2) { throw 'Fewer than two Sprint 4.3 machine resul
 $selectedIndexes = @($resultIndexes | Select-Object -Last 2)
 $runs = @()
 $rawBlocks = @()
+$expectedTotal = 213
 
 for ($runNumber = 0; $runNumber -lt 2; $runNumber++) {
     $resultIndex = $selectedIndexes[$runNumber]
@@ -35,7 +36,9 @@ for ($runNumber = 0; $runNumber -lt 2; $runNumber++) {
     $buildLine = $block | Where-Object { $_ -match 'MetaTester 5 build' } | Select-Object -First 1
     $serverLine = $block | Where-Object { $_ -match '\([^)]*(Trial|Demo)[^)]*\): generating based' } | Select-Object -First 1
     $metadataLine = $block | Where-Object { $_ -match 'SWV5_RUN_METADATA' } | Select-Object -First 1
+    $testerResultLine = $block | Where-Object { $_ -match 'OnTester result 1(\.0+)?$' } | Select-Object -First 1
     if (-not $serverLine) { throw "Run $($runNumber + 1) is not proven to use an MT5 Demo/Trial server." }
+    if (-not $testerResultLine) { throw "Run $($runNumber + 1) did not produce OnTester result 1." }
     $terminalBuild = [int]([regex]::Match($buildLine, 'MetaTester 5 build (?<build>\d+)').Groups['build'].Value)
     $brokerServer = [regex]::Match($serverLine, '\((?<server>[^)]*)\): generating').Groups['server'].Value
     $runTime = [regex]::Match($lines[$resultIndex], '\t(?<time>\d{2}:\d{2}:\d{2}\.\d{3})\t').Groups['time'].Value
@@ -53,6 +56,7 @@ for ($runNumber = 0; $runNumber -lt 2; $runNumber++) {
         broker_server = $brokerServer
         account_mode = 'HEDGING (deterministic fixture)'
         demo_strategy_tester = $true
+        on_tester_result = 1
         harness_metadata = [string]$metadataLine
     }
 }
@@ -82,6 +86,8 @@ finally { $sha256.Dispose() }
 $deterministic = $runs[0].signature -eq $runs[1].signature -and
                  $runs[0].total -eq $runs[1].total -and
                  $runs[0].passed -eq $runs[1].passed -and
+                 $runs[0].total -eq $expectedTotal -and $runs[1].total -eq $expectedTotal -and
+                 $runs[0].passed -eq $expectedTotal -and $runs[1].passed -eq $expectedTotal -and
                  $runs[0].failed -eq 0 -and $runs[1].failed -eq 0 -and
                  $runs[0].skipped -eq 0 -and $runs[1].skipped -eq 0
 if (-not $deterministic) { throw 'The two final runs are not deterministic and passing.' }
@@ -155,6 +161,7 @@ $report = @(
     '- The 30 corrective interface cases cover the ten final-review findings.',
     '- Ten interface-conformance cases directly invoke every remaining production interface method.',
     '- The original 162-case domain matrix remains present as regression coverage, with authoritative domain operations routed through interface implementations.',
+    '- Eleven persistence round-trip cases prove field-preserving deep-copy behavior and fail-closed namespace/header validation through `ISWV5PersistenceContract`.',
     '- No broker command, runtime implementation, live account mutation, file/network validator dependency, Signal Engine change, or frozen baseline change is present.'
 )
 $report | Set-Content -LiteralPath $reportPath -Encoding utf8

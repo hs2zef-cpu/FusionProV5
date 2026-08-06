@@ -193,15 +193,68 @@ class SWV5_TestPersistenceContract : public ISWV5PersistenceContract
 {
 private:
    SWV5_PersistedCheckpoint m_checkpoint;
+   SWV5_PersistedRequestEvidence m_requests[];
+   SWV5_PersistedRequestSetHeader m_request_set_header;
+   SWV5_PersistenceNamespace m_storage_namespace;
    int m_request_count;
-   bool m_configured;
+   bool m_checkpoint_configured;
+   bool m_requests_configured;
+
+   void ClearRequests()
+   {
+      ArrayResize(m_requests,0);
+      m_request_count=0;
+      m_requests_configured=false;
+   }
+
+   void CopyRequests(const SWV5_PersistedRequestEvidence &source[])
+   {
+      const int count=ArraySize(source);
+      ArrayResize(m_requests,count);
+      for(int index=0;index<count;index++)
+         m_requests[index]=source[index];
+      m_request_count=count;
+   }
+
+   bool RequestSetValid(const SWV5_PersistenceNamespace &persistence_namespace,
+                        const SWV5_PersistedRequestEvidence &requests[],
+                        const SWV5_PersistedRequestSetHeader &set_header)
+   {
+      if(!SWV5_TestNamespaceComplete(persistence_namespace) ||
+         !SWV5_TestVersionValid(set_header.contract_version) ||
+         ArraySize(requests)!=(int)set_header.request_count ||
+         set_header.request_set_digest=="" ||
+         set_header.request_index_revision=="" ||
+         set_header.record_sequence==0)
+         return false;
+      for(int index=0;index<ArraySize(requests);index++)
+      {
+         if(!SWV5_TestPersistedRequestValid(requests[index],persistence_namespace))
+            return false;
+      }
+      return true;
+   }
 public:
-   SWV5_TestPersistenceContract() { m_configured=false; m_request_count=0; }
+   SWV5_TestPersistenceContract()
+   {
+      m_checkpoint_configured=false;
+      m_requests_configured=false;
+      m_request_count=0;
+      ArrayResize(m_requests,0);
+   }
    void Configure(const SWV5_PersistedCheckpoint &checkpoint,const SWV5_PersistedRequestEvidence &requests[])
    {
+      ClearRequests();
+      m_checkpoint_configured=SWV5_TestPersistenceRecordValid(checkpoint);
+      if(!m_checkpoint_configured)
+         return;
       m_checkpoint=checkpoint;
-      m_request_count=ArraySize(requests);
-      m_configured=true;
+      m_storage_namespace=checkpoint.header.persistence_namespace;
+      m_request_set_header=checkpoint.pending_request_set;
+      if(!RequestSetValid(m_storage_namespace,requests,m_request_set_header))
+         return;
+      CopyRequests(requests);
+      m_requests_configured=true;
    }
    virtual string ContractName() { return "ISWV5PersistenceContract/V3"; }
    virtual bool ValidateRecord(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
@@ -215,7 +268,8 @@ public:
    }
    virtual bool LoadLatest(const SWV5_ContractValidationContext &context,const SWV5_PersistenceNamespace &persistence_namespace,SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
    {
-      const bool valid=m_configured && SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
+      const bool valid=m_checkpoint_configured && SWV5_TestContextValid(context) &&
+                       SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
       if(valid) checkpoint=m_checkpoint;
       result.contract_version=context.expected_version;
       result.status=(valid ? SWV5_PERSISTENCE_LOADED : SWV5_PERSISTENCE_NOT_FOUND);
@@ -225,25 +279,70 @@ public:
    }
    virtual bool LoadPendingRequests(const SWV5_ContractValidationContext &context,const SWV5_PersistenceNamespace &persistence_namespace,SWV5_PersistedRequestEvidence &requests[],SWV5_PersistenceLoadResult &result)
    {
-      const bool valid=m_configured && SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace) &&
-                       m_request_count==(int)m_checkpoint.pending_request_set.request_count;
-      if(valid) ArrayResize(requests,m_request_count);
+      bool records_valid=true;
+      for(int index=0;index<ArraySize(m_requests);index++)
+      {
+         if(!SWV5_TestPersistedRequestValid(m_requests[index],m_storage_namespace))
+         {
+            records_valid=false;
+            break;
+         }
+      }
+      const bool checkpoint_coherent=!m_checkpoint_configured ||
+                                     (SWV5_TestNamespaceEqual(m_storage_namespace,m_checkpoint.header.persistence_namespace) &&
+                                      m_request_count==(int)m_checkpoint.pending_request_set.request_count &&
+                                      m_request_set_header.request_set_digest==m_checkpoint.pending_request_set.request_set_digest &&
+                                      m_request_set_header.request_index_revision==m_checkpoint.pending_request_set.request_index_revision &&
+                                      m_request_set_header.record_sequence==m_checkpoint.pending_request_set.record_sequence);
+      const bool valid=m_requests_configured && SWV5_TestContextValid(context) &&
+                       SWV5_TestNamespaceEqual(persistence_namespace,m_storage_namespace) &&
+                       m_request_count==ArraySize(m_requests) &&
+                       m_request_count==(int)m_request_set_header.request_count &&
+                       m_request_set_header.request_set_digest!="" &&
+                       m_request_set_header.request_index_revision!="" &&
+                       m_request_set_header.record_sequence>0 &&
+                       checkpoint_coherent && records_valid;
+      ArrayResize(requests,0);
+      if(valid)
+      {
+         ArrayResize(requests,m_request_count);
+         for(int index=0;index<m_request_count;index++)
+            requests[index]=m_requests[index];
+      }
       result.contract_version=context.expected_version;
-      result.status=(valid ? SWV5_PERSISTENCE_LOADED : SWV5_PERSISTENCE_TRUNCATED);
+      result.status=(valid ? SWV5_PERSISTENCE_LOADED :
+                    (m_requests_configured && !SWV5_TestNamespaceEqual(persistence_namespace,m_storage_namespace) ? SWV5_PERSISTENCE_OWNER_CONFLICT : SWV5_PERSISTENCE_TRUNCATED));
       result.corruption_disposition=(valid ? SWV5_CORRUPTION_REJECT_RECORD : SWV5_CORRUPTION_HALT_AND_RECONCILE);
       result.diagnostic=(valid ? "REQUESTS_LOADED" : "REQUEST_SET_INVALID");
       return valid;
    }
    virtual bool SavePendingRequests(const SWV5_ContractValidationContext &context,const SWV5_PersistenceNamespace &persistence_namespace,const SWV5_PersistedRequestEvidence &requests[],const SWV5_PersistedRequestSetHeader &set_header,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestNamespaceComplete(persistence_namespace) && ArraySize(requests)==(int)set_header.request_count &&
-                       set_header.request_set_digest!="" && set_header.request_index_revision!="";
+      const bool checkpoint_coherent=!m_checkpoint_configured ||
+                                     SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
+      const bool valid=SWV5_TestContextValid(context) && checkpoint_coherent &&
+                       RequestSetValid(persistence_namespace,requests,set_header);
+      if(valid)
+      {
+         ClearRequests();
+         m_storage_namespace=persistence_namespace;
+         m_request_set_header=set_header;
+         CopyRequests(requests);
+         m_requests_configured=true;
+         if(m_checkpoint_configured)
+            m_checkpoint.pending_request_set=set_header;
+      }
       SWV5_TestSetDecision(context,valid,(valid ? "REQUEST_SET_SAVED" : "REQUEST_SET_REJECTED"),decision);
       return valid;
    }
    virtual bool SaveCheckpoint(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestPersistenceRecordValid(checkpoint);
+      if(valid)
+      {
+         m_checkpoint=checkpoint;
+         m_checkpoint_configured=true;
+      }
       SWV5_TestSetDecision(context,valid,(valid ? "CHECKPOINT_SAVED" : "CHECKPOINT_REJECTED"),decision);
       return valid;
    }
