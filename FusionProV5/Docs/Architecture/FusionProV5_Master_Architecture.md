@@ -53,7 +53,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V3 corrective candidate; minimum compatible version 3
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings; its 202 interface-level/regression cases passed twice on MT5 Demo Strategy Tester with identical signature. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
+The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings; Sprint 4.4 executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -96,7 +96,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 is corrective verification responding to final-review findings. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 and Sprint 4.4 are corrective verification responding to independent-review findings. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
 
 ## Architecture Boundary
 

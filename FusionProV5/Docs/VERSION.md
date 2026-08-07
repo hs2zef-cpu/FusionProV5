@@ -4,11 +4,11 @@
 
 ### Current Version
 
-Sprint 4.3 Contract Correction and Interface-Level Verification
+Sprint 4.4 Contract Completion and Semantic Verification
 
 ### Date
 
-2026-08-06
+2026-08-07
 
 ### Status
 
@@ -30,7 +30,7 @@ Review-candidate compile manifest:
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5` (test only)
 
-Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 is the corrective verification package responding to final-review findings. Neither is a production or runtime authorization.
+Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 introduced the V3 corrective package; Sprint 4.4 completes its remaining semantic contract findings. None is a production or runtime authorization.
 
 ## Frozen Signal Baseline
 
@@ -62,8 +62,8 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Unit and normalization contract complete
 - No concrete production implementation
 - No broker command path
-- Sprint 4.3 MetaEditor X64 Regular compile: 0 errors, 0 warnings
-- Sprint 4.3 MT5 Demo Strategy Tester: 202 passed, 0 failed, 0 skipped, repeated twice with signature `9897499331444689043`
+- Sprint 4.4 Architecture and test manifests, MetaEditor X64 Regular: 0 errors, 0 warnings
+- Sprint 4.4 MT5 Demo Strategy Tester: 238 passed, 0 failed, 0 skipped, repeated twice with signature `6132791249901820115`
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action

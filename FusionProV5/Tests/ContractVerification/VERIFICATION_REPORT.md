@@ -1,4 +1,4 @@
-﻿# Sprint 4.3 Interface-Level Contract Verification Report
+﻿# Sprint 4.4 Semantic Contract Verification Report
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -6,18 +6,19 @@
 
 **PASS - READY FOR INDEPENDENT REVIEW**
 
-Sprint 4 remains the authorized baseline. Sprint 4.1 remains Candidate / In Review. Sprint 4.2 is an authorized verification sub-sprint on the candidate branch. Sprint 4.3 corrects review findings but does not declare Architecture Lock, production readiness, or runtime authorization.
+Sprint 4 remains the authorized baseline. Sprint 4.1 remains Candidate / In Review. Sprint 4.4 closes audit findings but does not declare Architecture Lock, production readiness, or runtime authorization.
 
 ## Generated evidence
 
-- Exported at UTC: `2026-08-06T18:20:21Z`
-- Tested source commit: `c1367aff5eb6d86f8ccd002c6ad72c037f92052f`
-- Evidence exporter SHA-256: `e7621870a707037873efb5cc793759018e87bcaf850ac2b2fc2ccac88d8cc9bb`
-- Manifest SHA-256: `0e19eaaa1b0b0275806f14c98e66f841339a6a901b3cd1116650ab9823d6b72a`
-- Verification source digest: `7ca6d7059e311dbd6f1a7bbeec85237a3a98027dfdf77b73a248e41a3d187185`
-- Compile: 0 errors, 0 warnings, X64 Regular
-- Tests: 213 total, 213 passed, 0 failed, 0 skipped
-- Deterministic signature: `5208572328653077586`
+- Exported at UTC: `2026-08-07T13:17:40Z`
+- Tested source commit: `d77de8caed416364388688b40a9e13ddcbcee542`
+- Evidence exporter SHA-256: `4ca40c09b92a5d457b120d3e61afe9da98ccd7fdc6cc98696ad2811a26a2f0cd`
+- Manifest SHA-256: `450206d0dde297d2ae583f923821a7e6f5228a19f3f1ba8ed9f6e740b326d136`
+- Verification source digest: `ce404c8ce292b54cbf3773dde5f5f1b940e2c7e7958f2dc2a9ff11146c6560fe`
+- Architecture compile: 0 errors, 0 warnings, X64 Regular
+- Test compile: 0 errors, 0 warnings, X64 Regular
+- Tests: 238 total, 238 passed, 0 failed, 0 skipped
+- Deterministic signature: `6132791249901820115`
 - Independent runs: 2; signatures and counts identical
 - Terminal build: 6090
 - Broker/server evidence: Exness-MT5Trial6 (Demo/Trial Strategy Tester)
@@ -25,10 +26,10 @@ Sprint 4 remains the authorized baseline. Sprint 4.1 remains Candidate / In Revi
 
 ## Scope
 
+- 238 executable cases, including 236 interface-behavior cases and 2 supporting pure equality cases.
 - All 49 Basket state pairs execute through `ISWV5BasketStateMachineContract`.
-- All Production Contract V3 interfaces have deterministic in-memory test implementations.
-- The 30 corrective interface cases cover the ten final-review findings.
-- Ten interface-conformance cases directly invoke every remaining production interface method.
-- The original 162-case domain matrix remains present as regression coverage, with authoritative domain operations routed through interface implementations.
-- Eleven persistence round-trip cases prove field-preserving deep-copy behavior and fail-closed namespace/header validation through `ISWV5PersistenceContract`.
+- Restart reconstructs the complete persisted request set and derives readiness from canonical request state.
+- Persistence digests bind every serialized request field, order, count, and record sequence.
+- Risk authorization binds complete limits, projected values, account snapshot, Hard Kill namespace and generation.
+- Recovery, execution, statistics, and ownership interfaces return and verify monotonic resulting state.
 - No broker command, runtime implementation, live account mutation, file/network validator dependency, Signal Engine change, or frozen baseline change is present.

@@ -12,7 +12,7 @@ Governance status: **CANDIDATE / IN REVIEW**. Sprint 4 remains the authorized ar
 
 Sprint 4.1 introduced contract schema version 2. Sprint 4.3 corrects proven breaking findings and advances the candidate to schema version 3 with minimum compatible version 3. V3 adds monotonic recovery evidence, phase-specific execution identity, reconstructible pending requests, full account namespace/epoch and mode binding, typed takeover and Hard Kill release evidence, durable identity indexes, and non-caller-controlled unit safety.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. The executable suite exists. Sprint 4.3 replaces its helper-only verification claim with interface-level implementations and test invocation. Neither sub-sprint declares Architecture Lock, grants runtime authorization, or changes Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. The executable suite exists. Sprint 4.3 replaced its helper-only verification claim with interface-level implementations; Sprint 4.4 completes the full restart, payload integrity, authorization output, durable identity, and ownership mutation semantics. No verification sub-sprint declares Architecture Lock, grants runtime authorization, or changes Sprint 4 as the authorized baseline.
 
 Every contract operation receives an explicit validation context containing expected version identity, one clock ID/authority/time/sequence, evaluation sequence, and numeric tolerances. Contract validators may not obtain hidden wall-clock, broker, account, symbol, file, or random input. Fail-closed behavior is mandatory and cannot be disabled by a caller.
 
@@ -300,4 +300,4 @@ No arrow in this diagram is connected at runtime in Sprint 4.
 
 Sprint 4 stops at architecture. Implementation of adapters, stores, locks, risk calculations, broker requests, recovery behavior, basket execution, or signal-to-execution wiring requires a new explicitly authorized Sprint.
 
-Sprint 4.1 remains Candidate / In Review until formal approval. Sprint 4.2 and Sprint 4.3 provide verification evidence only; even approval of version 3 does not authorize runtime implementation.
+Sprint 4.1 remains Candidate / In Review until formal approval. Sprint 4.2, Sprint 4.3, and Sprint 4.4 provide verification evidence only; even approval of version 3 does not authorize runtime implementation.

@@ -4,6 +4,18 @@ This file records the authorized evolution of Fusion Pro V5.
 
 ## Unreleased
 
+## Sprint 4.4 Contract Completion and Semantic Verification
+
+Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; no Architecture Lock, production readiness, or runtime authorization is claimed.
+
+- Completed restart reconciliation over the full ordered pending-request set.
+- Bound persistence digest/revision metadata to canonical nested payload content and order.
+- Completed Risk authorization output and validation across account, limits, Basket, Hard Kill, projected-risk, monetary, and normalized execution fields.
+- Added durable recovery/execution/statistics identity-state mutation outputs and idempotent replay behavior.
+- Added monotonic heartbeat renewal and fully typed lease-expiry/takeover binding.
+- Audited all 238 executable cases: 236 meaningful interface-behavior cases and two supporting pure equality cases.
+- Verified 238/238 twice in MT5 Demo Strategy Tester with identical signature `6132791249901820115`.
+
 ## Sprint 4.3 Contract Correction and Interface Verification
 
 Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; no Architecture Lock or runtime authorization is claimed.
@@ -13,7 +25,7 @@ Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW
 - Split pre-submission request identity from broker-generated identity and added explicit execution phases.
 - Added reconstructible pending-request, durable event-set, account namespace/epoch, account-mode, recovery, takeover, Hard Kill, and unit-safety evidence.
 - Replaced helper-only claims with deterministic implementations and invocation of every `ISWV5*` interface.
-- Verified 202 cases twice on MT5 Demo Strategy Tester with identical output.
+- Its verification claim is superseded by the Sprint 4.4 semantic suite and immutable-source evidence.
 
 ## Sprint 4.2 Executable Verification
 

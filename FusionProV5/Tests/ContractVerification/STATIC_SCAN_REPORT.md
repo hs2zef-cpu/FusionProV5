@@ -1,4 +1,4 @@
-# Sprint 4.3 Static Safety Scan Report
+# Sprint 4.4 Static Safety Scan Report
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -8,7 +8,7 @@
 
 ## MQL code scan
 
-No matches in the Sprint 4.3 manifest, ProductionArchitecture headers, or ContractVerification MQL headers for:
+No matches in the Sprint 4.3/4.4 test manifest, ProductionArchitecture headers, or ContractVerification MQL headers for:
 
 - `OrderSend`, `OrderSendAsync`, `CTrade`, or `OnTradeTransaction`
 - `MqlTradeRequest` or `MqlTradeResult`
@@ -30,6 +30,6 @@ The evidence exporter uses local filesystem reads/writes outside validators sole
 ## Repository checks
 
 - `git diff --check`: pass (line-ending conversion notices only; no whitespace errors)
-- Sprint 4.3 test manifest: MetaEditor X64 Regular, 0 errors, 0 warnings
+- Sprint 4.3/4.4 test manifest: MetaEditor X64 Regular, 0 errors, 0 warnings
 - Unchanged Sprint 4 Architecture manifest against V3 headers: MetaEditor X64 Regular, 0 errors, 0 warnings
-- MT5 Demo Strategy Tester: `Exness-MT5Trial6`, build 6090, 202 passed, 0 failed, 0 skipped, two identical runs
+- MT5 Demo Strategy Tester: `Exness-MT5Trial6`, build 6090, 238 passed, 0 failed, 0 skipped, two identical runs; signature `6132791249901820115`

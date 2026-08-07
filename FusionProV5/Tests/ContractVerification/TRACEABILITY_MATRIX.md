@@ -1,4 +1,4 @@
-# Sprint 4.3 Contract Verification Traceability Matrix
+# Sprint 4.4 Semantic Contract Verification Traceability Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -20,6 +20,10 @@
 | Unit safety | operation kind/price, direction, freshness, applied rounding | `SWV5_TestUnitSystemContract::Normalize` | UNT-01–UNT-10, IFC-14–IFC-18 | Wrong side/freeze/stale reject; increase down; residual close broker-safe |
 | Risk authorization binding | request identity, fence, namespace, mode, Basket/spec/epoch/terms/expiry | `ValidateAuthorization` | RSK-02–RSK-16 | Any binding change rejects |
 | Statistics monetary completeness | profit, commission, swap, fee, currency, durable identity | Statistics interface | STA-01–STA-13, IFC-29 | Net includes all components; duplicate does not double count |
-| Determinism | complete input/context and decision DTO | All interfaces | COM-05, IFC-30, PRT-09 and two complete runs | Identical counts, outputs, persisted payloads, and signature |
+| Complete restart reconstruction | complete ordered pending array, summary/cache, header, readiness | Persistence `ReconcileRestart` | S44-01 through S44-05 | Disposition is derived from every request; summary never replaces set |
+| Payload-bound persistence integrity | canonical nested content, order, count, digest, revision, record sequence | Persistence Save/Load | S44-06 through S44-11 | Any payload/order/header mutation fails closed; empty replacement clears summary |
+| Complete authorization output | limits, request/fence/account/Hard Kill namespaces, projections, monetary and normalized terms | Risk `Evaluate/ValidateAuthorization` | S44-12 through S44-15 | Evaluate populates all bindings; missing or changed binding rejects |
+| Durable identity and ownership mutation | recovery/event/deal identity state, heartbeat and typed takeover evidence | Basket/Execution/Statistics/Ownership interfaces | S44-16 through S44-25 | First evidence mutates once; replay is idempotent; stale/conflicting evidence fails closed |
+| Determinism | complete input/context and decision DTO | All interfaces | COM-05, IFC-30, PRT-09, S44 suite and two complete runs | Identical counts, outputs, persisted payloads, and signature |
 
 The production headers define interfaces only. `SW_V5_InterfaceContractImplementations.mqh` is the explicit test-only implementation under test; `SW_V5_ReferenceValidators.mqh` contains pure rules invoked behind those interfaces.
