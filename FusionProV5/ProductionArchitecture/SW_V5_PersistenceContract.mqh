@@ -84,6 +84,7 @@ struct SWV5_PersistedCheckpoint
    SWV5_BasketAggregate         basket;
    SWV5_ExecutionCorrelation    last_confirmed_correlation;
    SWV5_PersistedRequestSetHeader pending_request_set;
+   bool                         has_latest_pending_request;
    SWV5_PersistedRequestEvidence latest_pending_request;
    SWV5_HardKillState           hard_kill_state;
    bool                         clean_shutdown;
@@ -158,6 +159,7 @@ public:
                                SWV5_ContractDecision &decision) = 0;
    virtual bool ReconcileRestart(const SWV5_ContractValidationContext &context,
                                  const SWV5_RestartReconciliationInput &engineInput,
+                                 const SWV5_PersistedRequestEvidence &pending_requests[],
                                  SWV5_RestartReconciliationResult &result) = 0;
 };
 

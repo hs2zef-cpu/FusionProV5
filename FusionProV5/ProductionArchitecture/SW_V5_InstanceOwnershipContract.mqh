@@ -33,12 +33,15 @@ struct SWV5_InstanceLease
 struct SWV5_LeaseExpiryEvidence
 {
    SWV5_ContractVersion contract_version;
+   SWV5_OwnershipKey    observed_ownership_key;
    string               clock_id;
    SWV5_TimeAuthority   clock_authority;
    ulong                observed_clock_sequence;
    datetime             observed_at;
    ulong                observed_lease_version;
+   ulong                observed_heartbeat_sequence;
    string               observed_store_revision;
+   datetime             observed_expiry_time;
    bool                 expired;
 };
 
@@ -94,6 +97,7 @@ public:
                         SWV5_OwnershipDecision &decision) = 0;
    virtual bool Heartbeat(const SWV5_ContractValidationContext &context,
                           const SWV5_InstanceLease &lease,
+                          const SWV5_InstanceLease &observed,
                           SWV5_OwnershipDecision &decision) = 0;
    virtual bool DetectConflict(const SWV5_ContractValidationContext &context,
                                const SWV5_OwnershipClaim &claim,

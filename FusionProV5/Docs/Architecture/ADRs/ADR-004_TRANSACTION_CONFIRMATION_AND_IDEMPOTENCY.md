@@ -16,6 +16,8 @@ Transaction evidence has a stable event ID and monotonic transaction sequence. D
 
 Accepted event membership is durable and reconstructible through a versioned canonical identity index plus digest, revision, highest sequence, and compaction generation. Remembering only the last event is insufficient; replaying event A after event B remains duplicate when A is already a member.
 
+Acceptance returns the complete resulting pending-request state: lifecycle phase/state, cumulative and residual volume, latest authoritative confirmation, retry disposition, and the updated durable identity set. The caller persists that returned state; it must not reconstruct a final state locally.
+
 Retcode classification is derived from a versioned mapping policy. Callers supply raw evidence, not trusted classifications.
 
 ## Consequences
@@ -24,3 +26,4 @@ Retcode classification is derived from a versioned mapping policy. Callers suppl
 - Each retry uses a unique attempt ID under one logical correlation ID.
 - Correlation and ownership-fence mismatch fail closed.
 - Broker-specific mapping tables and ordering fixtures are required before a broker adapter is authorized.
+- A reused event identity paired with a conflicting sequence fails closed; an unseen older sequence follows the explicit out-of-order-new policy and is accepted at most once.

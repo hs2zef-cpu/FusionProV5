@@ -50,14 +50,25 @@ SWV5_ConfirmationStatus SWV5_TestInterfaceConfirmation(SWV5_TestExecutionContrac
 }
 
 SWV5_ReconciliationStatus SWV5_TestInterfaceRestart(SWV5_TestPersistenceContract &implementation,
-                                                    const SWV5_ContractValidationContext &context,
-                                                    const SWV5_RestartReconciliationInput &engineInput,
-                                                    SWV5_RestartReadinessDisposition &readiness)
+                                                     const SWV5_ContractValidationContext &context,
+                                                     const SWV5_RestartReconciliationInput &engineInput,
+                                                     const SWV5_PersistedRequestEvidence &pending_requests[],
+                                                     SWV5_RestartReadinessDisposition &readiness)
 {
    SWV5_RestartReconciliationResult result;
-   implementation.ReconcileRestart(context,engineInput,result);
+   implementation.ReconcileRestart(context,engineInput,pending_requests,result);
    readiness=result.readiness_disposition;
    return result.status;
+}
+
+SWV5_ReconciliationStatus SWV5_TestInterfaceRestart(SWV5_TestPersistenceContract &implementation,
+                                                     const SWV5_ContractValidationContext &context,
+                                                     const SWV5_RestartReconciliationInput &engineInput,
+                                                     SWV5_RestartReadinessDisposition &readiness)
+{
+   SWV5_PersistedRequestEvidence empty_requests[];
+   ArrayResize(empty_requests,0);
+   return SWV5_TestInterfaceRestart(implementation,context,engineInput,empty_requests,readiness);
 }
 
 void SWV5_RunCommonTests(SWV5_TestCollector &collector)
@@ -90,9 +101,16 @@ void SWV5_RunCommonTests(SWV5_TestCollector &collector)
             passed=compatibility.compatibility==SWV5_COMPATIBILITY_REJECTED;
             break;
          case 4:
+         {
             context.clock_id="";
-            passed=!SWV5_TestContextValid(context);
+            SWV5_BasketLifecycleSnapshot snapshot;
+            SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_IDLE);
+            SWV5_BasketInvariantReport report;
+            SWV5_TestBasketStateContract basket_contract;
+            passed=!basket_contract.ValidateState(context,snapshot,report) && report.status==SWV5_CONTRACT_INVALID;
+            expected="missing_clock_fails_closed";
             break;
+         }
          case 5:
          {
             SWV5_BasketLifecycleSnapshot snapshot;
@@ -111,9 +129,16 @@ void SWV5_RunCommonTests(SWV5_TestCollector &collector)
             break;
          }
          case 6:
+         {
             context.evaluation_sequence=0;
-            passed=!SWV5_TestContextValid(context);
+            SWV5_BasketLifecycleSnapshot snapshot;
+            SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_IDLE);
+            SWV5_BasketInvariantReport report;
+            SWV5_TestBasketStateContract basket_contract;
+            passed=!basket_contract.ValidateState(context,snapshot,report) && report.status==SWV5_CONTRACT_INVALID;
+            expected="missing_sequence_fails_closed";
             break;
+         }
          case 7:
          {
             SWV5_OwnershipFence left;
@@ -139,7 +164,11 @@ void SWV5_RunCommonTests(SWV5_TestCollector &collector)
             SWV5_InstanceLease lease;
             SWV5_TestMakeLease(lease);
             lease.clock_id="OTHER-CLOCK";
-            passed=lease.clock_id!=context.clock_id;
+            SWV5_TestOwnershipContract ownership;
+            SWV5_OwnershipDecision heartbeat;
+            passed=!ownership.Heartbeat(context,lease,lease,heartbeat) &&
+                   heartbeat.decision.disposition==SWV5_DISPOSITION_DENY;
+            expected="wrong_clock_heartbeat_rejected";
             break;
          }
          case 10:
@@ -157,9 +186,14 @@ void SWV5_RunCommonTests(SWV5_TestCollector &collector)
          }
          case 12:
          {
-            const bool caller_fail_open_parameter_exposed=false;
-            passed=!caller_fail_open_parameter_exposed;
-            expected="no_fail_open_surface";
+            SWV5_BasketLifecycleSnapshot snapshot;
+            SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_IDLE);
+            SWV5_BasketInvariantReport report;
+            SWV5_TestBasketStateContract basket_contract;
+            context.evaluation_sequence=0;
+            passed=!basket_contract.ValidateState(context,snapshot,report) &&
+                   report.status==SWV5_CONTRACT_INVALID;
+            expected="invalid_context_fails_closed";
             break;
          }
       }
@@ -244,12 +278,11 @@ void SWV5_RunBasketAggregateTests(SWV5_TestCollector &collector)
             break;
          case 4:
          {
-            SWV5_ExecutionCorrelation prior=partial.correlation;
-            const double residual_before=basket.lifecycle.residual_volume;
-            const bool duplicate=partial.correlation.broker_identity.broker_event_id==prior.broker_identity.broker_event_id &&
-                                 SWV5_TestRequestIdentityEqual(partial.correlation.request_identity,prior.request_identity);
-            passed=duplicate && SWV5_TestNear(residual_before,basket.lifecycle.residual_volume,0.0000001);
-            expected="idempotent_no_decrement";
+            SWV5_ContractDecision first,second;
+            passed=implementation.ValidatePartialClose(context,basket,partial,first) &&
+                   implementation.ValidatePartialClose(context,basket,partial,second) &&
+                   SWV5_TestDecisionEqual(first,second) && SWV5_TestNear(basket.lifecycle.residual_volume,0.20,context.volume_tolerance);
+            expected="pure_validation_repeat_is_stable";
             break;
          }
          case 5:
@@ -262,7 +295,9 @@ void SWV5_RunBasketAggregateTests(SWV5_TestCollector &collector)
             break;
          case 7:
             basket.persistence_namespace.ownership_namespace.account_login=0;
-            passed=!SWV5_TestNamespaceComplete(basket.persistence_namespace);
+            passed=!implementation.ValidateAggregate(context,basket,basket_result) &&
+                   basket_result.decision.disposition==SWV5_DISPOSITION_DENY;
+            expected="incomplete_namespace_rejected";
             break;
          case 8:
             basket.account_mode=SWV5_ACCOUNT_MODE_NETTING;
@@ -361,25 +396,34 @@ void SWV5_RunOwnershipTests(SWV5_TestCollector &collector)
          case 1:
          {
             observed.status=SWV5_LOCK_UNCLAIMED;
-            const ulong new_version=observed.fence.lease_version+1;
-            passed=new_version==8 && claim.expected_fence.store_revision==observed.fence.store_revision;
+            passed=implementation.Acquire(context,claim,observed,ownership_decision) &&
+                   ownership_decision.resulting_lease.status==SWV5_LOCK_ACQUIRED &&
+                   ownership_decision.resulting_lease.fence.lease_version==observed.fence.lease_version+1 &&
+                   SWV5_TestOwnerEqual(ownership_decision.resulting_lease.fence.owner,claim.claimant);
             expected="acquire_version_8";
             break;
          }
          case 2:
-            passed=observed.status==SWV5_LOCK_ACQUIRED && !SWV5_TestOwnerEqual(claim.claimant,observed.fence.owner);
+         {
+            SWV5_OwnershipConflict conflict;
+            passed=implementation.DetectConflict(context,claim,observed,conflict) &&
+                   conflict.status==SWV5_LOCK_CONFLICT &&
+                   SWV5_TestOwnerEqual(conflict.claimant,claim.claimant) && SWV5_TestOwnerEqual(conflict.incumbent,observed.fence.owner);
             expected="conflict_halt";
             break;
+         }
          case 3:
             observed.status=SWV5_LOCK_EXPIRED;
             context.clock_sequence=1000;
             observed.expiry_clock_sequence=1100;
+            SWV5_TestMakeClaim(claim,observed);
             passed=!implementation.Acquire(context,claim,observed,ownership_decision);
             break;
          case 4:
             observed.status=SWV5_LOCK_EXPIRED;
             observed.expires_at=SWV5_TEST_TIME-1;
             observed.expiry_clock_sequence=999;
+            SWV5_TestMakeClaim(claim,observed);
             claim.takeover_evidence.broker_reconciliation.evidence_id="";
             claim.takeover_evidence.persistence_reconciliation.evidence_id="";
             passed=!implementation.Acquire(context,claim,observed,ownership_decision);
@@ -388,6 +432,7 @@ void SWV5_RunOwnershipTests(SWV5_TestCollector &collector)
             observed.status=SWV5_LOCK_EXPIRED;
             observed.expires_at=SWV5_TEST_TIME-1;
             observed.expiry_clock_sequence=999;
+            SWV5_TestMakeClaim(claim,observed);
             passed=implementation.Acquire(context,claim,observed,ownership_decision) &&
                    ownership_decision.resulting_lease.fence.takeover_generation==3;
             expected="takeover_generation_3";
@@ -396,42 +441,51 @@ void SWV5_RunOwnershipTests(SWV5_TestCollector &collector)
          {
             SWV5_InstanceLease caller=observed;
             caller.fence.fencing_token_digest="STALE-TOKEN";
-            passed=!SWV5_TestHeartbeatValid(context,caller,observed);
+            passed=!implementation.Heartbeat(context,caller,observed,ownership_decision) &&
+                   ownership_decision.decision.disposition==SWV5_DISPOSITION_DENY;
+            expected="stale_token_heartbeat_rejected";
             break;
          }
          case 7:
          {
             SWV5_InstanceLease caller=observed;
             caller.fence.store_revision="STALE-REV";
-            passed=!SWV5_TestFenceEqual(caller.fence,observed.fence);
+            passed=!implementation.Release(context,caller,observed,ownership_decision) &&
+                   ownership_decision.resulting_lease.status==observed.status;
+            expected="stale_revision_release_rejected";
             break;
          }
          case 8:
          {
-            SWV5_OwnerIdentity contender;
-            SWV5_TestMakeOwner(contender,"INSTANCE-C");
-            const bool simultaneous=observed.heartbeat_sequence==20 && contender.instance_id!=observed.fence.owner.instance_id;
-            passed=simultaneous;
+            SWV5_OwnershipConflict conflict;
+            passed=implementation.DetectConflict(context,claim,observed,conflict) &&
+                   conflict.simultaneous_heartbeat && conflict.status==SWV5_LOCK_CONFLICT;
             expected="conflict_halt";
             break;
          }
          case 9:
             observed.status=SWV5_LOCK_CORRUPT;
             context.clock_authority=SWV5_TIME_AUTHORITY_NONE;
-            passed=!SWV5_TestContextValid(context);
+            passed=!implementation.Acquire(context,claim,observed,ownership_decision) &&
+                   ownership_decision.decision.disposition==SWV5_DISPOSITION_DENY;
             expected="operator_required";
             break;
          case 10:
          {
-            SWV5_OwnershipFence accepted=observed.fence;
-            accepted.lease_version++;
-            passed=!SWV5_TestFenceEqual(accepted,observed.fence);
+            SWV5_InstanceLease stale=observed;
+            stale.fence.lease_version++;
+            passed=!implementation.Release(context,stale,observed,ownership_decision) &&
+                   ownership_decision.resulting_lease.status==observed.status;
             break;
          }
          case 11:
-            observed.clock_id="FOREIGN-CLOCK";
-            passed=observed.clock_id!=context.clock_id;
+         {
+            SWV5_InstanceLease caller=observed;
+            caller.clock_id="FOREIGN-CLOCK";
+            passed=!implementation.Heartbeat(context,caller,observed,ownership_decision) &&
+                   ownership_decision.decision.disposition==SWV5_DISPOSITION_DENY;
             break;
+         }
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("OWN",number),"OWNERSHIP",passed,expected);
    }
@@ -501,13 +555,16 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
             expected="idempotent_0.10";
             break;
          case 10:
-            pending.accepted_event_identities.canonical_event_index="NEWER-EVENT|500";
-            pending.accepted_event_identities.highest_transaction_sequence=500;
+         {
+            SWV5_DurableEventIdentitySet newer;
+            SWV5_TestAppendEventIdentity("NEWER-EVENT",500,pending.accepted_event_identities,newer);
+            pending.accepted_event_identities=newer;
             evidence.correlation.broker_identity.transaction_sequence=499;
             evidence.correlation.broker_identity.broker_event_id="OLDER-UNSEEN-EVENT";
             passed=SWV5_TestInterfaceConfirmation(implementation,context,pending,evidence,confirmed,residual)==SWV5_CONFIRMATION_CONFIRMED;
             expected="out_of_order_new_accepted_once";
             break;
+         }
          case 11:
             evidence.confirmed_volume=0.04;
             passed=SWV5_TestInterfaceConfirmation(implementation,context,pending,evidence,confirmed,residual)==SWV5_CONFIRMATION_PARTIAL &&
@@ -517,9 +574,14 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
          case 12:
          {
             SWV5_RetryPolicy policy;
+            SWV5_TestMakeVersion(policy.contract_version);
             policy.maximum_attempts=3;
+            policy.disposition=SWV5_RETRY_AFTER_BACKOFF;
+            policy.earliest_retry_at=context.clock_time;
             pending.submission_attempt_count=3;
-            passed=pending.submission_attempt_count>=policy.maximum_attempts;
+            SWV5_ContractDecision retry_decision;
+            passed=!implementation.EvaluateRetry(context,pending,policy,retry_decision) &&
+                   retry_decision.disposition==SWV5_DISPOSITION_DENY;
             expected="retry_forbidden";
             break;
          }
@@ -536,10 +598,15 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
             expected="halt_and_reconcile";
             break;
          case 16:
+         {
             pending.state=SWV5_REQUEST_ACKNOWLEDGED;
-            passed=pending.cumulative_confirmed_volume==0.0 && pending.state!=SWV5_REQUEST_CONFIRMED;
+            SWV5_ResultRetcodeClassification classification;
+            passed=implementation.ClassifyResultRetcode(context,pending.latest_retcode,classification) &&
+                   classification.classification==SWV5_RETCODE_ACCEPTED_PENDING_CONFIRMATION &&
+                   pending.cumulative_confirmed_volume==0.0 && pending.state==SWV5_REQUEST_ACKNOWLEDGED;
             expected="ack_is_not_confirmation";
             break;
+         }
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("EXE",number),"EXECUTION",passed,expected);
    }
@@ -556,6 +623,8 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
       SWV5_TestPersistenceContract implementation;
       SWV5_PersistenceLoadResult load_result;
       SWV5_RestartReadinessDisposition readiness;
+      SWV5_PersistedRequestEvidence pending_requests[];
+      ArrayResize(pending_requests,0);
       bool passed=false;
       string expected="fail_closed";
       switch(number)
@@ -599,12 +668,18 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             expected="manual_required";
             break;
          case 9:
-            engineInput.persisted.pending_request_set.request_count=1;
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],1);
+            pending_requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
+            pending_requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+            pending_requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
+            SWV5_TestBindRequestSetHeader(engineInput.persisted.pending_request_set,pending_requests,30);
+            engineInput.persisted.has_latest_pending_request=true;
+            engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
-            engineInput.persisted.pending_request_set.request_set_digest="PENDING-SET-1";
-            engineInput.persisted.latest_pending_request.pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
-            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
-            expected="blind_retry_forbidden";
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
+                   readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
+            expected="uncertain_requires_reconciliation";
             break;
          case 10:
             engineInput.persistence_status=SWV5_PERSISTENCE_CHECKSUM_FAILED;
@@ -618,16 +693,21 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             break;
          case 12:
             SWV5_TestMakeHardKill(engineInput.persisted.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
-            passed=engineInput.persisted.hard_kill_state.state==SWV5_HARD_KILL_ACTIVE &&
-                   engineInput.persisted.hard_kill_state.latch_generation==4;
-            expected="active_latch_preserved";
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
+                   readiness==SWV5_RESTART_CLOSE_ONLY;
+            expected="active_latch_close_only";
             break;
          case 13:
-            engineInput.persisted.pending_request_set.request_count=1;
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],2);
+            SWV5_TestBindRequestSetHeader(engineInput.persisted.pending_request_set,pending_requests,30);
+            engineInput.persisted.pending_request_set.request_set_digest="COPIED-FROM-OTHER-PAYLOAD";
+            engineInput.persisted.has_latest_pending_request=true;
+            engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
-            engineInput.persisted.pending_request_set.request_set_digest="";
-            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
-            expected="pending_set_conflict";
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+                   readiness==SWV5_RESTART_HALTED;
+            expected="payload_digest_conflict";
             break;
          case 14:
             engineInput.persistence_namespace.ownership_namespace.broker_identity="";
@@ -637,12 +717,15 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             expected="composite_namespace_required";
             break;
          case 15:
-            engineInput.persisted.pending_request_set.request_count=1;
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],3);
+            pending_requests[0].persistence_namespace.basket_id.value="FOREIGN-BASKET";
+            SWV5_TestBindRequestSetHeader(engineInput.persisted.pending_request_set,pending_requests,30);
+            engineInput.persisted.has_latest_pending_request=true;
+            engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
-            engineInput.persisted.pending_request_set.request_set_digest="PENDING-SET-1";
-            engineInput.persisted.latest_pending_request.pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_COMPLETED;
-            engineInput.persisted.latest_pending_request.persistence_namespace.basket_id.value="FOREIGN-BASKET";
-            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+                   readiness==SWV5_RESTART_HALTED;
             expected="membership_conflict";
             break;
       }
@@ -669,66 +752,73 @@ void SWV5_RunRiskTests(SWV5_TestCollector &collector)
       switch(number)
       {
          case 1:
-            hard_kill.state=SWV5_HARD_KILL_ACTIVE;
-            passed=SWV5_TestRiskPrecheck(hard_kill,intent.ownership_fence,authorization.ownership_fence)==SWV5_RISK_HARD_KILL;
+         {
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.hard_kill_state.state=SWV5_HARD_KILL_ACTIVE;
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="exposure_increase_blocked";
             break;
+         }
          case 2:
             authorization.ownership_fence.store_revision="STALE-REV";
             passed=SWV5_TestRiskPrecheck(hard_kill,intent.ownership_fence,authorization.ownership_fence)==SWV5_RISK_RECONCILIATION_REQUIRED &&
-                    !implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+                    !implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             break;
          case 3:
             authorization.risk_snapshot_epoch=0;
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="stale_snapshot_blocked";
             break;
          case 4:
          {
-            const double minimum_equity=10000.0;
-            const double equity=9999.0;
-            passed=equity<minimum_equity;
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.account.equity=risk_input.limits.minimum_equity-1.0;
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="equity_block";
             break;
          }
          case 5:
          {
-            const double maximum_daily_loss=500.0;
-            const double daily_loss=501.0;
-            passed=daily_loss>maximum_daily_loss;
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.account.daily_realized_net=-(risk_input.limits.maximum_daily_net_loss+1.0);
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="daily_loss_halt";
             break;
          }
          case 6:
          {
-            const double aggregate_limit=2.0;
-            const double aggregate_projected=2.1;
-            const double basket_projected=0.1;
-            passed=aggregate_projected>aggregate_limit && basket_projected<aggregate_limit;
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.projected.projected_aggregate_volume=risk_input.limits.maximum_aggregate_volume+0.1;
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="aggregate_domain_block";
             break;
          }
          case 7:
          {
-            const double basket_limit=300.0;
-            const double basket_loss=301.0;
-            passed=basket_loss>basket_limit;
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.projected.projected_maximum_loss=risk_input.limits.maximum_basket_loss+1.0;
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="basket_close_only";
             break;
          }
          case 8:
             authorization.symbol_specification_sequence++;
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="binding_mismatch_rejected";
             break;
          case 9:
             context.clock_time=authorization.expires_at+1;
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="expired";
             break;
          case 10:
             intent.normalized_volume=0.20;
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="volume_exceeds_authorization";
             break;
          case 11:
@@ -737,28 +827,32 @@ void SWV5_RunRiskTests(SWV5_TestCollector &collector)
             expected="release_evidence_rejected";
             break;
          case 12:
-            hard_kill.state=SWV5_HARD_KILL_ACTIVE;
-            passed=hard_kill.state==SWV5_HARD_KILL_ACTIVE && hard_kill.latch_generation==4;
+         {
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.hard_kill_state.state=SWV5_HARD_KILL_ACTIVE;
+            passed=!implementation.Evaluate(context,risk_input,authorization) && authorization.disposition!=SWV5_RISK_ALLOW;
             expected="restart_latch_active";
             break;
+         }
          case 13:
             authorization.account_namespace.snapshot_epoch=0;
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="snapshot_binding_invalid";
             break;
          case 14:
             authorization.hard_kill_latch_generation=3;
-            passed=authorization.hard_kill_latch_generation!=hard_kill.latch_generation;
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="latch_generation_invalid";
             break;
          case 15:
             authorization.monetary_basis.conversion_source="";
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="monetary_basis_invalid";
             break;
          case 16:
             intent.request_identity.request_id.attempt_id="ATTEMPT-0002";
-            passed=!implementation.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!implementation.ValidateAuthorization(context,authorization,intent,hard_kill,contract_decision);
             expected="attempt_change_invalid";
             break;
       }
@@ -801,6 +895,7 @@ void SWV5_RunStatisticsTests(SWV5_TestCollector &collector)
             SWV5_TestMakeStatistics(current);
             current.residual_volume=0.30;
             current.partial_close_count=0;
+            deal.correlation=evidence.correlation;
             passed=implementation.AccumulateDeal(validation_context,deal,evidence,current,next) &&
                    SWV5_TestNear(next.residual_volume,0.20,0.0000001) && next.partial_close_count==1;
             expected="partial_count_1_residual_0.20";
@@ -809,9 +904,9 @@ void SWV5_RunStatisticsTests(SWV5_TestCollector &collector)
          case 4:
          {
             SWV5_TestMakeDedupEvidence(evidence,state,SWV5_STAT_IDENTITY_DUPLICATE);
-            evidence.correlation.broker_identity.transaction_sequence=400;
             SWV5_BasketStatistics current,next;
             SWV5_TestMakeStatistics(current);
+            deal.correlation=evidence.correlation;
             passed=implementation.AccumulateDeal(validation_context,deal,evidence,current,next) &&
                    SWV5_TestNear(next.authoritative_net_result,current.authoritative_net_result,validation_context.price_tolerance);
             expected="duplicate_idempotent";
@@ -834,8 +929,12 @@ void SWV5_RunStatisticsTests(SWV5_TestCollector &collector)
             break;
          case 8:
          {
-            const double residual=0.0;
-            passed=implementation.ValidateDeal(validation_context,deal,context,contract_decision) && SWV5_TestNear(residual,0.0,0.0000001);
+            SWV5_BasketStatistics complete;
+            SWV5_TestMakeStatistics(complete);
+            complete.residual_volume=0.0;
+            SWV5_StatisticsValidationResult result;
+            passed=implementation.Finalize(validation_context,context,complete,result) &&
+                   (result.validation_flags&SWV5_STAT_MONETARY_COMPLETE)!=0;
             expected="completion_eligible";
             break;
          }
@@ -845,27 +944,39 @@ void SWV5_RunStatisticsTests(SWV5_TestCollector &collector)
             expected="netting_rejected";
             break;
          case 10:
+         {
             SWV5_TestMakeDedupEvidence(evidence,state,SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW);
-            evidence.correlation.broker_identity.transaction_sequence=state.identities.highest_transaction_sequence-1;
+            evidence.correlation.broker_identity.transaction_sequence=state.identities.highest_transaction_sequence-2;
             evidence.correlation.broker_identity.broker_event_id="OUT-OF-ORDER-NEW";
-            passed=SWV5_TestDedupEvidenceValid(evidence,state) &&
-                    evidence.correlation.broker_identity.transaction_sequence<state.identities.highest_transaction_sequence;
+            deal.correlation=evidence.correlation;
+            SWV5_BasketStatistics current,next;
+            SWV5_TestMakeStatistics(current);
+            passed=implementation.AccumulateDeal(validation_context,deal,evidence,current,next) &&
+                   next.deduplication.identities.accepted_identity_count==current.deduplication.identities.accepted_identity_count+1 &&
+                   next.deduplication.identities.highest_transaction_sequence==current.deduplication.identities.highest_transaction_sequence &&
+                   next.deduplication.unique_deal_count==current.deduplication.unique_deal_count+1;
             expected="out_of_order_accumulated_once";
             break;
+         }
          case 11:
+         {
             SWV5_TestMakeDedupEvidence(evidence,state,SWV5_STAT_IDENTITY_DUPLICATE);
             evidence.membership_proof="";
-            passed=!SWV5_TestDedupEvidenceValid(evidence,state);
+            deal.correlation=evidence.correlation;
+            SWV5_BasketStatistics current,next;
+            SWV5_TestMakeStatistics(current);
+            passed=!implementation.AccumulateDeal(validation_context,deal,evidence,current,next);
             expected="identity_evidence_rejected";
             break;
+         }
          case 12:
          {
-            SWV5_ExecutionCorrelation conflicting=deal.correlation;
-            conflicting.broker_identity.broker_event_id="CONFLICTING-EVENT";
-            conflicting.request_identity.idempotency_key="CONFLICTING-IDEMPOTENCY";
-            passed=conflicting.broker_identity.deal_ticket==deal.correlation.broker_identity.deal_ticket &&
-                    (conflicting.broker_identity.broker_event_id!=deal.correlation.broker_identity.broker_event_id ||
-                     conflicting.request_identity.idempotency_key!=deal.correlation.request_identity.idempotency_key);
+            SWV5_BasketStatistics current,next;
+            SWV5_TestMakeStatistics(current);
+            SWV5_TestMakeDedupEvidence(evidence,state,SWV5_STAT_IDENTITY_NEW);
+            evidence.correlation.broker_identity.broker_event_id="EVENT-0001";
+            deal.correlation=evidence.correlation;
+            passed=!implementation.AccumulateDeal(validation_context,deal,evidence,current,next);
             expected="identity_conflict";
             break;
          }
@@ -889,6 +1000,8 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
       SWV5_TestMakeIntent(intent);
       SWV5_RiskAuthorization authorization;
       SWV5_TestMakeRiskAuthorization(authorization);
+      SWV5_HardKillState current_hard_kill;
+      SWV5_TestMakeHardKill(current_hard_kill,SWV5_HARD_KILL_INACTIVE);
       SWV5_RestartReconciliationInput restart;
       SWV5_TestMakeRestartInput(restart);
       SWV5_PendingRequest pending;
@@ -917,7 +1030,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             SWV5_NormalizedUnits normalized;
              SWV5_UnitValidationResult unit_result;
              passed=execution_contract.ValidateIntent(context,intent,contract_decision) &&
-                    risk_contract.ValidateAuthorization(context,authorization,intent,contract_decision) &&
+                    risk_contract.ValidateAuthorization(context,authorization,intent,current_hard_kill,contract_decision) &&
                     SWV5_TestInterfaceRestart(persistence_contract,context,restart,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                     unit_contract.Normalize(context,specification,request,normalized,unit_result) &&
                     SWV5_TestInterfaceConfirmation(execution_contract,context,pending,transaction,confirmed,residual)==SWV5_CONFIRMATION_CONFIRMED;
@@ -931,35 +1044,51 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             expected="halt_reconcile_no_retry";
             break;
          case 3:
-            restart.persisted.pending_request_set.request_count=1;
+         {
+            SWV5_PersistedRequestEvidence pending_requests[];
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],1);
+            pending_requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
+            pending_requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+            pending_requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,pending_requests,30);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
-            restart.persisted.pending_request_set.request_set_digest="PENDING-SET";
-            restart.persisted.latest_pending_request.pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
-            passed=SWV5_TestInterfaceRestart(persistence_contract,context,restart,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
-            expected="restart_halted_no_blind_retry";
+            passed=SWV5_TestInterfaceRestart(persistence_contract,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
+                   readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
+            expected="uncertain_restart_reconciles_no_blind_retry";
             break;
+         }
          case 4:
-            restart.persisted.basket.lifecycle.state=SWV5_BASKET_CLOSING;
-            restart.persisted.basket.lifecycle.residual_volume=0.10;
-            restart.broker.residual_volume=0.10;
-            passed=restart.persisted.basket.lifecycle.residual_volume>0.0 &&
-                   restart.persisted.basket.lifecycle.state!=SWV5_BASKET_IDLE;
-            expected="residual_managed_not_idle";
+         {
+            SWV5_BasketAggregate basket;
+            SWV5_TestMakeAggregate(basket,SWV5_BASKET_CLOSING);
+            SWV5_CloseVerificationEvidence close_evidence;
+            SWV5_TestMakeCloseEvidence(basket,close_evidence);
+            close_evidence.broker_residual_volume=0.10;
+            close_evidence.broker_position_count=1;
+            passed=!basket_contract.ValidateCloseCompletion(context,basket,close_evidence,contract_decision) &&
+                   contract_decision.disposition==SWV5_DISPOSITION_DENY;
+            expected="residual_close_completion_denied";
             break;
+         }
          case 5:
             intent.symbol_specification_sequence=51;
-            passed=!risk_contract.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!risk_contract.ValidateAuthorization(context,authorization,intent,current_hard_kill,contract_decision);
             expected="renormalize_reevaluate";
             break;
          case 6:
          {
             SWV5_HardKillState hard_kill;
             SWV5_TestMakeHardKill(hard_kill,SWV5_HARD_KILL_ACTIVE);
-            SWV5_BasketLifecycleSnapshot basket;
-            SWV5_TestMakeLifecycle(basket,SWV5_BASKET_OPENING);
-            passed=basket.state==SWV5_BASKET_OPENING &&
-                   SWV5_TestRiskPrecheck(hard_kill,basket.ownership_fence,basket.ownership_fence)==SWV5_RISK_HARD_KILL;
-            expected="increase_stopped_reduce_only";
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            risk_input.hard_kill_state=hard_kill;
+            SWV5_RiskAuthorization denied;
+            passed=!risk_contract.Evaluate(context,risk_input,denied) &&
+                   denied.disposition==SWV5_RISK_RECONCILIATION_REQUIRED;
+            expected="hard_kill_blocks_risk_authorization";
             break;
          }
          case 7:
@@ -979,7 +1108,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             break;
          case 9:
             authorization.ownership_fence.takeover_generation++;
-            passed=!risk_contract.ValidateAuthorization(context,authorization,intent,contract_decision);
+            passed=!risk_contract.ValidateAuthorization(context,authorization,intent,current_hard_kill,contract_decision);
             expected="stale_owner_conflict";
             break;
          case 10:
@@ -994,15 +1123,26 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             break;
          }
          case 11:
+         {
             pending.state=SWV5_REQUEST_ACKNOWLEDGED;
-            restart.persisted.pending_request_set.request_count=1;
+            pending.lifecycle_phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+            SWV5_PersistedRequestEvidence pending_requests[];
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],1);
+            pending_requests[0].pending_request=pending;
+            pending_requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
+            pending_requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+            pending_requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,pending_requests,30);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
-            restart.persisted.pending_request_set.request_set_digest="PENDING-SET";
-            restart.persisted.latest_pending_request.pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
             passed=pending.cumulative_confirmed_volume==0.0 &&
-                   SWV5_TestInterfaceRestart(persistence_contract,context,restart,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
+                   SWV5_TestInterfaceRestart(persistence_contract,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
+                   readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="ack_not_confirmation";
             break;
+         }
          case 12:
          {
             SWV5_BasketAggregate basket;
@@ -1049,7 +1189,8 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             passed=basket_state.ValidateTransition(context,snapshot,request,result) &&
                    result.resulting_cumulative_recovery_attempts==snapshot.cumulative_recovery_attempts+1 &&
                    result.resulting_recovery_layer==snapshot.current_recovery_layer+1 &&
-                   result.resulting_state_version==snapshot.state_version+1;
+                   result.resulting_state_version==snapshot.state_version+1 && result.recovery_evidence_added &&
+                   result.resulting_accepted_recovery_evidence.accepted_identity_count==snapshot.accepted_recovery_evidence.accepted_identity_count+1;
             expected="recovery_increment_exposed";
             break;
          }
@@ -1071,10 +1212,19 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_ACTIVE);
             SWV5_BasketTransitionRequest request;
             SWV5_TestMakeTransition(snapshot,SWV5_BASKET_RECOVERY,request);
-            snapshot.accepted_recovery_evidence.canonical_event_index=request.recovery_evidence.evidence_identity+"|"+IntegerToString((long)request.recovery_evidence.evidence_sequence);
-            SWV5_BasketTransitionDecision result;
-            passed=!basket_state.ValidateTransition(context,snapshot,request,result);
-            expected="duplicate_recovery_evidence_rejected";
+            SWV5_BasketTransitionDecision first,replay;
+            const bool first_ok=basket_state.ValidateTransition(context,snapshot,request,first);
+            SWV5_BasketLifecycleSnapshot restored=snapshot;
+            restored.state=first.resulting_state;
+            restored.state_version=first.resulting_state_version;
+            restored.cumulative_recovery_attempts=first.resulting_cumulative_recovery_attempts;
+            restored.current_recovery_layer=first.resulting_recovery_layer;
+            restored.accepted_recovery_evidence=first.resulting_accepted_recovery_evidence;
+            passed=first_ok && basket_state.ValidateTransition(context,restored,request,replay) && replay.recovery_evidence_duplicate &&
+                   replay.resulting_state_version==restored.state_version &&
+                   replay.resulting_cumulative_recovery_attempts==restored.cumulative_recovery_attempts &&
+                   SWV5_TestEventIdentitySetEqual(replay.resulting_accepted_recovery_evidence,restored.accepted_recovery_evidence);
+            expected="duplicate_recovery_evidence_idempotent";
             break;
          }
          case 4:
@@ -1127,7 +1277,24 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             if(number==11) engineInput.projected.account_namespace.snapshot_epoch++;
             SWV5_RiskAuthorization authorization;
             const bool evaluated=risk.Evaluate(context,engineInput,authorization);
-            passed=(number==9 ? evaluated && authorization.risk_snapshot_epoch==77 : !evaluated && authorization.disposition==SWV5_RISK_RECONCILIATION_REQUIRED);
+            if(number==9)
+            {
+               passed=evaluated && risk.ValidateAuthorization(context,authorization,engineInput.intent,engineInput.hard_kill_state,decision) &&
+                      authorization.authorization_id==engineInput.intent.risk_authorization_id &&
+                      authorization.limits_contract_id==engineInput.limits.contract_id &&
+                      authorization.authorized_limits.contract_id==engineInput.limits.contract_id &&
+                      SWV5_TestAccountNamespaceEqual(authorization.account_namespace,engineInput.account_namespace,true) &&
+                      authorization.risk_snapshot_epoch==engineInput.account_namespace.snapshot_epoch &&
+                      authorization.risk_snapshot_sequence==engineInput.account_namespace.snapshot_sequence &&
+                      authorization.basket_state_version==engineInput.intent.expected_basket_version &&
+                      authorization.symbol_specification_sequence==engineInput.intent.symbol_specification_sequence &&
+                      authorization.authorized_volume==engineInput.intent.normalized_volume &&
+                      authorization.hard_kill_latch_generation==engineInput.hard_kill_state.latch_generation &&
+                      authorization.authorized_projected_loss==engineInput.projected.projected_maximum_loss &&
+                      SWV5_TestMonetaryBasisComplete(authorization.monetary_basis);
+            }
+            else
+               passed=!evaluated && authorization.disposition==SWV5_RISK_RECONCILIATION_REQUIRED;
             expected=(number==9 ? "coherent_account_epoch" : (number==10 ? "wrong_broker_rejected" : "mixed_epoch_rejected"));
             break;
          }
@@ -1146,8 +1313,10 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeIntent(intent);
             SWV5_RiskAuthorization authorization;
             SWV5_TestMakeRiskAuthorization(authorization);
+            SWV5_HardKillState hard_kill;
+            SWV5_TestMakeHardKill(hard_kill,SWV5_HARD_KILL_INACTIVE);
             authorization.account_mode=SWV5_ACCOUNT_MODE_NETTING;
-            passed=!risk.ValidateAuthorization(context,authorization,intent,decision);
+            passed=!risk.ValidateAuthorization(context,authorization,intent,hard_kill,decision);
             expected="mode_change_invalidates_authorization";
             break;
          }
@@ -1184,7 +1353,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             observed.expiry_clock_sequence=context.clock_sequence-1;
             SWV5_OwnershipClaim claim;
             SWV5_TestMakeClaim(claim,observed);
-            if(number==20) claim.takeover_evidence.observed_store_revision="STALE-REVISION";
+            if(number==20) claim.takeover_evidence.lease_expiry.observed_store_revision="STALE-NESTED-REVISION";
             if(number==21) claim.takeover_evidence.authority=SWV5_COMPONENT_AUTHORITY_EXECUTION;
             SWV5_OwnershipDecision result;
             const bool acquired=ownership.Acquire(context,claim,observed,result);
@@ -1214,21 +1383,38 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeTransaction(pending,evidence,(number==27 ? 0.04 : 0.10));
             if(number==24)
             {
-               pending.accepted_event_identities.canonical_event_index="EVENT-0001|400;EVENT-NEWER|500";
-               pending.accepted_event_identities.highest_transaction_sequence=500;
-               pending.cumulative_confirmed_volume=0.10;
-               pending.residual_requested_volume=0.0;
-               pending.state=SWV5_REQUEST_CONFIRMED;
+               evidence.confirmed_volume=0.04;
+               SWV5_ExecutionConfirmation first;
+               const bool first_ok=execution.AcceptTransactionEvidence(context,pending,evidence,first);
+               SWV5_TransactionEvidence newer;
+               SWV5_TestMakeTransaction(first.resulting_pending_request,newer,0.06);
+               newer.correlation.broker_identity.broker_event_id="EVENT-NEWER";
+               newer.correlation.broker_identity.transaction_sequence=500;
+               SWV5_ExecutionConfirmation second,replay;
+               const bool second_ok=execution.AcceptTransactionEvidence(context,first.resulting_pending_request,newer,second);
+               const bool replay_ok=execution.AcceptTransactionEvidence(context,second.resulting_pending_request,evidence,replay);
+               passed=first_ok && second_ok && replay_ok && replay.duplicate_event && !replay.event_identity_added &&
+                      SWV5_TestPendingRequestEqual(replay.resulting_pending_request,second.resulting_pending_request) &&
+                      replay.resulting_pending_request.accepted_event_identities.accepted_identity_count==2;
             }
-            if(number==25)
+            else if(number==25)
             {
-               pending.accepted_event_identities.canonical_event_index="EVENT-NEWER|500";
-               pending.accepted_event_identities.highest_transaction_sequence=500;
-               evidence.correlation.broker_identity.broker_event_id="EVENT-OLDER-UNSEEN";
-               evidence.correlation.broker_identity.transaction_sequence=499;
+               evidence.confirmed_volume=0.04;
+               evidence.correlation.broker_identity.broker_event_id="EVENT-NEWER";
+               evidence.correlation.broker_identity.transaction_sequence=500;
+               SWV5_ExecutionConfirmation first,second;
+               const bool first_ok=execution.AcceptTransactionEvidence(context,pending,evidence,first);
+               SWV5_TransactionEvidence older;
+               SWV5_TestMakeTransaction(first.resulting_pending_request,older,0.06);
+               older.correlation.broker_identity.broker_event_id="EVENT-OLDER-UNSEEN";
+               older.correlation.broker_identity.transaction_sequence=499;
+               const bool second_ok=execution.AcceptTransactionEvidence(context,first.resulting_pending_request,older,second);
+               passed=first_ok && second_ok && second.event_identity_added &&
+                      second.resulting_pending_request.state==SWV5_REQUEST_CONFIRMED &&
+                      second.resulting_pending_request.accepted_event_identities.accepted_identity_count==2 &&
+                      second.resulting_pending_request.accepted_event_identities.highest_transaction_sequence==500;
             }
-            double confirmed=0.0,residual=0.0;
-            if(number==26)
+            else if(number==26)
             {
                SWV5_ResultRetcodeClassification classification;
                execution.ClassifyResultRetcode(context,pending.latest_retcode,classification);
@@ -1236,10 +1422,11 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             }
             else
             {
-               const SWV5_ConfirmationStatus status=SWV5_TestInterfaceConfirmation(execution,context,pending,evidence,confirmed,residual);
-               if(number==24) passed=status==SWV5_CONFIRMATION_CONFIRMED && SWV5_TestNear(confirmed,0.10,context.volume_tolerance);
-               if(number==25) passed=status==SWV5_CONFIRMATION_CONFIRMED && SWV5_TestNear(confirmed,0.10,context.volume_tolerance);
-               if(number==27) passed=status==SWV5_CONFIRMATION_PARTIAL && SWV5_TestNear(residual,0.06,context.volume_tolerance);
+               SWV5_ExecutionConfirmation partial;
+               passed=execution.AcceptTransactionEvidence(context,pending,evidence,partial) &&
+                      partial.status==SWV5_CONFIRMATION_PARTIAL && partial.event_identity_added &&
+                      partial.resulting_pending_request.state==SWV5_REQUEST_PARTIALLY_CONFIRMED &&
+                      SWV5_TestNear(partial.resulting_pending_request.residual_requested_volume,0.06,context.volume_tolerance);
             }
             expected=(number==24 ? "replayed_A_after_B_is_duplicate" : (number==25 ? "out_of_order_unseen_accepted_once" : (number==26 ? "ack_not_confirmation" : "partial_fill_residual")));
             break;
@@ -1248,12 +1435,17 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
          {
             SWV5_RestartReconciliationInput restart;
             SWV5_TestMakeRestartInput(restart);
-            restart.persisted.pending_request_set.request_count=1;
+            SWV5_PersistedRequestEvidence pending_requests[];
+            ArrayResize(pending_requests,1);
+            SWV5_TestMakePersistedRequest(pending_requests[0],1);
+            pending_requests[0].account_mode=SWV5_ACCOUNT_MODE_NETTING;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,pending_requests,30);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
-            restart.persisted.pending_request_set.request_set_digest="PENDING-SET";
-            restart.persisted.latest_pending_request.account_mode=SWV5_ACCOUNT_MODE_NETTING;
             SWV5_RestartReadinessDisposition readiness;
-            passed=SWV5_TestInterfaceRestart(persistence,context,restart,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+                   readiness==SWV5_RESTART_HALTED;
             expected="persisted_mode_mismatch_rejected";
             break;
          }
@@ -1265,7 +1457,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeDeal(deal);
             SWV5_StatisticsDeduplicationEvidence evidence;
             SWV5_TestMakeDedupEvidence(evidence,current.deduplication,SWV5_STAT_IDENTITY_DUPLICATE);
-            evidence.correlation.broker_identity.transaction_sequence=400;
+            deal.correlation=evidence.correlation;
             SWV5_BasketStatistics next;
             passed=statistics.AccumulateDeal(context,deal,evidence,current,next) &&
                    SWV5_TestNear(next.authoritative_net_result,current.authoritative_net_result,context.price_tolerance) &&
@@ -1295,7 +1487,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_IDLE);
             SWV5_BasketInvariantReport report;
             passed=basket_state.ValidateState(context,snapshot,report) && report.status==SWV5_CONTRACT_VALID;
-            expected="basket_state_interface_invoked";
+            expected="valid_idle_state_reported";
             break;
          }
          case 32:
@@ -1307,8 +1499,9 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             policy.maximum_attempts=3;
             policy.disposition=SWV5_RETRY_AFTER_REVALIDATION;
             policy.earliest_retry_at=context.clock_time;
-            passed=execution.EvaluateRetry(context,pending,policy,decision);
-            expected="retry_interface_invoked";
+            passed=execution.EvaluateRetry(context,pending,policy,decision) &&
+                   decision.disposition==SWV5_DISPOSITION_ALLOW;
+            expected="retry_after_revalidation_allowed";
             break;
          }
          case 33:
@@ -1325,14 +1518,14 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
                SWV5_PersistedCheckpoint loaded;
                passed=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,result) &&
                       loaded.header.record_sequence==checkpoint.header.record_sequence;
-               expected="load_latest_interface_invoked";
+                expected="load_latest_restores_checkpoint";
             }
             else
             {
                SWV5_PersistedRequestEvidence loaded_requests[];
                passed=persistence.LoadPendingRequests(context,checkpoint.header.persistence_namespace,loaded_requests,result) &&
                       ArraySize(loaded_requests)==0;
-               expected="load_pending_interface_invoked";
+                expected="load_pending_restores_empty_set";
             }
             break;
          }
@@ -1342,16 +1535,18 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeCheckpoint(checkpoint);
             SWV5_PersistedRequestEvidence requests[];
             ArrayResize(requests,0);
-            passed=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,requests,checkpoint.pending_request_set,decision);
-            expected="save_pending_interface_invoked";
+            passed=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,requests,checkpoint.pending_request_set,decision) &&
+                   checkpoint.pending_request_set.request_count==0;
+            expected="save_empty_pending_set_succeeds";
             break;
          }
          case 36:
          {
             SWV5_PersistedCheckpoint checkpoint;
             SWV5_TestMakeCheckpoint(checkpoint);
-            passed=persistence.SaveCheckpoint(context,checkpoint,decision);
-            expected="save_checkpoint_interface_invoked";
+            passed=persistence.SaveCheckpoint(context,checkpoint,decision) &&
+                   decision.disposition==SWV5_DISPOSITION_ALLOW;
+            expected="valid_checkpoint_saved";
             break;
          }
          case 37:
@@ -1362,7 +1557,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             limits.maximum_snapshot_age_seconds=60;
             limits.maximum_cumulative_recovery_attempts=5;
             passed=risk.ValidateLimits(context,limits,decision);
-            expected="validate_limits_interface_invoked";
+            expected="minimal_valid_limits_accepted";
             break;
          }
          case 38:
@@ -1373,7 +1568,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeStatistics(current);
             SWV5_StatisticsValidationResult result;
             passed=statistics.Finalize(context,build_context,current,result) && result.validation_flags!=0;
-            expected="statistics_finalize_interface_invoked";
+            expected="complete_statistics_finalize_valid";
             break;
          }
          case 39:
@@ -1384,9 +1579,14 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_OwnershipClaim claim;
             SWV5_TestMakeClaim(claim,lease);
             SWV5_OwnershipConflict conflict;
-            passed=ownership.Heartbeat(context,lease,heartbeat) && ownership.DetectConflict(context,claim,lease,conflict) &&
-                   conflict.status==SWV5_LOCK_CONFLICT;
-            expected="heartbeat_conflict_interfaces_invoked";
+            passed=ownership.Heartbeat(context,lease,lease,heartbeat) &&
+                   heartbeat.resulting_lease.status==SWV5_LOCK_RENEWED &&
+                   heartbeat.resulting_lease.heartbeat_sequence==lease.heartbeat_sequence+1 &&
+                   heartbeat.resulting_lease.heartbeat_clock_sequence==context.clock_sequence &&
+                   heartbeat.resulting_lease.heartbeat_at==context.clock_time &&
+                   heartbeat.resulting_lease.expires_at>lease.expires_at &&
+                   ownership.DetectConflict(context,claim,lease,conflict) && conflict.status==SWV5_LOCK_CONFLICT;
+            expected="heartbeat_renews_and_conflict_detects";
             break;
          }
          case 40:
@@ -1395,7 +1595,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             SWV5_TestMakeLease(lease);
             SWV5_OwnershipDecision result;
             passed=ownership.Release(context,lease,lease,result) && result.resulting_lease.status==SWV5_LOCK_RELEASED;
-            expected="release_interface_invoked";
+            expected="matching_owner_release_transitions_state";
             break;
          }
       }
@@ -1424,7 +1624,8 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             ArrayResize(configured,1);
             SWV5_TestMakePersistedRequest(configured[0],1);
             SWV5_PersistedRequestEvidence expected_record=configured[0];
-            SWV5_TestMakeRequestSetHeader(checkpoint.pending_request_set,1,31);
+            SWV5_TestBindRequestSetHeader(checkpoint.pending_request_set,configured,31);
+            checkpoint.has_latest_pending_request=true;
             checkpoint.latest_pending_request=configured[0];
             persistence.Configure(checkpoint,configured);
             configured[0].pending_request.intent.request_identity.request_id.correlation_id="CALLER-MUTATED";
@@ -1440,7 +1641,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             ArrayResize(saved,1);
             SWV5_TestMakePersistedRequest(saved[0],2);
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,1,32);
+            SWV5_TestBindRequestSetHeader(header,saved,32);
             SWV5_PersistedRequestEvidence loaded[];
             ArrayResize(loaded,2);
             ArrayResize(loaded,0);
@@ -1456,7 +1657,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             ArrayResize(saved,3);
             for(int index=0;index<3;index++) SWV5_TestMakePersistedRequest(saved[index],index+3);
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,3,33);
+            SWV5_TestBindRequestSetHeader(header,saved,33);
             SWV5_PersistedRequestEvidence loaded[];
             bool ordered=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
                          persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==3;
@@ -1483,7 +1684,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             saved[0].pending_request.latest_authoritative_confirmation.confirmed_at=SWV5_TEST_TIME;
             SWV5_TestMakeEventIdentitySet(saved[0].pending_request.accepted_event_identities,true);
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,1,34);
+            SWV5_TestBindRequestSetHeader(header,saved,34);
             SWV5_PersistedRequestEvidence loaded[];
             passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
                    persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==1 &&
@@ -1504,7 +1705,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             saved[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
             saved[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,1,35);
+            SWV5_TestBindRequestSetHeader(header,saved,35);
             SWV5_PersistedRequestEvidence loaded[];
             passed=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
                    persistence.LoadPendingRequests(context,saved[0].persistence_namespace,loaded,result) && ArraySize(loaded)==1 &&
@@ -1521,7 +1722,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             ArrayResize(saved,1);
             SWV5_TestMakePersistedRequest(saved[0],8);
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,1,36);
+            SWV5_TestBindRequestSetHeader(header,saved,36);
             SWV5_PersistenceNamespace foreign=saved[0].persistence_namespace;
             foreign.ownership_namespace.server="FOREIGN-SERVER";
             SWV5_PersistedRequestEvidence loaded[];
@@ -1539,7 +1740,10 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             SWV5_PersistedRequestEvidence configured[];
             ArrayResize(configured,1);
             SWV5_TestMakePersistedRequest(configured[0],9);
-            SWV5_TestMakeRequestSetHeader(checkpoint.pending_request_set,2,37);
+            SWV5_TestBindRequestSetHeader(checkpoint.pending_request_set,configured,37);
+            checkpoint.pending_request_set.request_count=2;
+            checkpoint.has_latest_pending_request=true;
+            checkpoint.latest_pending_request=configured[0];
             persistence.Configure(checkpoint,configured);
             SWV5_PersistedRequestEvidence loaded[];
             const bool configured_rejected=!persistence.LoadPendingRequests(context,checkpoint.header.persistence_namespace,loaded,result) && ArraySize(loaded)==0;
@@ -1555,10 +1759,10 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             ArrayResize(saved,1);
             SWV5_TestMakePersistedRequest(saved[0],10);
             SWV5_PersistedRequestSetHeader missing_digest;
-            SWV5_TestMakeRequestSetHeader(missing_digest,1,38);
+            SWV5_TestBindRequestSetHeader(missing_digest,saved,38);
             missing_digest.request_set_digest="";
             SWV5_PersistedRequestSetHeader missing_revision;
-            SWV5_TestMakeRequestSetHeader(missing_revision,1,38);
+            SWV5_TestBindRequestSetHeader(missing_revision,saved,38);
             missing_revision.request_index_revision="";
             passed=!persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,missing_digest,decision) &&
                    !persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,missing_revision,decision);
@@ -1572,7 +1776,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             SWV5_TestMakePersistedRequest(saved[0],11);
             SWV5_TestMakePersistedRequest(saved[1],12);
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,2,39);
+            SWV5_TestBindRequestSetHeader(header,saved,39);
             SWV5_PersistedRequestEvidence first[];
             SWV5_PersistedRequestEvidence second[];
             bool same=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision) &&
@@ -1592,7 +1796,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             SWV5_TestMakePersistedRequest(saved[0],13);
             SWV5_PersistedRequestEvidence immutable=saved[0];
             SWV5_PersistedRequestSetHeader header;
-            SWV5_TestMakeRequestSetHeader(header,1,40);
+            SWV5_TestBindRequestSetHeader(header,saved,40);
             const bool stored=persistence.SavePendingRequests(context,saved[0].persistence_namespace,saved,header,decision);
             saved[0].pending_request.intent.request_identity.idempotency_key="MUTATED-AFTER-SAVE";
             saved[0].pending_request.cumulative_confirmed_volume=99.0;
@@ -1620,6 +1824,300 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
    }
 }
 
+void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=25;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_TestPersistenceContract persistence;
+      SWV5_TestRiskContract risk;
+      SWV5_TestBasketStateContract basket_state;
+      SWV5_TestExecutionContract execution;
+      SWV5_TestStatisticsContract statistics;
+      SWV5_TestOwnershipContract ownership;
+      bool passed=false;
+      string expected="semantic_fail_closed";
+      switch(number)
+      {
+         case 1:
+         {
+            SWV5_RestartReconciliationInput restart;
+            SWV5_TestMakeRestartInput(restart);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,0);
+            SWV5_RestartReadinessDisposition readiness;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_SAFE_TO_RESUME;
+            expected="complete_empty_set_safe";
+            break;
+         }
+         case 2:
+         {
+            SWV5_RestartReconciliationInput restart;
+            SWV5_TestMakeRestartInput(restart);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,2);
+            SWV5_TestMakePersistedRequest(requests[0],1);
+            SWV5_TestMakePersistedRequest(requests[1],2);
+            requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
+            requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+            requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=requests[1];
+            restart.broker.pending_request_count=2;
+            SWV5_RestartReadinessDisposition readiness;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
+            expected="multi_request_uncertain_reconcile";
+            break;
+         }
+         case 3:
+         {
+            SWV5_RestartReconciliationInput restart;
+            SWV5_TestMakeRestartInput(restart);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,1);
+            SWV5_TestMakePersistedRequest(requests[0],1);
+            requests[0].pending_request.state=SWV5_REQUEST_CONFIRMATION_PENDING;
+            requests[0].pending_request.retry_disposition=SWV5_RETRY_FORBIDDEN;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=requests[0];
+            restart.broker.pending_request_count=1;
+            SWV5_RestartReadinessDisposition readiness;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RETRY_FORBIDDEN;
+            expected="pending_retry_forbidden";
+            break;
+         }
+         case 4:
+         {
+            SWV5_RestartReconciliationInput restart;
+            SWV5_TestMakeRestartInput(restart);
+            SWV5_TestMakeHardKill(restart.persisted.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,0);
+            SWV5_RestartReadinessDisposition readiness;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_CLOSE_ONLY;
+            expected="hard_kill_close_only";
+            break;
+         }
+         case 5:
+         {
+            SWV5_RestartReconciliationInput restart;
+            SWV5_TestMakeRestartInput(restart);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,1);
+            SWV5_TestMakePersistedRequest(requests[0],1);
+            requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_PARTIAL_FILL;
+            requests[0].pending_request.state=SWV5_REQUEST_PARTIALLY_CONFIRMED;
+            requests[0].pending_request.cumulative_confirmed_volume=0.04;
+            requests[0].pending_request.residual_requested_volume=0.05;
+            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
+            restart.persisted.has_latest_pending_request=true;
+            restart.persisted.latest_pending_request=requests[0];
+            restart.broker.pending_request_count=1;
+            SWV5_RestartReadinessDisposition readiness;
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT && readiness==SWV5_RESTART_HALTED;
+            expected="partial_residual_mismatch_halts";
+            break;
+         }
+         case 6:
+         case 7:
+         case 8:
+         case 9:
+         {
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,2);
+            SWV5_TestMakePersistedRequest(requests[0],1);
+            SWV5_TestMakePersistedRequest(requests[1],2);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestBindRequestSetHeader(header,requests,50);
+            if(number==6) requests[1].pending_request.intent.normalized_stop_price-=1.0;
+            if(number==7) { SWV5_PersistedRequestEvidence swap=requests[0]; requests[0]=requests[1]; requests[1]=swap; }
+            if(number==8) header.request_index_revision="STALE-REVISION";
+            if(number==9) header.request_set_digest=SWV5_TestCanonicalHash("OTHER-PAYLOAD");
+            SWV5_ContractDecision decision;
+            passed=!persistence.SavePendingRequests(context,requests[0].persistence_namespace,requests,header,decision);
+            expected=(number==6 ? "nested_mutation_breaks_digest" : (number==7 ? "reorder_breaks_digest" : (number==8 ? "stale_revision_rejected" : "copied_digest_rejected")));
+            break;
+         }
+         case 10:
+         case 11:
+         {
+            SWV5_PersistedCheckpoint checkpoint;
+            SWV5_TestMakeCheckpoint(checkpoint);
+            SWV5_PersistedRequestEvidence empty[];
+            ArrayResize(empty,0);
+            persistence.Configure(checkpoint,empty);
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,2);
+            SWV5_TestMakePersistedRequest(requests[0],1);
+            SWV5_TestMakePersistedRequest(requests[1],2);
+            SWV5_PersistedRequestSetHeader header;
+            SWV5_TestBindRequestSetHeader(header,requests,50);
+            SWV5_ContractDecision decision;
+            bool stored=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,requests,header,decision);
+            if(number==11)
+            {
+               SWV5_PersistedRequestSetHeader empty_header;
+               SWV5_TestBindRequestSetHeader(empty_header,empty,51);
+               stored=stored && persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,empty,empty_header,decision);
+            }
+            SWV5_PersistedCheckpoint loaded;
+            SWV5_PersistenceLoadResult load_result;
+            const bool loaded_ok=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result);
+            if(number==10)
+               passed=stored && loaded_ok && loaded.has_latest_pending_request && loaded.pending_request_set.request_count==2 && SWV5_TestPersistedRequestEqual(loaded.latest_pending_request,requests[1]);
+            else
+               passed=stored && loaded_ok && !loaded.has_latest_pending_request && loaded.pending_request_set.request_count==0 && loaded.latest_pending_request.record_sequence==0;
+            expected=(number==10 ? "checkpoint_summary_tracks_last_record" : "empty_set_clears_latest_summary");
+            break;
+         }
+         case 12:
+         case 13:
+         case 14:
+         case 15:
+         {
+            SWV5_RiskEvaluationInput risk_input;
+            SWV5_TestMakeRiskInput(risk_input);
+            if(number==14) risk_input.hard_kill_state.account_namespace.server="FOREIGN-SERVER";
+            SWV5_RiskAuthorization authorization;
+            const bool evaluated=risk.Evaluate(context,risk_input,authorization);
+            SWV5_ContractDecision decision;
+            if(number==12)
+               passed=evaluated && risk.ValidateAuthorization(context,authorization,risk_input.intent,risk_input.hard_kill_state,decision) && authorization.authorization_id!="" && authorization.authorized_limits.contract_id==risk_input.limits.contract_id && authorization.authorized_projected_notional==risk_input.projected.projected_notional;
+            else if(number==13)
+            {
+               authorization.authorization_id="";
+               passed=evaluated && !risk.ValidateAuthorization(context,authorization,risk_input.intent,risk_input.hard_kill_state,decision);
+            }
+            else if(number==14)
+               passed=!evaluated && authorization.disposition==SWV5_RISK_RECONCILIATION_REQUIRED;
+            else
+            {
+               risk_input.hard_kill_state.latch_generation++;
+               passed=evaluated && !risk.ValidateAuthorization(context,authorization,risk_input.intent,risk_input.hard_kill_state,decision);
+            }
+            expected=(number==12 ? "complete_authorization_round_trip" : (number==13 ? "missing_authorization_field_rejected" : (number==14 ? "full_hard_kill_namespace_rejected" : "hard_kill_generation_invalidates")));
+            break;
+         }
+         case 16:
+         {
+            SWV5_BasketLifecycleSnapshot snapshot;
+            SWV5_TestMakeLifecycle(snapshot,SWV5_BASKET_ACTIVE);
+            SWV5_BasketTransitionRequest request;
+            SWV5_TestMakeTransition(snapshot,SWV5_BASKET_RECOVERY,request);
+            SWV5_BasketTransitionDecision first,replay;
+            const bool first_ok=basket_state.ValidateTransition(context,snapshot,request,first);
+            snapshot.state=first.resulting_state;
+            snapshot.state_version=first.resulting_state_version;
+            snapshot.cumulative_recovery_attempts=first.resulting_cumulative_recovery_attempts;
+            snapshot.current_recovery_layer=first.resulting_recovery_layer;
+            snapshot.accepted_recovery_evidence=first.resulting_accepted_recovery_evidence;
+            passed=first_ok && first.recovery_evidence_added && basket_state.ValidateTransition(context,snapshot,request,replay) && replay.recovery_evidence_duplicate && replay.resulting_cumulative_recovery_attempts==snapshot.cumulative_recovery_attempts;
+            expected="recovery_add_once_replay_stable";
+            break;
+         }
+         case 17:
+         case 18:
+         {
+            SWV5_PendingRequest pending;
+            SWV5_TestMakePending(pending);
+            SWV5_TransactionEvidence first_event;
+            SWV5_TestMakeTransaction(pending,first_event,0.04);
+            SWV5_ExecutionConfirmation first;
+            const bool first_ok=execution.AcceptTransactionEvidence(context,pending,first_event,first);
+            SWV5_TransactionEvidence second_event;
+            SWV5_TestMakeTransaction(first.resulting_pending_request,second_event,0.06);
+            second_event.correlation.broker_identity.transaction_sequence=401;
+            second_event.correlation.broker_identity.broker_event_id=(number==18 ? first_event.correlation.broker_identity.broker_event_id : "EVENT-0002");
+            SWV5_ExecutionConfirmation second;
+            const bool second_ok=execution.AcceptTransactionEvidence(context,first.resulting_pending_request,second_event,second);
+            if(number==17)
+            {
+               SWV5_ExecutionConfirmation replay;
+               const bool replay_ok=execution.AcceptTransactionEvidence(context,second.resulting_pending_request,first_event,replay);
+               passed=first_ok && second_ok && replay_ok && replay.duplicate_event && replay.resulting_pending_request.accepted_event_identities.accepted_identity_count==2 && replay.resulting_pending_request.cumulative_confirmed_volume==0.10;
+            }
+            else
+               passed=first_ok && !second_ok && second.status==SWV5_CONFIRMATION_CONFLICT;
+            expected=(number==17 ? "execution_add_two_replay_first_stable" : "reused_event_identity_conflict");
+            break;
+         }
+         case 19:
+         case 20:
+         {
+            SWV5_BasketStatistics current;
+            SWV5_TestMakeStatistics(current);
+            SWV5_AuthoritativeDeal deal;
+            SWV5_TestMakeDeal(deal);
+            SWV5_StatisticsDeduplicationEvidence evidence;
+            SWV5_TestMakeDedupEvidence(evidence,current.deduplication,number==20 ? SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW : SWV5_STAT_IDENTITY_NEW);
+            if(number==20)
+            {
+               evidence.correlation.broker_identity.transaction_sequence=398;
+               evidence.correlation.broker_identity.broker_event_id="OUT-OF-ORDER-398";
+            }
+            deal.correlation=evidence.correlation;
+            SWV5_BasketStatistics first;
+            const bool first_ok=statistics.AccumulateDeal(context,deal,evidence,current,first);
+            if(number==19)
+            {
+               SWV5_StatisticsDeduplicationEvidence duplicate=evidence;
+               duplicate.prior_identity_index_revision=first.deduplication.identities.index_revision;
+               duplicate.disposition=SWV5_STAT_IDENTITY_DUPLICATE;
+               duplicate.membership_proof="MEMBERSHIP-PROOF";
+               SWV5_BasketStatistics replay;
+               const bool replay_ok=statistics.AccumulateDeal(context,deal,duplicate,first,replay);
+               passed=first_ok && replay_ok && replay.authoritative_net_result==first.authoritative_net_result && replay.deal_count==first.deal_count && replay.deduplication.duplicate_deal_count==first.deduplication.duplicate_deal_count+1;
+            }
+            else
+               passed=first_ok && first.deduplication.identities.highest_transaction_sequence==current.deduplication.identities.highest_transaction_sequence && first.deduplication.identities.accepted_identity_count==current.deduplication.identities.accepted_identity_count+1;
+            expected=(number==19 ? "statistics_first_then_duplicate_no_double_money" : "statistics_out_of_order_unique_once");
+            break;
+         }
+         case 21:
+         case 22:
+         {
+            SWV5_InstanceLease observed;
+            SWV5_TestMakeLease(observed);
+            SWV5_InstanceLease caller=observed;
+            if(number==22) caller.fence.store_revision="STALE-REVISION";
+            SWV5_OwnershipDecision result;
+            const bool renewed=ownership.Heartbeat(context,caller,observed,result);
+            if(number==21)
+               passed=renewed && result.resulting_lease.heartbeat_sequence==observed.heartbeat_sequence+1 && result.resulting_lease.heartbeat_clock_sequence==context.clock_sequence && result.resulting_lease.expires_at>observed.expires_at && SWV5_TestFenceEqual(result.resulting_lease.fence,observed.fence);
+            else
+               passed=!renewed && result.resulting_lease.heartbeat_sequence==observed.heartbeat_sequence;
+            expected=(number==21 ? "heartbeat_monotonic_renewal" : "stale_heartbeat_rejected");
+            break;
+         }
+         case 23:
+         case 24:
+         case 25:
+         {
+            SWV5_InstanceLease observed;
+            SWV5_TestMakeLease(observed,SWV5_LOCK_EXPIRED);
+            observed.expires_at=context.clock_time-1;
+            observed.expiry_clock_sequence=context.clock_sequence-1;
+            SWV5_OwnershipClaim claim;
+            SWV5_TestMakeClaim(claim,observed);
+            if(number==23) claim.takeover_evidence.lease_expiry.observed_heartbeat_sequence++;
+            if(number==25) claim.claimant.key.server="FOREIGN-SERVER";
+            SWV5_OwnershipDecision first,second;
+            const bool first_ok=ownership.Acquire(context,claim,observed,first);
+            if(number==24)
+               passed=first_ok && !ownership.Acquire(context,claim,first.resulting_lease,second);
+            else
+               passed=!first_ok;
+            expected=(number==23 ? "nested_expiry_mismatch_rejected" : (number==24 ? "duplicate_takeover_rejected" : "foreign_namespace_takeover_rejected"));
+            break;
+         }
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S44",number),"SPRINT4_4_SEMANTIC",passed,expected);
+   }
+}
+
 void SWV5_RunContractSuite(SWV5_TestCollector &collector)
 {
    SWV5_RunCommonTests(collector);
@@ -1634,6 +2132,7 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunCrossDomainTests(collector);
    SWV5_RunInterfaceCorrectionTests(collector);
    SWV5_RunPersistenceRoundTripTests(collector);
+   SWV5_RunSprint44SemanticTests(collector);
 }
 
 bool SWV5_RunContractVerification()
@@ -1647,7 +2146,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==213;
+   const bool complete=first.Total()==238 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),

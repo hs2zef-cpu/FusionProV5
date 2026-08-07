@@ -16,6 +16,10 @@ Persistence is addressed by `SWV5_PersistenceNamespace`: broker/server, account,
 
 Takeover requires typed, versioned lease-expiry, broker-reconciliation, and persistence-reconciliation evidence; the observed lease version and store revision; an independent authority source; and a new monotonic takeover generation. Self-attested reconciliation booleans are not evidence. Writes from a non-owner or stale store revision are rejected.
 
+The typed expiry evidence must repeat and exactly match the observed ownership key, lease version, store revision, heartbeat sequence, clock identity and authority, expiry timestamp, and expiry clock sequence. Heartbeat returns a renewed lease with a monotonic heartbeat sequence, authoritative heartbeat clock sequence/time, and extended expiry while preserving the owner and fence.
+
+Restart reconciliation consumes the complete ordered persisted-request array. `latest_pending_request` is only an optional summary of the last ordered record and is never a replacement for the set. Request-set digest and revision are computed from canonical serialization of every record, including nested fields, record order, record sequence, count, and namespace. The empty set has a deterministic digest and revision and clears the summary.
+
 Sprint 4.1 does not select or implement a physical store.
 
 ## Consequences

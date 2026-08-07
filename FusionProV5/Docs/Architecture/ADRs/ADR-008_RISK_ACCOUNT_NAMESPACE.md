@@ -12,6 +12,8 @@ All Risk inputs and authorizations bind one canonical account namespace: broker 
 
 Account, exposure, Basket, projected, equity/daily-loss, and Hard Kill evidence must share that namespace and epoch. Different per-domain sequences are permitted only inside the same epoch and authoritative namespace. The same login on another broker or server, an unknown/changing position mode, or a mixed epoch fails closed.
 
+Successful evaluation returns a fully bound authorization, including the limits DTO/version, request and ownership identities, Basket and symbol-specification versions, normalized execution terms, account snapshot sequence, projected loss/notional/margin, monetary conversion basis, and Hard Kill latch ID/generation. Validation compares the current complete Hard Kill namespace and generation, not the epoch alone. If any required output cannot be populated coherently, evaluation fails closed.
+
 ## Consequences
 
 - Login alone is never an account identity.

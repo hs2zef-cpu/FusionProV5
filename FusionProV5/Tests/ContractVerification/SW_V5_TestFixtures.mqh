@@ -10,6 +10,8 @@
 
 const datetime SWV5_TEST_TIME=D'2026.08.05 12:00:00';
 
+string SWV5_TestCanonicalHash(const string value);
+
 void SWV5_TestMakeVersion(SWV5_ContractVersion &version)
 {
    version.contract_name="SWV5-PRODUCTION";
@@ -123,11 +125,15 @@ void SWV5_TestMakeEventIdentitySet(SWV5_DurableEventIdentitySet &set,const bool 
 {
    SWV5_TestMakeVersion(set.contract_version);
    set.canonical_event_index=(populated ? "EVENT-0001|400" : "");
-   set.identity_set_digest=(populated ? "EVENT-SET-DIGEST-1" : "EMPTY-EVENT-SET-DIGEST");
    set.accepted_identity_count=(populated ? 1 : 0);
    set.highest_transaction_sequence=(populated ? 400 : 0);
    set.index_revision=(populated ? 1 : 0);
    set.compaction_generation=1;
+   set.identity_set_digest=SWV5_TestCanonicalHash("SWV5-EVENT-SET-V3|"+set.canonical_event_index+"|"+
+                                                  IntegerToString((long)set.accepted_identity_count)+"|"+
+                                                  IntegerToString((long)set.highest_transaction_sequence)+"|"+
+                                                  IntegerToString((long)set.index_revision)+"|"+
+                                                  IntegerToString((long)set.compaction_generation));
 }
 
 void SWV5_TestMakeQueries(SWV5_AuthoritativeQuerySet &queries,const ulong required_flags)
@@ -381,6 +387,10 @@ void SWV5_TestMakeRiskAuthorization(SWV5_RiskAuthorization &authorization)
    SWV5_TestMakeVersion(authorization.contract_version);
    authorization.authorization_id="RISK-AUTH-0001";
    authorization.limits_contract_id="RISK-LIMITS-V1";
+   SWV5_TestMakeVersion(authorization.authorized_limits.contract_version);
+   authorization.authorized_limits.contract_id=authorization.limits_contract_id;
+   authorization.authorized_limits.maximum_snapshot_age_seconds=60;
+   authorization.authorized_limits.maximum_cumulative_recovery_attempts=5;
    SWV5_TestMakeRequestIdentity(authorization.request_identity);
    SWV5_TestMakeNamespace(authorization.persistence_namespace);
    SWV5_TestMakeFence(authorization.ownership_fence);
@@ -398,6 +408,10 @@ void SWV5_TestMakeRiskAuthorization(SWV5_RiskAuthorization &authorization)
    authorization.authorized_stop_price=2390.0;
    authorization.authorized_limit_price=2420.0;
    authorization.risk_snapshot_epoch=77;
+   authorization.risk_snapshot_sequence=101;
+   authorization.authorized_projected_loss=125.0;
+   authorization.authorized_projected_notional=240.0;
+   authorization.authorized_projected_margin=24.0;
    authorization.hard_kill_latch_id="HARD-KILL-0001";
    authorization.hard_kill_latch_generation=4;
    SWV5_TestMakeMonetaryBasis(authorization.monetary_basis);
@@ -414,23 +428,50 @@ void SWV5_TestMakeRiskInput(SWV5_RiskEvaluationInput &engineInput)
    engineInput.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
    SWV5_TestMakeVersion(engineInput.limits.contract_version);
    engineInput.limits.contract_id="RISK-LIMITS-V3";
+   engineInput.limits.minimum_equity=9000.0;
+   engineInput.limits.maximum_daily_net_loss=500.0;
+   engineInput.limits.maximum_account_margin_fraction=0.50;
+   engineInput.limits.maximum_basket_loss=300.0;
+   engineInput.limits.maximum_basket_volume=1.0;
+   engineInput.limits.maximum_symbol_volume=2.0;
+   engineInput.limits.maximum_aggregate_volume=5.0;
+   engineInput.limits.maximum_aggregate_notional=100000.0;
+   engineInput.limits.maximum_live_baskets=10;
    engineInput.limits.maximum_snapshot_age_seconds=60;
    engineInput.limits.maximum_cumulative_recovery_attempts=5;
    SWV5_TestMakeVersion(engineInput.account.contract_version);
    engineInput.account.account_namespace=engineInput.account_namespace;
    engineInput.account.balance=10000.0;
    engineInput.account.equity=10000.0;
+   engineInput.account.margin=100.0;
+   engineInput.account.free_margin=9900.0;
+   engineInput.account.daily_realized_net=0.0;
+   engineInput.account.daily_unrealized_net=0.0;
+   engineInput.account.trading_day_start=SWV5_TEST_TIME-3600;
+   engineInput.account.observed_at=SWV5_TEST_TIME;
    engineInput.account.authoritative=true;
    SWV5_TestMakeVersion(engineInput.exposure.contract_version);
    engineInput.exposure.account_namespace=engineInput.account_namespace;
    engineInput.exposure.symbol="XAUUSD.TEST";
+   engineInput.exposure.aggregate_volume=0.30;
+   engineInput.exposure.aggregate_notional=720.0;
+   engineInput.exposure.observed_at=SWV5_TEST_TIME;
    engineInput.exposure.complete=true;
    SWV5_TestMakeVersion(engineInput.basket.contract_version);
    engineInput.basket.account_namespace=engineInput.account_namespace;
    SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_ACTIVE);
+   engineInput.basket.observed_at=SWV5_TEST_TIME;
    SWV5_TestMakeVersion(engineInput.projected.contract_version);
    engineInput.projected.account_namespace=engineInput.account_namespace;
    engineInput.projected.symbol="XAUUSD.TEST";
+   engineInput.projected.projected_volume=0.10;
+   engineInput.projected.projected_symbol_volume=0.40;
+   engineInput.projected.projected_aggregate_volume=0.40;
+   engineInput.projected.projected_notional=240.0;
+   engineInput.projected.projected_margin=24.0;
+   engineInput.projected.projected_maximum_loss=125.0;
+   SWV5_TestMakeMonetaryBasis(engineInput.projected.monetary_basis);
+   engineInput.projected.calculated_at=SWV5_TEST_TIME;
    engineInput.projected.complete=true;
    engineInput.ownership_fence=engineInput.intent.ownership_fence;
    SWV5_TestMakeHardKill(engineInput.hard_kill_state,SWV5_HARD_KILL_INACTIVE);
@@ -547,12 +588,15 @@ void SWV5_TestMakeClaim(SWV5_OwnershipClaim &claim,const SWV5_InstanceLease &obs
    SWV5_TestMakeTypedReconciliation(claim.takeover_evidence.broker_reconciliation,"BROKER-RECON-1",SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER);
    SWV5_TestMakeTypedReconciliation(claim.takeover_evidence.persistence_reconciliation,"STORE-RECON-1",SWV5_COMPONENT_AUTHORITY_PERSISTENCE);
    SWV5_TestMakeVersion(claim.takeover_evidence.lease_expiry.contract_version);
+   claim.takeover_evidence.lease_expiry.observed_ownership_key=observed.fence.ownership_namespace;
    claim.takeover_evidence.lease_expiry.clock_id="TEST-CLOCK-1";
    claim.takeover_evidence.lease_expiry.clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
    claim.takeover_evidence.lease_expiry.observed_clock_sequence=1200;
    claim.takeover_evidence.lease_expiry.observed_at=SWV5_TEST_TIME;
    claim.takeover_evidence.lease_expiry.observed_lease_version=observed.fence.lease_version;
+   claim.takeover_evidence.lease_expiry.observed_heartbeat_sequence=observed.heartbeat_sequence;
    claim.takeover_evidence.lease_expiry.observed_store_revision=observed.fence.store_revision;
+   claim.takeover_evidence.lease_expiry.observed_expiry_time=observed.expires_at;
    claim.takeover_evidence.lease_expiry.expired=true;
    claim.takeover_evidence.observed_lease_version=observed.fence.lease_version;
    claim.takeover_evidence.observed_store_revision=observed.fence.store_revision;
@@ -635,14 +679,165 @@ void SWV5_TestMakePersistedRequest(SWV5_PersistedRequestEvidence &record,const i
    record.recorded_at=SWV5_TEST_TIME+ordinal;
 }
 
+string SWV5_TestCanonicalHash(const string value)
+{
+   ulong hash=1469598103934665603;
+   for(int index=0;index<StringLen(value);index++)
+   {
+      hash^=(ulong)StringGetCharacter(value,index);
+      hash*=1099511628211;
+   }
+   return StringFormat("%I64u",hash);
+}
+
+string SWV5_TestCanonicalVersion(const SWV5_ContractVersion &value)
+{
+   return value.contract_name+"|"+IntegerToString((long)value.schema_version)+"|"+
+          IntegerToString((long)value.minimum_compatible_version)+"|"+value.policy_id;
+}
+
+string SWV5_TestCanonicalOwnershipKey(const SWV5_OwnershipKey &value)
+{
+   return IntegerToString(value.account_login)+"|"+value.broker_identity+"|"+value.server+"|"+
+          value.symbol+"|"+value.strategy_id+"|"+IntegerToString((long)value.magic);
+}
+
+string SWV5_TestCanonicalOwner(const SWV5_OwnerIdentity &value)
+{
+   return SWV5_TestCanonicalOwnershipKey(value.key)+"|"+value.instance_id+"|"+
+          value.process_fingerprint+"|"+IntegerToString((long)value.started_at);
+}
+
+string SWV5_TestCanonicalFence(const SWV5_OwnershipFence &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+SWV5_TestCanonicalOwnershipKey(value.ownership_namespace)+"|"+
+          SWV5_TestCanonicalOwner(value.owner)+"|"+IntegerToString((long)value.lease_version)+"|"+
+          IntegerToString((long)value.takeover_generation)+"|"+value.fencing_token_digest+"|"+value.store_revision;
+}
+
+string SWV5_TestCanonicalNamespace(const SWV5_PersistenceNamespace &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+SWV5_TestCanonicalOwnershipKey(value.ownership_namespace)+"|"+value.basket_id.value;
+}
+
+string SWV5_TestCanonicalRequestIdentity(const SWV5_ExecutionRequestIdentity &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+value.request_id.correlation_id+"|"+
+          value.request_id.attempt_id+"|"+value.request_id.parent_attempt_id+"|"+
+          IntegerToString((long)value.request_id.monotonic_sequence)+"|"+IntegerToString((long)value.request_id.created_at)+"|"+
+          value.idempotency_key;
+}
+
+string SWV5_TestCanonicalBrokerIdentity(const SWV5_BrokerExecutionIdentity &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+IntegerToString((long)value.order_ticket)+"|"+
+          IntegerToString((long)value.deal_ticket)+"|"+IntegerToString((long)value.position_identifier)+"|"+
+          value.broker_event_id+"|"+IntegerToString((long)value.transaction_sequence);
+}
+
+string SWV5_TestCanonicalCorrelation(const SWV5_ExecutionCorrelation &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+IntegerToString((long)value.phase)+"|"+
+          SWV5_TestCanonicalRequestIdentity(value.request_identity)+"|"+SWV5_TestCanonicalBrokerIdentity(value.broker_identity);
+}
+
+string SWV5_TestCanonicalDecision(const SWV5_ContractDecision &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+IntegerToString((long)value.disposition)+"|"+
+          IntegerToString((long)value.reason_flags)+"|"+value.reason_code+"|"+value.reason_text+"|"+
+          IntegerToString((long)value.evaluated_schema_version)+"|"+IntegerToString((long)value.evaluation_sequence)+"|"+
+          IntegerToString((long)value.evaluated_at);
+}
+
+string SWV5_TestCanonicalIntent(const SWV5_ExecutionIntent &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+SWV5_TestCanonicalNamespace(value.persistence_namespace)+"|"+
+          SWV5_TestCanonicalFence(value.ownership_fence)+"|"+SWV5_TestCanonicalRequestIdentity(value.request_identity)+"|"+
+          IntegerToString((long)value.account_mode)+"|"+IntegerToString((long)value.intent_type)+"|"+IntegerToString(value.direction)+"|"+
+          DoubleToString(value.normalized_volume,8)+"|"+DoubleToString(value.normalized_price,8)+"|"+
+          DoubleToString(value.normalized_stop_price,8)+"|"+DoubleToString(value.normalized_limit_price,8)+"|"+
+          IntegerToString((long)value.symbol_specification_sequence)+"|"+IntegerToString((long)value.expected_basket_version)+"|"+
+          value.risk_authorization_id+"|"+IntegerToString((long)value.authorization_expires_at);
+}
+
+string SWV5_TestCanonicalEventSet(const SWV5_DurableEventIdentitySet &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+value.canonical_event_index+"|"+value.identity_set_digest+"|"+
+          IntegerToString((long)value.accepted_identity_count)+"|"+IntegerToString((long)value.highest_transaction_sequence)+"|"+
+          IntegerToString((long)value.index_revision)+"|"+IntegerToString((long)value.compaction_generation);
+}
+
+string SWV5_TestCanonicalPending(const SWV5_PendingRequest &value)
+{
+   string text=SWV5_TestCanonicalVersion(value.contract_version)+"|"+SWV5_TestCanonicalIntent(value.intent)+"|"+
+               IntegerToString((long)value.account_mode)+"|"+IntegerToString((long)value.lifecycle_phase)+"|"+
+               IntegerToString((long)value.state)+"|"+IntegerToString((long)value.submission_attempt_count);
+   text+="|"+SWV5_TestCanonicalVersion(value.latest_submission.contract_version)+"|"+
+         SWV5_TestCanonicalRequestIdentity(value.latest_submission.request_identity)+"|"+
+         IntegerToString((long)value.latest_submission.submission_attempt_count)+"|"+
+         IntegerToString((long)value.latest_submission.submitted_at)+"|"+IntegerToString((long)value.latest_submission.authority);
+   text+="|"+SWV5_TestCanonicalVersion(value.latest_retcode.contract_version)+"|"+
+         SWV5_TestCanonicalNamespace(value.latest_retcode.persistence_namespace)+"|"+SWV5_TestCanonicalFence(value.latest_retcode.ownership_fence)+"|"+
+         SWV5_TestCanonicalCorrelation(value.latest_retcode.correlation)+"|"+IntegerToString((long)value.latest_retcode.raw_retcode)+"|"+
+         value.latest_retcode.broker_comment+"|"+IntegerToString((long)value.latest_retcode.observed_at);
+   text+="|"+SWV5_TestCanonicalVersion(value.latest_retcode_classification.contract_version)+"|"+
+         IntegerToString((long)value.latest_retcode_classification.classification)+"|"+
+         IntegerToString((long)value.latest_retcode_classification.retry_disposition)+"|"+
+         value.latest_retcode_classification.mapping_policy_id+"|"+SWV5_TestCanonicalDecision(value.latest_retcode_classification.decision);
+   text+="|"+SWV5_TestCanonicalVersion(value.latest_authoritative_confirmation.contract_version)+"|"+
+         SWV5_TestCanonicalCorrelation(value.latest_authoritative_confirmation.correlation)+"|"+
+         IntegerToString((long)value.latest_authoritative_confirmation.status)+"|"+
+         DoubleToString(value.latest_authoritative_confirmation.cumulative_confirmed_volume,8)+"|"+
+         DoubleToString(value.latest_authoritative_confirmation.residual_volume,8)+"|"+
+         IntegerToString((long)value.latest_authoritative_confirmation.authority)+"|"+
+         IntegerToString((long)value.latest_authoritative_confirmation.confirmation_sequence)+"|"+
+         IntegerToString((long)value.latest_authoritative_confirmation.confirmed_at);
+   text+="|"+DoubleToString(value.cumulative_confirmed_volume,8)+"|"+DoubleToString(value.residual_requested_volume,8)+"|"+
+         SWV5_TestCanonicalEventSet(value.accepted_event_identities)+"|"+IntegerToString((long)value.retry_disposition)+"|"+
+         value.authorization_identity+"|"+value.normalization_identity+"|"+IntegerToString((long)value.last_changed_at);
+   return text;
+}
+
+string SWV5_TestCanonicalPersistedRequest(const SWV5_PersistedRequestEvidence &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+"|"+SWV5_TestCanonicalNamespace(value.persistence_namespace)+"|"+
+          SWV5_TestCanonicalFence(value.ownership_fence)+"|"+SWV5_TestCanonicalPending(value.pending_request)+"|"+
+          IntegerToString((long)value.account_mode)+"|"+IntegerToString((long)value.record_sequence)+"|"+
+          IntegerToString((long)value.recorded_at);
+}
+
+string SWV5_TestRequestSetDigest(const SWV5_PersistedRequestEvidence &requests[])
+{
+   string canonical="SWV5-PERSISTED-REQUEST-SET-V3|"+IntegerToString(ArraySize(requests));
+   for(int index=0;index<ArraySize(requests);index++)
+      canonical+="|"+IntegerToString(index)+"|"+SWV5_TestCanonicalPersistedRequest(requests[index]);
+   return SWV5_TestCanonicalHash(canonical);
+}
+
+string SWV5_TestRequestSetRevision(const SWV5_PersistedRequestEvidence &requests[],const ulong record_sequence)
+{
+   return SWV5_TestCanonicalHash("SWV5-REQUEST-INDEX-V3|"+IntegerToString((long)record_sequence)+"|"+SWV5_TestRequestSetDigest(requests));
+}
+
+void SWV5_TestBindRequestSetHeader(SWV5_PersistedRequestSetHeader &header,
+                                   const SWV5_PersistedRequestEvidence &requests[],
+                                   const ulong record_sequence)
+{
+   SWV5_TestMakeVersion(header.contract_version);
+   header.request_count=(uint)ArraySize(requests);
+   header.request_set_digest=SWV5_TestRequestSetDigest(requests);
+   header.request_index_revision=SWV5_TestRequestSetRevision(requests,record_sequence);
+   header.record_sequence=record_sequence;
+}
+
 void SWV5_TestMakeRequestSetHeader(SWV5_PersistedRequestSetHeader &header,
                                    const uint request_count,
                                    const ulong record_sequence=30)
 {
    SWV5_TestMakeVersion(header.contract_version);
    header.request_count=request_count;
-   header.request_set_digest=StringFormat("REQUEST-SET-DIGEST-%u-%I64u",request_count,record_sequence);
-   header.request_index_revision=StringFormat("REQUEST-INDEX-%I64u",record_sequence);
+   header.request_set_digest="UNBOUND-REQUEST-SET-DIGEST";
+   header.request_index_revision="UNBOUND-REQUEST-INDEX-REVISION";
    header.record_sequence=record_sequence;
 }
 
@@ -676,11 +871,10 @@ void SWV5_TestMakeCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
    checkpoint.header.written_at=SWV5_TEST_TIME-10;
    SWV5_TestMakeAggregate(checkpoint.basket,SWV5_BASKET_ACTIVE);
    SWV5_TestMakeCorrelation(checkpoint.last_confirmed_correlation);
-   SWV5_TestMakeVersion(checkpoint.pending_request_set.contract_version);
-   checkpoint.pending_request_set.request_count=0;
-   checkpoint.pending_request_set.request_set_digest="EMPTY-SET-DIGEST";
-   checkpoint.pending_request_set.request_index_revision="REQUEST-INDEX-20";
-   checkpoint.pending_request_set.record_sequence=20;
+   SWV5_PersistedRequestEvidence empty_requests[];
+   ArrayResize(empty_requests,0);
+   SWV5_TestBindRequestSetHeader(checkpoint.pending_request_set,empty_requests,20);
+   checkpoint.has_latest_pending_request=false;
    SWV5_TestMakeVersion(checkpoint.latest_pending_request.contract_version);
    checkpoint.latest_pending_request.persistence_namespace=checkpoint.header.persistence_namespace;
    checkpoint.latest_pending_request.ownership_fence=checkpoint.header.ownership_fence;
@@ -735,11 +929,11 @@ void SWV5_TestMakeDedupState(SWV5_StatisticsDeduplicationState &state)
    SWV5_TestMakeVersion(state.contract_version);
    SWV5_TestMakeEventIdentitySet(state.identities,true);
    state.identities.canonical_event_index="EVENT-0001|400;EVENT-0002|399";
-   state.identities.identity_set_digest="SET-DIGEST-10";
-   state.identities.accepted_identity_count=10;
+   state.identities.accepted_identity_count=2;
    state.identities.highest_transaction_sequence=400;
-   state.identities.index_revision=10;
-   state.unique_deal_count=10;
+   state.identities.index_revision=2;
+   state.identities.identity_set_digest=SWV5_TestCanonicalHash("SWV5-EVENT-SET-V3|"+state.identities.canonical_event_index+"|2|400|2|1");
+   state.unique_deal_count=2;
    state.duplicate_deal_count=1;
 }
 
@@ -748,7 +942,9 @@ void SWV5_TestMakeDedupEvidence(SWV5_StatisticsDeduplicationEvidence &evidence,
                                 const SWV5_StatisticsIdentityDisposition disposition)
 {
    SWV5_TestMakeVersion(evidence.contract_version);
-   SWV5_TestMakeCorrelation(evidence.correlation,state.identities.highest_transaction_sequence+1);
+   const ulong sequence=(disposition==SWV5_STAT_IDENTITY_DUPLICATE ? 400 : state.identities.highest_transaction_sequence+1);
+   SWV5_TestMakeCorrelation(evidence.correlation,sequence);
+   evidence.correlation.broker_identity.broker_event_id=(disposition==SWV5_STAT_IDENTITY_DUPLICATE ? "EVENT-0001" : "EVENT-NEW-"+IntegerToString((long)sequence));
    evidence.prior_identity_index_revision=state.identities.index_revision;
    evidence.membership_proof=(disposition==SWV5_STAT_IDENTITY_DUPLICATE ? "MEMBERSHIP-PROOF" : "");
    evidence.disposition=disposition;

@@ -12,6 +12,8 @@ The Basket lifecycle remains the sole authority for cumulative recovery attempts
 
 Accepted recovery evidence identities are durable and reconstructible. Restart restores both counters and their accepted-evidence index. A repeated identity cannot increment counters again, and any regression or reset fails closed.
 
+`ValidateTransition()` returns the resulting accepted-evidence identity set and explicit `added`/`duplicate` mutation flags. First acceptance appends exactly one identity and advances counters once. Replay against the returned or restart-restored set is a successful idempotent no-op with stable counters and state version.
+
 ## Consequences
 
 - Local arithmetic is not recovery verification; interface output is authoritative.

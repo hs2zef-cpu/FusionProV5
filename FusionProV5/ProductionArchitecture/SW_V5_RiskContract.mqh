@@ -173,6 +173,7 @@ struct SWV5_RiskAuthorization
    SWV5_ContractVersion contract_version;
    string                authorization_id;
    string                limits_contract_id;
+   SWV5_RiskLimits       authorized_limits;
    SWV5_ExecutionRequestIdentity request_identity;
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence  ownership_fence;
@@ -190,6 +191,10 @@ struct SWV5_RiskAuthorization
    double                authorized_stop_price;
    double                authorized_limit_price;
    ulong                 risk_snapshot_epoch;
+   ulong                 risk_snapshot_sequence;
+   double                authorized_projected_loss;
+   double                authorized_projected_notional;
+   double                authorized_projected_margin;
    string                hard_kill_latch_id;
    ulong                 hard_kill_latch_generation;
    SWV5_RiskMonetaryBasis monetary_basis;
@@ -211,6 +216,7 @@ public:
    virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,
                                       const SWV5_RiskAuthorization &authorization,
                                       const SWV5_ExecutionIntent &intent,
+                                      const SWV5_HardKillState &current_hard_kill_state,
                                       SWV5_ContractDecision &decision) = 0;
    virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,
                                         const SWV5_HardKillState &current_state,

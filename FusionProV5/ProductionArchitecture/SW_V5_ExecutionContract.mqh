@@ -183,6 +183,9 @@ struct SWV5_ExecutionConfirmation
    double                  confirmed_volume;
    double                  residual_volume;
    ulong                   symbol_specification_sequence;
+   SWV5_PendingRequest     resulting_pending_request;
+   bool                    event_identity_added;
+   bool                    duplicate_event;
    string                  diagnostic;
 };
 

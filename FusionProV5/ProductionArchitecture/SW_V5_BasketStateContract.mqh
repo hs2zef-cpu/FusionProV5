@@ -125,6 +125,9 @@ struct SWV5_BasketTransitionDecision
    ulong                     resulting_state_version;
    ulong                     resulting_cumulative_recovery_attempts;
    uint                      resulting_recovery_layer;
+   SWV5_DurableEventIdentitySet resulting_accepted_recovery_evidence;
+   bool                      recovery_evidence_added;
+   bool                      recovery_evidence_duplicate;
    SWV5_BasketInvariantReport invariants;
 };
 
