@@ -37,6 +37,8 @@ Sprint 4.1 hardens the isolated Sprint 4 contracts with versioning, deterministi
 
 Sprint 4.2 is an authorized verification sub-sprint within the Sprint 4.1 candidate branch. Sprint 4.3 introduced Production Contract V3 interface verification, and Sprint 4.4 completed its remaining semantic boundaries. Sprint 4.5 is corrective candidate work that advances the unlocked contract candidate to V4 and hardens authority binding, canonical validation, Risk and Unit safety, ownership lifecycle, persistence canonicalization, and test credibility. None of these verification sprints changes the authorized baseline, declares Architecture Lock, grants runtime authorization, or establishes production readiness.
 
+Sprint 4.5 immutable verification passed `368/368` cases with `0` failed and `0` skipped in two intentional independent MT5 Demo Strategy Tester runs. Both runs produced deterministic signature `14243830495988534780` against tested source `f768205573d44d71a7f55b8e893ae0b48770d451`. This evidence supports review of the candidate only.
+
 ## Repository Workflow
 
 1. Confirm the authorized Sprint and read the current version and architecture records.

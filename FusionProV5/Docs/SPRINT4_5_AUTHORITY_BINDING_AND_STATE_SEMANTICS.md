@@ -24,4 +24,6 @@ All concrete implementations remain deterministic, in-memory, test-only referenc
 
 ## Verification Boundary
 
-Phase F freezes reviewed source only. Historical verification records remain historical. Final immutable Sprint 4.5 verification counts, signatures, and provenance are intentionally deferred to the separately authorized Phase G workflow and are not claimed here.
+Phase F froze the reviewed source, and Phase G verified that immutable source without implementation changes. Two intentional independent MT5 Demo Strategy Tester runs each passed 368 of 368 tests with 0 failed and 0 skipped. Both runs produced deterministic signature `14243830495988534780` against tested source `f768205573d44d71a7f55b8e893ae0b48770d451`.
+
+This evidence supports formal review only. Sprint 4 remains the authorized baseline; Sprint 4.1 and Sprint 4.5 remain Candidate / In Review, V4 remains unlocked, and no Architecture Lock, production readiness, or runtime authorization is claimed.

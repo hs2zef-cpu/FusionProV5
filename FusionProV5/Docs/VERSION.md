@@ -64,7 +64,7 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - No broker command path
 - Sprint 4.4 historical Architecture and test manifests, MetaEditor X64 Regular: 0 errors, 0 warnings
 - Sprint 4.4 historical MT5 Demo Strategy Tester evidence: 238 passed, 0 failed, 0 skipped, repeated twice with signature `6132791249901820115`
-- Sprint 4.5 final immutable verification evidence remains pending the separate Phase G workflow
+- Sprint 4.5 immutable verification: 368 passed, 0 failed, 0 skipped in each of two intentional independent MT5 Demo Strategy Tester runs; identical signature `14243830495988534780`; tested source `f768205573d44d71a7f55b8e893ae0b48770d451`
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action

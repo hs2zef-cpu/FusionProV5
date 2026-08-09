@@ -15,7 +15,7 @@ Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW
 - Separated stable ownership authority from mutable heartbeat liveness and store/CAS revision.
 - Replaced delimiter-based persistence canonicalization with typed length-prefixed encoding.
 - Classified every executable test and separated behavioral, supporting, and conformance evidence.
-- Final immutable verification evidence remains deferred to the separately authorized Phase G workflow.
+- Recorded final immutable verification against source `f768205573d44d71a7f55b8e893ae0b48770d451`: two intentional independent MT5 Demo Strategy Tester runs each passed 368/368 with 0 failed, 0 skipped, and identical signature `14243830495988534780`.
 
 ## Sprint 4.4 Contract Completion and Semantic Verification
 

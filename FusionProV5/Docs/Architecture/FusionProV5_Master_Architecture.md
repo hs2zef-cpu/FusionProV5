@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.2 |
-| Date | 2026-08-05 |
+| Version | 2.5 |
+| Date | 2026-08-10 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Review Candidate | **Sprint 4.1 Contract Hardening** |
@@ -22,7 +22,8 @@
 | 2.1 | 2026-08-05 | Hardened production contract version 2, deterministic validation context, ADR governance, and table-driven verification requirements. |
 | 2.2 | 2026-08-05 | Corrected governance wording: Sprint 4 remains the authorized baseline; Sprint 4.1 is Candidate / In Review pending formal approval. |
 | 2.3 | 2026-08-06 | Recorded Sprint 4.2 as an authorized verification sub-sprint and Sprint 4.3 as corrective interface-level verification; advanced the breaking candidate contracts to V3 without Architecture Lock or runtime authorization. |
-| 2.4 | 2026-08-10 | Recorded Sprint 4.5 corrective candidate work and advanced the still-unlocked contracts to V4; Sprint 4 remains the authorized baseline and final immutable verification remains pending. |
+| 2.4 | 2026-08-10 | Recorded Sprint 4.5 corrective candidate work and advanced the still-unlocked contracts to V4; Sprint 4 remained the authorized baseline and immutable verification was pending at the source-freeze checkpoint. |
+| 2.5 | 2026-08-10 | Recorded final Sprint 4.5 immutable verification: two intentional independent MT5 Demo Strategy Tester runs passed 368/368 with identical signature against source `f768205573d44d71a7f55b8e893ae0b48770d451`; candidate governance remains unchanged. |
 
 ## Purpose
 
@@ -54,7 +55,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V4 corrective candidate; minimum compatible version 4
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4/4.5 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`; final immutable Sprint 4.5 evidence remains deferred to Phase G. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
+The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4/4.5 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`. Final Sprint 4.5 immutable verification executed 368 cases twice in intentional independent MT5 Demo Strategy Tester runs; both runs passed 368/368 with 0 failed, 0 skipped, and identical signature `14243830495988534780` against source `f768205573d44d71a7f55b8e893ae0b48770d451`. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change. This evidence supports candidate review only and does not change the authorized baseline or grant Architecture Lock, production readiness, or runtime authorization.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 

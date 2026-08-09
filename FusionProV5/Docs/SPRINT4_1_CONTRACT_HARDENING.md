@@ -85,7 +85,7 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 - MetaEditor X64 Regular compilation of the unchanged Sprint 4 Architecture manifest: `0 errors, 0 warnings`
 - Sprint 4.2 executable verification sub-sprint: authorized and present
 - Sprint 4.4 historical semantic corrective suite: 238 passed, 0 failed, 0 skipped in two MT5 Demo Strategy Tester runs; identical signature `6132791249901820115`
-- Sprint 4.5 final immutable verification evidence: pending the separate Phase G workflow
+- Sprint 4.5 immutable verification: 368 passed, 0 failed, 0 skipped in each of two intentional independent MT5 Demo Strategy Tester runs; identical signature `14243830495988534780`; tested source `f768205573d44d71a7f55b8e893ae0b48770d451`
 
 ## Definition Of Done
 

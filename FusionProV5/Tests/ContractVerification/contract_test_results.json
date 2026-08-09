@@ -1,68 +1,102 @@
 ﻿{
-    "schema":  "SWV5-CONTRACT-TEST-EVIDENCE-V3",
-    "generated_by":  "Export-Sprint44Evidence.ps1",
-    "exporter_sha256":  "4ca40c09b92a5d457b120d3e61afe9da98ccd7fdc6cc98696ad2811a26a2f0cd",
-    "generated_at_utc":  "2026-08-07T13:17:40Z",
-    "source_commit_sha":  "d77de8caed416364388688b40a9e13ddcbcee542",
+    "schema":  "SWV5-CONTRACT-TEST-EVIDENCE-V4",
+    "suite":  "Sprint 4.5",
+    "governance_status":  "CANDIDATE / IN REVIEW; NOT ARCHITECTURE LOCKED; NO RUNTIME AUTHORIZATION",
+    "generated_by":  "temporary Export-Sprint45Evidence.ps1",
+    "exporter_sha256":  "66722a8a10339db69ac47b677e1f695e99da49ca32e323a293da963fb1c1cc1e",
+    "generated_at_utc":  "2026-08-09T18:03:26Z",
+    "tested_source_commit":  "f768205573d44d71a7f55b8e893ae0b48770d451",
     "manifest":  "SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5",
-    "manifest_sha256":  "450206d0dde297d2ae583f923821a7e6f5228a19f3f1ba8ed9f6e740b326d136",
-    "verification_source_digest":  "ce404c8ce292b54cbf3773dde5f5f1b940e2c7e7958f2dc2a9ff11146c6560fe",
-    "contract_policy":  "SWV5-PRODUCTION-V3",
+    "manifest_sha256":  "ba9443ceed30c80ed5a5f8eb23d920780e17df34f32618538c5affc95b32c088",
+    "verification_source_digest":  "67dfe5b7fdc37a6deecb5205daaa92c286aaa905d53cb2190edb0883c4276f56",
+    "contract_policy":  "SWV5-PRODUCTION-V4",
     "implementation_under_test":  "ISWV5 deterministic semantic reference implementations",
     "compile":  {
                     "architecture":  {
                                          "errors":  0,
                                          "warnings":  0,
-                                         "elapsed_ms":  580,
+                                         "elapsed_ms":  541,
                                          "cpu":  "X64 Regular",
-                                         "log_sha256":  "a231423f245d0f4a2ebca2bf284ad927f97d252def02c37739a9fe1ef6d47d0c"
+                                         "log_sha256":  "b682ba755a465cfce73fdc29fffcefa971165bcd633ca99c36f215ec020baad2"
                                      },
                     "tests":  {
                                   "errors":  0,
                                   "warnings":  0,
-                                  "elapsed_ms":  6372,
+                                  "elapsed_ms":  12560,
                                   "cpu":  "X64 Regular",
-                                  "log_sha256":  "960ee51dfc3725f92492c26be3ec5f101c182f654c9827770c4b23227d6e28f0"
+                                  "log_sha256":  "5894dd29494bff3526d299df93a6568e83586cab79e9ec1ff8eeb17ede915989"
                               }
                 },
-    "deterministic":  true,
-    "signature":  "6132791249901820115",
-    "total":  238,
-    "passed":  238,
+    "credibility":  {
+                        "executable_total":  368,
+                        "MERGE_GATING_BEHAVIOR":  40,
+                        "STATE_TRANSITION":  96,
+                        "NEGATIVE_FAIL_CLOSED":  190,
+                        "ROUND_TRIP":  17,
+                        "INVARIANT_BEHAVIOR":  13,
+                        "SUPPORTING_PURE_FUNCTION":  11,
+                        "CONFORMANCE_ONLY":  1,
+                        "WEAK_FALSE_POSITIVE":  0,
+                        "sum":  368
+                    },
+    "executable_total":  368,
+    "passed":  368,
     "failed":  0,
     "skipped":  0,
+    "deterministic":  true,
+    "signature":  "14243830495988534780",
+    "run_1_signature":  "14243830495988534780",
+    "run_2_signature":  "14243830495988534780",
+    "terminal_build":  6090,
+    "demo_server":  "Exness-MT5Trial6",
+    "account_mode_fixture":  "HEDGING",
     "runs":  [
                  {
                      "run":  1,
-                     "journal_time":  "19:56:38.864",
-                     "total":  238,
-                     "passed":  238,
+                     "total":  368,
+                     "passed":  368,
                      "failed":  0,
                      "skipped":  0,
-                     "signature":  "6132791249901820115",
+                     "signature":  "14243830495988534780",
                      "internal_replay_deterministic":  true,
+                     "start":  "2026-08-10T00:38:41.638+07:00",
+                     "end":  "2026-08-10T00:38:46.147+07:00",
                      "terminal_build":  6090,
-                     "broker_server":  "Exness-MT5Trial6",
-                     "account_mode":  "HEDGING (deterministic fixture)",
-                     "demo_strategy_tester":  true,
+                     "demo_server":  "Exness-MT5Trial6",
+                     "account_mode_fixture":  "HEDGING",
                      "on_tester_result":  1,
-                     "harness_metadata":  "CS\t0\t19:56:38.847\tSOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS (EURUSD,M1)\t2026.01.05 00:00:00   SWV5_RUN_METADATA suite=SPRINT4.4 fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false"
+                     "source_log":  "run1_agent_log_snapshot.log",
+                     "source_log_sha256":  "15933ae5e530d3f262b0d1e51a4295a69f088f005479d8f936d1ebe2a41347b7"
                  },
                  {
                      "run":  2,
-                     "journal_time":  "20:17:18.226",
-                     "total":  238,
-                     "passed":  238,
+                     "total":  368,
+                     "passed":  368,
                      "failed":  0,
                      "skipped":  0,
-                     "signature":  "6132791249901820115",
+                     "signature":  "14243830495988534780",
                      "internal_replay_deterministic":  true,
+                     "start":  "2026-08-10T00:40:06.975+07:00",
+                     "end":  "2026-08-10T00:40:07.561+07:00",
                      "terminal_build":  6090,
-                     "broker_server":  "Exness-MT5Trial6",
-                     "account_mode":  "HEDGING (deterministic fixture)",
-                     "demo_strategy_tester":  true,
+                     "demo_server":  "Exness-MT5Trial6",
+                     "account_mode_fixture":  "HEDGING",
                      "on_tester_result":  1,
-                     "harness_metadata":  "CS\t0\t20:17:18.182\tSOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS (EURUSD,M1)\t2026.01.05 00:00:00   SWV5_RUN_METADATA suite=SPRINT4.4 fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false"
+                     "source_log":  "run2_agent_log_snapshot.log",
+                     "source_log_sha256":  "d82b959f4d0a4242263e88bd5ca329c9a728ca18fd28039fd302f4acfe1e5498"
                  }
-             ]
+             ],
+    "raw_evidence":  {
+                         "file":  "sprint4_5_tester_evidence.txt",
+                         "sha256":  "375e7c8900afdee2bd5ef8005a3a8c24bbb2e11a1ac3f8805a9e49b2685f1c0f",
+                         "bytes":  383407,
+                         "source_run_1_sha256":  "15933ae5e530d3f262b0d1e51a4295a69f088f005479d8f936d1ebe2a41347b7",
+                         "source_run_2_sha256":  "d82b959f4d0a4242263e88bd5ca329c9a728ca18fd28039fd302f4acfe1e5498"
+                     },
+    "static_safety":  {
+                          "forbidden_broker_api_hits":  0,
+                          "hidden_live_file_network_random_clock_hits":  0,
+                          "frozen_runtime_change_hits":  0,
+                          "passed":  true
+                      }
 }
