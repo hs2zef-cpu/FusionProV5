@@ -4,6 +4,19 @@ This file records the authorized evolution of Fusion Pro V5.
 
 ## Unreleased
 
+## Sprint 4.5 Authority Binding and State Semantics
+
+Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; V4 remains an unlocked candidate with no Architecture Lock, production readiness, or runtime authorization.
+
+- Advanced the unresolved breaking contract candidate from V3 to V4.
+- Separated acknowledgement from authoritative execution confirmation and added durable evidence fingerprints.
+- Required canonical validation before recovery replay or unclaimed ownership acquisition.
+- Completed Risk authorization rebinding and contract-derived Unit operation semantics.
+- Separated stable ownership authority from mutable heartbeat liveness and store/CAS revision.
+- Replaced delimiter-based persistence canonicalization with typed length-prefixed encoding.
+- Classified every executable test and separated behavioral, supporting, and conformance evidence.
+- Final immutable verification evidence remains deferred to the separately authorized Phase G workflow.
+
 ## Sprint 4.4 Contract Completion and Semantic Verification
 
 Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; no Architecture Lock, production readiness, or runtime authorization is claimed.

@@ -14,9 +14,9 @@ Sprint 3.2.1 remains frozen.
 
 ## Contract Version
 
-Sprint 4.1 advanced the schema from version 1 to version 2. Sprint 4.3 corrects proven breaking findings and advances the candidate to version 3 with minimum compatible version 3.
+Sprint 4.1 advanced the schema from version 1 to version 2. Sprint 4.3 advanced the corrective candidate to version 3. Sprint 4.5 advances the still-unlocked candidate to version 4 with minimum compatible version 4.
 
-Version 2 introduced the original hardening. Version 3 adds:
+Version 2 introduced the original hardening. Version 3 added the following boundaries, and version 4 completes authority binding, canonical validation, Risk/Unit semantics, ownership/CAS separation, and durable fingerprinting before formal approval:
 
 - Deterministic validation context
 - Explicit contract policy ID and compatibility result
@@ -84,7 +84,8 @@ Sprint 4.1 defines validation requirements and table-driven specifications. It d
 - Repository whitespace and line-ending policy check: complete
 - MetaEditor X64 Regular compilation of the unchanged Sprint 4 Architecture manifest: `0 errors, 0 warnings`
 - Sprint 4.2 executable verification sub-sprint: authorized and present
-- Sprint 4.4 semantic corrective suite: 238 passed, 0 failed, 0 skipped in two MT5 Demo Strategy Tester runs; identical signature `6132791249901820115`
+- Sprint 4.4 historical semantic corrective suite: 238 passed, 0 failed, 0 skipped in two MT5 Demo Strategy Tester runs; identical signature `6132791249901820115`
+- Sprint 4.5 final immutable verification evidence: pending the separate Phase G workflow
 
 ## Definition Of Done
 

@@ -4,6 +4,8 @@ Status: **CANDIDATE / IN REVIEW**
 
 Sprint 4 remains the authorized architecture baseline. Sprint 4.4 is corrective contract and test-only work on the Sprint 4.1 candidate branch. It is not Architecture Locked, does not authorize runtime implementation, and does not claim production readiness.
 
+Historical status: Sprint 4.5 subsequently advances the still-unlocked corrective candidate to V4. This Sprint 4.4 record remains historical and does not describe the current candidate schema.
+
 ## Scope
 
 Sprint 4.4 closes the six Major findings from the final independent merge audit without changing trading logic or implementing a production runtime.

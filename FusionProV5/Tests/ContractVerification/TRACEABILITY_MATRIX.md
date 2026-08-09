@@ -1,29 +1,33 @@
-# Sprint 4.4 Semantic Contract Verification Traceability Matrix
+# Sprint 4.5 V4 Candidate Verification Traceability Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
-| Requirement | Contract field/interface | Implementation under test | Test IDs | Expected result |
-|---|---|---|---|---|
-| All 49 Basket pairs and version rules | state pair, cause, expected/resulting version | `SWV5_TestBasketStateContract::ValidateTransition` | BSM-01–BSM-49 | Allowed +1; same/forbidden stable |
-| IDLE and close invariants | residual, live positions/orders/pending, queries | `SWV5_TestBasketContract::ValidateCloseCompletion` | BAS-06, XDM-12 | Residual or incomplete evidence rejects completion |
-| Recovery monotonicity | `recovery_evidence`, accepted index, resulting attempt/layer/version | Basket state interface | IFC-01–IFC-03 | Exact +1; regression/duplicate rejected |
-| Phase identity | request identity, broker identity, lifecycle phase | `SWV5_TestExecutionContract::ValidateIntent/ValidatePhaseTransition` | IFC-04–IFC-06 | No future IDs; no acknowledgement-to-completed jump |
-| Acknowledgement boundary | retcode evidence, cumulative confirmation | Execution interface | EXE-02–EXE-03, EXE-16, IFC-26 | Acknowledgement leaves confirmed volume unchanged |
-| Partial fill/residual | cumulative confirmed and residual volume | `AcceptTransactionEvidence` | EXE-11, IFC-27, XDM-12 | Partial status; residual remains managed |
-| Durable duplicate/out-of-order | canonical identity index, digest, revision, transaction sequence | Execution/Statistics interfaces | IFC-24–IFC-25, IFC-29 | Known event idempotent; unseen older event accepted once |
-| Restart reconstruction | pending DTO, request-set header, readiness disposition | `SWV5_TestPersistenceContract::ReconcileRestart` | PER-05–PER-15, IFC-07–IFC-08 | Exactly one safe/reconcile/retry-forbidden/close-only/halted disposition |
-| Pending-request persistence round trip | full persisted request payload, set header, namespace, digest, revision | `SWV5_TestPersistenceContract::Configure/SavePendingRequests/LoadPendingRequests` | PRT-01–PRT-11 | Every field and record order survives deep-copy round trip; foreign/corrupt/unconfigured storage fails closed |
-| Account namespace and epoch | broker, server, login, currency, strategy, Magic, authority, epoch | `SWV5_TestRiskContract::Evaluate` | IFC-09–IFC-11 | Mixed identity or epoch rejected |
-| Account mode binding | intent, Risk input/auth, pending, persisted request, broker summary | Execution/Risk/Persistence interfaces | IFC-12–IFC-13, IFC-28 | Netting/Unknown/change invalidates readiness |
-| Typed takeover | typed broker/store/lease evidence, observed revision, generation, authority | `SWV5_TestOwnershipContract::Acquire` | IFC-19–IFC-21 | Valid independent evidence accepts; stale/self-issued rejects |
-| Typed Hard Kill release | approver, broker/store/exposure evidence, expiry/generation/audit | `SWV5_TestRiskContract::ValidateHardKillRelease` | IFC-22–IFC-23, XDM-10 | Independent complete release accepts; execution self-approval rejects |
-| Unit safety | operation kind/price, direction, freshness, applied rounding | `SWV5_TestUnitSystemContract::Normalize` | UNT-01–UNT-10, IFC-14–IFC-18 | Wrong side/freeze/stale reject; increase down; residual close broker-safe |
-| Risk authorization binding | request identity, fence, namespace, mode, Basket/spec/epoch/terms/expiry | `ValidateAuthorization` | RSK-02–RSK-16 | Any binding change rejects |
-| Statistics monetary completeness | profit, commission, swap, fee, currency, durable identity | Statistics interface | STA-01–STA-13, IFC-29 | Net includes all components; duplicate does not double count |
-| Complete restart reconstruction | complete ordered pending array, summary/cache, header, readiness | Persistence `ReconcileRestart` | S44-01 through S44-05 | Disposition is derived from every request; summary never replaces set |
-| Payload-bound persistence integrity | canonical nested content, order, count, digest, revision, record sequence | Persistence Save/Load | S44-06 through S44-11 | Any payload/order/header mutation fails closed; empty replacement clears summary |
-| Complete authorization output | limits, request/fence/account/Hard Kill namespaces, projections, monetary and normalized terms | Risk `Evaluate/ValidateAuthorization` | S44-12 through S44-15 | Evaluate populates all bindings; missing or changed binding rejects |
-| Durable identity and ownership mutation | recovery/event/deal identity state, heartbeat and typed takeover evidence | Basket/Execution/Statistics/Ownership interfaces | S44-16 through S44-25 | First evidence mutates once; replay is idempotent; stale/conflicting evidence fails closed |
-| Determinism | complete input/context and decision DTO | All interfaces | COM-05, IFC-30, PRT-09, S44 suite and two complete runs | Identical counts, outputs, persisted payloads, and signature |
+| Requirement | Contract field/interface | Executable IDs | Material evidence |
+|---|---|---|---|
+| Contract compatibility and deterministic output | Version policy and validation context | COM-01–COM-06, COM-09–COM-12 | Exact/migration/rejection decisions; hostile preseed overwritten; invalid clocks/sequences fail closed |
+| All 49 Basket transitions | `ValidateTransition`, state/version | BSM-01–BSM-49 | Independent pair table; allowed +1; same/forbidden stable |
+| Recovery mutation and durable replay | Recovery evidence and accepted identity set | IFC-01–IFC-03, S44-16, S45BR-01–S45BR-10 | First mutation, exact no-op replay, canonical negative mutations, restart-restored replay |
+| IDLE and close-completion invariants | Residual/live counts/query authority | BAS-06, XDM-04, XDM-12 | Missing evidence or residual exposure denies completion |
+| Partial-close arithmetic | Partial-close evidence and Basket residual | BAS-03–BAS-05, EXE-11, IFC-27 | Coherent partial allowed; over-close rejected; returned residual remains managed |
+| Acknowledgement cannot confirm | Transaction event kind/authority/phase | EXE-16, XDM-11, IFC-26, S45A-01–S45A-06 | Actual acknowledgement interface returns pending, no identity/money mutation, persisted restart not ready |
+| Authoritative execution confirmation | `AcceptTransactionEvidence` | EXE-09–EXE-11, IFC-24–IFC-27, S44-17–S44-18, S45A-07–S45A-10 | Full/partial returned state, exact replay idempotency, conflicting fingerprint no mutation |
+| Durable execution fingerprint | Canonical event/fingerprint index | S45F-01–S45F-02 | Eight material mutations conflict; identity survives persistence round trip |
+| Retry policy | `EvaluateRetry` | EXE-12, IFC-32 | Maximum attempts deny; valid revalidation retry allows |
+| Complete restart readiness | Full ordered pending set, broker summary, Hard Kill | PER-05–PER-15, XDM-03, XDM-08, XDM-11, S44-01–S44-05 | Safe/reconcile/retry-forbidden/close-only/halted dispositions from actual set contents |
+| Persistence header/payload integrity | Namespace, count, digest, revision, record sequence | PER-01–PER-04, PER-13–PER-15, S44-06–S44-09, S45DP-08–S45DP-12 | Foreign/corrupt/stale payloads reject before storage mutation |
+| Persistence deep-copy round trip | Configure/Save/Load interfaces | IFC-33–IFC-36, PRT-01–PRT-11, S44-10–S44-11, S45DP-15–S45DP-16 | Field/order equality, caller isolation, replacement semantics, no stale latest summary |
+| Canonical collision resistance | Typed length-prefixed serializer/digest helpers | S45DP-01–S45DP-07, S45DP-13–S45DP-14 | Adversarial delimiter/unicode/field changes differ; independent equal fixtures match |
+| Ownership unclaimed acquisition | Claimant/key/CAS/clock bindings | OWN-01, S45BO-01–S45BO-10 | Complete acquired lease; invalid claims return field-equal observed lease |
+| Same-owner heartbeat semantics | Immutable fence; mutable liveness/store revision | OWN-06, OWN-11, IFC-39, S44-21–S44-22, S45DO-01–S45DO-16, S45DO-32 | Returned-state heartbeat chain, stable authority fence, monotonic heartbeat/expiry/CAS revision, Risk auth remains valid |
+| Typed takeover and stale-owner fencing | Takeover evidence/generation/authority | OWN-03–OWN-05, IFC-19–IFC-21, S44-23–S44-25, S45DO-17–S45DO-31, S45DO-33 | Complete takeover succeeds; every stale/malformed dimension rejects; old authorization invalidated |
+| Ownership conflict/release | `DetectConflict`, `Release` | OWN-02, OWN-07–OWN-10, IFC-39–IFC-40 | Conflict identities exposed; stale release rejected; matching lease transitions RELEASED |
+| Risk authorization construction | `Evaluate`, authorization DTO | IFC-09, S44-12, S45CR-01 | Complete independently asserted binding and coherent ALLOW state |
+| Risk binding mutation resistance | `ValidateAuthorization` | RSK-02–RSK-16, IFC-10–IFC-13, S44-13–S44-15, S45CR-02–S45CR-29 | Every limits/account/mode/Basket/spec/term/money/Hard Kill/fence/identity/time mutation denies |
+| Hard Kill release | Typed independent release evidence | RSK-11, IFC-22–IFC-23, XDM-10 | Complete independent release allows; self/incomplete/mismatched release denies |
+| Derived unit policy | Operation semantics and directional rounding | UNT-01–UNT-10, IFC-14–IFC-18, S45CU-01–S45CU-20 | Caller flags cannot override; safe rounding material outputs; stale/wrong-side/freeze/stops/range fail closed |
+| Statistics monetary completeness | Profit/commission/swap/fee/net | STA-02, STA-08, S44-19 | Actual accumulator changes every component; returned next state finalizes |
+| Statistics durable deduplication | Identity set/revision/counts | STA-03–STA-04, STA-10–STA-12, IFC-29, S44-19–S44-20 | Unique and out-of-order mutate once; duplicate changes only duplicate counter |
+| Cross-domain gate ordering | Unit/Risk/Persistence/Execution interfaces | XDM-01–XDM-12 | Coherent path succeeds; stale owner, Hard Kill, residual, restart, and spec failures close safely |
+| Determinism | Complete inputs and returned DTOs | COM-05, S45CU-16, S45DP-13–S45DP-14 plus suite replay | Independent identical inputs produce identical material results and signatures |
 
-The production headers define interfaces only. `SW_V5_InterfaceContractImplementations.mqh` is the explicit test-only implementation under test; `SW_V5_ReferenceValidators.mqh` contains pure rules invoked behind those interfaces.
+The per-ID credibility category and mutation-resistance rationale are authoritative in `TEST_CREDIBILITY_MATRIX.md`.

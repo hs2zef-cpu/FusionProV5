@@ -27,7 +27,7 @@ void SWV5_TestSetDecision(const SWV5_ContractValidationContext &context,
 class SWV5_TestVersionPolicy : public ISWV5ContractVersionPolicy
 {
 public:
-   virtual string ContractName() { return "ISWV5ContractVersionPolicy/V3"; }
+   virtual string ContractName() { return "ISWV5ContractVersionPolicy/V4"; }
    virtual bool EvaluateCompatibility(const SWV5_ContractValidationContext &context,
                                       const SWV5_ContractVersion &candidate,
                                       SWV5_ContractCompatibilityResult &result)
@@ -43,7 +43,7 @@ public:
 class SWV5_TestBasketStateContract : public ISWV5BasketStateMachineContract
 {
 public:
-   virtual string ContractName() { return "ISWV5BasketStateMachineContract/V3"; }
+   virtual string ContractName() { return "ISWV5BasketStateMachineContract/V4"; }
    virtual bool ValidateState(const SWV5_ContractValidationContext &context,
                               const SWV5_BasketLifecycleSnapshot &snapshot,
                               SWV5_BasketInvariantReport &report)
@@ -68,17 +68,27 @@ public:
       decision.resulting_accepted_recovery_evidence=snapshot.accepted_recovery_evidence;
       decision.recovery_evidence_added=false;
       decision.recovery_evidence_duplicate=false;
-      if(request.recovery_evidence.evidence_identity!="")
+      decision.resulting_state=snapshot.state;
+      decision.resulting_state_version=snapshot.state_version;
+      decision.resulting_cumulative_recovery_attempts=snapshot.cumulative_recovery_attempts;
+      decision.resulting_recovery_layer=snapshot.current_recovery_layer;
+      const bool recovery_operation=request.recovery_evidence.evidence_identity!="" ||
+                                    (request.from_state==SWV5_BASKET_ACTIVE && request.to_state==SWV5_BASKET_RECOVERY);
+      if(recovery_operation)
       {
-         const string recovery_token=request.recovery_evidence.evidence_identity+"|"+IntegerToString((long)request.recovery_evidence.evidence_sequence);
-         if(StringFind(";"+snapshot.accepted_recovery_evidence.canonical_event_index+";",";"+recovery_token+";")>=0)
+         const bool new_envelope=SWV5_TestRecoveryNewEnvelopeValid(context,snapshot,request);
+         const bool replay_envelope=SWV5_TestRecoveryReplayEnvelopeValid(context,snapshot,request);
+         const string fingerprint=SWV5_TestCanonicalRecoveryTransition(request);
+         SWV5_StatisticsIdentityDisposition identity_disposition=SWV5_STAT_IDENTITY_CONFLICT;
+         if(new_envelope || replay_envelope)
+            identity_disposition=SWV5_TestClassifyDurableFingerprint(request.recovery_evidence.evidence_identity,
+                                                                     request.recovery_evidence.evidence_sequence,
+                                                                     fingerprint,
+                                                                     snapshot.accepted_recovery_evidence);
+         if(replay_envelope && identity_disposition==SWV5_STAT_IDENTITY_DUPLICATE)
          {
             decision.contract_version=context.expected_version;
             SWV5_TestSetDecision(context,true,"RECOVERY_EVIDENCE_DUPLICATE",decision.decision);
-            decision.resulting_state=snapshot.state;
-            decision.resulting_state_version=snapshot.state_version;
-            decision.resulting_cumulative_recovery_attempts=snapshot.cumulative_recovery_attempts;
-            decision.resulting_recovery_layer=snapshot.current_recovery_layer;
             decision.recovery_evidence_duplicate=true;
             decision.invariants.contract_version=context.expected_version;
             decision.invariants.status=SWV5_CONTRACT_VALID;
@@ -87,6 +97,41 @@ public:
             decision.invariants.primary_violation="";
             return true;
          }
+         if(new_envelope && (identity_disposition==SWV5_STAT_IDENTITY_NEW || identity_disposition==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW))
+         {
+            SWV5_DurableEventIdentitySet accepted;
+            const SWV5_StatisticsIdentityDisposition appended=SWV5_TestAppendDurableFingerprint(request.recovery_evidence.evidence_identity,
+                                                                                                 request.recovery_evidence.evidence_sequence,
+                                                                                                 fingerprint,
+                                                                                                 snapshot.accepted_recovery_evidence,
+                                                                                                 accepted);
+            if(appended==SWV5_STAT_IDENTITY_NEW || appended==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW)
+            {
+               decision.contract_version=context.expected_version;
+               SWV5_TestSetDecision(context,true,"RECOVERY_TRANSITION_ACCEPTED",decision.decision);
+               decision.resulting_state=request.to_state;
+               decision.resulting_state_version=snapshot.state_version+1;
+               decision.resulting_cumulative_recovery_attempts=request.recovery_evidence.proposed_cumulative_recovery_attempts;
+               decision.resulting_recovery_layer=request.recovery_evidence.proposed_recovery_layer;
+               decision.resulting_accepted_recovery_evidence=accepted;
+               decision.recovery_evidence_added=true;
+               decision.invariants.contract_version=context.expected_version;
+               decision.invariants.status=SWV5_CONTRACT_VALID;
+               decision.invariants.satisfied_flags=SWV5_INVARIANT_VERSION_MONOTONIC;
+               decision.invariants.violated_flags=0;
+               decision.invariants.primary_violation="";
+               return true;
+            }
+         }
+         decision.contract_version=context.expected_version;
+         const string rejection_reason=(!new_envelope && !replay_envelope ? "RECOVERY_ENVELOPE_INVALID" : "RECOVERY_EVIDENCE_CONFLICT");
+         SWV5_TestSetDecision(context,false,rejection_reason,decision.decision);
+         decision.invariants.contract_version=context.expected_version;
+         decision.invariants.status=SWV5_CONTRACT_INVALID;
+         decision.invariants.satisfied_flags=0;
+         decision.invariants.violated_flags=SWV5_INVARIANT_VERSION_MONOTONIC;
+         decision.invariants.primary_violation=rejection_reason;
+         return false;
       }
       ulong resulting_version=snapshot.state_version;
       const SWV5_TestBasketRule rule=SWV5_TestEvaluateBasketTransition(context,snapshot,request,resulting_version);
@@ -95,20 +140,6 @@ public:
       SWV5_TestSetDecision(context,allowed,(allowed ? "TRANSITION_ACCEPTED" : "TRANSITION_REJECTED"),decision.decision);
       decision.resulting_state=(allowed ? request.to_state : snapshot.state);
       decision.resulting_state_version=resulting_version;
-      decision.resulting_cumulative_recovery_attempts=snapshot.cumulative_recovery_attempts;
-      decision.resulting_recovery_layer=snapshot.current_recovery_layer;
-      if(allowed && snapshot.state==SWV5_BASKET_ACTIVE && request.to_state==SWV5_BASKET_RECOVERY)
-      {
-         decision.resulting_cumulative_recovery_attempts=request.recovery_evidence.proposed_cumulative_recovery_attempts;
-         decision.resulting_recovery_layer=request.recovery_evidence.proposed_recovery_layer;
-         const SWV5_StatisticsIdentityDisposition identity_disposition=SWV5_TestAppendEventIdentity(request.recovery_evidence.evidence_identity,
-                                                                                                    request.recovery_evidence.evidence_sequence,
-                                                                                                    snapshot.accepted_recovery_evidence,
-                                                                                                    decision.resulting_accepted_recovery_evidence);
-         if(identity_disposition==SWV5_STAT_IDENTITY_CONFLICT || identity_disposition==SWV5_STAT_IDENTITY_DUPLICATE)
-            return false;
-         decision.recovery_evidence_added=true;
-      }
       decision.invariants.contract_version=context.expected_version;
       decision.invariants.status=(allowed ? SWV5_CONTRACT_VALID : SWV5_CONTRACT_INVALID);
       decision.invariants.satisfied_flags=(allowed ? SWV5_INVARIANT_VERSION_MONOTONIC : 0);
@@ -121,7 +152,7 @@ public:
 class SWV5_TestBasketContract : public ISWV5BasketContract
 {
 public:
-   virtual string ContractName() { return "ISWV5BasketContract/V3"; }
+   virtual string ContractName() { return "ISWV5BasketContract/V4"; }
    virtual bool ValidateAggregate(const SWV5_ContractValidationContext &context,
                                   const SWV5_BasketAggregate &basket,
                                   SWV5_BasketValidationResult &result)
@@ -158,7 +189,7 @@ public:
 class SWV5_TestExecutionContract : public ISWV5ExecutionContract
 {
 public:
-   virtual string ContractName() { return "ISWV5ExecutionContract/V3"; }
+   virtual string ContractName() { return "ISWV5ExecutionContract/V4"; }
    virtual bool ValidateIntent(const SWV5_ContractValidationContext &context,const SWV5_ExecutionIntent &intent,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestIntentValid(context,intent);
@@ -200,12 +231,34 @@ public:
       confirmation.event_identity_added=false;
       confirmation.duplicate_event=false;
       double confirmed=0.0,residual=0.0;
-      const SWV5_ConfirmationStatus status=SWV5_TestConfirmExecution(pending,evidence,confirmed,residual);
+      SWV5_TransactionEvidenceDisposition evidence_disposition=SWV5_TRANSACTION_EVIDENCE_INVALID;
+      const SWV5_ConfirmationStatus status=SWV5_TestConfirmExecution(context,pending,evidence,evidence_disposition,confirmed,residual);
+      confirmation.contract_version=context.expected_version;
+      confirmation.persistence_namespace=evidence.persistence_namespace;
+      confirmation.ownership_fence=evidence.ownership_fence;
+      confirmation.correlation=evidence.correlation;
+      confirmation.evidence_disposition=evidence_disposition;
+      confirmation.status=status;
+      confirmation.confirmed_volume=confirmed;
+      confirmation.residual_volume=residual;
+      confirmation.symbol_specification_sequence=evidence.symbol_specification_sequence;
+      if(status==SWV5_CONFIRMATION_PENDING)
+      {
+         confirmation.disposition=(evidence_disposition==SWV5_TRANSACTION_EVIDENCE_RECONCILIATION_REQUIRED ? SWV5_DISPOSITION_RECONCILE : SWV5_DISPOSITION_DENY);
+         confirmation.diagnostic=(evidence_disposition==SWV5_TRANSACTION_EVIDENCE_RECONCILIATION_REQUIRED ? "NON_CONFIRMING_RECONCILIATION_REQUIRED" : "ACKNOWLEDGEMENT_ONLY_NO_CONFIRMATION");
+         return evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY;
+      }
       SWV5_DurableEventIdentitySet updated_identities;
-      const SWV5_StatisticsIdentityDisposition identity_disposition=SWV5_TestAppendEventIdentity(evidence.correlation.broker_identity.broker_event_id,
-                                                                                                  evidence.correlation.broker_identity.transaction_sequence,
-                                                                                                  pending.accepted_event_identities,
-                                                                                                  updated_identities);
+      string evidence_fingerprint="";
+      SWV5_StatisticsIdentityDisposition identity_disposition=SWV5_STAT_IDENTITY_CONFLICT;
+      if(status!=SWV5_CONFIRMATION_CONFLICT)
+         identity_disposition=SWV5_TestClassifyExecutionEvidence(evidence,pending.accepted_event_identities,evidence_fingerprint);
+      if((identity_disposition==SWV5_STAT_IDENTITY_NEW || identity_disposition==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW) &&
+         (pending.lifecycle_phase==SWV5_EXECUTION_PHASE_COMPLETED ||
+          evidence.confirmed_volume>pending.residual_requested_volume+context.volume_tolerance))
+         identity_disposition=SWV5_STAT_IDENTITY_CONFLICT;
+      if(identity_disposition==SWV5_STAT_IDENTITY_NEW || identity_disposition==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW)
+         identity_disposition=SWV5_TestAppendExecutionEvidence(evidence,pending.accepted_event_identities,updated_identities,evidence_fingerprint);
       SWV5_ConfirmationStatus effective_status=status;
       if(identity_disposition==SWV5_STAT_IDENTITY_CONFLICT)
          effective_status=SWV5_CONFIRMATION_CONFLICT;
@@ -216,10 +269,6 @@ public:
          confirmed=pending.cumulative_confirmed_volume;
          residual=pending.residual_requested_volume;
       }
-      confirmation.contract_version=context.expected_version;
-      confirmation.persistence_namespace=evidence.persistence_namespace;
-      confirmation.ownership_fence=evidence.ownership_fence;
-      confirmation.correlation=evidence.correlation;
       confirmation.status=effective_status;
       confirmation.disposition=(effective_status==SWV5_CONFIRMATION_CONFLICT ? SWV5_DISPOSITION_RECONCILE : SWV5_DISPOSITION_ALLOW);
       confirmation.confirmed_volume=confirmed;
@@ -320,7 +369,7 @@ public:
       CopyRequests(requests);
       m_requests_configured=true;
    }
-   virtual string ContractName() { return "ISWV5PersistenceContract/V3"; }
+   virtual string ContractName() { return "ISWV5PersistenceContract/V4"; }
    virtual bool ValidateRecord(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
    {
       const bool valid=SWV5_TestContextValid(context) && SWV5_TestPersistenceRecordValid(checkpoint);
@@ -359,8 +408,9 @@ public:
                                       m_request_set_header.request_index_revision==m_checkpoint.pending_request_set.request_index_revision &&
                                       m_request_set_header.record_sequence==m_checkpoint.pending_request_set.record_sequence);
       const bool valid=m_requests_configured && SWV5_TestContextValid(context) &&
-                       SWV5_TestNamespaceEqual(persistence_namespace,m_storage_namespace) &&
-                       m_request_count==ArraySize(m_requests) &&
+                        SWV5_TestNamespaceEqual(persistence_namespace,m_storage_namespace) &&
+                        RequestSetValid(m_storage_namespace,m_requests,m_request_set_header) &&
+                        m_request_count==ArraySize(m_requests) &&
                        m_request_count==(int)m_request_set_header.request_count &&
                        m_request_set_header.request_set_digest!="" &&
                        m_request_set_header.request_index_revision!="" &&
@@ -384,8 +434,10 @@ public:
    {
       const bool checkpoint_coherent=!m_checkpoint_configured ||
                                      SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
+      const bool monotonic_revision=!m_requests_configured || set_header.record_sequence>m_request_set_header.record_sequence;
       const bool valid=SWV5_TestContextValid(context) && checkpoint_coherent &&
-                       RequestSetValid(persistence_namespace,requests,set_header);
+                        monotonic_revision &&
+                        RequestSetValid(persistence_namespace,requests,set_header);
       if(valid)
       {
          ClearRequests();
@@ -434,36 +486,16 @@ public:
 class SWV5_TestRiskContract : public ISWV5RiskContract
 {
 public:
-   virtual string ContractName() { return "ISWV5RiskContract/V3"; }
+   virtual string ContractName() { return "ISWV5RiskContract/V4"; }
    virtual bool ValidateLimits(const SWV5_ContractValidationContext &context,const SWV5_RiskLimits &limits,SWV5_ContractDecision &decision)
    {
-      const bool valid=limits.contract_id!="" && limits.maximum_snapshot_age_seconds>0 && limits.maximum_cumulative_recovery_attempts>0;
+      const bool valid=SWV5_TestContextValid(context) && SWV5_TestRiskLimitsComplete(limits);
       SWV5_TestSetDecision(context,valid,(valid ? "LIMITS_VALID" : "LIMITS_INVALID"),decision);
       return valid;
    }
    virtual bool Evaluate(const SWV5_ContractValidationContext &context,const SWV5_RiskEvaluationInput &engineInput,SWV5_RiskAuthorization &authorization)
    {
-      const bool namespace_coherent=SWV5_TestAccountNamespaceEqual(engineInput.account_namespace,engineInput.account.account_namespace,false) &&
-                           SWV5_TestAccountNamespaceEqual(engineInput.account_namespace,engineInput.exposure.account_namespace,false) &&
-                           SWV5_TestAccountNamespaceEqual(engineInput.account_namespace,engineInput.basket.account_namespace,false) &&
-                           SWV5_TestAccountNamespaceEqual(engineInput.account_namespace,engineInput.projected.account_namespace,false) &&
-                           SWV5_TestAccountNamespaceEqual(engineInput.account_namespace,engineInput.hard_kill_state.account_namespace,true);
-      const bool coherent=SWV5_TestContextValid(context) && engineInput.account_mode==SWV5_ACCOUNT_MODE_HEDGING && engineInput.intent.account_mode==engineInput.account_mode &&
-                           namespace_coherent && SWV5_TestFenceEqual(engineInput.ownership_fence,engineInput.intent.ownership_fence) &&
-                           SWV5_TestNamespaceEqual(engineInput.intent.persistence_namespace,engineInput.hard_kill_state.persistence_namespace) &&
-                           engineInput.account.authoritative && engineInput.exposure.complete && engineInput.projected.complete &&
-                           SWV5_TestMonetaryBasisComplete(engineInput.projected.monetary_basis) && engineInput.limits.contract_id!="" &&
-                           engineInput.account.observed_at<=context.clock_time && engineInput.exposure.observed_at<=context.clock_time &&
-                           engineInput.basket.observed_at<=context.clock_time && engineInput.projected.calculated_at<=context.clock_time &&
-                           engineInput.hard_kill_state.state==SWV5_HARD_KILL_INACTIVE &&
-                           engineInput.account.equity>=engineInput.limits.minimum_equity &&
-                           -(engineInput.account.daily_realized_net+engineInput.account.daily_unrealized_net)<=engineInput.limits.maximum_daily_net_loss &&
-                           engineInput.projected.projected_aggregate_volume<=engineInput.limits.maximum_aggregate_volume &&
-                           engineInput.projected.projected_notional<=engineInput.limits.maximum_aggregate_notional &&
-                           engineInput.projected.projected_symbol_volume<=engineInput.limits.maximum_symbol_volume &&
-                           engineInput.projected.projected_volume<=engineInput.limits.maximum_basket_volume &&
-                           engineInput.projected.projected_maximum_loss<=engineInput.limits.maximum_basket_loss &&
-                           engineInput.basket.lifecycle.state_version==engineInput.intent.expected_basket_version;
+      const bool coherent=SWV5_TestRiskInputCoherent(context,engineInput);
       authorization.contract_version=context.expected_version;
       authorization.authorization_id=engineInput.intent.risk_authorization_id;
       authorization.limits_contract_id=engineInput.limits.contract_id;
@@ -498,9 +530,9 @@ public:
       authorization.reason_text=(coherent ? "COMPLETE_AUTHORIZATION" : "RISK_INPUT_INCOHERENT");
       return coherent;
    }
-   virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,const SWV5_RiskAuthorization &authorization,const SWV5_ExecutionIntent &intent,const SWV5_HardKillState &current_hard_kill_state,SWV5_ContractDecision &decision)
+   virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,const SWV5_RiskAuthorization &authorization,const SWV5_RiskEvaluationInput &current_binding,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestAuthorizationMatches(context,authorization,intent,current_hard_kill_state);
+      const bool valid=SWV5_TestAuthorizationMatches(context,authorization,current_binding);
       SWV5_TestSetDecision(context,valid,(valid ? "AUTHORIZATION_VALID" : "AUTHORIZATION_INVALID"),decision);
       return valid;
    }
@@ -516,7 +548,7 @@ public:
 class SWV5_TestStatisticsContract : public ISWV5StatisticsContract
 {
 public:
-   virtual string ContractName() { return "ISWV5StatisticsContract/V3"; }
+   virtual string ContractName() { return "ISWV5StatisticsContract/V4"; }
    virtual bool ValidateDeal(const SWV5_ContractValidationContext &validation_context,const SWV5_AuthoritativeDeal &deal,const SWV5_StatisticsBuildContext &context,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestDealValid(deal,context);
@@ -576,27 +608,45 @@ public:
 class SWV5_TestOwnershipContract : public ISWV5InstanceOwnershipContract
 {
 public:
-   virtual string ContractName() { return "ISWV5InstanceOwnershipContract/V3"; }
+   virtual string ContractName() { return "ISWV5InstanceOwnershipContract/V4"; }
    virtual bool Acquire(const SWV5_ContractValidationContext &context,const SWV5_OwnershipClaim &claim,const SWV5_InstanceLease &observed,SWV5_OwnershipDecision &decision)
    {
-      const bool valid=(observed.status==SWV5_LOCK_UNCLAIMED || SWV5_TestCanTakeover(context,claim,observed));
+      const bool unclaimed=observed.status==SWV5_LOCK_UNCLAIMED;
+      const bool valid=(unclaimed ? SWV5_TestUnclaimedClaimValid(context,claim,observed) : SWV5_TestCanTakeover(context,claim,observed));
       decision.contract_version=context.expected_version;
       SWV5_TestSetDecision(context,valid,(valid ? "OWNERSHIP_ACQUIRED" : "OWNERSHIP_REJECTED"),decision.decision);
       decision.resulting_lease=observed;
       if(valid)
       {
+         decision.resulting_lease.contract_version=context.expected_version;
+         decision.resulting_lease.fence.contract_version=context.expected_version;
+         decision.resulting_lease.fence.ownership_namespace=claim.claimant.key;
          decision.resulting_lease.fence.owner=claim.claimant;
          decision.resulting_lease.fence.lease_version=observed.fence.lease_version+1;
-         decision.resulting_lease.status=SWV5_LOCK_ACQUIRED;
-         decision.resulting_lease.clock_id=context.clock_id;
+          decision.resulting_lease.status=SWV5_LOCK_ACQUIRED;
+          decision.resulting_lease.clock_id=context.clock_id;
+          decision.resulting_lease.clock_authority=context.clock_authority;
          decision.resulting_lease.acquired_clock_sequence=context.clock_sequence;
          decision.resulting_lease.heartbeat_clock_sequence=context.clock_sequence;
          decision.resulting_lease.expiry_clock_sequence=context.clock_sequence+claim.lease_duration_seconds;
+          decision.resulting_lease.heartbeat_sequence=(unclaimed ? 1 : observed.heartbeat_sequence+1);
          decision.resulting_lease.acquired_at=context.clock_time;
          decision.resulting_lease.heartbeat_at=context.clock_time;
          decision.resulting_lease.expires_at=context.clock_time+(datetime)claim.lease_duration_seconds;
          if(observed.status==SWV5_LOCK_EXPIRED)
             decision.resulting_lease.fence.takeover_generation=claim.takeover_evidence.proposed_takeover_generation;
+         decision.resulting_lease.fence.fencing_token_digest=SWV5_TestCanonicalHash(
+             SWV5_TestCanonicalField("format","s","SWV5-OWNERSHIP-FENCE-V4")+
+             SWV5_TestCanonicalField("ownership_namespace","x",SWV5_TestCanonicalOwnershipKey(claim.claimant.key))+
+             SWV5_TestCanonicalField("owner","x",SWV5_TestCanonicalOwner(claim.claimant))+
+             SWV5_TestCanonicalUnsignedField("lease_version",decision.resulting_lease.fence.lease_version)+
+             SWV5_TestCanonicalUnsignedField("takeover_generation",decision.resulting_lease.fence.takeover_generation));
+         decision.resulting_lease.store_revision=SWV5_TestCanonicalHash(
+            SWV5_TestCanonicalField("format","s","SWV5-OWNERSHIP-STORE-REVISION-V1")+
+            SWV5_TestCanonicalField("prior_store_revision","s",observed.store_revision)+
+            SWV5_TestCanonicalField("fencing_token_digest","s",decision.resulting_lease.fence.fencing_token_digest)+
+            SWV5_TestCanonicalUnsignedField("lease_version",decision.resulting_lease.fence.lease_version)+
+            SWV5_TestCanonicalUnsignedField("takeover_generation",decision.resulting_lease.fence.takeover_generation));
       }
       return valid;
    }
@@ -608,20 +658,26 @@ public:
       decision.resulting_lease=observed;
       if(valid)
       {
-         const ulong sequence_extension=observed.expiry_clock_sequence-observed.heartbeat_clock_sequence;
-         const datetime time_extension=observed.expires_at-observed.heartbeat_at;
-         decision.resulting_lease.status=SWV5_LOCK_RENEWED;
-         decision.resulting_lease.heartbeat_sequence=observed.heartbeat_sequence+1;
+          const ulong sequence_extension=observed.expiry_clock_sequence-observed.heartbeat_clock_sequence;
+          const datetime time_extension=observed.expires_at-observed.heartbeat_at;
+          decision.resulting_lease.status=SWV5_LOCK_RENEWED;
+          decision.resulting_lease.heartbeat_sequence=observed.heartbeat_sequence+1;
          decision.resulting_lease.heartbeat_clock_sequence=context.clock_sequence;
          decision.resulting_lease.expiry_clock_sequence=context.clock_sequence+sequence_extension;
-         decision.resulting_lease.heartbeat_at=context.clock_time;
-         decision.resulting_lease.expires_at=context.clock_time+time_extension;
+          decision.resulting_lease.heartbeat_at=context.clock_time;
+          decision.resulting_lease.expires_at=context.clock_time+time_extension;
+          decision.resulting_lease.store_revision=SWV5_TestCanonicalHash(
+             SWV5_TestCanonicalField("format","s","SWV5-OWNERSHIP-STORE-REVISION-V1")+
+             SWV5_TestCanonicalField("prior_store_revision","s",observed.store_revision)+
+             SWV5_TestCanonicalField("fencing_token_digest","s",observed.fence.fencing_token_digest)+
+             SWV5_TestCanonicalUnsignedField("heartbeat_sequence",decision.resulting_lease.heartbeat_sequence)+
+             SWV5_TestCanonicalUnsignedField("heartbeat_clock_sequence",decision.resulting_lease.heartbeat_clock_sequence));
       }
       return valid;
    }
    virtual bool DetectConflict(const SWV5_ContractValidationContext &context,const SWV5_OwnershipClaim &claim,const SWV5_InstanceLease &observed,SWV5_OwnershipConflict &conflict)
    {
-      const bool detected=observed.status==SWV5_LOCK_ACQUIRED && !SWV5_TestOwnerEqual(claim.claimant,observed.fence.owner);
+      const bool detected=SWV5_TestActiveOwnedStatus(observed.status) && !SWV5_TestOwnerEqual(claim.claimant,observed.fence.owner);
       conflict.contract_version=context.expected_version;
       conflict.key=observed.fence.ownership_namespace;
       conflict.claimant=claim.claimant;
@@ -634,7 +690,7 @@ public:
    }
    virtual bool Release(const SWV5_ContractValidationContext &context,const SWV5_InstanceLease &lease,const SWV5_InstanceLease &observed,SWV5_OwnershipDecision &decision)
    {
-      const bool valid=SWV5_TestFenceEqual(lease.fence,observed.fence);
+      const bool valid=SWV5_TestActiveOwnedStatus(lease.status) && SWV5_TestInstanceLeaseEqual(lease,observed);
       decision.contract_version=context.expected_version;
       SWV5_TestSetDecision(context,valid,(valid ? "RELEASED" : "STALE_OWNER"),decision.decision);
       decision.resulting_lease=observed;
@@ -646,7 +702,7 @@ public:
 class SWV5_TestUnitSystemContract : public ISWV5UnitSystemContract
 {
 public:
-   virtual string ContractName() { return "ISWV5UnitSystemContract/V3"; }
+   virtual string ContractName() { return "ISWV5UnitSystemContract/V4"; }
    virtual bool ValidateSpecification(const SWV5_ContractValidationContext &context,const SWV5_SymbolUnitSpecification &specification,SWV5_UnitValidationResult &result)
    {
       const bool valid=SWV5_TestSpecificationValid(context,specification);
@@ -660,7 +716,16 @@ public:
       const bool valid=SWV5_TestNormalize(context,specification,request,normalized);
       result.contract_version=context.expected_version;
       SWV5_TestSetDecision(context,valid,(valid ? "UNITS_NORMALIZED" : "UNITS_REJECTED"),result.decision);
-      result.validation_flags=(valid ? SWV5_UNIT_POINT_VALID|SWV5_UNIT_TICK_VALID|SWV5_UNIT_VOLUME_STEP_VALID|SWV5_UNIT_SPECIFICATION_FRESH|SWV5_UNIT_STOPS_LEVEL_VALID|SWV5_UNIT_FREEZE_LEVEL_VALID : 0);
+      result.validation_flags=0;
+      if(valid)
+      {
+         result.validation_flags=SWV5_UNIT_POINT_VALID|SWV5_UNIT_TICK_VALID|SWV5_UNIT_SPECIFICATION_FRESH|
+                                 SWV5_UNIT_STOPS_LEVEL_VALID|SWV5_UNIT_FREEZE_LEVEL_VALID;
+         if(normalized.volume_aligned_to_step)
+            result.validation_flags|=SWV5_UNIT_VOLUME_STEP_VALID;
+         if(normalized.derived_operation_semantic!=SWV5_UNIT_OPERATION_RESIDUAL_CLOSE)
+            result.validation_flags|=SWV5_UNIT_VOLUME_RANGE_VALID;
+      }
       return valid;
    }
 };

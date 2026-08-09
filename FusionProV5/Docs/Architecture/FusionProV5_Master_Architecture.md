@@ -22,6 +22,7 @@
 | 2.1 | 2026-08-05 | Hardened production contract version 2, deterministic validation context, ADR governance, and table-driven verification requirements. |
 | 2.2 | 2026-08-05 | Corrected governance wording: Sprint 4 remains the authorized baseline; Sprint 4.1 is Candidate / In Review pending formal approval. |
 | 2.3 | 2026-08-06 | Recorded Sprint 4.2 as an authorized verification sub-sprint and Sprint 4.3 as corrective interface-level verification; advanced the breaking candidate contracts to V3 without Architecture Lock or runtime authorization. |
+| 2.4 | 2026-08-10 | Recorded Sprint 4.5 corrective candidate work and advanced the still-unlocked contracts to V4; Sprint 4 remains the authorized baseline and final immutable verification remains pending. |
 
 ## Purpose
 
@@ -50,10 +51,10 @@ Latest verified MetaEditor compilation:
 - Errors: `0`
 - Warnings: `0`
 - Target: X64 Regular
-- Production contract version: V3 corrective candidate; minimum compatible version 3
+- Production contract version: V4 corrective candidate; minimum compatible version 4
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings; Sprint 4.4 executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
+The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4/4.5 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`; final immutable Sprint 4.5 evidence remains deferred to Phase G. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -96,7 +97,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 and Sprint 4.4 are corrective verification responding to independent-review findings. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3, Sprint 4.4, and Sprint 4.5 are corrective verification responding to independent-review findings. Sprint 4.5 advances the still-unlocked contract candidate to V4. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
 
 ## Architecture Boundary
 

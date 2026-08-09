@@ -215,8 +215,7 @@ public:
                          SWV5_RiskAuthorization &authorization) = 0;
    virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,
                                       const SWV5_RiskAuthorization &authorization,
-                                      const SWV5_ExecutionIntent &intent,
-                                      const SWV5_HardKillState &current_hard_kill_state,
+                                      const SWV5_RiskEvaluationInput &current_binding,
                                       SWV5_ContractDecision &decision) = 0;
    virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,
                                         const SWV5_HardKillState &current_state,

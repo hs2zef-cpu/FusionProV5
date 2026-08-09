@@ -1,7 +1,7 @@
 #ifndef SW_V5_UNIT_SYSTEM_CONTRACT_MQH
 #define SW_V5_UNIT_SYSTEM_CONTRACT_MQH
 
-#include "SW_V5_ProductionCommon.mqh"
+#include "SW_V5_ExecutionContract.mqh"
 
 enum SWV5_NormalizationDirection
 {
@@ -27,6 +27,18 @@ enum SWV5_TradeOperationKind
    SWV5_OPERATION_MODIFY_LIMIT = 3,
    SWV5_OPERATION_REDUCE = 4,
    SWV5_OPERATION_CLOSE = 5
+};
+
+enum SWV5_UnitOperationSemantic
+{
+   SWV5_UNIT_OPERATION_INVALID = 0,
+   SWV5_UNIT_OPERATION_OPEN = 1,
+   SWV5_UNIT_OPERATION_INCREASE = 2,
+   SWV5_UNIT_OPERATION_REDUCE = 3,
+   SWV5_UNIT_OPERATION_FULL_CLOSE = 4,
+   SWV5_UNIT_OPERATION_RESIDUAL_CLOSE = 5,
+   SWV5_UNIT_OPERATION_PROTECTIVE_STOP = 6,
+   SWV5_UNIT_OPERATION_LIMIT_TARGET = 7
 };
 
 const ulong SWV5_UNIT_POINT_VALID = 1;
@@ -70,6 +82,7 @@ struct SWV5_UnitNormalizationRequest
    SWV5_ContractVersion       contract_version;
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence       ownership_fence;
+   SWV5_ExecutionIntentType  intent_type;
    SWV5_PricePurpose          purpose;
    SWV5_TradeOperationKind    operation_kind;
    int                        direction;
@@ -77,6 +90,8 @@ struct SWV5_UnitNormalizationRequest
    double                     raw_stop_price;
    double                     raw_limit_price;
    double                     raw_volume;
+   double                     current_exposure_volume;
+   double                     target_exposure_volume;
    double                     reference_market_price;
    double                     operation_price;
    double                     market_bid;
@@ -91,10 +106,15 @@ struct SWV5_NormalizedUnits
    SWV5_ContractVersion contract_version;
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence ownership_fence;
+   SWV5_UnitOperationSemantic derived_operation_semantic;
    double price;
    double stop_price;
    double limit_price;
    double volume;
+   double current_exposure_volume;
+   double target_exposure_volume;
+   double resulting_exposure_volume;
+   double residual_exposure_volume;
    double stop_distance_price;
    double stop_distance_points;
    double stop_distance_ticks;
@@ -109,6 +129,7 @@ struct SWV5_NormalizedUnits
    bool   volume_aligned_to_step;
    bool   stops_level_satisfied;
    bool   freeze_level_satisfied;
+   bool   caller_flags_consistent;
 };
 
 struct SWV5_UnitValidationResult

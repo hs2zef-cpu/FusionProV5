@@ -6,12 +6,16 @@ Candidate policy for the Sprint 4.1 review package. Pending formal approval; not
 
 ## Current Contract
 
-- Schema version: `3`
-- Minimum compatible version: `3`
-- Policy ID: `SWV5-PRODUCTION-V3`
+- Schema version: `4`
+- Minimum compatible version: `4`
+- Policy ID: `SWV5-PRODUCTION-V4`
 - Sprint 4 version 1 records are architecture artifacts, not production persistence records.
 
-Version 3 is intentionally incompatible with versions 1 and 2. Version 2 added deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence. Version 3 corrects proven final-review defects by making recovery state explicit, splitting pre- and post-submission identity, making pending requests reconstructible, binding Risk to a canonical account namespace/epoch and account mode, replacing self-attested evidence, making idempotency membership reconstructible, and enforcing non-caller-controlled unit safety.
+Version 4 is an intentionally incompatible evolution of the unlocked version 3 candidate. It adds durable immutable evidence fingerprint binding, completes Risk authorization rebinding against the full current Risk input, and makes Unit safety derive operation semantics from intent, operation kind, purpose, and current/target exposure. Caller flags are consistency evidence only. Version 3 remains historical candidate work and was never Architecture Locked or authorized for runtime use. Version 2 added deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence. Version 3 corrected earlier review defects by making recovery state explicit, splitting pre- and post-submission identity, making pending requests reconstructible, binding Risk to a canonical account namespace/epoch and account mode, replacing self-attested evidence, making idempotency membership reconstructible, and introducing the earlier Unit safety model.
+
+The Sprint 4.5 Phase C signature and Unit DTO additions and the Phase D ownership-evidence additions are V4 candidate completion, not a V5 release. V4 has never been approved, locked, emitted by runtime, or accepted as a durable compatibility baseline. Phase D completes the unresolved candidate by binding the authoritative clock and complete observed lease identity into ownership lifecycle and takeover evidence, and by separating immutable ownership-authority fencing from mutable lease-record CAS revision. These corrections therefore complete the same unresolved candidate before formal approval. After V4 approval, the same required-field or interface-signature changes would require a schema increment and migration review.
+
+Phase D request-set identity uses deterministic typed length-prefixed fields in fixed DTO and array order. Strings are encoded with their field name, type, character length, and exact value, so delimiters and Unicode content remain unambiguous. Signed integers, unsigned integers, enums, booleans, and datetimes use locale-independent decimal text. Doubles use fixed 16-decimal point notation with deterministic negative-zero normalization. Request arrays are order-sensitive: every record is bound to its explicit zero-based order index, and implementations do not sort silently.
 
 ## Version Fields
 

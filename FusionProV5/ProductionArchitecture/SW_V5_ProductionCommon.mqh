@@ -1,9 +1,9 @@
 #ifndef SW_V5_PRODUCTION_COMMON_MQH
 #define SW_V5_PRODUCTION_COMMON_MQH
 
-#define SWV5_PRODUCTION_CONTRACT_VERSION 3
-#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 3
-#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V3"
+#define SWV5_PRODUCTION_CONTRACT_VERSION 4
+#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 4
+#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V4"
 
 enum SWV5_AccountPositionMode
 {
@@ -176,6 +176,7 @@ struct SWV5_DurableEventIdentitySet
 {
    SWV5_ContractVersion contract_version;
    string               canonical_event_index;
+   string               canonical_fingerprint_index;
    string               identity_set_digest;
    uint                 accepted_identity_count;
    ulong                highest_transaction_sequence;
@@ -209,7 +210,6 @@ struct SWV5_OwnershipFence
    ulong                lease_version;
    ulong                takeover_generation;
    string               fencing_token_digest;
-   string               store_revision;
 };
 
 struct SWV5_PersistenceNamespace

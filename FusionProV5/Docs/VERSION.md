@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 4.4 Contract Completion and Semantic Verification
+Sprint 4.5 Authority Binding and State Semantics Candidate
 
 ### Date
 
-2026-08-07
+2026-08-10
 
 ### Status
 
 **CANDIDATE / IN REVIEW**
 
-Corrective verification is part of the Sprint 4.1 candidate branch and remains pending independent review. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
+Corrective contract and verification work is part of the Sprint 4.1 candidate branch and remains pending independent review. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
 
 ## Current Authorized Baseline
 
@@ -30,7 +30,7 @@ Review-candidate compile manifest:
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5` (test only)
 
-Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 introduced the V3 corrective package; Sprint 4.4 completes its remaining semantic contract findings. None is a production or runtime authorization.
+Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 introduced the V3 corrective package, Sprint 4.4 completed its remaining semantic findings, and Sprint 4.5 advances the unresolved candidate to V4 with authority-binding, canonical-validation, ownership, persistence, Risk, Unit, and test-credibility corrections. None is a production or runtime authorization.
 
 ## Frozen Signal Baseline
 
@@ -44,7 +44,7 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Current State
 
-- Production contract version 3 corrective candidate (minimum compatible version 3)
+- Production contract version 4 corrective candidate (minimum compatible version 4)
 - Deterministic validation context required by every contract interface
 - Contract compatibility and migration policy documented
 - Execution host and Hedging-only initial account-mode decisions recorded
@@ -62,8 +62,9 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Unit and normalization contract complete
 - No concrete production implementation
 - No broker command path
-- Sprint 4.4 Architecture and test manifests, MetaEditor X64 Regular: 0 errors, 0 warnings
-- Sprint 4.4 MT5 Demo Strategy Tester: 238 passed, 0 failed, 0 skipped, repeated twice with signature `6132791249901820115`
+- Sprint 4.4 historical Architecture and test manifests, MetaEditor X64 Regular: 0 errors, 0 warnings
+- Sprint 4.4 historical MT5 Demo Strategy Tester evidence: 238 passed, 0 failed, 0 skipped, repeated twice with signature `6132791249901820115`
+- Sprint 4.5 final immutable verification evidence remains pending the separate Phase G workflow
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action

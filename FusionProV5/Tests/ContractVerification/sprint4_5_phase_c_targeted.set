@@ -1,0 +1,9 @@
+; TEST ONLY
+; NOT FOR PRODUCTION
+; NO BROKER ACCESS
+InpPhaseATargetedOnly=false||false||0||true||N
+InpPhaseBTargetedOnly=false||false||0||true||N
+InpPhaseCTargetedOnly=true||false||0||true||N
+InpPhaseDTargetedOnly=false||false||0||true||N
+InpPhaseETargetedOnly=false||false||0||true||N
+InpS4421TargetedOnly=false||false||0||true||N

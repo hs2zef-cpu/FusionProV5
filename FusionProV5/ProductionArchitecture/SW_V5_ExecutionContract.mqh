@@ -52,6 +52,14 @@ enum SWV5_TransactionEventKind
    SWV5_TRANSACTION_EVENT_HISTORY_CONFIRMED = 5
 };
 
+enum SWV5_TransactionEvidenceDisposition
+{
+   SWV5_TRANSACTION_EVIDENCE_INVALID = 0,
+   SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY = 1,
+   SWV5_TRANSACTION_EVIDENCE_AUTHORITATIVE_CONFIRMATION = 2,
+   SWV5_TRANSACTION_EVIDENCE_RECONCILIATION_REQUIRED = 3
+};
+
 enum SWV5_RetryDisposition
 {
    SWV5_RETRY_FORBIDDEN = 0,
@@ -178,6 +186,7 @@ struct SWV5_ExecutionConfirmation
    SWV5_PersistenceNamespace persistence_namespace;
    SWV5_OwnershipFence     ownership_fence;
    SWV5_ExecutionCorrelation correlation;
+   SWV5_TransactionEvidenceDisposition evidence_disposition;
    SWV5_ConfirmationStatus status;
    SWV5_ContractDisposition disposition;
    double                  confirmed_volume;

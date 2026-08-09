@@ -20,8 +20,10 @@ struct SWV5_InstanceLease
    SWV5_ContractVersion    contract_version;
    SWV5_OwnershipFence     fence;
    SWV5_InstanceLockStatus status;
+   string                 store_revision;
    ulong                  heartbeat_sequence;
    string                 clock_id;
+   SWV5_TimeAuthority     clock_authority;
    ulong                  acquired_clock_sequence;
    ulong                  heartbeat_clock_sequence;
    ulong                  expiry_clock_sequence;
@@ -34,6 +36,8 @@ struct SWV5_LeaseExpiryEvidence
 {
    SWV5_ContractVersion contract_version;
    SWV5_OwnershipKey    observed_ownership_key;
+   SWV5_OwnerIdentity   observed_owner;
+   SWV5_OwnershipKey    observed_ownership_namespace;
    string               clock_id;
    SWV5_TimeAuthority   clock_authority;
    ulong                observed_clock_sequence;
@@ -42,6 +46,7 @@ struct SWV5_LeaseExpiryEvidence
    ulong                observed_heartbeat_sequence;
    string               observed_store_revision;
    datetime             observed_expiry_time;
+   ulong                observed_takeover_generation;
    bool                 expired;
 };
 
@@ -51,10 +56,21 @@ struct SWV5_OwnershipTakeoverEvidence
    SWV5_TypedReconciliationEvidence broker_reconciliation;
    SWV5_TypedReconciliationEvidence persistence_reconciliation;
    SWV5_LeaseExpiryEvidence lease_expiry;
+   SWV5_OwnershipKey    observed_ownership_key;
+   SWV5_OwnerIdentity   observed_owner;
+   SWV5_OwnershipKey    observed_ownership_namespace;
    ulong                observed_lease_version;
    string               observed_store_revision;
+   ulong                observed_heartbeat_sequence;
+   string               observed_clock_id;
+   SWV5_TimeAuthority   observed_clock_authority;
+   ulong                observed_clock_sequence;
+   datetime             observed_expiry_time;
+   datetime             observed_at;
+   ulong                observed_takeover_generation;
    ulong                proposed_takeover_generation;
    SWV5_ComponentAuthority authority;
+   SWV5_AuthoritySource independent_authority_source;
    ulong                evidence_sequence;
    datetime             evidenced_at;
 };
@@ -64,6 +80,7 @@ struct SWV5_OwnershipClaim
    SWV5_ContractVersion contract_version;
    SWV5_OwnerIdentity claimant;
    SWV5_OwnershipFence expected_fence;
+   string             expected_store_revision;
    uint               lease_duration_seconds;
    SWV5_OwnershipTakeoverEvidence takeover_evidence;
 };
