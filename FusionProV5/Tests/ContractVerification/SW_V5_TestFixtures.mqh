@@ -16,13 +16,25 @@ string SWV5_TestCanonicalIntegerField(const string name,const long value);
 string SWV5_TestCanonicalUnsignedField(const string name,const ulong value);
 string SWV5_TestCanonicalDoubleField(const string name,const double value);
 string SWV5_TestCanonicalBoolField(const string name,const bool value);
+string SWV5_TestCanonicalDurableEventEntry(const string event_id,const ulong sequence);
+string SWV5_TestCanonicalDurableFingerprintEntry(const string event_id,const ulong sequence,const string fingerprint);
+string SWV5_TestEventSetDigest(const SWV5_DurableEventIdentitySet &set);
+string SWV5_TestCanonicalCheckpointPayload(const SWV5_PersistedCheckpoint &checkpoint);
+string SWV5_TestCheckpointPayloadDigest(const SWV5_PersistedCheckpoint &checkpoint);
+ulong SWV5_TestCheckpointPayloadSize(const SWV5_PersistedCheckpoint &checkpoint);
+void SWV5_TestSealCheckpoint(SWV5_PersistedCheckpoint &checkpoint);
 
 void SWV5_TestMakeVersion(SWV5_ContractVersion &version)
 {
-   version.contract_name="SWV5-PRODUCTION";
+   version.contract_name=SWV5_PRODUCTION_CONTRACT_NAME;
    version.schema_version=SWV5_PRODUCTION_CONTRACT_VERSION;
    version.minimum_compatible_version=SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION;
    version.policy_id=SWV5_PRODUCTION_CONTRACT_POLICY;
+}
+
+void SWV5_TestSetForeignContractIdentity(SWV5_ContractVersion &version)
+{
+   version.contract_name="FOREIGN-PRODUCTION-CONTRACT";
 }
 
 void SWV5_TestMakeContext(SWV5_ContractValidationContext &context)
@@ -125,20 +137,20 @@ void SWV5_TestMakeTypedReconciliation(SWV5_TypedReconciliationEvidence &evidence
    evidence.state_digest=evidence_id+"-DIGEST";
 }
 
-void SWV5_TestMakeEventIdentitySet(SWV5_DurableEventIdentitySet &set,const bool populated=false)
+void SWV5_TestMakeEventIdentitySet(SWV5_DurableEventIdentitySet &set,
+                                   const bool populated=false,
+                                   const SWV5_DurableFingerprintPolicy fingerprint_policy=SWV5_DURABLE_FINGERPRINT_IDENTITY_ONLY)
 {
    SWV5_TestMakeVersion(set.contract_version);
-   set.canonical_event_index=(populated ? "EVENT-0001|400" : "");
-   set.canonical_fingerprint_index="";
+   set.fingerprint_policy=fingerprint_policy;
+   set.canonical_event_index=(populated ? SWV5_TestCanonicalDurableEventEntry("EVENT-0001",400) : "");
+   set.canonical_fingerprint_index=(populated && fingerprint_policy==SWV5_DURABLE_FINGERPRINT_REQUIRED ?
+                                    SWV5_TestCanonicalDurableFingerprintEntry("EVENT-0001",400,"FINGERPRINT-EVENT-0001") : "");
    set.accepted_identity_count=(populated ? 1 : 0);
    set.highest_transaction_sequence=(populated ? 400 : 0);
    set.index_revision=(populated ? 1 : 0);
    set.compaction_generation=1;
-   set.identity_set_digest=SWV5_TestCanonicalHash("SWV5-EVENT-SET-V4|"+set.canonical_event_index+"|"+set.canonical_fingerprint_index+"|"+
-                                                  IntegerToString((long)set.accepted_identity_count)+"|"+
-                                                  IntegerToString((long)set.highest_transaction_sequence)+"|"+
-                                                  IntegerToString((long)set.index_revision)+"|"+
-                                                  IntegerToString((long)set.compaction_generation));
+   set.identity_set_digest=SWV5_TestEventSetDigest(set);
 }
 
 void SWV5_TestMakeQueries(SWV5_AuthoritativeQuerySet &queries,const ulong required_flags)
@@ -159,7 +171,7 @@ void SWV5_TestMakeLifecycle(SWV5_BasketLifecycleSnapshot &snapshot,const SWV5_Ba
    snapshot.state_version=12;
    snapshot.cumulative_recovery_attempts=3;
    snapshot.current_recovery_layer=2;
-   SWV5_TestMakeEventIdentitySet(snapshot.accepted_recovery_evidence,false);
+   SWV5_TestMakeEventIdentitySet(snapshot.accepted_recovery_evidence,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
    snapshot.aggregate_open_volume=(state==SWV5_BASKET_IDLE ? 0.0 : 0.30);
    snapshot.residual_volume=(state==SWV5_BASKET_IDLE ? 0.0 : 0.20);
    snapshot.live_position_count=(state==SWV5_BASKET_IDLE ? 0 : 1);
@@ -546,6 +558,8 @@ void SWV5_TestMakeValidHardKillRelease(SWV5_HardKillState &state)
    state.release_evidence.approving_component=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE;
    SWV5_TestMakeTypedReconciliation(state.release_evidence.broker_evidence,"BROKER-RELEASE-1",SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER);
    SWV5_TestMakeTypedReconciliation(state.release_evidence.persistence_evidence,"STORE-RELEASE-1",SWV5_COMPONENT_AUTHORITY_PERSISTENCE);
+   state.release_evidence.broker_evidence.observed_at=SWV5_TEST_TIME-25;
+   state.release_evidence.persistence_evidence.observed_at=SWV5_TEST_TIME-20;
    state.release_evidence.exposure_evidence.evidence_id="EXPOSURE-RELEASE-1";
    state.release_evidence.exposure_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE;
    state.release_evidence.exposure_evidence.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
@@ -553,7 +567,7 @@ void SWV5_TestMakeValidHardKillRelease(SWV5_HardKillState &state)
    state.release_evidence.exposure_evidence.prior_exposure_volume=0.10;
    state.release_evidence.exposure_evidence.zero_or_reducing=true;
    state.release_evidence.exposure_evidence.evidence_sequence=952;
-   state.release_evidence.exposure_evidence.observed_at=SWV5_TEST_TIME-5;
+   state.release_evidence.exposure_evidence.observed_at=SWV5_TEST_TIME-15;
    state.release_evidence.approved_at=SWV5_TEST_TIME-10;
    state.release_evidence.expires_at=SWV5_TEST_TIME+60;
    state.release_evidence.audit_reference="AUDIT-RELEASE-0001";
@@ -697,6 +711,10 @@ void SWV5_TestMakePending(SWV5_PendingRequest &pending)
    pending.latest_retcode.ownership_fence=pending.intent.ownership_fence;
    SWV5_TestMakeCorrelation(pending.latest_retcode.correlation);
    pending.latest_retcode.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+   pending.latest_retcode.correlation.broker_identity.deal_ticket=0;
+   pending.latest_retcode.correlation.broker_identity.position_identifier=0;
+   pending.latest_retcode.correlation.broker_identity.broker_event_id="";
+   pending.latest_retcode.correlation.broker_identity.transaction_sequence=0;
    pending.latest_retcode.raw_retcode=1;
    pending.latest_retcode.broker_comment="TEST-ACK";
    pending.latest_retcode.observed_at=SWV5_TEST_TIME;
@@ -713,7 +731,7 @@ void SWV5_TestMakePending(SWV5_PendingRequest &pending)
    pending.latest_retcode_classification.decision.evaluation_sequence=2000;
    pending.latest_retcode_classification.decision.evaluated_at=SWV5_TEST_TIME;
    SWV5_TestMakeVersion(pending.latest_authoritative_confirmation.contract_version);
-   SWV5_TestMakeCorrelation(pending.latest_authoritative_confirmation.correlation);
+   pending.latest_authoritative_confirmation.correlation=pending.latest_retcode.correlation;
    pending.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_NOT_STARTED;
    pending.latest_authoritative_confirmation.cumulative_confirmed_volume=0.0;
    pending.latest_authoritative_confirmation.residual_volume=0.10;
@@ -722,11 +740,75 @@ void SWV5_TestMakePending(SWV5_PendingRequest &pending)
    pending.latest_authoritative_confirmation.confirmed_at=0;
    pending.cumulative_confirmed_volume=0.0;
    pending.residual_requested_volume=0.10;
-   SWV5_TestMakeEventIdentitySet(pending.accepted_event_identities,false);
+   SWV5_TestMakeEventIdentitySet(pending.accepted_event_identities,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
    pending.retry_disposition=SWV5_RETRY_FORBIDDEN;
    pending.authorization_identity=pending.intent.risk_authorization_id;
    pending.normalization_identity="NORMALIZATION-50-2400.00-0.10";
    pending.last_changed_at=SWV5_TEST_TIME;
+}
+
+void SWV5_TestMakeRetryCandidate(SWV5_PendingRequest &pending)
+{
+   SWV5_TestMakePending(pending);
+   pending.retry_disposition=SWV5_RETRY_AFTER_REVALIDATION;
+   pending.latest_retcode_classification.classification=SWV5_RETCODE_CONNECTION_UNCERTAIN;
+   pending.latest_retcode_classification.retry_disposition=SWV5_RETRY_AFTER_REVALIDATION;
+   pending.last_changed_at=SWV5_TEST_TIME-1;
+}
+
+void SWV5_TestMakeRetryPolicy(const SWV5_ContractValidationContext &context,SWV5_RetryPolicy &policy)
+{
+   SWV5_TestMakeVersion(policy.contract_version);
+   policy.maximum_attempts=3;
+   policy.initial_backoff_milliseconds=100;
+   policy.maximum_backoff_milliseconds=1000;
+   policy.require_fresh_risk_authorization=true;
+   policy.require_fresh_unit_normalization=true;
+   policy.disposition=SWV5_RETRY_AFTER_REVALIDATION;
+   policy.authorization_deadline=context.clock_time+120;
+   policy.earliest_retry_at=context.clock_time;
+}
+
+void SWV5_TestMakeRetryRiskEvidence(const SWV5_ContractValidationContext &context,
+                                    const SWV5_PendingRequest &pending,
+                                    SWV5_RetryRiskFreshnessEvidence &evidence)
+{
+   SWV5_TestMakeVersion(evidence.contract_version);
+   evidence.persistence_namespace=pending.intent.persistence_namespace;
+   evidence.ownership_fence=pending.intent.ownership_fence;
+   evidence.request_identity=pending.intent.request_identity;
+   evidence.account_mode=pending.account_mode;
+   evidence.expected_basket_version=pending.intent.expected_basket_version;
+   evidence.symbol_specification_sequence=pending.intent.symbol_specification_sequence;
+   evidence.authorization_id=pending.authorization_identity;
+   evidence.authorized_volume=pending.intent.normalized_volume;
+   evidence.evidenced_at=context.clock_time;
+   evidence.expires_at=pending.intent.authorization_expires_at;
+   evidence.evidence_sequence=context.evaluation_sequence;
+   evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE;
+}
+
+void SWV5_TestMakeRetryNormalizationEvidence(const SWV5_ContractValidationContext &context,
+                                             const SWV5_PendingRequest &pending,
+                                             SWV5_RetryNormalizationFreshnessEvidence &evidence)
+{
+   SWV5_TestMakeVersion(evidence.contract_version);
+   evidence.persistence_namespace=pending.intent.persistence_namespace;
+   evidence.ownership_fence=pending.intent.ownership_fence;
+   evidence.request_identity=pending.intent.request_identity;
+   evidence.account_mode=pending.account_mode;
+   evidence.expected_basket_version=pending.intent.expected_basket_version;
+   evidence.symbol_specification_sequence=pending.intent.symbol_specification_sequence;
+   evidence.intent_type=pending.intent.intent_type;
+   evidence.direction=pending.intent.direction;
+   evidence.normalized_volume=pending.intent.normalized_volume;
+   evidence.normalized_price=pending.intent.normalized_price;
+   evidence.normalized_stop_price=pending.intent.normalized_stop_price;
+   evidence.normalized_limit_price=pending.intent.normalized_limit_price;
+   evidence.normalization_identity=pending.normalization_identity;
+   evidence.evidenced_at=context.clock_time;
+   evidence.evidence_sequence=context.evaluation_sequence;
+   evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_UNIT_SYSTEM;
 }
 
 void SWV5_TestMakePersistedRequest(SWV5_PersistedRequestEvidence &record,const int ordinal=1)
@@ -1028,6 +1110,7 @@ string SWV5_TestCanonicalIntent(const SWV5_ExecutionIntent &value)
 string SWV5_TestCanonicalEventSet(const SWV5_DurableEventIdentitySet &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalIntegerField("fingerprint_policy",(long)value.fingerprint_policy)+
           SWV5_TestCanonicalField("canonical_event_index","s",value.canonical_event_index)+
           SWV5_TestCanonicalField("canonical_fingerprint_index","s",value.canonical_fingerprint_index)+
           SWV5_TestCanonicalField("identity_set_digest","s",value.identity_set_digest)+
@@ -1035,6 +1118,27 @@ string SWV5_TestCanonicalEventSet(const SWV5_DurableEventIdentitySet &value)
           SWV5_TestCanonicalUnsignedField("highest_transaction_sequence",value.highest_transaction_sequence)+
           SWV5_TestCanonicalUnsignedField("index_revision",value.index_revision)+
           SWV5_TestCanonicalUnsignedField("compaction_generation",value.compaction_generation);
+}
+
+string SWV5_TestCanonicalDurableEventEntry(const string event_id,const ulong sequence)
+{
+   const string identity=SWV5_TestCanonicalField("event_id","s",event_id)+
+                         SWV5_TestCanonicalUnsignedField("transaction_sequence",sequence);
+   return SWV5_TestCanonicalField("entry","x",identity);
+}
+
+string SWV5_TestEventSetDigest(const SWV5_DurableEventIdentitySet &set)
+{
+   const string canonical=SWV5_TestCanonicalField("format","s","SWV5-DURABLE-EVENT-SET-V4-LP1")+
+                          SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(set.contract_version))+
+                          SWV5_TestCanonicalIntegerField("fingerprint_policy",(long)set.fingerprint_policy)+
+                          SWV5_TestCanonicalField("canonical_event_index","x",set.canonical_event_index)+
+                          SWV5_TestCanonicalField("canonical_fingerprint_index","x",set.canonical_fingerprint_index)+
+                          SWV5_TestCanonicalUnsignedField("accepted_identity_count",set.accepted_identity_count)+
+                          SWV5_TestCanonicalUnsignedField("highest_transaction_sequence",set.highest_transaction_sequence)+
+                          SWV5_TestCanonicalUnsignedField("index_revision",set.index_revision)+
+                          SWV5_TestCanonicalUnsignedField("compaction_generation",set.compaction_generation);
+   return SWV5_TestCanonicalHash(canonical);
 }
 
 string SWV5_TestCanonicalPending(const SWV5_PendingRequest &value)
@@ -1093,6 +1197,176 @@ string SWV5_TestCanonicalPersistedRequest(const SWV5_PersistedRequestEvidence &v
           SWV5_TestCanonicalIntegerField("account_mode",(long)value.account_mode)+
           SWV5_TestCanonicalUnsignedField("record_sequence",value.record_sequence)+
           SWV5_TestCanonicalIntegerField("recorded_at",value.recorded_at);
+}
+
+string SWV5_TestCanonicalQueries(const SWV5_AuthoritativeQuerySet &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalUnsignedField("required_flags",value.required_flags)+
+          SWV5_TestCanonicalUnsignedField("completed_flags",value.completed_flags)+
+          SWV5_TestCanonicalUnsignedField("authoritative_flags",value.authoritative_flags)+
+          SWV5_TestCanonicalUnsignedField("observation_sequence",value.observation_sequence);
+}
+
+string SWV5_TestCanonicalAccountNamespace(const SWV5_AccountRiskNamespace &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("broker_identity","s",value.broker_identity)+
+          SWV5_TestCanonicalField("server","s",value.server)+
+          SWV5_TestCanonicalIntegerField("account_login",value.account_login)+
+          SWV5_TestCanonicalField("account_currency","s",value.account_currency)+
+          SWV5_TestCanonicalField("strategy_id","s",value.strategy_id)+
+          SWV5_TestCanonicalUnsignedField("magic",value.magic)+
+          SWV5_TestCanonicalIntegerField("account_mode",(long)value.account_mode)+
+          SWV5_TestCanonicalIntegerField("authoritative_source",(long)value.authoritative_source)+
+          SWV5_TestCanonicalUnsignedField("snapshot_epoch",value.snapshot_epoch)+
+          SWV5_TestCanonicalUnsignedField("snapshot_sequence",value.snapshot_sequence);
+}
+
+string SWV5_TestCanonicalTypedReconciliation(const SWV5_TypedReconciliationEvidence &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
+          SWV5_TestCanonicalField("evidence_id","s",value.evidence_id)+
+          SWV5_TestCanonicalIntegerField("issuing_component",(long)value.issuing_component)+
+          SWV5_TestCanonicalIntegerField("authority_source",(long)value.authority_source)+
+          SWV5_TestCanonicalUnsignedField("evidence_sequence",value.evidence_sequence)+
+          SWV5_TestCanonicalIntegerField("observed_at",value.observed_at)+
+          SWV5_TestCanonicalField("state_digest","s",value.state_digest);
+}
+
+string SWV5_TestCanonicalExposureEvidence(const SWV5_ExposureReductionEvidence &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("evidence_id","s",value.evidence_id)+
+          SWV5_TestCanonicalIntegerField("issuing_component",(long)value.issuing_component)+
+          SWV5_TestCanonicalIntegerField("authority_source",(long)value.authority_source)+
+          SWV5_TestCanonicalDoubleField("observed_exposure_volume",value.observed_exposure_volume)+
+          SWV5_TestCanonicalDoubleField("prior_exposure_volume",value.prior_exposure_volume)+
+          SWV5_TestCanonicalBoolField("zero_or_reducing",value.zero_or_reducing)+
+          SWV5_TestCanonicalUnsignedField("evidence_sequence",value.evidence_sequence)+
+          SWV5_TestCanonicalIntegerField("observed_at",value.observed_at);
+}
+
+string SWV5_TestCanonicalOperator(const SWV5_OperatorIdentity &value)
+{
+   return SWV5_TestCanonicalField("operator_id","s",value.operator_id)+
+          SWV5_TestCanonicalField("authority_role","s",value.authority_role)+
+          SWV5_TestCanonicalField("authentication_reference","s",value.authentication_reference)+
+          SWV5_TestCanonicalIntegerField("authenticated_at",value.authenticated_at);
+}
+
+string SWV5_TestCanonicalHardKillRelease(const SWV5_HardKillReleaseEvidence &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
+          SWV5_TestCanonicalField("release_id","s",value.release_id)+
+          SWV5_TestCanonicalField("latch_id","s",value.latch_id)+
+          SWV5_TestCanonicalUnsignedField("latch_generation",value.latch_generation)+
+          SWV5_TestCanonicalUnsignedField("release_generation",value.release_generation)+
+          SWV5_TestCanonicalField("operator_identity","x",SWV5_TestCanonicalOperator(value.operator_identity))+
+          SWV5_TestCanonicalIntegerField("approving_component",(long)value.approving_component)+
+          SWV5_TestCanonicalField("broker_evidence","x",SWV5_TestCanonicalTypedReconciliation(value.broker_evidence))+
+          SWV5_TestCanonicalField("persistence_evidence","x",SWV5_TestCanonicalTypedReconciliation(value.persistence_evidence))+
+          SWV5_TestCanonicalField("exposure_evidence","x",SWV5_TestCanonicalExposureEvidence(value.exposure_evidence))+
+          SWV5_TestCanonicalIntegerField("approved_at",value.approved_at)+
+          SWV5_TestCanonicalIntegerField("expires_at",value.expires_at)+
+          SWV5_TestCanonicalField("audit_reference","s",value.audit_reference);
+}
+
+string SWV5_TestCanonicalHardKill(const SWV5_HardKillState &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
+          SWV5_TestCanonicalField("account_namespace","x",SWV5_TestCanonicalAccountNamespace(value.account_namespace))+
+          SWV5_TestCanonicalField("latch_id","s",value.latch_id)+
+          SWV5_TestCanonicalUnsignedField("latch_generation",value.latch_generation)+
+          SWV5_TestCanonicalIntegerField("state",(long)value.state)+
+          SWV5_TestCanonicalField("activation_reason","s",value.activation_reason)+
+          SWV5_TestCanonicalIntegerField("activated_at",value.activated_at)+
+          SWV5_TestCanonicalField("activation_authority","s",value.activation_authority)+
+          SWV5_TestCanonicalUnsignedField("release_generation",value.release_generation)+
+          SWV5_TestCanonicalField("release_evidence","x",SWV5_TestCanonicalHardKillRelease(value.release_evidence));
+}
+
+string SWV5_TestCanonicalLifecycle(const SWV5_BasketLifecycleSnapshot &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("basket_id","s",value.basket_id.value)+
+          SWV5_TestCanonicalField("ownership_fence","x",SWV5_TestCanonicalFence(value.ownership_fence))+
+          SWV5_TestCanonicalIntegerField("state",(long)value.state)+
+          SWV5_TestCanonicalUnsignedField("state_version",value.state_version)+
+          SWV5_TestCanonicalUnsignedField("cumulative_recovery_attempts",value.cumulative_recovery_attempts)+
+          SWV5_TestCanonicalUnsignedField("current_recovery_layer",value.current_recovery_layer)+
+          SWV5_TestCanonicalField("accepted_recovery_evidence","x",SWV5_TestCanonicalEventSet(value.accepted_recovery_evidence))+
+          SWV5_TestCanonicalDoubleField("aggregate_open_volume",value.aggregate_open_volume)+
+          SWV5_TestCanonicalDoubleField("residual_volume",value.residual_volume)+
+          SWV5_TestCanonicalUnsignedField("live_position_count",value.live_position_count)+
+          SWV5_TestCanonicalUnsignedField("live_order_count",value.live_order_count)+
+          SWV5_TestCanonicalUnsignedField("pending_request_count",value.pending_request_count)+
+          SWV5_TestCanonicalIntegerField("reconciliation_state",(long)value.reconciliation_state)+
+          SWV5_TestCanonicalField("broker_queries","x",SWV5_TestCanonicalQueries(value.broker_queries))+
+          SWV5_TestCanonicalIntegerField("state_entered_at",value.state_entered_at);
+}
+
+string SWV5_TestCanonicalBasket(const SWV5_BasketAggregate &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
+          SWV5_TestCanonicalIntegerField("account_mode",(long)value.account_mode)+
+          SWV5_TestCanonicalField("lifecycle","x",SWV5_TestCanonicalLifecycle(value.lifecycle))+
+          SWV5_TestCanonicalDoubleField("initial_volume",value.initial_volume)+
+          SWV5_TestCanonicalDoubleField("aggregate_closed_volume",value.aggregate_closed_volume)+
+          SWV5_TestCanonicalIntegerField("close_verification",(long)value.close_verification)+
+          SWV5_TestCanonicalIntegerField("opened_at",value.opened_at)+
+          SWV5_TestCanonicalIntegerField("updated_at",value.updated_at);
+}
+
+string SWV5_TestCanonicalRequestSetHeader(const SWV5_PersistedRequestSetHeader &value)
+{
+   return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
+          SWV5_TestCanonicalUnsignedField("request_count",value.request_count)+
+          SWV5_TestCanonicalField("request_set_digest","s",value.request_set_digest)+
+          SWV5_TestCanonicalField("request_index_revision","s",value.request_index_revision)+
+          SWV5_TestCanonicalUnsignedField("record_sequence",value.record_sequence);
+}
+
+string SWV5_TestCanonicalCheckpointPayload(const SWV5_PersistedCheckpoint &checkpoint)
+{
+   // payload_digest and payload_size are the integrity envelope and are deliberately
+   // excluded from the body they describe. Every other persisted field is bound here.
+   return SWV5_TestCanonicalField("format","s","SWV5-CHECKPOINT-V4-LP1")+
+          SWV5_TestCanonicalField("header_contract_version","x",SWV5_TestCanonicalVersion(checkpoint.header.contract_version))+
+          SWV5_TestCanonicalField("header_persistence_namespace","x",SWV5_TestCanonicalNamespace(checkpoint.header.persistence_namespace))+
+          SWV5_TestCanonicalField("header_ownership_fence","x",SWV5_TestCanonicalFence(checkpoint.header.ownership_fence))+
+          SWV5_TestCanonicalUnsignedField("record_sequence",checkpoint.header.record_sequence)+
+          SWV5_TestCanonicalUnsignedField("previous_record_sequence",checkpoint.header.previous_record_sequence)+
+          SWV5_TestCanonicalIntegerField("written_at",checkpoint.header.written_at)+
+          SWV5_TestCanonicalField("basket","x",SWV5_TestCanonicalBasket(checkpoint.basket))+
+          SWV5_TestCanonicalField("last_confirmed_correlation","x",SWV5_TestCanonicalCorrelation(checkpoint.last_confirmed_correlation))+
+          SWV5_TestCanonicalField("pending_request_set","x",SWV5_TestCanonicalRequestSetHeader(checkpoint.pending_request_set))+
+          SWV5_TestCanonicalBoolField("has_latest_pending_request",checkpoint.has_latest_pending_request)+
+          SWV5_TestCanonicalField("latest_pending_request","x",SWV5_TestCanonicalPersistedRequest(checkpoint.latest_pending_request))+
+          SWV5_TestCanonicalField("hard_kill_state","x",SWV5_TestCanonicalHardKill(checkpoint.hard_kill_state))+
+          SWV5_TestCanonicalBoolField("clean_shutdown",checkpoint.clean_shutdown);
+}
+
+string SWV5_TestCheckpointPayloadDigest(const SWV5_PersistedCheckpoint &checkpoint)
+{
+   return SWV5_TestCanonicalHash(SWV5_TestCanonicalCheckpointPayload(checkpoint));
+}
+
+ulong SWV5_TestCheckpointPayloadSize(const SWV5_PersistedCheckpoint &checkpoint)
+{
+   // Size unit is the deterministic MQL string character count used by LP1 fields.
+   return (ulong)StringLen(SWV5_TestCanonicalCheckpointPayload(checkpoint));
+}
+
+void SWV5_TestSealCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
+{
+   const string canonical=SWV5_TestCanonicalCheckpointPayload(checkpoint);
+   checkpoint.header.payload_digest=SWV5_TestCanonicalHash(canonical);
+   checkpoint.header.payload_size=(ulong)StringLen(canonical);
 }
 
 string SWV5_TestCanonicalRequestSet(const SWV5_PersistedRequestEvidence &requests[])
@@ -1161,6 +1435,22 @@ void SWV5_TestMakeTransaction(const SWV5_PendingRequest &pending,SWV5_Transactio
    evidence.history_cross_checked=true;
 }
 
+void SWV5_TestMakeAcknowledgementTransaction(const SWV5_PendingRequest &pending,
+                                              SWV5_TransactionEvidence &evidence)
+{
+   SWV5_TestMakeTransaction(pending,evidence,0.0);
+   evidence.event_kind=SWV5_TRANSACTION_EVENT_ORDER_ACCEPTED;
+   evidence.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+   evidence.correlation.broker_identity.deal_ticket=0;
+   evidence.correlation.broker_identity.position_identifier=0;
+   evidence.correlation.broker_identity.broker_event_id="ORDER-ACK-EVENT-0001";
+   evidence.correlation.broker_identity.transaction_sequence=400;
+   evidence.confirmed_volume=0.0;
+   evidence.confirmed_price=0.0;
+   evidence.authority=SWV5_AUTHORITY_TRANSACTION_EVENT;
+   evidence.history_cross_checked=false;
+}
+
 void SWV5_TestMakeCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
 {
    SWV5_TestMakeVersion(checkpoint.header.contract_version);
@@ -1168,8 +1458,8 @@ void SWV5_TestMakeCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
    SWV5_TestMakeFence(checkpoint.header.ownership_fence);
    checkpoint.header.record_sequence=20;
    checkpoint.header.previous_record_sequence=19;
-   checkpoint.header.payload_digest="PAYLOAD-DIGEST-20";
-   checkpoint.header.payload_size=4096;
+   checkpoint.header.payload_digest="";
+   checkpoint.header.payload_size=0;
    checkpoint.header.written_at=SWV5_TEST_TIME-10;
    SWV5_TestMakeAggregate(checkpoint.basket,SWV5_BASKET_ACTIVE);
    SWV5_TestMakeCorrelation(checkpoint.last_confirmed_correlation);
@@ -1188,6 +1478,7 @@ void SWV5_TestMakeCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
    checkpoint.latest_pending_request.recorded_at=SWV5_TEST_TIME-10;
    SWV5_TestMakeHardKill(checkpoint.hard_kill_state,SWV5_HARD_KILL_INACTIVE);
    checkpoint.clean_shutdown=true;
+   SWV5_TestSealCheckpoint(checkpoint);
 }
 
 void SWV5_TestMakeBrokerSummary(const SWV5_PersistedCheckpoint &checkpoint,SWV5_AuthoritativeBrokerSummary &broker)
@@ -1230,12 +1521,13 @@ void SWV5_TestMakeDedupState(SWV5_StatisticsDeduplicationState &state)
 {
    SWV5_TestMakeVersion(state.contract_version);
    SWV5_TestMakeEventIdentitySet(state.identities,true);
-   state.identities.canonical_event_index="EVENT-0001|400;EVENT-0002|399";
+   state.identities.canonical_event_index=SWV5_TestCanonicalDurableEventEntry("EVENT-0001",400)+
+                                          SWV5_TestCanonicalDurableEventEntry("EVENT-0002",399);
    state.identities.canonical_fingerprint_index="";
    state.identities.accepted_identity_count=2;
    state.identities.highest_transaction_sequence=400;
    state.identities.index_revision=2;
-   state.identities.identity_set_digest=SWV5_TestCanonicalHash("SWV5-EVENT-SET-V4|"+state.identities.canonical_event_index+"||2|400|2|1");
+   state.identities.identity_set_digest=SWV5_TestEventSetDigest(state.identities);
    state.unique_deal_count=2;
    state.duplicate_deal_count=1;
 }

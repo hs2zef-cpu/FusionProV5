@@ -1,6 +1,7 @@
 #ifndef SW_V5_PRODUCTION_COMMON_MQH
 #define SW_V5_PRODUCTION_COMMON_MQH
 
+#define SWV5_PRODUCTION_CONTRACT_NAME "SWV5-PRODUCTION"
 #define SWV5_PRODUCTION_CONTRACT_VERSION 4
 #define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 4
 #define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V4"
@@ -102,7 +103,8 @@ enum SWV5_ComponentAuthority
    SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER = 3,
    SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE = 4,
    SWV5_COMPONENT_AUTHORITY_OPERATOR = 5,
-   SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE = 6
+   SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE = 6,
+   SWV5_COMPONENT_AUTHORITY_UNIT_SYSTEM = 7
 };
 
 struct SWV5_ContractVersion
@@ -172,9 +174,22 @@ struct SWV5_ExecutionCorrelation
    SWV5_BrokerExecutionIdentity  broker_identity;
 };
 
+enum SWV5_DurableFingerprintPolicy
+{
+   SWV5_DURABLE_FINGERPRINT_POLICY_UNDEFINED=0,
+   SWV5_DURABLE_FINGERPRINT_IDENTITY_ONLY=1,
+   SWV5_DURABLE_FINGERPRINT_REQUIRED=2
+};
+
 struct SWV5_DurableEventIdentitySet
 {
    SWV5_ContractVersion contract_version;
+   // V4 candidate encoding is SWV5-DURABLE-EVENT-SET-V4-LP1: ordered,
+   // typed, length-prefixed identity entries. Legacy delimiter indexes fail
+   // closed; no runtime migration exists because V4 is not approved/locked.
+   // IDENTITY_ONLY forbids fingerprint entries. REQUIRED enforces exactly one
+   // canonical fingerprint mapping for every accepted identity in event order.
+   SWV5_DurableFingerprintPolicy fingerprint_policy;
    string               canonical_event_index;
    string               canonical_fingerprint_index;
    string               identity_set_digest;
@@ -256,6 +271,9 @@ struct SWV5_TypedReconciliationEvidence
 
 struct SWV5_ExposureReductionEvidence
 {
+   // This evidence is valid only as a nested member of a Hard Kill release
+   // envelope. Its governed namespace is the enclosing release namespace,
+   // bound to the current Hard Kill account-risk namespace by Risk validation.
    SWV5_ContractVersion   contract_version;
    string                 evidence_id;
    SWV5_ComponentAuthority issuing_component;
@@ -277,6 +295,8 @@ enum SWV5_HardKillLatchState
 
 struct SWV5_HardKillReleaseEvidence
 {
+   // The outer persistence namespace scopes every nested evidence record.
+   // The current Hard Kill state supplies the full account-risk namespace.
    SWV5_ContractVersion  contract_version;
    SWV5_PersistenceNamespace persistence_namespace;
    string                release_id;

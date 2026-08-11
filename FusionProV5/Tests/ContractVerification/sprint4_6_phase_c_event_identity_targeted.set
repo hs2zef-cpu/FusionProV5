@@ -1,7 +1,7 @@
 ; TEST ONLY
 ; NOT FOR PRODUCTION
 ; NO BROKER ACCESS
-InpPhaseATargetedOnly=true||false||0||true||N
+InpPhaseATargetedOnly=false||false||0||true||N
 InpPhaseBTargetedOnly=false||false||0||true||N
 InpPhaseCTargetedOnly=false||false||0||true||N
 InpPhaseDTargetedOnly=false||false||0||true||N
@@ -12,7 +12,7 @@ InpSprint46OwnershipRegressionOnly=false||false||0||true||N
 InpSprint46PhaseBTargetedOnly=false||false||0||true||N
 InpSprint46RiskRegressionOnly=false||false||0||true||N
 InpSprint46CheckpointTargetedOnly=false||false||0||true||N
-InpSprint46EventIdentityTargetedOnly=false||false||0||true||N
+InpSprint46EventIdentityTargetedOnly=true||false||0||true||N
 InpSprint46PersistenceRegressionOnly=false||false||0||true||N
 InpSprint46StatisticsRegressionOnly=false||false||0||true||N
 InpSprint46ExecutionFingerprintRegressionOnly=false||false||0||true||N

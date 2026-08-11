@@ -180,6 +180,44 @@ struct SWV5_RetryPolicy
    datetime              earliest_retry_at;
 };
 
+struct SWV5_RetryRiskFreshnessEvidence
+{
+   SWV5_ContractVersion          contract_version;
+   SWV5_PersistenceNamespace     persistence_namespace;
+   SWV5_OwnershipFence           ownership_fence;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_AccountPositionMode      account_mode;
+   ulong                         expected_basket_version;
+   ulong                         symbol_specification_sequence;
+   string                        authorization_id;
+   double                        authorized_volume;
+   datetime                      evidenced_at;
+   datetime                      expires_at;
+   ulong                         evidence_sequence;
+   SWV5_ComponentAuthority       issuing_component;
+};
+
+struct SWV5_RetryNormalizationFreshnessEvidence
+{
+   SWV5_ContractVersion          contract_version;
+   SWV5_PersistenceNamespace     persistence_namespace;
+   SWV5_OwnershipFence           ownership_fence;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_AccountPositionMode      account_mode;
+   ulong                         expected_basket_version;
+   ulong                         symbol_specification_sequence;
+   SWV5_ExecutionIntentType      intent_type;
+   int                           direction;
+   double                        normalized_volume;
+   double                        normalized_price;
+   double                        normalized_stop_price;
+   double                        normalized_limit_price;
+   string                        normalization_identity;
+   datetime                      evidenced_at;
+   ulong                         evidence_sequence;
+   SWV5_ComponentAuthority       issuing_component;
+};
+
 struct SWV5_ExecutionConfirmation
 {
    SWV5_ContractVersion    contract_version;
@@ -201,6 +239,12 @@ struct SWV5_ExecutionConfirmation
 class ISWV5ExecutionContract
 {
 public:
+   // Every operation must fail closed unless the complete execution envelope is
+   // relationally coherent with the validation context. Local DTO validity is
+   // insufficient: all nested contract identities must exactly match the
+   // expected Production contract, and namespace, ownership fence, request,
+   // account mode, Basket version, and symbol-specification bindings must agree.
+   // Acknowledgement classification never constitutes authoritative confirmation.
    virtual string ContractName() = 0;
    virtual bool ValidateIntent(const SWV5_ContractValidationContext &context,
                                const SWV5_ExecutionIntent &intent,
@@ -216,9 +260,14 @@ public:
                                           const SWV5_PendingRequest &pending,
                                           const SWV5_TransactionEvidence &evidence,
                                           SWV5_ExecutionConfirmation &confirmation) = 0;
+   // authorization_deadline is exclusive: retry is denied when clock_time is
+   // equal to or later than the deadline. Freshness is proved by typed Risk and
+   // Unit evidence; caller booleans are policy requirements, never proof.
    virtual bool EvaluateRetry(const SWV5_ContractValidationContext &context,
                               const SWV5_PendingRequest &pending,
                               const SWV5_RetryPolicy &policy,
+                              const SWV5_RetryRiskFreshnessEvidence &risk_evidence,
+                              const SWV5_RetryNormalizationFreshnessEvidence &normalization_evidence,
                               SWV5_ContractDecision &decision) = 0;
 };
 

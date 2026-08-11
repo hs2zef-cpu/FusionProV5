@@ -49,6 +49,24 @@ SWV5_ConfirmationStatus SWV5_TestInterfaceConfirmation(SWV5_TestExecutionContrac
    return confirmation.status;
 }
 
+bool SWV5_TestExecutionRejectsWithoutMutation(SWV5_TestExecutionContract &implementation,
+                                               const SWV5_ContractValidationContext &context,
+                                               const SWV5_PendingRequest &pending,
+                                               const SWV5_TransactionEvidence &evidence)
+{
+   SWV5_ExecutionConfirmation confirmation;
+   const bool accepted=implementation.AcceptTransactionEvidence(context,pending,evidence,confirmation);
+   return !accepted && confirmation.status==SWV5_CONFIRMATION_CONFLICT &&
+          confirmation.disposition==SWV5_DISPOSITION_RECONCILE &&
+          confirmation.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_INVALID &&
+          !confirmation.event_identity_added && !confirmation.duplicate_event &&
+          SWV5_TestPendingRequestEqual(confirmation.resulting_pending_request,pending) &&
+          SWV5_TestNear(confirmation.confirmed_volume,pending.cumulative_confirmed_volume,context.volume_tolerance) &&
+          SWV5_TestNear(confirmation.residual_volume,pending.residual_requested_volume,context.volume_tolerance) &&
+          SWV5_TestEventIdentitySetEqual(confirmation.resulting_pending_request.accepted_event_identities,
+                                         pending.accepted_event_identities);
+}
+
 SWV5_ReconciliationStatus SWV5_TestInterfaceRestart(SWV5_TestPersistenceContract &implementation,
                                                      const SWV5_ContractValidationContext &context,
                                                      const SWV5_RestartReconciliationInput &engineInput,
@@ -575,7 +593,12 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
          case 10:
          {
             SWV5_DurableEventIdentitySet newer;
-            SWV5_TestAppendEventIdentity("NEWER-EVENT",500,pending.accepted_event_identities,newer);
+            SWV5_TransactionEvidence newer_evidence=evidence;
+            newer_evidence.correlation.broker_identity.broker_event_id="NEWER-EVENT";
+            newer_evidence.correlation.broker_identity.transaction_sequence=500;
+            SWV5_TestAppendDurableFingerprint("NEWER-EVENT",500,
+                                              SWV5_TestCanonicalTransactionEvidence(newer_evidence),
+                                              pending.accepted_event_identities,newer);
             pending.accepted_event_identities=newer;
             evidence.correlation.broker_identity.transaction_sequence=499;
             evidence.correlation.broker_identity.broker_event_id="OLDER-UNSEEN-EVENT";
@@ -591,14 +614,17 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
             break;
          case 12:
          {
+            SWV5_TestMakeRetryCandidate(pending);
             SWV5_RetryPolicy policy;
-            SWV5_TestMakeVersion(policy.contract_version);
-            policy.maximum_attempts=3;
-            policy.disposition=SWV5_RETRY_AFTER_BACKOFF;
-            policy.earliest_retry_at=context.clock_time;
+            SWV5_TestMakeRetryPolicy(context,policy);
+            SWV5_RetryRiskFreshnessEvidence risk_evidence;
+            SWV5_TestMakeRetryRiskEvidence(context,pending,risk_evidence);
+            SWV5_RetryNormalizationFreshnessEvidence normalization_evidence;
+            SWV5_TestMakeRetryNormalizationEvidence(context,pending,normalization_evidence);
             pending.submission_attempt_count=3;
+            pending.latest_submission.submission_attempt_count=3;
             SWV5_ContractDecision retry_decision;
-            passed=!implementation.EvaluateRetry(context,pending,policy,retry_decision) &&
+            passed=!implementation.EvaluateRetry(context,pending,policy,risk_evidence,normalization_evidence,retry_decision) &&
                    retry_decision.disposition==SWV5_DISPOSITION_DENY;
             expected="retry_forbidden";
             break;
@@ -619,8 +645,7 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
          {
             pending.state=SWV5_REQUEST_ACKNOWLEDGED;
             pending.lifecycle_phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
-            evidence.event_kind=SWV5_TRANSACTION_EVENT_ORDER_ACCEPTED;
-            evidence.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+            SWV5_TestMakeAcknowledgementTransaction(pending,evidence);
             SWV5_ExecutionConfirmation acknowledgement;
             passed=implementation.AcceptTransactionEvidence(context,pending,evidence,acknowledgement) &&
                    acknowledgement.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
@@ -635,6 +660,31 @@ void SWV5_RunExecutionTests(SWV5_TestCollector &collector)
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("EXE",number),"EXECUTION",passed,expected);
    }
+}
+
+bool SWV5_TestPER02Behavior()
+{
+   SWV5_ContractValidationContext context;
+   SWV5_TestMakeContext(context);
+   SWV5_PersistedCheckpoint checkpoint;
+   SWV5_TestMakeCheckpoint(checkpoint);
+   SWV5_TestPersistenceContract persistence;
+   SWV5_PersistenceLoadResult validation_result,load_result;
+   SWV5_ContractDecision save_decision;
+   const bool baseline_valid=persistence.ValidateRecord(context,checkpoint,validation_result) &&
+                             persistence.SaveCheckpoint(context,checkpoint,save_decision);
+   SWV5_PersistedCheckpoint corrupted=checkpoint;
+   corrupted.basket.lifecycle.cumulative_recovery_attempts++;
+   const bool stale_digest_retained=corrupted.header.payload_digest!="" &&
+                                    corrupted.header.payload_digest==checkpoint.header.payload_digest &&
+                                    corrupted.header.payload_size==checkpoint.header.payload_size;
+   const bool rejected=!persistence.ValidateRecord(context,corrupted,validation_result) &&
+                       !persistence.SaveCheckpoint(context,corrupted,save_decision);
+   SWV5_PersistedCheckpoint loaded;
+   const bool original_preserved=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
+                                 loaded.basket.lifecycle.cumulative_recovery_attempts==checkpoint.basket.lifecycle.cumulative_recovery_attempts &&
+                                 SWV5_TestPersistenceRecordValid(loaded);
+   return baseline_valid && stale_digest_retained && rejected && original_preserved;
 }
 
 void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
@@ -659,9 +709,8 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             expected="record_valid";
             break;
          case 2:
-            engineInput.persisted.header.payload_digest="";
-            passed=!implementation.ValidateRecord(context,engineInput.persisted,load_result);
-            expected="corrupt";
+            passed=SWV5_TestPER02Behavior();
+            expected="stale_digest_after_payload_corruption";
             break;
          case 3:
             engineInput.persisted.header.previous_record_sequence=engineInput.persisted.header.record_sequence;
@@ -1178,8 +1227,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
          {
             pending.state=SWV5_REQUEST_ACKNOWLEDGED;
             pending.lifecycle_phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
-            transaction.event_kind=SWV5_TRANSACTION_EVENT_ORDER_ACCEPTED;
-            transaction.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+            SWV5_TestMakeAcknowledgementTransaction(pending,transaction);
             SWV5_ExecutionConfirmation acknowledgement;
             const bool acknowledgement_ok=execution_contract.AcceptTransactionEvidence(context,pending,transaction,acknowledgement);
             SWV5_PersistedRequestEvidence pending_requests[];
@@ -1233,8 +1281,7 @@ void SWV5_RunSprint45ExecutionAuthorityTests(SWV5_TestCollector &collector)
       string expected="fail_closed";
       if(number==1 || number==2)
       {
-         evidence.event_kind=SWV5_TRANSACTION_EVENT_ORDER_ACCEPTED;
-         evidence.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+         SWV5_TestMakeAcknowledgementTransaction(pending,evidence);
          accepted=execution.AcceptTransactionEvidence(context,pending,evidence,confirmation);
          passed=accepted && confirmation.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
                 confirmation.status==SWV5_CONFIRMATION_PENDING && !confirmation.event_identity_added &&
@@ -1397,6 +1444,235 @@ void SWV5_RunSprint45FingerprintTests(SWV5_TestCollector &collector)
          expected="fingerprint_survives_round_trip_replay_and_conflict";
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S45F",number),"SPRINT4_5_DURABLE_FINGERPRINT",passed,expected);
+   }
+}
+
+// Sprint 4.6 Phase A credibility trace. Every case starts from a valid returned/fixture state,
+// invokes the real test interface, asserts material output/no-mutation, and targets one unsafe omission.
+// S46AE-01 valid intent; detects unusable canonical path.
+// S46AE-02 schema version; detects version-valid/equality omission.
+// S46AE-03 foreign contract name; detects V4-looking foreign identity acceptance.
+// S46AE-04 empty fence digest; detects incomplete-fence acceptance.
+// S46AE-05 complete foreign fence; detects missing fence-to-namespace relation.
+// S46AE-06..11 broker/server/login/strategy/symbol/Magic namespace mutations; each detects a missing key-field binding.
+// S46AE-12 invalid intent enum; detects arbitrary enum acceptance.
+// S46AE-13 invalid direction; detects arbitrary direction acceptance.
+// S46AE-14 cancel plus trading terms; detects contradictory intent/direction/term acceptance.
+// S46AE-15 foreign policy; detects policy identity omission.
+// S46AE-16 foreign namespace contract; detects nested namespace version omission.
+// S46AE-17 foreign request contract; detects request-identity version omission.
+// S46AE-18 foreign expected context identity; detects non-Production validation context acceptance.
+// S46AE-19 valid acknowledgement; proves acknowledgement-only state and zero exposure mutation.
+// S46AE-20 foreign acknowledgement fence; detects acknowledgement fast-path bypass.
+// S46AE-21 foreign acknowledgement namespace; detects acknowledgement namespace bypass.
+// S46AE-22 valid authoritative deal; proves canonical confirmation path.
+// S46AE-23 wrong evidence schema; detects transaction version omission.
+// S46AE-24 coherent foreign evidence namespace/fence; detects pending-to-evidence scope omission.
+// S46AE-25 stale fence token; detects stale-owner confirmation.
+// S46AE-26 wrong Basket; detects Basket correlation omission.
+// S46AE-27 wrong request attempt; detects request correlation omission.
+// S46AE-28 invalid inherited intent enum; detects pending-intent bypass.
+// S46AE-29 real same-owner heartbeat; proves stable authority remains usable.
+// S46AE-30 real takeover; proves stale prior-owner pending state is rejected.
+// S46AE-31..41 mutate one otherwise-unrelated nested contract identity; each detects that exact missing version check.
+// S46AE-42 coherently foreign V4-looking envelope; detects local-validity-only validation across the whole envelope.
+void SWV5_RunSprint46ExecutionEnvelopeTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=42;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_PendingRequest pending;
+      SWV5_TestMakePending(pending);
+      SWV5_TransactionEvidence evidence;
+      SWV5_TestMakeTransaction(pending,evidence);
+      SWV5_TestExecutionContract execution;
+      bool passed=false;
+      string expected="fail_closed_without_mutation";
+
+      if(number<=18)
+      {
+         SWV5_ExecutionIntent intent=pending.intent;
+         if(number==2) intent.contract_version.schema_version--;
+         if(number==3) SWV5_TestSetForeignContractIdentity(intent.contract_version);
+         if(number==4) intent.ownership_fence.fencing_token_digest="";
+         if(number==5)
+         {
+            intent.ownership_fence.ownership_namespace.server="FOREIGN-FENCE-SERVER";
+            intent.ownership_fence.owner.key.server="FOREIGN-FENCE-SERVER";
+         }
+         if(number==6) intent.persistence_namespace.ownership_namespace.broker_identity="FOREIGN-BROKER";
+         if(number==7) intent.persistence_namespace.ownership_namespace.server="FOREIGN-SERVER";
+         if(number==8) intent.persistence_namespace.ownership_namespace.account_login++;
+         if(number==9) intent.persistence_namespace.ownership_namespace.strategy_id="FOREIGN-STRATEGY";
+         if(number==10) intent.persistence_namespace.ownership_namespace.symbol="FOREIGN-SYMBOL";
+         if(number==11) intent.persistence_namespace.ownership_namespace.magic++;
+         if(number==12) intent.intent_type=(SWV5_ExecutionIntentType)99;
+         if(number==13) intent.direction=2;
+         if(number==14) intent.intent_type=SWV5_INTENT_CANCEL_PENDING;
+         if(number==15) intent.contract_version.policy_id="FOREIGN-POLICY";
+         if(number==16) SWV5_TestSetForeignContractIdentity(intent.persistence_namespace.contract_version);
+         if(number==17) SWV5_TestSetForeignContractIdentity(intent.request_identity.contract_version);
+         if(number==18) context.expected_version.contract_name="FOREIGN-EXPECTED-CONTRACT";
+         SWV5_ContractDecision decision;
+         const bool accepted=execution.ValidateIntent(context,intent,decision);
+         passed=(number==1 ? accepted && decision.disposition==SWV5_DISPOSITION_ALLOW :
+                             !accepted && decision.disposition==SWV5_DISPOSITION_DENY);
+         if(number==1) expected="canonical_intent_accepted";
+         if(number==2) expected="wrong_intent_schema_rejected";
+         if(number==3) expected="foreign_intent_contract_rejected";
+         if(number==4) expected="incomplete_fence_rejected";
+         if(number==5) expected="foreign_complete_fence_rejected";
+         if(number==6) expected="wrong_broker_binding_rejected";
+         if(number==7) expected="wrong_server_binding_rejected";
+         if(number==8) expected="wrong_account_login_binding_rejected";
+         if(number==9) expected="wrong_strategy_binding_rejected";
+         if(number==10) expected="wrong_symbol_binding_rejected";
+         if(number==11) expected="wrong_magic_binding_rejected";
+         if(number==12) expected="invalid_intent_enum_rejected";
+         if(number==13) expected="invalid_direction_rejected";
+         if(number==14) expected="contradictory_cancel_terms_rejected";
+         if(number==15) expected="foreign_policy_rejected";
+         if(number==16) expected="foreign_namespace_contract_rejected";
+         if(number==17) expected="foreign_request_contract_rejected";
+         if(number==18) expected="foreign_expected_context_rejected";
+      }
+      else
+      {
+         if(number>=19 && number<=21)
+            SWV5_TestMakeAcknowledgementTransaction(pending,evidence);
+         if(number==20)
+         {
+            evidence.ownership_fence.ownership_namespace.server="FOREIGN-FENCE-SERVER";
+            evidence.ownership_fence.owner.key.server="FOREIGN-FENCE-SERVER";
+         }
+         if(number==21) evidence.persistence_namespace.basket_id.value="FOREIGN-ACK-BASKET";
+         if(number==23) evidence.contract_version.schema_version--;
+         if(number==24)
+         {
+            evidence.persistence_namespace.ownership_namespace.server="FOREIGN-EVIDENCE-SERVER";
+            evidence.ownership_fence.ownership_namespace.server="FOREIGN-EVIDENCE-SERVER";
+            evidence.ownership_fence.owner.key.server="FOREIGN-EVIDENCE-SERVER";
+         }
+         if(number==25) evidence.ownership_fence.fencing_token_digest="STALE-OWNER-FENCE";
+         if(number==26) evidence.persistence_namespace.basket_id.value="FOREIGN-BASKET";
+         if(number==27) evidence.correlation.request_identity.request_id.attempt_id="FOREIGN-ATTEMPT";
+         if(number==28) pending.intent.intent_type=(SWV5_ExecutionIntentType)99;
+         if(number==31) SWV5_TestSetForeignContractIdentity(evidence.contract_version);
+         if(number==32) SWV5_TestSetForeignContractIdentity(evidence.correlation.contract_version);
+         if(number==33) SWV5_TestSetForeignContractIdentity(evidence.correlation.broker_identity.contract_version);
+         if(number==34) SWV5_TestSetForeignContractIdentity(pending.contract_version);
+         if(number==35) SWV5_TestSetForeignContractIdentity(pending.intent.contract_version);
+         if(number==36) SWV5_TestSetForeignContractIdentity(pending.accepted_event_identities.contract_version);
+         if(number==37) SWV5_TestSetForeignContractIdentity(pending.latest_authoritative_confirmation.contract_version);
+         if(number==38) SWV5_TestSetForeignContractIdentity(pending.latest_submission.contract_version);
+         if(number==39) SWV5_TestSetForeignContractIdentity(pending.latest_retcode.contract_version);
+         if(number==40) SWV5_TestSetForeignContractIdentity(pending.latest_retcode_classification.contract_version);
+         if(number==41) SWV5_TestSetForeignContractIdentity(pending.latest_retcode.correlation.contract_version);
+         if(number==42)
+         {
+            SWV5_TestSetForeignContractIdentity(pending.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.intent.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.intent.persistence_namespace.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.intent.ownership_fence.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.intent.request_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_submission.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_submission.request_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.persistence_namespace.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.ownership_fence.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.correlation.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.correlation.request_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode.correlation.broker_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode_classification.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_retcode_classification.decision.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_authoritative_confirmation.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_authoritative_confirmation.correlation.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_authoritative_confirmation.correlation.request_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.latest_authoritative_confirmation.correlation.broker_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(pending.accepted_event_identities.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.persistence_namespace.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.ownership_fence.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.correlation.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.correlation.request_identity.contract_version);
+            SWV5_TestSetForeignContractIdentity(evidence.correlation.broker_identity.contract_version);
+         }
+
+         if(number==19)
+         {
+            SWV5_ExecutionConfirmation acknowledgement;
+            const bool accepted=execution.AcceptTransactionEvidence(context,pending,evidence,acknowledgement);
+            passed=accepted && acknowledgement.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
+                   acknowledgement.status==SWV5_CONFIRMATION_PENDING && !acknowledgement.event_identity_added &&
+                   !acknowledgement.duplicate_event && SWV5_TestPendingRequestEqual(acknowledgement.resulting_pending_request,pending) &&
+                   SWV5_TestNear(acknowledgement.confirmed_volume,pending.cumulative_confirmed_volume,context.volume_tolerance) &&
+                   SWV5_TestNear(acknowledgement.residual_volume,pending.residual_requested_volume,context.volume_tolerance);
+            expected="valid_acknowledgement_no_exposure_mutation";
+         }
+         else if(number==22)
+         {
+            SWV5_ExecutionConfirmation confirmation;
+            const bool accepted=execution.AcceptTransactionEvidence(context,pending,evidence,confirmation);
+            passed=accepted && confirmation.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_AUTHORITATIVE_CONFIRMATION &&
+                   confirmation.status==SWV5_CONFIRMATION_CONFIRMED && confirmation.event_identity_added &&
+                   !confirmation.duplicate_event && confirmation.resulting_pending_request.state==SWV5_REQUEST_CONFIRMED &&
+                   SWV5_TestNear(confirmation.resulting_pending_request.cumulative_confirmed_volume,0.10,context.volume_tolerance) &&
+                   SWV5_TestNear(confirmation.resulting_pending_request.residual_requested_volume,0.0,context.volume_tolerance);
+            expected="valid_authoritative_deal_confirms";
+         }
+         else if(number==29)
+         {
+            SWV5_InstanceLease lease;
+            SWV5_TestMakeLease(lease);
+            SWV5_TestOwnershipContract ownership;
+            SWV5_OwnershipDecision heartbeat;
+            SWV5_ExecutionConfirmation confirmation;
+            const bool renewed=ownership.Heartbeat(context,lease,lease,heartbeat);
+            const bool accepted=renewed && execution.AcceptTransactionEvidence(context,pending,evidence,confirmation);
+            passed=accepted && SWV5_TestFenceEqual(lease.fence,heartbeat.resulting_lease.fence) &&
+                   confirmation.status==SWV5_CONFIRMATION_CONFIRMED && confirmation.event_identity_added;
+            expected="same_owner_heartbeat_preserves_execution_authority";
+         }
+         else if(number==30)
+         {
+            SWV5_InstanceLease observed;
+            SWV5_OwnershipClaim claim;
+            SWV5_TestMakeExpiredTakeoverFixture(context,observed,claim);
+            SWV5_TestOwnershipContract ownership;
+            SWV5_OwnershipDecision takeover;
+            const bool acquired=ownership.Acquire(context,claim,observed,takeover);
+            evidence.ownership_fence=takeover.resulting_lease.fence;
+            passed=acquired && !SWV5_TestFenceEqual(pending.intent.ownership_fence,evidence.ownership_fence) &&
+                   SWV5_TestExecutionRejectsWithoutMutation(execution,context,pending,evidence);
+            expected="takeover_invalidates_stale_pending_owner";
+         }
+         else
+         {
+            passed=SWV5_TestExecutionRejectsWithoutMutation(execution,context,pending,evidence);
+            if(number==20) expected="foreign_acknowledgement_fence_rejected";
+            if(number==21) expected="foreign_acknowledgement_namespace_rejected";
+            if(number==23) expected="wrong_transaction_schema_rejected";
+            if(number==24) expected="coherent_foreign_transaction_namespace_rejected";
+            if(number==25) expected="stale_owner_transaction_rejected";
+            if(number==26) expected="wrong_basket_transaction_rejected";
+            if(number==27) expected="wrong_request_transaction_rejected";
+            if(number==28) expected="invalid_inherited_intent_rejected";
+            if(number==31) expected="foreign_evidence_contract_rejected";
+            if(number==32) expected="foreign_correlation_contract_rejected";
+            if(number==33) expected="foreign_broker_identity_contract_rejected";
+            if(number==34) expected="foreign_pending_contract_rejected";
+            if(number==35) expected="foreign_pending_intent_contract_rejected";
+            if(number==36) expected="foreign_durable_event_set_contract_rejected";
+            if(number==37) expected="foreign_authoritative_state_contract_rejected";
+            if(number==38) expected="foreign_submission_contract_rejected";
+            if(number==39) expected="foreign_retcode_contract_rejected";
+            if(number==40) expected="foreign_retcode_classification_contract_rejected";
+            if(number==41) expected="foreign_retcode_correlation_contract_rejected";
+            if(number==42) expected="coherent_foreign_v4_envelope_rejected";
+         }
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46AE",number),"SPRINT4_6_EXECUTION_ENVELOPE",passed,expected);
    }
 }
 
@@ -1658,8 +1934,7 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             {
                pending.state=SWV5_REQUEST_ACKNOWLEDGED;
                pending.lifecycle_phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
-               evidence.event_kind=SWV5_TRANSACTION_EVENT_ORDER_ACCEPTED;
-               evidence.correlation.phase=SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT;
+               SWV5_TestMakeAcknowledgementTransaction(pending,evidence);
                SWV5_ExecutionConfirmation acknowledgement;
                passed=execution.AcceptTransactionEvidence(context,pending,evidence,acknowledgement) &&
                       acknowledgement.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
@@ -1739,13 +2014,14 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
          case 32:
          {
             SWV5_PendingRequest pending;
-            SWV5_TestMakePending(pending);
+            SWV5_TestMakeRetryCandidate(pending);
             SWV5_RetryPolicy policy;
-            SWV5_TestMakeVersion(policy.contract_version);
-            policy.maximum_attempts=3;
-            policy.disposition=SWV5_RETRY_AFTER_REVALIDATION;
-            policy.earliest_retry_at=context.clock_time;
-            passed=execution.EvaluateRetry(context,pending,policy,decision) &&
+            SWV5_TestMakeRetryPolicy(context,policy);
+            SWV5_RetryRiskFreshnessEvidence risk_evidence;
+            SWV5_TestMakeRetryRiskEvidence(context,pending,risk_evidence);
+            SWV5_RetryNormalizationFreshnessEvidence normalization_evidence;
+            SWV5_TestMakeRetryNormalizationEvidence(context,pending,normalization_evidence);
+            passed=execution.EvaluateRetry(context,pending,policy,risk_evidence,normalization_evidence,decision) &&
                    decision.disposition==SWV5_DISPOSITION_ALLOW;
             expected="retry_after_revalidation_allowed";
             break;
@@ -1888,6 +2164,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             SWV5_TestBindRequestSetHeader(checkpoint.pending_request_set,configured,31);
             checkpoint.has_latest_pending_request=true;
             checkpoint.latest_pending_request=configured[0];
+            SWV5_TestSealCheckpoint(checkpoint);
             persistence.Configure(checkpoint,configured);
             configured[0].pending_request.intent.request_identity.request_id.correlation_id="CALLER-MUTATED";
             SWV5_PersistedRequestEvidence loaded[];
@@ -1943,7 +2220,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             saved[0].pending_request.latest_authoritative_confirmation.authority=SWV5_AUTHORITY_TRANSACTION_EVENT;
             saved[0].pending_request.latest_authoritative_confirmation.confirmation_sequence=401;
             saved[0].pending_request.latest_authoritative_confirmation.confirmed_at=SWV5_TEST_TIME;
-            SWV5_TestMakeEventIdentitySet(saved[0].pending_request.accepted_event_identities,true);
+            SWV5_TestMakeEventIdentitySet(saved[0].pending_request.accepted_event_identities,true,SWV5_DURABLE_FINGERPRINT_REQUIRED);
             SWV5_PersistedRequestSetHeader header;
             SWV5_TestBindRequestSetHeader(header,saved,34);
             SWV5_PersistedRequestEvidence loaded[];
@@ -2492,6 +2769,7 @@ void SWV5_RunSprint45RecoveryValidationTests(SWV5_TestCollector &collector)
          SWV5_PersistedCheckpoint checkpoint;
          SWV5_TestMakeCheckpoint(checkpoint);
          checkpoint.basket.lifecycle=restored;
+         SWV5_TestSealCheckpoint(checkpoint);
          SWV5_PersistedRequestEvidence empty[];
          ArrayResize(empty,0);
          SWV5_TestPersistenceContract persistence;
@@ -3501,6 +3779,831 @@ void SWV5_RunSprint45PersistenceCanonicalTests(SWV5_TestCollector &collector)
    }
 }
 
+bool SWV5_TestRiskRejectsAndClearsAuthorization(SWV5_TestRiskContract &implementation,
+                                                const SWV5_ContractValidationContext &context,
+                                                const SWV5_RiskEvaluationInput &engineInput)
+{
+   SWV5_RiskAuthorization authorization;
+   SWV5_TestMakeRiskAuthorization(authorization);
+   return !implementation.Evaluate(context,engineInput,authorization) &&
+          authorization.disposition!=SWV5_RISK_ALLOW &&
+          authorization.authorization_id=="" && authorization.request_identity.request_id.correlation_id=="" &&
+          authorization.persistence_namespace.basket_id.value=="" && authorization.hard_kill_latch_id=="" &&
+          MathAbs(authorization.authorized_volume)<=context.volume_tolerance &&
+          MathAbs(authorization.authorized_projected_margin)<=context.price_tolerance;
+}
+
+// Sprint 4.6 Phase B Risk trace. Every negative case starts with SWV5_TestMakeRiskInput,
+// mutates exactly the named field, calls Evaluate, and requires a cleared non-ALLOW output.
+// S46BR-02 intent_type; 03 direction; 04/05 volume; 06 price; 07 stop; 08 cancel type; 09 expiry.
+// S46BR-10 projected_volume; 11 symbol volume; 12 aggregate volume; 13 notional; 14 margin; 15 maximum loss.
+// S46BR-16 basket<=symbol relation; 17 symbol<=aggregate; 18 request margin cap; 19 current+additional cap.
+// S46BR-20 usable free margin; 21 account age; 22 exposure age; 23 Basket age; 24 projection age; 25 valuation age.
+// S46BR-26 epoch; 27 monetary completeness; 28 Hard Kill; 29 account mode; 30 namespace; 31 exact nested version.
+// Removing the corresponding predicate makes the named case produce an unsafe ALLOW or complete-looking authorization.
+void SWV5_RunSprint46RiskSafetyTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=31;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_RiskEvaluationInput engineInput;
+      SWV5_TestMakeRiskInput(engineInput);
+      SWV5_TestRiskContract implementation;
+      SWV5_RiskAuthorization authorization;
+      SWV5_ContractDecision decision;
+      bool passed=false;
+      string expected="fail_closed";
+      if(number==1)
+      {
+         passed=implementation.Evaluate(context,engineInput,authorization) &&
+                authorization.disposition==SWV5_RISK_ALLOW &&
+                authorization.blocking_domain==SWV5_RISK_DOMAIN_NONE && authorization.reason_flags==0 &&
+                authorization.authorization_id==engineInput.intent.risk_authorization_id &&
+                implementation.ValidateAuthorization(context,authorization,engineInput,decision);
+         expected="complete_safe_input_allowed";
+      }
+      else
+      {
+         if(number==2) engineInput.intent.intent_type=(SWV5_ExecutionIntentType)99;
+         if(number==3) engineInput.intent.direction=2;
+         if(number==4) engineInput.intent.normalized_volume=0.0;
+         if(number==5) engineInput.intent.normalized_volume=-0.10;
+         if(number==6) engineInput.intent.normalized_price=0.0;
+         if(number==7) engineInput.intent.normalized_stop_price=engineInput.intent.normalized_price+1.0;
+         if(number==8) engineInput.intent.intent_type=SWV5_INTENT_CANCEL_PENDING;
+         if(number==9) engineInput.intent.authorization_expires_at=context.clock_time-1;
+         if(number==10) engineInput.projected.projected_volume=-0.01;
+         if(number==11) engineInput.projected.projected_symbol_volume=-0.01;
+         if(number==12) engineInput.projected.projected_aggregate_volume=-0.01;
+         if(number==13) engineInput.projected.projected_notional=-1.0;
+         if(number==14) engineInput.projected.projected_margin=-1.0;
+         if(number==15) engineInput.projected.projected_maximum_loss=-1.0;
+         if(number==16) engineInput.projected.projected_volume=engineInput.projected.projected_symbol_volume+0.01;
+         if(number==17) engineInput.projected.projected_symbol_volume=engineInput.projected.projected_aggregate_volume+0.01;
+         if(number==18) engineInput.projected.projected_margin=engineInput.account.equity*engineInput.limits.maximum_account_margin_fraction+1.0;
+         if(number==19) engineInput.projected.projected_margin=engineInput.account.equity*engineInput.limits.maximum_account_margin_fraction-engineInput.account.margin+1.0;
+         if(number==20) engineInput.account.free_margin=engineInput.projected.projected_margin-1.0;
+         if(number==21) engineInput.account.observed_at=context.clock_time-(datetime)engineInput.limits.maximum_snapshot_age_seconds-1;
+         if(number==22) engineInput.exposure.observed_at=context.clock_time-(datetime)engineInput.limits.maximum_snapshot_age_seconds-1;
+         if(number==23) engineInput.basket.observed_at=context.clock_time-(datetime)engineInput.limits.maximum_snapshot_age_seconds-1;
+         if(number==24) engineInput.projected.calculated_at=context.clock_time-(datetime)engineInput.limits.maximum_snapshot_age_seconds-1;
+         if(number==25) engineInput.projected.monetary_basis.valuation_at=context.clock_time-(datetime)engineInput.limits.maximum_snapshot_age_seconds-1;
+         if(number==26) engineInput.exposure.account_namespace.snapshot_epoch++;
+         if(number==27) engineInput.projected.monetary_basis.includes_fee=false;
+         if(number==28) engineInput.hard_kill_state.state=SWV5_HARD_KILL_ACTIVE;
+         if(number==29) engineInput.account_mode=SWV5_ACCOUNT_MODE_NETTING;
+         if(number==30) engineInput.projected.account_namespace.broker_identity="FOREIGN-BROKER";
+         if(number==31) SWV5_TestSetForeignContractIdentity(engineInput.projected.contract_version);
+         passed=SWV5_TestRiskRejectsAndClearsAuthorization(implementation,context,engineInput);
+         if(number==2) expected="invalid_intent_enum_rejected";
+         if(number==3) expected="invalid_direction_rejected";
+         if(number==4) expected="zero_trading_volume_rejected";
+         if(number==5) expected="negative_trading_volume_rejected";
+         if(number==6) expected="zero_required_price_rejected";
+         if(number==7) expected="contradictory_stop_rejected";
+         if(number==8) expected="cancel_with_trading_terms_rejected";
+         if(number==9) expected="expired_intent_authorization_rejected";
+         if(number==10) expected="negative_projected_volume_rejected";
+         if(number==11) expected="negative_projected_symbol_volume_rejected";
+         if(number==12) expected="negative_projected_aggregate_volume_rejected";
+         if(number==13) expected="negative_projected_notional_rejected";
+         if(number==14) expected="negative_projected_margin_rejected";
+         if(number==15) expected="negative_projected_loss_rejected";
+         if(number==16) expected="basket_projection_above_symbol_rejected";
+         if(number==17) expected="symbol_projection_above_aggregate_rejected";
+         if(number==18) expected="projected_margin_above_account_cap_rejected";
+         if(number==19) expected="current_plus_additional_margin_above_cap_rejected";
+         if(number==20) expected="projected_margin_above_free_margin_rejected";
+         if(number==21) expected="stale_account_snapshot_rejected";
+         if(number==22) expected="stale_exposure_snapshot_rejected";
+         if(number==23) expected="stale_basket_snapshot_rejected";
+         if(number==24) expected="stale_projected_snapshot_rejected";
+         if(number==25) expected="stale_monetary_valuation_rejected";
+         if(number==26) expected="mixed_epoch_rejected";
+         if(number==27) expected="incomplete_monetary_basis_rejected";
+         if(number==28) expected="active_hard_kill_rejected";
+         if(number==29) expected="account_mode_mismatch_rejected";
+         if(number==30) expected="account_namespace_mismatch_rejected";
+         if(number==31) expected="foreign_nested_contract_rejected";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46BR",number),"SPRINT4_6_RISK_SAFETY",passed,expected);
+   }
+}
+
+// Sprint 4.6 Phase B Hard Kill trace. Every negative case starts with one complete
+// RELEASE_PENDING state, mutates exactly one field, invokes ValidateHardKillRelease,
+// and requires rejection. The cases detect omitted context/version, namespace,
+// time-order, authority, latch-generation, and exposure-reduction predicates.
+void SWV5_RunSprint46HardKillReleaseTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=40;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_HardKillState state;
+      SWV5_TestMakeValidHardKillRelease(state);
+      SWV5_HardKillReleaseEvidence evidence=state.release_evidence;
+      SWV5_TestRiskContract implementation;
+      SWV5_ContractDecision decision;
+      bool passed=false;
+      string expected="fail_closed";
+      if(number==1)
+      {
+         passed=implementation.ValidateHardKillRelease(context,state,evidence,decision) &&
+                decision.disposition==SWV5_DISPOSITION_ALLOW;
+         expected="complete_release_evidence_accepted";
+      }
+      else
+      {
+         if(number==2) context.clock_sequence=0;
+         if(number==3) state.contract_version.schema_version--;
+         if(number==4) evidence.contract_version.schema_version--;
+         if(number==5) evidence.broker_evidence.contract_version.schema_version--;
+         if(number==6) evidence.persistence_namespace.basket_id.value="FOREIGN-BASKET";
+         if(number==7) evidence.persistence_namespace.ownership_namespace.broker_identity="FOREIGN-BROKER";
+         if(number==8) evidence.persistence_namespace.ownership_namespace.server="FOREIGN-SERVER";
+         if(number==9) evidence.persistence_namespace.ownership_namespace.account_login++;
+         if(number==10) evidence.broker_evidence.observed_at=evidence.operator_identity.authenticated_at-1;
+         if(number==11) evidence.persistence_evidence.observed_at=evidence.operator_identity.authenticated_at-1;
+         if(number==12) evidence.exposure_evidence.observed_at=evidence.operator_identity.authenticated_at-1;
+         if(number==13) evidence.broker_evidence.observed_at=0;
+         if(number==14) evidence.operator_identity.authenticated_at=evidence.approved_at+1;
+         if(number==15) evidence.expires_at=context.clock_time-1;
+         if(number==16) evidence.approving_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+         if(number==17) evidence.broker_evidence.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
+         if(number==18) evidence.persistence_evidence.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
+         if(number==19) evidence.exposure_evidence.authority_source=SWV5_AUTHORITY_NONE;
+         if(number==20) evidence.latch_id="FOREIGN-LATCH";
+         if(number==21) evidence.latch_generation++;
+         if(number==22) evidence.release_generation=state.release_generation;
+         if(number==23) evidence.exposure_evidence.observed_exposure_volume=evidence.exposure_evidence.prior_exposure_volume+0.01;
+         if(number==24) evidence.exposure_evidence.zero_or_reducing=false;
+         if(number==25) state.state=SWV5_HARD_KILL_ACTIVE;
+         if(number==26) evidence.release_id="";
+         if(number==27) evidence.audit_reference="";
+         if(number==28) evidence.approved_at=context.clock_time+1;
+         if(number==29) state.account_namespace.account_mode=SWV5_ACCOUNT_MODE_NETTING;
+         if(number==30) SWV5_TestSetForeignContractIdentity(evidence.exposure_evidence.contract_version);
+         if(number==31) evidence.broker_evidence.persistence_namespace.basket_id.value="FOREIGN-BASKET";
+         if(number==32) evidence.operator_identity.authenticated_at=0;
+         if(number==33) evidence.expires_at=evidence.approved_at;
+         if(number==34) evidence.approving_component=SWV5_COMPONENT_AUTHORITY_NONE;
+         if(number==35) evidence.broker_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+         if(number==36) evidence.persistence_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+         if(number==37) evidence.exposure_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+         if(number==38) evidence.exposure_evidence.prior_exposure_volume=-0.01;
+         if(number==39) evidence.exposure_evidence.observed_exposure_volume=-0.01;
+         if(number==40) evidence.exposure_evidence.evidence_sequence=0;
+         passed=!implementation.ValidateHardKillRelease(context,state,evidence,decision) &&
+                decision.disposition!=SWV5_DISPOSITION_ALLOW;
+         if(number==2) expected="invalid_context_rejected";
+         if(number==3) expected="wrong_state_contract_version_rejected";
+         if(number==4) expected="wrong_release_contract_version_rejected";
+         if(number==5) expected="wrong_broker_nested_version_rejected";
+         if(number==6) expected="foreign_release_namespace_rejected";
+         if(number==7) expected="wrong_broker_rejected";
+         if(number==8) expected="wrong_server_rejected";
+         if(number==9) expected="wrong_account_rejected";
+         if(number==10) expected="stale_broker_evidence_rejected";
+         if(number==11) expected="stale_persistence_evidence_rejected";
+         if(number==12) expected="stale_exposure_evidence_rejected";
+         if(number==13) expected="zero_observation_time_rejected";
+         if(number==14) expected="authentication_after_approval_rejected";
+         if(number==15) expected="expired_approval_rejected";
+         if(number==16) expected="execution_approval_rejected";
+         if(number==17) expected="wrong_broker_authority_rejected";
+         if(number==18) expected="wrong_persistence_authority_rejected";
+         if(number==19) expected="wrong_exposure_authority_rejected";
+         if(number==20) expected="latch_id_mismatch_rejected";
+         if(number==21) expected="latch_generation_mismatch_rejected";
+         if(number==22) expected="non_monotonic_release_generation_rejected";
+         if(number==23) expected="exposure_increase_rejected";
+         if(number==24) expected="zero_or_reducing_contradiction_rejected";
+         if(number==25) expected="non_pending_state_rejected";
+         if(number==26) expected="empty_release_id_rejected";
+         if(number==27) expected="empty_audit_reference_rejected";
+         if(number==28) expected="future_approval_rejected";
+         if(number==29) expected="unsupported_account_mode_rejected";
+         if(number==30) expected="foreign_exposure_contract_rejected";
+         if(number==31) expected="nested_broker_namespace_rejected";
+         if(number==32) expected="zero_authentication_time_rejected";
+         if(number==33) expected="non_positive_release_window_rejected";
+         if(number==34) expected="missing_approver_rejected";
+         if(number==35) expected="wrong_broker_component_rejected";
+         if(number==36) expected="wrong_persistence_component_rejected";
+         if(number==37) expected="wrong_exposure_component_rejected";
+         if(number==38) expected="negative_prior_exposure_rejected";
+         if(number==39) expected="negative_observed_exposure_rejected";
+         if(number==40) expected="zero_exposure_sequence_rejected";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46BH",number),"SPRINT4_6_HARD_KILL_RELEASE",passed,expected);
+   }
+}
+
+// Sprint 4.6 Phase C checkpoint trace. S46CP-01 proves a sealed baseline.
+// S46CP-02..16 mutate one persisted safety field or integrity-envelope member
+// without resealing and require fail-closed validation. S46CP-17..20 prove
+// deterministic serialization, delimiter/Unicode safety, round trip, and copy isolation.
+void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_PersistedCheckpoint checkpoint;
+      SWV5_TestMakeCheckpoint(checkpoint);
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_TestPersistenceContract persistence;
+      SWV5_PersistenceLoadResult load_result;
+      SWV5_ContractDecision decision;
+      bool passed=false;
+      string expected="mutation_rejected";
+      if(number==1)
+      {
+         passed=SWV5_TestPersistenceRecordValid(checkpoint) &&
+                checkpoint.header.payload_digest==SWV5_TestCheckpointPayloadDigest(checkpoint) &&
+                checkpoint.header.payload_size==SWV5_TestCheckpointPayloadSize(checkpoint);
+         expected="valid_canonical_checkpoint";
+      }
+      else if(number>=2 && number<=12)
+      {
+         if(number==2) checkpoint.header.payload_digest="";
+         if(number==3) checkpoint.header.payload_digest="ARBITRARY-NONEMPTY-FAKE";
+         if(number==4) checkpoint.basket.lifecycle.state=SWV5_BASKET_RECOVERY;
+         if(number==5) checkpoint.basket.lifecycle.cumulative_recovery_attempts++;
+         if(number==6) checkpoint.header.ownership_fence.fencing_token_digest="MUTATED-FENCE";
+         if(number==7) checkpoint.latest_pending_request.pending_request.authorization_identity="MUTATED-PENDING";
+         if(number==8) checkpoint.latest_pending_request.pending_request.cumulative_confirmed_volume+=0.01;
+         if(number==9) checkpoint.hard_kill_state.latch_generation++;
+         if(number==10) checkpoint.header.persistence_namespace.ownership_namespace.server="MUTATED-SERVER";
+         if(number==11) checkpoint.latest_pending_request.pending_request.accepted_event_identities.canonical_fingerprint_index="MUTATED-FINGERPRINT";
+         if(number==12) checkpoint.header.payload_size++;
+         passed=!persistence.ValidateRecord(context,checkpoint,load_result) && load_result.status==SWV5_PERSISTENCE_CHECKSUM_FAILED;
+         if(number==2) expected="empty_digest_rejected";
+         if(number==3) expected="nonempty_fake_digest_rejected";
+         if(number==4) expected="stale_digest_after_basket_state_mutation";
+         if(number==5) expected="stale_digest_after_recovery_counter_mutation";
+         if(number==6) expected="stale_digest_after_ownership_fence_mutation";
+         if(number==7) expected="stale_digest_after_pending_request_mutation";
+         if(number==8) expected="stale_digest_after_confirmed_volume_mutation";
+         if(number==9) expected="stale_digest_after_hard_kill_generation_mutation";
+         if(number==10) expected="stale_digest_after_namespace_mutation";
+         if(number==11) expected="stale_digest_after_event_fingerprint_mutation";
+         if(number==12) expected="wrong_payload_size_rejected";
+      }
+      else if(number==13)
+      {
+         SWV5_PersistedCheckpoint other;
+         SWV5_TestMakeCheckpoint(other);
+         checkpoint.latest_pending_request.pending_request.authorization_identity="AUTH|:;, spaces\n雪";
+         other.latest_pending_request.pending_request.authorization_identity="AUTH|:;, spaces\n雪";
+         SWV5_TestSealCheckpoint(checkpoint); SWV5_TestSealCheckpoint(other);
+         passed=SWV5_TestPersistenceRecordValid(checkpoint) && SWV5_TestPersistenceRecordValid(other) &&
+                checkpoint.header.payload_digest==other.header.payload_digest && checkpoint.header.payload_size==other.header.payload_size;
+         expected="unicode_delimiter_payload_deterministic";
+      }
+      else if(number==14)
+      {
+         SWV5_PersistedCheckpoint other;
+         SWV5_TestMakeCheckpoint(other);
+         passed=SWV5_TestCanonicalCheckpointPayload(checkpoint)==SWV5_TestCanonicalCheckpointPayload(other) &&
+                checkpoint.header.payload_digest==other.header.payload_digest;
+         expected="identical_payload_identical_serialization_digest";
+      }
+      else if(number==15)
+      {
+         checkpoint.latest_pending_request.pending_request.authorization_identity="NESTED-A";
+         SWV5_TestSealCheckpoint(checkpoint);
+         const string digest_a=checkpoint.header.payload_digest;
+         checkpoint.latest_pending_request.pending_request.authorization_identity="NESTED-B";
+         passed=!SWV5_TestPersistenceRecordValid(checkpoint) && digest_a!=SWV5_TestCheckpointPayloadDigest(checkpoint);
+         expected="one_nested_character_changes_digest";
+      }
+      else if(number==16)
+      {
+         const string canonical=SWV5_TestCanonicalCheckpointPayload(checkpoint);
+         SWV5_PersistedCheckpoint loaded;
+         passed=persistence.SaveCheckpoint(context,checkpoint,decision) &&
+                persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
+                SWV5_TestCanonicalCheckpointPayload(loaded)==canonical &&
+                loaded.header.payload_digest==SWV5_TestCheckpointPayloadDigest(loaded) &&
+                loaded.header.payload_size==SWV5_TestCheckpointPayloadSize(loaded);
+         expected="save_load_retains_integrity";
+      }
+      else if(number==17)
+      {
+         const string saved_digest=checkpoint.header.payload_digest;
+         const bool saved=persistence.SaveCheckpoint(context,checkpoint,decision);
+         checkpoint.basket.lifecycle.residual_volume=9.99;
+         checkpoint.hard_kill_state.latch_id="CALLER-MUTATION";
+         SWV5_PersistedCheckpoint loaded;
+         passed=saved && persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
+                loaded.header.payload_digest==saved_digest &&
+                loaded.basket.lifecycle.residual_volume!=9.99 &&
+                loaded.hard_kill_state.latch_id!="CALLER-MUTATION";
+         expected="caller_mutation_cannot_change_stored_checkpoint";
+      }
+      else if(number==18)
+      {
+         SWV5_PersistedCheckpoint loaded;
+         const bool saved=persistence.SaveCheckpoint(context,checkpoint,decision) &&
+                          persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result);
+         loaded.basket.lifecycle.residual_volume+=0.01;
+         passed=saved && !persistence.ValidateRecord(context,loaded,load_result);
+         expected="corrupted_loaded_copy_rejected";
+      }
+      else if(number==19)
+      {
+         SWV5_PersistedCheckpoint other=checkpoint;
+         other.basket.updated_at++;
+         SWV5_TestSealCheckpoint(other);
+         other.header.payload_digest=checkpoint.header.payload_digest;
+         passed=!persistence.ValidateRecord(context,other,load_result);
+         expected="copied_digest_from_other_checkpoint_rejected";
+      }
+      else if(number==20)
+      {
+         checkpoint.header.previous_record_sequence=checkpoint.header.record_sequence;
+         SWV5_TestSealCheckpoint(checkpoint);
+         passed=!persistence.ValidateRecord(context,checkpoint,load_result);
+         expected="record_sequence_header_inconsistency_rejected";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46CP",number),"SPRINT4_6_CHECKPOINT_INTEGRITY",passed,expected);
+   }
+}
+
+// Sprint 4.6 Phase C durable identity trace. Every accepted identity is a typed,
+// length-prefixed entry. Exact membership and conflict classification never use
+// delimiter substring search; malformed/legacy encodings fail closed.
+void SWV5_RunSprint46DurableIdentityTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_DurableEventIdentitySet current,next;
+      SWV5_TestMakeEventIdentitySet(current,false);
+      bool passed=false;
+      string expected="fail_closed";
+      if(number==1)
+      {
+         passed=SWV5_TestAppendEventIdentity("NORMAL-EVENT",100,current,next)==SWV5_STAT_IDENTITY_NEW && SWV5_TestEventSetIntegrityValid(next);
+         expected="normal_event_insert";
+      }
+      else if(number==2)
+      {
+         SWV5_TestAppendEventIdentity("REPLAY-EVENT",100,current,next); current=next;
+         passed=SWV5_TestAppendEventIdentity("REPLAY-EVENT",100,current,next)==SWV5_STAT_IDENTITY_DUPLICATE;
+         expected="exact_replay_duplicate";
+      }
+      else if(number>=3 && number<=6)
+      {
+         string event_id="EVENT|PIPE";
+         if(number==4) event_id="EVENT;SEMICOLON";
+         if(number==5) event_id="EVENT:COLON";
+         if(number==6) event_id="เหตุการณ์-雪";
+         SWV5_BrokerExecutionIdentity identity; ZeroMemory(identity);
+         identity.broker_event_id=event_id; identity.transaction_sequence=100;
+         passed=SWV5_TestAppendEventIdentity(event_id,100,current,next)==SWV5_STAT_IDENTITY_NEW &&
+                SWV5_TestEventIdentitySetContains(next,identity) && SWV5_TestEventSetIntegrityValid(next);
+         if(number==3) expected="pipe_in_event_id_safe";
+         if(number==4) expected="semicolon_in_event_id_safe";
+         if(number==5) expected="colon_in_event_id_safe";
+         if(number==6) expected="unicode_event_id_safe";
+      }
+      else if(number==7)
+      {
+         SWV5_DurableEventIdentitySet temp;
+         SWV5_TestAppendEventIdentity("EVENT-LONG",100,current,temp); current=temp;
+         const SWV5_StatisticsIdentityDisposition disposition=SWV5_TestAppendEventIdentity("EVENT",101,current,next);
+         passed=disposition==SWV5_STAT_IDENTITY_NEW && SWV5_TestEventSetIntegrityValid(next);
+         expected="substring_event_ids_distinct";
+      }
+      else if(number==8)
+      {
+         SWV5_BrokerExecutionIdentity false_match; ZeroMemory(false_match);
+         SWV5_TestAppendEventIdentity("EVENT-400-DIGITS",7,current,next);
+         false_match.broker_event_id="EVENT"; false_match.transaction_sequence=400;
+         passed=!SWV5_TestEventIdentitySetContains(next,false_match);
+         expected="sequence_digits_inside_id_not_membership";
+      }
+      else if(number==9)
+      {
+         SWV5_DurableEventIdentitySet pair_set,single_set,temp;
+         SWV5_TestMakeEventIdentitySet(pair_set,false);
+         SWV5_TestMakeEventIdentitySet(single_set,false);
+         SWV5_TestAppendEventIdentity("A",1,pair_set,temp); pair_set=temp;
+         SWV5_TestAppendEventIdentity("B",2,pair_set,temp); pair_set=temp;
+         SWV5_TestAppendEventIdentity("A|1;B",2,single_set,temp); single_set=temp;
+         const string legacy_pair="A|1;B|2";
+         const string legacy_single="A|1;B|2";
+         passed=legacy_pair==legacy_single && pair_set.canonical_event_index!=single_set.canonical_event_index &&
+                pair_set.identity_set_digest!=single_set.identity_set_digest;
+         expected="legacy_collision_separated_by_typed_encoding";
+      }
+      else if(number==10 || number==11)
+      {
+         SWV5_TestAppendEventIdentity("EVENT-A",100,current,next); current=next;
+         const SWV5_StatisticsIdentityDisposition disposition=(number==10 ?
+            SWV5_TestAppendEventIdentity("EVENT-A",101,current,next) :
+            SWV5_TestAppendEventIdentity("EVENT-B",100,current,next));
+         passed=disposition==SWV5_STAT_IDENTITY_CONFLICT;
+         expected=(number==10 ? "same_event_id_different_sequence_conflict" : "different_event_id_same_sequence_conflict");
+      }
+      else if(number==12)
+      {
+         SWV5_TestAppendEventIdentity("EVENT-A",100,current,next); current=next;
+         passed=SWV5_TestAppendEventIdentity("EVENT-B",99,current,next)==SWV5_STAT_IDENTITY_OUT_OF_ORDER_NEW &&
+                next.highest_transaction_sequence==100;
+         expected="unique_out_of_order_explicitly_accepted";
+      }
+      else if(number==13)
+      {
+         SWV5_DurableEventIdentitySet temp;
+         SWV5_TestAppendEventIdentity("EVENT-A",100,current,temp); current=temp;
+         SWV5_TestAppendEventIdentity("EVENT-B",101,current,temp); current=temp;
+         SWV5_TestAppendEventIdentity("EVENT-C",102,current,temp); current=temp;
+         passed=SWV5_TestAppendEventIdentity("EVENT-A",100,current,next)==SWV5_STAT_IDENTITY_DUPLICATE;
+         expected="replay_after_later_events_duplicate";
+      }
+      else if(number==14)
+      {
+         SWV5_ContractValidationContext context;
+         SWV5_TestMakeContext(context);
+         SWV5_PendingRequest pending;
+         SWV5_TestMakePending(pending);
+         SWV5_TransactionEvidence evidence;
+         SWV5_TestMakeTransaction(pending,evidence,0.04);
+         evidence.correlation.broker_identity.broker_event_id="EXEC|;雪";
+         SWV5_TestExecutionContract execution;
+         SWV5_ExecutionConfirmation accepted,conflict;
+         const bool first=execution.AcceptTransactionEvidence(context,pending,evidence,accepted);
+         evidence.confirmed_price+=1.0;
+         const bool second=execution.AcceptTransactionEvidence(context,accepted.resulting_pending_request,evidence,conflict);
+         passed=first && !second && conflict.status==SWV5_CONFIRMATION_CONFLICT && !conflict.event_identity_added;
+         expected="execution_fingerprint_conflict_still_fails_closed";
+      }
+      else if(number==15)
+      {
+         SWV5_TestMakeEventIdentitySet(current,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
+         SWV5_TestAppendDurableFingerprint("ROUND|TRIP;雪",100,"ROUND|TRIP-FP;雪",current,next); current=next;
+         SWV5_PersistedCheckpoint checkpoint,loaded;
+         SWV5_TestMakeCheckpoint(checkpoint);
+         checkpoint.basket.lifecycle.accepted_recovery_evidence=current;
+         SWV5_TestSealCheckpoint(checkpoint);
+         SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+         SWV5_TestPersistenceContract persistence;
+         SWV5_ContractDecision decision; SWV5_PersistenceLoadResult load_result;
+         passed=persistence.SaveCheckpoint(context,checkpoint,decision) &&
+                persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
+                SWV5_TestEventIdentitySetEqual(current,loaded.basket.lifecycle.accepted_recovery_evidence);
+         expected="event_set_checkpoint_round_trip";
+      }
+      else if(number==16 || number==17)
+      {
+         SWV5_DurableEventIdentitySet first,second;
+         SWV5_TestMakeEventIdentitySet(first,false); SWV5_TestMakeEventIdentitySet(second,false);
+         SWV5_TestAppendEventIdentity("EVENT-A",100,first,current); first=current;
+         SWV5_TestAppendEventIdentity(number==16 ? "EVENT-B" : "EVENT-A",number==16 ? 100 : 101,second,current); second=current;
+         passed=first.identity_set_digest!=second.identity_set_digest;
+         expected=(number==16 ? "digest_changes_with_event_id" : "digest_changes_with_sequence");
+      }
+      else if(number==18)
+      {
+         SWV5_DurableEventIdentitySet first,second,temp;
+         SWV5_TestMakeEventIdentitySet(first,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
+         SWV5_TestAppendDurableFingerprint("EVENT-A",100,"FP-A",first,temp); first=temp; second=first;
+         second.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-B");
+         first.identity_set_digest=SWV5_TestEventSetDigest(first); second.identity_set_digest=SWV5_TestEventSetDigest(second);
+         passed=SWV5_TestEventSetIntegrityValid(first) && SWV5_TestEventSetIntegrityValid(second) &&
+                first.identity_set_digest!=second.identity_set_digest;
+         expected="digest_changes_with_fingerprint";
+      }
+      else if(number==19)
+      {
+         SWV5_TestMakeEventIdentitySet(current,true);
+         current.canonical_event_index="entry:x:999:event_id:s:1:A";
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="malformed_canonical_identity_rejected";
+      }
+      else if(number==20)
+      {
+         SWV5_TestMakeEventIdentitySet(current,true);
+         current.accepted_identity_count++;
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="accepted_identity_count_mismatch_rejected";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46EI",number),"SPRINT4_6_DURABLE_IDENTITY",passed,expected);
+   }
+}
+
+void SWV5_TestMakeRequiredFingerprintPair(SWV5_DurableEventIdentitySet &set)
+{
+   SWV5_DurableEventIdentitySet next;
+   SWV5_TestMakeEventIdentitySet(set,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
+   SWV5_TestAppendDurableFingerprint("EVENT-A",100,"FP-A",set,next);
+   set=next;
+   SWV5_TestAppendDurableFingerprint("EVENT-B",101,"FP-B",set,next);
+   set=next;
+}
+
+void SWV5_TestMakeAmbiguousFingerprintSet(SWV5_DurableEventIdentitySet &set,
+                                           const bool identical_fingerprints)
+{
+   SWV5_TestMakeRequiredFingerprintPair(set);
+   set.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A")+
+                                   SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,
+                                      identical_fingerprints ? "FP-A" : "FP-CONFLICT");
+   set.identity_set_digest=SWV5_TestEventSetDigest(set);
+}
+
+// Sprint 4.6 Phase E1 durable fingerprint trace. Fingerprint-required sets
+// enforce exactly one canonical mapping per accepted (event_id, sequence).
+// Ambiguous or noncanonical persistent state fails closed before classification.
+void SWV5_RunSprint46FingerprintUniquenessTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_DurableEventIdentitySet current,next;
+      SWV5_TestMakeRequiredFingerprintPair(current);
+      bool passed=false;
+      string expected="fail_closed";
+      if(number==1)
+      {
+         passed=SWV5_TestEventSetIntegrityValid(current) && current.accepted_identity_count==2;
+         expected="valid_one_to_one_mapping";
+      }
+      else if(number==2)
+      {
+         passed=SWV5_TestClassifyDurableFingerprint("EVENT-A",100,"FP-A",current)==SWV5_STAT_IDENTITY_DUPLICATE &&
+                SWV5_TestAppendDurableFingerprint("EVENT-A",100,"FP-A",current,next)==SWV5_STAT_IDENTITY_DUPLICATE &&
+                SWV5_TestEventIdentitySetEqual(current,next);
+         expected="exact_replay_duplicate_no_mutation";
+      }
+      else if(number==3)
+      {
+         passed=SWV5_TestClassifyDurableFingerprint("EVENT-A",100,"FP-CHANGED",current)==SWV5_STAT_IDENTITY_CONFLICT &&
+                SWV5_TestAppendDurableFingerprint("EVENT-A",100,"FP-CHANGED",current,next)==SWV5_STAT_IDENTITY_CONFLICT &&
+                SWV5_TestEventIdentitySetEqual(current,next);
+         expected="same_identity_different_fingerprint_conflict";
+      }
+      else if(number==4 || number==5)
+      {
+         SWV5_TestMakeAmbiguousFingerprintSet(current,number==4);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected=(number==4 ? "duplicate_identical_mapping_rejected" : "duplicate_conflicting_mapping_rejected");
+      }
+      else if(number==6)
+      {
+         current.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A")+
+                                             SWV5_TestCanonicalDurableFingerprintEntry("EVENT-ORPHAN",101,"FP-B");
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="orphan_mapping_rejected";
+      }
+      else if(number==7)
+      {
+         current.canonical_event_index=SWV5_TestCanonicalDurableEventEntry("EVENT-A",100)+
+                                       SWV5_TestCanonicalDurableEventEntry("EVENT-A",100);
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="duplicate_event_identity_rejected";
+      }
+      else if(number==8)
+      {
+         current.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A");
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="fingerprint_count_lower_than_event_count_rejected";
+      }
+      else if(number==9)
+      {
+         current.canonical_fingerprint_index+=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A");
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="fingerprint_count_greater_than_event_count_rejected";
+      }
+      else if(number==10)
+      {
+         current.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-B",101,"FP-B")+
+                                             SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A");
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="reordered_noncanonical_mapping_rejected";
+      }
+      else if(number==11)
+      {
+         current.canonical_fingerprint_index="entry:x:999:identity:x:0:";
+         current.identity_set_digest=SWV5_TestEventSetDigest(current);
+         passed=!SWV5_TestEventSetIntegrityValid(current);
+         expected="malformed_mapping_rejected";
+      }
+      else if(number==12)
+      {
+         SWV5_TestMakeEventIdentitySet(current,false,SWV5_DURABLE_FINGERPRINT_REQUIRED);
+         const string event_id="EVENT|:;, spaces\né›ª";
+         const string fingerprint="FP|:;, spaces\né›ª";
+         passed=SWV5_TestAppendDurableFingerprint(event_id,777,fingerprint,current,next)==SWV5_STAT_IDENTITY_NEW &&
+                SWV5_TestEventSetIntegrityValid(next) &&
+                SWV5_TestClassifyDurableFingerprint(event_id,777,fingerprint,next)==SWV5_STAT_IDENTITY_DUPLICATE;
+         expected="unicode_delimiter_mapping_round_trip";
+      }
+      else if(number==13)
+      {
+         SWV5_DurableEventIdentitySet forward,reverse;
+         SWV5_TestMakeAmbiguousFingerprintSet(forward,false);
+         SWV5_TestMakeRequiredFingerprintPair(reverse);
+         reverse.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-CONFLICT")+
+                                             SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-A");
+         reverse.identity_set_digest=SWV5_TestEventSetDigest(reverse);
+         const SWV5_StatisticsIdentityDisposition first=SWV5_TestClassifyDurableFingerprint("EVENT-A",100,"FP-A",forward);
+         const SWV5_StatisticsIdentityDisposition second=SWV5_TestClassifyDurableFingerprint("EVENT-A",100,"FP-A",reverse);
+         passed=first==SWV5_STAT_IDENTITY_CONFLICT && second==SWV5_STAT_IDENTITY_CONFLICT;
+         expected="ordering_attempts_have_identical_fail_closed_result";
+      }
+      else if(number==14)
+      {
+         SWV5_TestMakeAmbiguousFingerprintSet(current,false);
+         passed=SWV5_TestClassifyDurableFingerprint("EVENT-A",100,"FP-A",current)==SWV5_STAT_IDENTITY_CONFLICT;
+         expected="ambiguous_state_never_duplicate";
+      }
+      else if(number==15)
+      {
+         const string sealed_digest=current.identity_set_digest;
+         current.canonical_fingerprint_index=SWV5_TestCanonicalDurableFingerprintEntry("EVENT-A",100,"FP-MUTATED")+
+                                             SWV5_TestCanonicalDurableFingerprintEntry("EVENT-B",101,"FP-B");
+         passed=!SWV5_TestEventSetIntegrityValid(current) &&
+                sealed_digest!=SWV5_TestEventSetDigest(current);
+         expected="fingerprint_mutation_detected_by_digest";
+      }
+      else if(number>=16 && number<=18)
+      {
+         SWV5_TestMakeAmbiguousFingerprintSet(current,false);
+         SWV5_PersistedCheckpoint checkpoint;
+         SWV5_TestMakeCheckpoint(checkpoint);
+         checkpoint.basket.lifecycle.accepted_recovery_evidence=current;
+         SWV5_TestSealCheckpoint(checkpoint);
+         SWV5_ContractValidationContext context;
+         SWV5_TestMakeContext(context);
+         SWV5_TestPersistenceContract persistence;
+         SWV5_PersistenceLoadResult load_result;
+         SWV5_ContractDecision decision;
+         if(number==16)
+         {
+            passed=!persistence.ValidateRecord(context,checkpoint,load_result);
+            expected="checkpoint_ambiguous_mapping_rejected";
+         }
+         else if(number==17)
+         {
+            passed=!persistence.SaveCheckpoint(context,checkpoint,decision);
+            expected="save_checkpoint_rejects_ambiguous_mapping";
+         }
+         else
+         {
+            SWV5_PersistedRequestEvidence requests[];
+            ArrayResize(requests,0);
+            persistence.Configure(checkpoint,requests);
+            SWV5_PersistedCheckpoint loaded;
+            passed=!persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
+                   !persistence.ValidateRecord(context,checkpoint,load_result);
+            expected="configure_load_validate_reject_ambiguous_mapping";
+         }
+      }
+      else if(number==19)
+      {
+         SWV5_ContractValidationContext context;
+         SWV5_TestMakeContext(context);
+         SWV5_BasketStatistics current_statistics,next_statistics;
+         SWV5_TestMakeStatistics(current_statistics);
+         SWV5_AuthoritativeDeal deal;
+         SWV5_TestMakeDeal(deal);
+         SWV5_StatisticsDeduplicationEvidence evidence;
+         SWV5_TestMakeDedupEvidence(evidence,current_statistics.deduplication,SWV5_STAT_IDENTITY_DUPLICATE);
+         deal.correlation=evidence.correlation;
+         SWV5_TestStatisticsContract statistics;
+         passed=statistics.AccumulateDeal(context,deal,evidence,current_statistics,next_statistics) &&
+                next_statistics.deal_count==current_statistics.deal_count &&
+                next_statistics.entry_deal_count==current_statistics.entry_deal_count &&
+                next_statistics.exit_deal_count==current_statistics.exit_deal_count &&
+                next_statistics.partial_close_count==current_statistics.partial_close_count &&
+                SWV5_TestNear(next_statistics.gross_profit,current_statistics.gross_profit,context.price_tolerance) &&
+                SWV5_TestNear(next_statistics.authoritative_net_result,current_statistics.authoritative_net_result,context.price_tolerance) &&
+                SWV5_TestEventIdentitySetEqual(next_statistics.deduplication.identities,current_statistics.deduplication.identities) &&
+                next_statistics.deduplication.duplicate_deal_count==current_statistics.deduplication.duplicate_deal_count+1;
+         expected="statistics_duplicate_counted_once_only";
+      }
+      else if(number==20)
+      {
+         SWV5_ContractValidationContext context;
+         SWV5_TestMakeContext(context);
+         SWV5_PendingRequest pending;
+         SWV5_TestMakePending(pending);
+         SWV5_TransactionEvidence evidence;
+         SWV5_TestMakeTransaction(pending,evidence,0.04);
+         SWV5_TestExecutionContract execution;
+         SWV5_ExecutionConfirmation accepted,conflict;
+         const bool first=execution.AcceptTransactionEvidence(context,pending,evidence,accepted);
+         const SWV5_PendingRequest accepted_pending=accepted.resulting_pending_request;
+         evidence.confirmed_price+=1.0;
+         const bool second=execution.AcceptTransactionEvidence(context,accepted_pending,evidence,conflict);
+         passed=first && !second && conflict.status==SWV5_CONFIRMATION_CONFLICT &&
+                !conflict.event_identity_added &&
+                SWV5_TestPendingRequestEqual(conflict.resulting_pending_request,accepted_pending) &&
+                conflict.resulting_pending_request.cumulative_confirmed_volume==accepted_pending.cumulative_confirmed_volume &&
+                conflict.resulting_pending_request.residual_requested_volume==accepted_pending.residual_requested_volume;
+         expected="execution_conflict_preserves_exposure_residual_identity_state";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46E1",number),"SPRINT4_6_FINGERPRINT_UNIQUENESS",passed,expected);
+   }
+}
+
+void SWV5_RunSprint46RetryFreshnessTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
+      SWV5_PendingRequest pending;
+      SWV5_TestMakeRetryCandidate(pending);
+      SWV5_PendingRequest original=pending;
+      SWV5_RetryPolicy policy;
+      SWV5_TestMakeRetryPolicy(context,policy);
+      SWV5_RetryRiskFreshnessEvidence risk_evidence;
+      SWV5_TestMakeRetryRiskEvidence(context,pending,risk_evidence);
+      SWV5_RetryNormalizationFreshnessEvidence normalization_evidence;
+      SWV5_TestMakeRetryNormalizationEvidence(context,pending,normalization_evidence);
+      SWV5_TestExecutionContract implementation;
+      SWV5_ContractDecision decision;
+      bool expect_allow=(number==1 || number==9 || number==12 || number==20);
+      string expected="fail_closed";
+      if(number==2) context.clock_sequence=0;
+      if(number==3) SWV5_TestSetForeignContractIdentity(pending.contract_version);
+      if(number==4)
+      {
+         risk_evidence.ownership_fence.fencing_token_digest="CURRENT-TAKEOVER-FENCE";
+         normalization_evidence.ownership_fence.fencing_token_digest="CURRENT-TAKEOVER-FENCE";
+      }
+      if(number==5) policy.authorization_deadline=context.clock_time-1;
+      if(number==6) policy.authorization_deadline=context.clock_time;
+      if(number==7) risk_evidence.expires_at=context.clock_time-1;
+      if(number==8) ZeroMemory(risk_evidence);
+      if(number==10) normalization_evidence.evidenced_at=pending.last_changed_at;
+      if(number==11) ZeroMemory(normalization_evidence);
+      if(number==13)
+      {
+         risk_evidence.symbol_specification_sequence++;
+         normalization_evidence.symbol_specification_sequence++;
+      }
+      if(number==14)
+      {
+         risk_evidence.expected_basket_version++;
+         normalization_evidence.expected_basket_version++;
+      }
+      if(number==15)
+      {
+         pending.submission_attempt_count=policy.maximum_attempts;
+         pending.latest_submission.submission_attempt_count=policy.maximum_attempts;
+      }
+      if(number==16)
+      {
+         pending.lifecycle_phase=SWV5_EXECUTION_PHASE_COMPLETED;
+         pending.state=SWV5_REQUEST_CONFIRMED;
+      }
+      if(number==17) pending.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
+      if(number==18) pending.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_CONFLICT;
+      if(number==19)
+      {
+         risk_evidence.request_identity.request_id.attempt_id="FOREIGN-ATTEMPT";
+         normalization_evidence.request_identity.request_id.attempt_id="FOREIGN-ATTEMPT";
+      }
+      const bool allowed=implementation.EvaluateRetry(context,pending,policy,risk_evidence,normalization_evidence,decision);
+      bool passed=(expect_allow ? allowed && decision.disposition==SWV5_DISPOSITION_ALLOW :
+                                  !allowed && decision.disposition==SWV5_DISPOSITION_DENY);
+      if(number==20) passed=passed && SWV5_TestPendingRequestEqual(pending,original);
+      if(number==1) expected="valid_retry_allowed";
+      if(number==2) expected="invalid_context_rejected";
+      if(number==3) expected="foreign_contract_rejected";
+      if(number==4) expected="stale_owner_after_takeover_rejected";
+      if(number==5) expected="expired_authorization_deadline_rejected";
+      if(number==6) expected="exact_deadline_exclusive_rejected";
+      if(number==7) expected="expired_risk_authorization_rejected";
+      if(number==8) expected="fresh_risk_required_absent_rejected";
+      if(number==9) expected="fresh_risk_current_allowed";
+      if(number==10) expected="stale_normalization_rejected";
+      if(number==11) expected="fresh_normalization_absent_rejected";
+      if(number==12) expected="fresh_normalization_current_allowed";
+      if(number==13) expected="changed_symbol_specification_rejected";
+      if(number==14) expected="changed_basket_version_rejected";
+      if(number==15) expected="retry_budget_exhausted_rejected";
+      if(number==16) expected="terminal_lifecycle_rejected";
+      if(number==17) expected="reconciliation_required_rejected";
+      if(number==18) expected="conflict_state_rejected";
+      if(number==19) expected="foreign_request_identity_rejected";
+      if(number==20) expected="valid_retry_does_not_mutate_pending";
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S46DR",number),"SPRINT4_6_RETRY_FRESHNESS",passed,expected);
+   }
+}
+
 void SWV5_RunContractSuite(SWV5_TestCollector &collector)
 {
    SWV5_RunCommonTests(collector);
@@ -3511,6 +4614,13 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunExecutionTests(collector);
    SWV5_RunSprint45ExecutionAuthorityTests(collector);
    SWV5_RunSprint45FingerprintTests(collector);
+   SWV5_RunSprint46ExecutionEnvelopeTests(collector);
+   SWV5_RunSprint46RiskSafetyTests(collector);
+   SWV5_RunSprint46HardKillReleaseTests(collector);
+   SWV5_RunSprint46CheckpointIntegrityTests(collector);
+   SWV5_RunSprint46DurableIdentityTests(collector);
+   SWV5_RunSprint46FingerprintUniquenessTests(collector);
+   SWV5_RunSprint46RetryFreshnessTests(collector);
    SWV5_RunSprint45RecoveryValidationTests(collector);
    SWV5_RunSprint45UnclaimedAcquireTests(collector);
    SWV5_RunSprint45RiskBindingTests(collector);
@@ -3537,7 +4647,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==368 && first.Skipped()==0;
+   const bool complete=first.Total()==561 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -3563,6 +4673,203 @@ bool SWV5_RunPhaseATargetedVerification()
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
                deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46PhaseATargetedVerification()
+{
+   SWV5_TestCollector first;
+   SWV5_TestCollector replay;
+   SWV5_RunSprint46ExecutionEnvelopeTests(first);
+   SWV5_RunSprint46ExecutionEnvelopeTests(replay);
+   const bool deterministic=first.Total()==replay.Total() &&
+                            first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==42 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46OwnershipRegressionVerification()
+{
+   SWV5_TestCollector first;
+   SWV5_TestCollector replay;
+   SWV5_RunSprint45OwnershipLifecycleTests(first);
+   SWV5_TestRecordCondition(first,"S44-21","SPRINT4_4_SEMANTIC",SWV5_TestS4421HeartbeatSemantic(),"heartbeat_authority_stable_liveness_monotonic");
+   SWV5_RunSprint45OwnershipLifecycleTests(replay);
+   SWV5_TestRecordCondition(replay,"S44-21","SPRINT4_4_SEMANTIC",SWV5_TestS4421HeartbeatSemantic(),"heartbeat_authority_stable_liveness_monotonic");
+   const bool deterministic=first.Total()==replay.Total() &&
+                            first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==34 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46PhaseBTargetedVerification()
+{
+   SWV5_TestCollector first;
+   SWV5_TestCollector replay;
+   SWV5_RunSprint46RiskSafetyTests(first);
+   SWV5_RunSprint46HardKillReleaseTests(first);
+   SWV5_RunSprint46RiskSafetyTests(replay);
+   SWV5_RunSprint46HardKillReleaseTests(replay);
+   const bool deterministic=first.Total()==replay.Total() &&
+                            first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==71 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46RiskRegressionVerification()
+{
+   SWV5_TestCollector first;
+   SWV5_TestCollector replay;
+   SWV5_RunRiskTests(first);
+   SWV5_RunSprint45RiskBindingTests(first);
+   SWV5_RunRiskTests(replay);
+   SWV5_RunSprint45RiskBindingTests(replay);
+   const bool deterministic=first.Total()==replay.Total() &&
+                            first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==45 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46CheckpointTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint46CheckpointIntegrityTests(first);
+   SWV5_RunSprint46CheckpointIntegrityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==20 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46RetryTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint46RetryFreshnessTests(first);
+   SWV5_RunSprint46RetryFreshnessTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==20 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunPER02TargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_TestRecordCondition(first,"PER-02","PERSISTENCE",SWV5_TestPER02Behavior(),"stale_digest_after_payload_corruption");
+   SWV5_TestRecordCondition(replay,"PER-02","PERSISTENCE",SWV5_TestPER02Behavior(),"stale_digest_after_payload_corruption");
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==1 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46EventIdentityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint46DurableIdentityTests(first);
+   SWV5_RunSprint46DurableIdentityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==20 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46E1FingerprintTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint46FingerprintUniquenessTests(first);
+   SWV5_RunSprint46FingerprintUniquenessTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==20 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46PersistenceRegressionVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunPersistenceTests(first); SWV5_RunPersistenceRoundTripTests(first); SWV5_RunSprint45PersistenceCanonicalTests(first);
+   SWV5_RunPersistenceTests(replay); SWV5_RunPersistenceRoundTripTests(replay); SWV5_RunSprint45PersistenceCanonicalTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==42 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46StatisticsRegressionVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunStatisticsTests(first); SWV5_RunStatisticsTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==13 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint46ExecutionFingerprintRegressionVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint45ExecutionAuthorityTests(first); SWV5_RunSprint45FingerprintTests(first);
+   SWV5_RunSprint45ExecutionAuthorityTests(replay); SWV5_RunSprint45FingerprintTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==12 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
    return first.AllPassed() && deterministic && complete;
 }
 

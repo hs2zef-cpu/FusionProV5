@@ -218,22 +218,41 @@ public:
    virtual bool ClassifyResultRetcode(const SWV5_ContractValidationContext &context,const SWV5_ResultRetcodeEvidence &evidence,SWV5_ResultRetcodeClassification &classification)
    {
       classification.contract_version=context.expected_version;
+      classification.classification=SWV5_RETCODE_UNCLASSIFIED;
+      classification.retry_disposition=SWV5_RETRY_FORBIDDEN;
+      classification.mapping_policy_id="TEST-RETCODE-MAP-V3";
+      if(!SWV5_TestRetcodeEnvelopeValid(context,evidence))
+      {
+         SWV5_TestSetDecision(context,false,"RETCODE_ENVELOPE_INVALID",classification.decision);
+         return false;
+      }
       classification.classification=SWV5_TestClassifyRetcode(evidence.raw_retcode);
       classification.retry_disposition=(classification.classification==SWV5_RETCODE_CONNECTION_UNCERTAIN ? SWV5_RETRY_REQUIRES_RECONCILIATION : SWV5_RETRY_FORBIDDEN);
-      classification.mapping_policy_id="TEST-RETCODE-MAP-V3";
       const bool known=(classification.classification!=SWV5_RETCODE_UNCLASSIFIED);
       SWV5_TestSetDecision(context,known,(known ? "RETCODE_CLASSIFIED" : "RETCODE_UNKNOWN"),classification.decision);
       return known;
    }
    virtual bool AcceptTransactionEvidence(const SWV5_ContractValidationContext &context,const SWV5_PendingRequest &pending,const SWV5_TransactionEvidence &evidence,SWV5_ExecutionConfirmation &confirmation)
    {
+      confirmation.contract_version=context.expected_version;
+      confirmation.persistence_namespace=pending.intent.persistence_namespace;
+      confirmation.ownership_fence=pending.intent.ownership_fence;
+      confirmation.correlation=pending.latest_retcode.correlation;
+      confirmation.evidence_disposition=SWV5_TRANSACTION_EVIDENCE_INVALID;
+      confirmation.status=SWV5_CONFIRMATION_CONFLICT;
+      confirmation.disposition=SWV5_DISPOSITION_RECONCILE;
+      confirmation.confirmed_volume=pending.cumulative_confirmed_volume;
+      confirmation.residual_volume=pending.residual_requested_volume;
+      confirmation.symbol_specification_sequence=pending.intent.symbol_specification_sequence;
       confirmation.resulting_pending_request=pending;
       confirmation.event_identity_added=false;
       confirmation.duplicate_event=false;
+      confirmation.diagnostic="EXECUTION_ENVELOPE_INVALID";
+      if(!SWV5_TestTransactionEnvelopeValid(context,pending,evidence))
+         return false;
       double confirmed=0.0,residual=0.0;
       SWV5_TransactionEvidenceDisposition evidence_disposition=SWV5_TRANSACTION_EVIDENCE_INVALID;
       const SWV5_ConfirmationStatus status=SWV5_TestConfirmExecution(context,pending,evidence,evidence_disposition,confirmed,residual);
-      confirmation.contract_version=context.expected_version;
       confirmation.persistence_namespace=evidence.persistence_namespace;
       confirmation.ownership_fence=evidence.ownership_fence;
       confirmation.correlation=evidence.correlation;
@@ -301,10 +320,9 @@ public:
       confirmation.diagnostic="EVIDENCE_CONFLICT";
       return false;
    }
-   virtual bool EvaluateRetry(const SWV5_ContractValidationContext &context,const SWV5_PendingRequest &pending,const SWV5_RetryPolicy &policy,SWV5_ContractDecision &decision)
+   virtual bool EvaluateRetry(const SWV5_ContractValidationContext &context,const SWV5_PendingRequest &pending,const SWV5_RetryPolicy &policy,const SWV5_RetryRiskFreshnessEvidence &risk_evidence,const SWV5_RetryNormalizationFreshnessEvidence &normalization_evidence,SWV5_ContractDecision &decision)
    {
-      const bool valid=pending.lifecycle_phase!=SWV5_EXECUTION_PHASE_UNCERTAIN && pending.submission_attempt_count<policy.maximum_attempts &&
-                       policy.disposition!=SWV5_RETRY_FORBIDDEN && policy.earliest_retry_at<=context.clock_time;
+      const bool valid=SWV5_TestRetryFreshnessValid(context,pending,policy,risk_evidence,normalization_evidence);
       SWV5_TestSetDecision(context,valid,(valid ? "RETRY_ALLOWED" : "RETRY_FORBIDDEN"),decision);
       return valid;
    }
@@ -354,18 +372,19 @@ public:
    void Configure(const SWV5_PersistedCheckpoint &checkpoint,const SWV5_PersistedRequestEvidence &requests[])
    {
       ClearRequests();
-      m_checkpoint_configured=SWV5_TestPersistenceRecordValid(checkpoint);
-      if(!m_checkpoint_configured)
+      m_checkpoint_configured=false;
+      if(!SWV5_TestPersistenceRecordValid(checkpoint))
+         return;
+      if(!RequestSetValid(checkpoint.header.persistence_namespace,requests,checkpoint.pending_request_set))
+         return;
+      if((ArraySize(requests)==0 && checkpoint.has_latest_pending_request) ||
+         (ArraySize(requests)>0 && (!checkpoint.has_latest_pending_request ||
+           !SWV5_TestPersistedRequestEqual(checkpoint.latest_pending_request,requests[ArraySize(requests)-1]))))
          return;
       m_checkpoint=checkpoint;
       m_storage_namespace=checkpoint.header.persistence_namespace;
       m_request_set_header=checkpoint.pending_request_set;
-      if(!RequestSetValid(m_storage_namespace,requests,m_request_set_header))
-         return;
-      if((ArraySize(requests)==0 && checkpoint.has_latest_pending_request) ||
-         (ArraySize(requests)>0 && (!checkpoint.has_latest_pending_request ||
-          !SWV5_TestPersistedRequestEqual(checkpoint.latest_pending_request,requests[ArraySize(requests)-1]))))
-         return;
+      m_checkpoint_configured=true;
       CopyRequests(requests);
       m_requests_configured=true;
    }
@@ -382,7 +401,8 @@ public:
    virtual bool LoadLatest(const SWV5_ContractValidationContext &context,const SWV5_PersistenceNamespace &persistence_namespace,SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
    {
       const bool valid=m_checkpoint_configured && SWV5_TestContextValid(context) &&
-                       SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
+                        SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace) &&
+                        SWV5_TestPersistenceRecordValid(m_checkpoint);
       if(valid) checkpoint=m_checkpoint;
       result.contract_version=context.expected_version;
       result.status=(valid ? SWV5_PERSISTENCE_LOADED : SWV5_PERSISTENCE_NOT_FOUND);
@@ -451,19 +471,22 @@ public:
             m_checkpoint.has_latest_pending_request=(ArraySize(requests)>0);
             if(ArraySize(requests)>0)
                m_checkpoint.latest_pending_request=requests[ArraySize(requests)-1];
-            else
-               ZeroMemory(m_checkpoint.latest_pending_request);
-         }
+             else
+                ZeroMemory(m_checkpoint.latest_pending_request);
+             SWV5_TestSealCheckpoint(m_checkpoint);
+          }
       }
       SWV5_TestSetDecision(context,valid,(valid ? "REQUEST_SET_SAVED" : "REQUEST_SET_REJECTED"),decision);
       return valid;
    }
    virtual bool SaveCheckpoint(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestPersistenceRecordValid(checkpoint);
+      const bool valid=SWV5_TestContextValid(context) && SWV5_TestPersistenceRecordValid(checkpoint);
       if(valid)
       {
          m_checkpoint=checkpoint;
+         // Store integrity metadata is independently derived from the copied body.
+         SWV5_TestSealCheckpoint(m_checkpoint);
          m_checkpoint_configured=true;
       }
       SWV5_TestSetDecision(context,valid,(valid ? "CHECKPOINT_SAVED" : "CHECKPOINT_REJECTED"),decision);
@@ -489,14 +512,31 @@ public:
    virtual string ContractName() { return "ISWV5RiskContract/V4"; }
    virtual bool ValidateLimits(const SWV5_ContractValidationContext &context,const SWV5_RiskLimits &limits,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestContextValid(context) && SWV5_TestRiskLimitsComplete(limits);
+      const bool valid=SWV5_TestContextValid(context) && SWV5_TestRiskLimitsComplete(context,limits);
       SWV5_TestSetDecision(context,valid,(valid ? "LIMITS_VALID" : "LIMITS_INVALID"),decision);
       return valid;
    }
    virtual bool Evaluate(const SWV5_ContractValidationContext &context,const SWV5_RiskEvaluationInput &engineInput,SWV5_RiskAuthorization &authorization)
    {
       const bool coherent=SWV5_TestRiskInputCoherent(context,engineInput);
+      ZeroMemory(authorization);
       authorization.contract_version=context.expected_version;
+      authorization.authorization_id="";
+      authorization.limits_contract_id="";
+      authorization.request_identity.request_id.correlation_id="";
+      authorization.request_identity.request_id.attempt_id="";
+      authorization.request_identity.request_id.parent_attempt_id="";
+      authorization.request_identity.idempotency_key="";
+      authorization.persistence_namespace.basket_id.value="";
+      authorization.hard_kill_latch_id="";
+      authorization.authorized_volume=0.0;
+      authorization.authorized_projected_margin=0.0;
+      authorization.disposition=SWV5_RISK_RECONCILIATION_REQUIRED;
+      authorization.blocking_domain=SWV5_RISK_DOMAIN_ACCOUNT;
+      authorization.reason_flags=SWV5_RISK_DATA_UNAVAILABLE;
+      authorization.reason_text="RISK_INPUT_INCOHERENT";
+      if(!coherent)
+         return false;
       authorization.authorization_id=engineInput.intent.risk_authorization_id;
       authorization.limits_contract_id=engineInput.limits.contract_id;
       authorization.authorized_limits=engineInput.limits;
@@ -505,9 +545,9 @@ public:
       authorization.ownership_fence=engineInput.ownership_fence;
       authorization.account_namespace=engineInput.account_namespace;
       authorization.account_mode=engineInput.account_mode;
-      authorization.disposition=(coherent ? SWV5_RISK_ALLOW : SWV5_RISK_RECONCILIATION_REQUIRED);
-      authorization.blocking_domain=(coherent ? SWV5_RISK_DOMAIN_NONE : SWV5_RISK_DOMAIN_ACCOUNT);
-      authorization.reason_flags=(coherent ? 0 : 1);
+      authorization.disposition=SWV5_RISK_ALLOW;
+      authorization.blocking_domain=SWV5_RISK_DOMAIN_NONE;
+      authorization.reason_flags=0;
       authorization.basket_state_version=engineInput.intent.expected_basket_version;
       authorization.symbol_specification_sequence=engineInput.intent.symbol_specification_sequence;
       authorization.authorized_intent_type=engineInput.intent.intent_type;
@@ -527,8 +567,8 @@ public:
       authorization.evaluated_at=context.clock_time;
       const datetime policy_expiry=context.clock_time+(datetime)engineInput.limits.maximum_snapshot_age_seconds;
       authorization.expires_at=(engineInput.intent.authorization_expires_at<policy_expiry ? engineInput.intent.authorization_expires_at : policy_expiry);
-      authorization.reason_text=(coherent ? "COMPLETE_AUTHORIZATION" : "RISK_INPUT_INCOHERENT");
-      return coherent;
+      authorization.reason_text="COMPLETE_AUTHORIZATION";
+      return true;
    }
    virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,const SWV5_RiskAuthorization &authorization,const SWV5_RiskEvaluationInput &current_binding,SWV5_ContractDecision &decision)
    {

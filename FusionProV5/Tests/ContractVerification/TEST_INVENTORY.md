@@ -1,4 +1,4 @@
-# Sprint 4.5 V4 Candidate Executable Test Inventory
+# Sprint 4.6 Phase E1 V4 Candidate Executable Test Inventory
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -25,8 +25,15 @@
 | Interface correction/conformance | IFC-01–IFC-40 | 40 | 7 | 10 | 14 | 4 | 4 | 0 | 1 | 0 |
 | Persistence round trip | PRT-01–PRT-11 | 11 | 0 | 0 | 4 | 7 | 0 | 0 | 0 | 0 |
 | Sprint 4.4 semantic closure | S44-01–S44-25 | 25 | 5 | 5 | 13 | 2 | 0 | 0 | 0 | 0 |
-| **Total** |  | **368** | **40** | **96** | **190** | **17** | **13** | **11** | **1** | **0** |
+| Sprint 4.6 execution envelope | S46AE-01–S46AE-42 | 42 | 1 | 3 | 38 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.6 Risk safety | S46BR-01–S46BR-31 | 31 | 1 | 0 | 30 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.6 Hard Kill release | S46BH-01–S46BH-40 | 40 | 1 | 0 | 39 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.6 checkpoint integrity | S46CP-01–S46CP-20 | 20 | 0 | 0 | 15 | 2 | 1 | 2 | 0 | 0 |
+| Sprint 4.6 durable event identity | S46EI-01–S46EI-20 | 20 | 0 | 4 | 5 | 1 | 0 | 10 | 0 | 0 |
+| Sprint 4.6 retry freshness | S46DR-01–S46DR-20 | 20 | 3 | 0 | 16 | 0 | 1 | 0 | 0 | 0 |
+| Sprint 4.6 fingerprint uniqueness | S46E1-01 through S46E1-20 | 20 | 1 | 2 | 15 | 0 | 2 | 0 | 0 | 0 |
+| **Total** |  | **561** | **47** | **105** | **348** | **20** | **17** | **23** | **1** | **0** |
 
-`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 356. The remaining 12 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. The complete per-ID rationale is in `TEST_CREDIBILITY_MATRIX.md`.
+`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 537. The remaining 24 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. The complete per-ID rationale is in `TEST_CREDIBILITY_MATRIX.md`.
 
 The suite is deterministic, in-memory, and test-only. It does not query terminal time, accounts, positions, orders, history, symbols, files, network, or randomness.

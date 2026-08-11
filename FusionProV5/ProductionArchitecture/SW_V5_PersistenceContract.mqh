@@ -53,6 +53,10 @@ struct SWV5_PersistenceRecordHeader
    SWV5_OwnershipFence ownership_fence;
    ulong                record_sequence;
    ulong                previous_record_sequence;
+   // SWV5-CHECKPOINT-V4-LP1 binds every persisted field except these two
+   // integrity-envelope members. payload_size is the canonical MQL string
+   // character count; payload_digest is the deterministic canonical hash.
+   // This is integrity-contract evidence, not cryptographic tamper resistance.
    string               payload_digest;
    ulong                payload_size;
    datetime             written_at;
@@ -63,6 +67,8 @@ struct SWV5_PersistedRequestEvidence
    SWV5_ContractVersion       contract_version;
    SWV5_PersistenceNamespace  persistence_namespace;
    SWV5_OwnershipFence        ownership_fence;
+   // Nested durable event sets carry an explicit fingerprint policy. Persisted
+   // execution requests require exact one-to-one fingerprint mappings.
    SWV5_PendingRequest        pending_request;
    SWV5_AccountPositionMode   account_mode;
    ulong                      record_sequence;

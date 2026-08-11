@@ -1,13 +1,13 @@
 ; TEST ONLY
 ; NOT FOR PRODUCTION
 ; NO BROKER ACCESS
-InpPhaseATargetedOnly=true||false||0||true||N
+InpPhaseATargetedOnly=false||false||0||true||N
 InpPhaseBTargetedOnly=false||false||0||true||N
 InpPhaseCTargetedOnly=false||false||0||true||N
 InpPhaseDTargetedOnly=false||false||0||true||N
 InpPhaseETargetedOnly=false||false||0||true||N
 InpS4421TargetedOnly=false||false||0||true||N
-InpSprint46PhaseATargetedOnly=false||false||0||true||N
+InpSprint46PhaseATargetedOnly=true||false||0||true||N
 InpSprint46OwnershipRegressionOnly=false||false||0||true||N
 InpSprint46PhaseBTargetedOnly=false||false||0||true||N
 InpSprint46RiskRegressionOnly=false||false||0||true||N

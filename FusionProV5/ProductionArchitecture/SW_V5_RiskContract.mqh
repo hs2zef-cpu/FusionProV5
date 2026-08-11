@@ -146,6 +146,8 @@ struct SWV5_ProjectedRequestRisk
    double   projected_symbol_volume;
    double   projected_aggregate_volume;
    double   projected_notional;
+   // Additional margin attributable to this request. Account capacity is
+   // evaluated as current account margin plus projected_margin.
    double   projected_margin;
    double   projected_maximum_loss;
    SWV5_RiskMonetaryBasis monetary_basis;
@@ -206,6 +208,8 @@ struct SWV5_RiskAuthorization
 class ISWV5RiskContract
 {
 public:
+   // Evaluate is an independent fail-closed boundary. It must validate the
+   // complete current Risk envelope even when Execution validated the intent.
    virtual string ContractName() = 0;
    virtual bool ValidateLimits(const SWV5_ContractValidationContext &context,
                                const SWV5_RiskLimits &limits,
