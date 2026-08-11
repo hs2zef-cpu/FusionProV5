@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.5 |
-| Date | 2026-08-10 |
+| Version | 2.6 |
+| Date | 2026-08-12 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Review Candidate | **Sprint 4.1 Contract Hardening** |
@@ -24,6 +24,7 @@
 | 2.3 | 2026-08-06 | Recorded Sprint 4.2 as an authorized verification sub-sprint and Sprint 4.3 as corrective interface-level verification; advanced the breaking candidate contracts to V3 without Architecture Lock or runtime authorization. |
 | 2.4 | 2026-08-10 | Recorded Sprint 4.5 corrective candidate work and advanced the still-unlocked contracts to V4; Sprint 4 remained the authorized baseline and immutable verification was pending at the source-freeze checkpoint. |
 | 2.5 | 2026-08-10 | Recorded final Sprint 4.5 immutable verification: two intentional independent MT5 Demo Strategy Tester runs passed 368/368 with identical signature against source `f768205573d44d71a7f55b8e893ae0b48770d451`; candidate governance remains unchanged. |
+| 2.6 | 2026-08-12 | Recorded Sprint 4.6 final safety closure and immutable verification: two intentional MT5 Demo/Trial Strategy Tester runs passed 561/561 with identical signature against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`; final independent merge audit remains required and candidate governance remains unchanged. |
 
 ## Purpose
 
@@ -55,7 +56,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V4 corrective candidate; minimum compatible version 4
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. The separate Sprint 4.3/4.4/4.5 test-only manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases (236 meaningful interface-behavior cases plus two supporting pure equality cases) twice on MT5 Demo Strategy Tester with identical signature `6132791249901820115`. Final Sprint 4.5 immutable verification executed 368 cases twice in intentional independent MT5 Demo Strategy Tester runs; both runs passed 368/368 with 0 failed, 0 skipped, and identical signature `14243830495988534780` against source `f768205573d44d71a7f55b8e893ae0b48770d451`. Static scans confirm no broker/runtime APIs, Signal Engine dependency, frozen `.mq5` change, or Signal Engine change. This evidence supports candidate review only and does not change the authorized baseline or grant Architecture Lock, production readiness, or runtime authorization.
+The Sprint 4 Architecture manifest remains unchanged. The separate test-only contract manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases twice with identical signature `6132791249901820115`, and Sprint 4.5 immutable evidence executed 368 cases twice with identical signature `14243830495988534780`. Sprint 4.6 immutable verification executed 561 cases in each of two intentional MT5 Demo/Trial Strategy Tester runs; both passed 561/561 with 0 failed, 0 skipped, and identical signature `11321096574546544847` against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`. Static scans confirm no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This evidence supports final independent merge audit and candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, or merge authorization.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -98,7 +99,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3, Sprint 4.4, and Sprint 4.5 are corrective verification responding to independent-review findings. Sprint 4.5 advances the still-unlocked contract candidate to V4. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, or replace Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.6 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4, and Sprint 4.6 closes the remaining reviewed safety findings before final independent merge audit. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize merge, or replace Sprint 4 as the authorized baseline.
 
 ## Architecture Boundary
 

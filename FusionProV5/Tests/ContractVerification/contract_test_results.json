@@ -1,102 +1,50 @@
 ﻿{
-    "schema":  "SWV5-CONTRACT-TEST-EVIDENCE-V4",
-    "suite":  "Sprint 4.5",
-    "governance_status":  "CANDIDATE / IN REVIEW; NOT ARCHITECTURE LOCKED; NO RUNTIME AUTHORIZATION",
-    "generated_by":  "temporary Export-Sprint45Evidence.ps1",
-    "exporter_sha256":  "66722a8a10339db69ac47b677e1f695e99da49ca32e323a293da963fb1c1cc1e",
-    "generated_at_utc":  "2026-08-09T18:03:26Z",
-    "tested_source_commit":  "f768205573d44d71a7f55b8e893ae0b48770d451",
-    "manifest":  "SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5",
-    "manifest_sha256":  "ba9443ceed30c80ed5a5f8eb23d920780e17df34f32618538c5affc95b32c088",
-    "verification_source_digest":  "67dfe5b7fdc37a6deecb5205daaa92c286aaa905d53cb2190edb0883c4276f56",
-    "contract_policy":  "SWV5-PRODUCTION-V4",
-    "implementation_under_test":  "ISWV5 deterministic semantic reference implementations",
-    "compile":  {
-                    "architecture":  {
-                                         "errors":  0,
-                                         "warnings":  0,
-                                         "elapsed_ms":  541,
-                                         "cpu":  "X64 Regular",
-                                         "log_sha256":  "b682ba755a465cfce73fdc29fffcefa971165bcd633ca99c36f215ec020baad2"
-                                     },
-                    "tests":  {
-                                  "errors":  0,
-                                  "warnings":  0,
-                                  "elapsed_ms":  12560,
-                                  "cpu":  "X64 Regular",
-                                  "log_sha256":  "5894dd29494bff3526d299df93a6568e83586cab79e9ec1ff8eeb17ede915989"
-                              }
-                },
-    "credibility":  {
-                        "executable_total":  368,
-                        "MERGE_GATING_BEHAVIOR":  40,
-                        "STATE_TRANSITION":  96,
-                        "NEGATIVE_FAIL_CLOSED":  190,
-                        "ROUND_TRIP":  17,
-                        "INVARIANT_BEHAVIOR":  13,
-                        "SUPPORTING_PURE_FUNCTION":  11,
-                        "CONFORMANCE_ONLY":  1,
-                        "WEAK_FALSE_POSITIVE":  0,
-                        "sum":  368
-                    },
-    "executable_total":  368,
-    "passed":  368,
+    "schema":  "SWV5-SPRINT46-EVIDENCE-V1",
+    "verdict":  "PASS",
+    "tested_source_sha":  "50f0dc5f35f3fafd8604081cee6cb0c07cb9effe",
+    "exporter_sha256":  "20002d668b9572c00b19af8361b5dfc59dc1f270bdefb63d88ea73f2952d4c8c",
+    "manifest_sha256":  "15d2b616fb6e5a1e81596ad13bdd158f6f98c9f5c1fd42aecb2a23497f2f06c4",
+    "verification_source_digest":  "03bae89b6c1576194e516f42ff8a82f94d29a8796e4472b47e2c9141667b50eb",
+    "architecture_compile_log_sha256":  "76080c095691bdc51e95835bebfc0938986f135a01a18ae21ed84af5d8f8103c",
+    "test_compile_log_sha256":  "67b6352d51c4b1a72d7bbb124507909b5628befc7100eb40f7f9cff6c6879a0f",
+    "raw_run_1_sha256":  "60c8028c3fb47d9c7c0c99cf27b70366523fc53fba8b0b60475eea15c13eba99",
+    "raw_run_2_sha256":  "6f4bd408a0849fb2e117226e7086b0d6aeb060b4bda6643b200de552a780880b",
+    "total":  561,
+    "passed":  561,
     "failed":  0,
     "skipped":  0,
-    "deterministic":  true,
-    "signature":  "14243830495988534780",
-    "run_1_signature":  "14243830495988534780",
-    "run_2_signature":  "14243830495988534780",
-    "terminal_build":  6090,
+    "deterministic_signature":  "11321096574546544847",
+    "terminal_build":  "6090",
     "demo_server":  "Exness-MT5Trial6",
-    "account_mode_fixture":  "HEDGING",
-    "runs":  [
-                 {
-                     "run":  1,
-                     "total":  368,
-                     "passed":  368,
-                     "failed":  0,
-                     "skipped":  0,
-                     "signature":  "14243830495988534780",
-                     "internal_replay_deterministic":  true,
-                     "start":  "2026-08-10T00:38:41.638+07:00",
-                     "end":  "2026-08-10T00:38:46.147+07:00",
-                     "terminal_build":  6090,
-                     "demo_server":  "Exness-MT5Trial6",
-                     "account_mode_fixture":  "HEDGING",
-                     "on_tester_result":  1,
-                     "source_log":  "run1_agent_log_snapshot.log",
-                     "source_log_sha256":  "15933ae5e530d3f262b0d1e51a4295a69f088f005479d8f936d1ebe2a41347b7"
-                 },
-                 {
-                     "run":  2,
-                     "total":  368,
-                     "passed":  368,
-                     "failed":  0,
-                     "skipped":  0,
-                     "signature":  "14243830495988534780",
-                     "internal_replay_deterministic":  true,
-                     "start":  "2026-08-10T00:40:06.975+07:00",
-                     "end":  "2026-08-10T00:40:07.561+07:00",
-                     "terminal_build":  6090,
-                     "demo_server":  "Exness-MT5Trial6",
-                     "account_mode_fixture":  "HEDGING",
-                     "on_tester_result":  1,
-                     "source_log":  "run2_agent_log_snapshot.log",
-                     "source_log_sha256":  "d82b959f4d0a4242263e88bd5ca329c9a728ca18fd28039fd302f4acfe1e5498"
-                 }
-             ],
-    "raw_evidence":  {
-                         "file":  "sprint4_5_tester_evidence.txt",
-                         "sha256":  "375e7c8900afdee2bd5ef8005a3a8c24bbb2e11a1ac3f8805a9e49b2685f1c0f",
-                         "bytes":  383407,
-                         "source_run_1_sha256":  "15933ae5e530d3f262b0d1e51a4295a69f088f005479d8f936d1ebe2a41347b7",
-                         "source_run_2_sha256":  "d82b959f4d0a4242263e88bd5ca329c9a728ca18fd28039fd302f4acfe1e5498"
-                     },
-    "static_safety":  {
-                          "forbidden_broker_api_hits":  0,
-                          "hidden_live_file_network_random_clock_hits":  0,
-                          "frozen_runtime_change_hits":  0,
-                          "passed":  true
-                      }
+    "account_mode":  "HEDGING",
+    "run_1_timestamp":  "2026-08-11T19:31:46.5867590Z",
+    "run_2_timestamp":  "2026-08-11T19:33:22.6445878Z",
+    "credibility":  {
+                        "MERGE_GATING_BEHAVIOR":  47,
+                        "STATE_TRANSITION":  105,
+                        "NEGATIVE_FAIL_CLOSED":  348,
+                        "ROUND_TRIP":  20,
+                        "INVARIANT_BEHAVIOR":  17,
+                        "SUPPORTING_PURE_FUNCTION":  23,
+                        "CONFORMANCE_ONLY":  1,
+                        "WEAK_FALSE_POSITIVE":  0
+                    },
+    "verification_sources":  [
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_ContractTestRunner.mqh",
+                                     "sha256":  "9ad6770b0a76005a2848755fdca849bcc3b57e6c688ddf6325a8efb0975e7c4d"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_InterfaceContractImplementations.mqh",
+                                     "sha256":  "b05818787a21ba3d7725c24889e8483ec2eaad86074012702cade0eb4182bd55"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_ReferenceValidators.mqh",
+                                     "sha256":  "c7495c3f36e33b84f79a08c1900385524efb09af6f157570071c92ab03f0513c"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_TestFixtures.mqh",
+                                     "sha256":  "37b915c9ae684a00ac66f258637b1f278035eb8ef8b9f104f7644869956a6d51"
+                                 }
+                             ]
 }
