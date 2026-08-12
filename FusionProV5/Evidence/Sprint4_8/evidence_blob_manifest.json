@@ -1,0 +1,28 @@
+{
+    "schema":  "SWV5-SPRINT48-BLOB-MANIFEST-V1",
+    "tested_source_commit":  "06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89",
+    "source_tree":  "13b9a0dc020dbdd293e648c5a6f4c4d1cba05147",
+    "hash_authority":  "GIT_BLOB_BYTES_SHA256",
+    "source":  "GIT_INDEX",
+    "line_endings":  "LF",
+    "final_newline":  "EXACTLY_ONE",
+    "self_hash_policy":  "MANIFEST_EXCLUDED",
+    "evidence_files":  [
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_8/COMPILE_REPORT.md",
+                               "sha256":  "df3481dd647c7bab5aaaa8158c1562fc86d975ee456cf95989c1a39a931748df"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_8/contract_test_results.json",
+                               "sha256":  "0f839c9bf66b143baec98f1ecb3349ff7aec7ac3f2603df5dbdf6a5f290506f3"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_8/sprint4_8_tester_evidence.txt",
+                               "sha256":  "b371563597c55809062c5ad294307ad1236ca21cbb529266e2aa921b31601c38"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_8/VERIFICATION_REPORT.md",
+                               "sha256":  "bffc5c9b992251d80f95773584464027488c4f4e91f3a1c0ac205719e804622b"
+                           }
+                       ]
+}

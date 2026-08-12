@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.8 |
+| Version | 2.9 |
 | Date | 2026-08-12 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -27,6 +27,7 @@
 | 2.6 | 2026-08-12 | Recorded Sprint 4.6 final safety closure and immutable verification: two intentional MT5 Demo/Trial Strategy Tester runs passed 561/561 with identical signature against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`; final independent merge audit remains required and candidate governance remains unchanged. |
 | 2.7 | 2026-08-12 | Recorded that Sprint 4.6 evidence became superseded failed-candidate history after final independent audit, and recorded Sprint 4.7 adversarial safety, coverage, and Git-blob evidence-reproducibility closure pending immutable verification. |
 | 2.8 | 2026-08-12 | Recorded Sprint 4.7 immutable verification PASS against frozen source `008411c67239372968a4f742519984169044b7e4`: two intentional MT5 Demo Strategy Tester runs passed 634/634 with identical signature; final independent merge audit remains required and candidate governance remains unchanged. |
+| 2.9 | 2026-08-12 | Recorded Sprint 4.8 source freeze and immutable verification PASS against source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89`: two intentional MT5 Demo Strategy Tester runs passed 846/846 with identical signature, and reproducible Git-blob evidence packaging completed; final independent merge audit remains required and candidate governance remains unchanged. |
 
 ## Purpose
 
@@ -58,7 +59,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V5 corrective candidate; minimum compatible version 5
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review and remain unlocked. Phase B5 adds true reconstructive V5 round-trip verification and V5 machine-metadata conformance but does not source-freeze or generate final evidence. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or source-freeze status.
+The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review and remain unlocked. Sprint 4.8 source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` is frozen; two immutable verification runs passed 846/846 with identical signature `12393352988365616976`, and reproducible Git-blob evidence packaging is complete. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 

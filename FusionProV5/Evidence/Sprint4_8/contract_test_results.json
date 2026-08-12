@@ -1,0 +1,79 @@
+{
+    "schema":  "SWV5-SPRINT48-EVIDENCE-V1",
+    "verdict":  "PASS",
+    "tested_source_commit":  "06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89",
+    "source_tree":  "13b9a0dc020dbdd293e648c5a6f4c4d1cba05147",
+    "source_commit_timestamp":  "2026-08-12T20:58:20+07:00",
+    "verification_source_digest":  "c952a9cf44b56112bf50afe35396cd9315d1a2ec8b18418e3be25277b849c91c",
+    "exporter_sha256":  "bd3921f05a10ebf03dbcc9f4888a75a7f2fcd9cf994c4071db331ace57151b61",
+    "hash_authority":  "GIT_BLOB_BYTES_SHA256",
+    "raw_input_hash_authority":  "EXACT_EXTERNAL_FILE_BYTES_SHA256",
+    "repository_hash_manifest":  "evidence_blob_manifest.json",
+    "result_schema":  "SWV5-CONTRACT-TEST-RESULT-V5",
+    "production_policy":  "SWV5-PRODUCTION-V5",
+    "suite":  "SPRINT4.8-V5-FULL",
+    "architecture_compile":  {
+                                 "errors":  0,
+                                 "warnings":  0,
+                                 "elapsed_ms":  1851,
+                                 "cpu":  "X64 Regular"
+                             },
+    "test_compile":  {
+                         "errors":  0,
+                         "warnings":  0,
+                         "elapsed_ms":  23876,
+                         "cpu":  "X64 Regular"
+                     },
+    "raw_inputs":  {
+                       "architecture_compile_log_sha256":  "26faa4ea2d01a5c50261da0b64f6fd1dda640471df41a96d7bb1d4a1e0e1da5b",
+                       "test_compile_log_sha256":  "af3e4eab599ca1781af535364182c62b5ff34e08ca8e6eaf608a9dd9f3d2d4fa",
+                       "run_1_sha256":  "b929648dc583858bd8c37e723ee001b06c59764b9898f7095cf428eee1056c54",
+                       "run_2_sha256":  "eeddde5d0ac3b1c1de464ce9191162a688566ac869b2c36d15e3206c7ff7c55c"
+                   },
+    "runs":  [
+                 {
+                     "number":  1,
+                     "total":  846,
+                     "passed":  846,
+                     "failed":  0,
+                     "skipped":  0,
+                     "signature":  "12393352988365616976",
+                     "build":  6090,
+                     "server":  "Exness-MT5Trial6",
+                     "account_mode":  "HEDGING",
+                     "ontester":  1,
+                     "first_raw_clock":  "21:19:16.141",
+                     "last_raw_clock":  "21:19:24.118"
+                 },
+                 {
+                     "number":  2,
+                     "total":  846,
+                     "passed":  846,
+                     "failed":  0,
+                     "skipped":  0,
+                     "signature":  "12393352988365616976",
+                     "build":  6090,
+                     "server":  "Exness-MT5Trial6",
+                     "account_mode":  "HEDGING",
+                     "ontester":  1,
+                     "first_raw_clock":  "21:20:36.842",
+                     "last_raw_clock":  "21:20:43.715"
+                 }
+             ],
+    "deterministic":  true,
+    "credibility":  {
+                        "MERGE_GATING_BEHAVIOR":  69,
+                        "STATE_TRANSITION":  107,
+                        "NEGATIVE_FAIL_CLOSED":  543,
+                        "ROUND_TRIP":  7,
+                        "INVARIANT_BEHAVIOR":  47,
+                        "SUPPORTING_PURE_FUNCTION":  59,
+                        "CONFORMANCE_ONLY":  14,
+                        "WEAK_FALSE_POSITIVE":  0
+                    },
+    "behavioral":  773,
+    "supporting":  59,
+    "conformance":  14,
+    "weak":  0,
+    "executable":  846
+}
