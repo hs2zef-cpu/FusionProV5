@@ -1,0 +1,57 @@
+{
+    "schema":  "SWV5-SPRINT47-EVIDENCE-V1",
+    "verdict":  "PASS",
+    "tested_source_sha":  "008411c67239372968a4f742519984169044b7e4",
+    "hash_authority":  "COMMITTED_GIT_BLOB_CONTENT",
+    "raw_input_hash_authority":  "EXACT_EXTERNAL_FILE_BYTES",
+    "line_endings":  "LF",
+    "final_newline":  "EXACTLY_ONE",
+    "repository_hash_manifest":  "evidence_blob_manifest.json",
+    "exporter_git_blob_sha256":  "f6c7cfc8cf2e2975f0ff7bd294f642a392d55a6890b338db4ee64822f7521153",
+    "test_manifest_git_blob_sha256":  "d631d9b42be83887017d53ad17c6dcfc849c00cc70dfd08c939793e233f5854c",
+    "verification_source_digest":  "252f87c790e84fb605aa91617b9086d045b7c00a8f1e739ac613ada6a7e34ad4",
+    "raw_inputs":  {
+                       "architecture_compile_log_sha256":  "9fe534b14b8bbe059d909e384e9903d245b940f767a57b2238f15217393736e6",
+                       "test_compile_log_sha256":  "39fa15cbbe54f0ef226062df13f40fdc6158b924f7184d4b30c2bb4ee4208b70",
+                       "run_1_sha256":  "4f0eafbae5aeee2781436f7aa57161bf7e2366bf15a295d993efd708e5bfc86d",
+                       "run_2_sha256":  "a9dd169e99c5feb0c36627a5a36d391797ab399d7c8055abe35222f3920857f8"
+                   },
+    "total":  634,
+    "passed":  634,
+    "failed":  0,
+    "skipped":  0,
+    "deterministic_signature":  "18433705061502137480",
+    "terminal_build":  "6090",
+    "demo_server":  "Exness-MT5Trial6",
+    "account_mode":  "HEDGING",
+    "run_1_timestamp":  "2026-08-12T06:43:19.5010000Z",
+    "run_2_timestamp":  "2026-08-12T06:48:46.7722730Z",
+    "credibility":  {
+                        "MERGE_GATING_BEHAVIOR":  52,
+                        "STATE_TRANSITION":  105,
+                        "NEGATIVE_FAIL_CLOSED":  415,
+                        "ROUND_TRIP":  20,
+                        "INVARIANT_BEHAVIOR":  18,
+                        "SUPPORTING_PURE_FUNCTION":  23,
+                        "CONFORMANCE_ONLY":  1,
+                        "WEAK_FALSE_POSITIVE":  0
+                    },
+    "verification_sources":  [
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_ContractTestRunner.mqh",
+                                     "git_blob_sha256":  "102899eb4e8b0139d4a86a7f9d024a7b36910a50909d88f6233331a45ea0d828"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_InterfaceContractImplementations.mqh",
+                                     "git_blob_sha256":  "7d1bf6da56b60bc5a75317821fe3c38bcde15c7458f43e4c3cb9c9e20b48d2bb"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_ReferenceValidators.mqh",
+                                     "git_blob_sha256":  "68ef0d61a219561f1f3e3a9039886decb82efeea94f212e954d8fadd4403ce62"
+                                 },
+                                 {
+                                     "path":  "FusionProV5/Tests/ContractVerification/SW_V5_TestFixtures.mqh",
+                                     "git_blob_sha256":  "151fc9d54e42859f1edcd7206988c45eae7c9984a25810b9d7bf206d8a0008e6"
+                                 }
+                             ]
+}

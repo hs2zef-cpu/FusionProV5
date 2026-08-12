@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.7 |
+| Version | 2.8 |
 | Date | 2026-08-12 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -26,6 +26,7 @@
 | 2.5 | 2026-08-10 | Recorded final Sprint 4.5 immutable verification: two intentional independent MT5 Demo Strategy Tester runs passed 368/368 with identical signature against source `f768205573d44d71a7f55b8e893ae0b48770d451`; candidate governance remains unchanged. |
 | 2.6 | 2026-08-12 | Recorded Sprint 4.6 final safety closure and immutable verification: two intentional MT5 Demo/Trial Strategy Tester runs passed 561/561 with identical signature against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`; final independent merge audit remains required and candidate governance remains unchanged. |
 | 2.7 | 2026-08-12 | Recorded that Sprint 4.6 evidence became superseded failed-candidate history after final independent audit, and recorded Sprint 4.7 adversarial safety, coverage, and Git-blob evidence-reproducibility closure pending immutable verification. |
+| 2.8 | 2026-08-12 | Recorded Sprint 4.7 immutable verification PASS against frozen source `008411c67239372968a4f742519984169044b7e4`: two intentional MT5 Demo Strategy Tester runs passed 634/634 with identical signature; final independent merge audit remains required and candidate governance remains unchanged. |
 
 ## Purpose
 
@@ -57,7 +58,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V4 corrective candidate; minimum compatible version 4
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. The separate test-only contract manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases twice with identical signature `6132791249901820115`, and Sprint 4.5 immutable evidence executed 368 cases twice with identical signature `14243830495988534780`. Sprint 4.6 immutable verification executed 561 cases in each of two intentional MT5 Demo/Trial Strategy Tester runs against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`, but that source/evidence is superseded failed-candidate history because the subsequent final independent audit found five Critical safety defects and Major coverage/provenance gaps. Sprint 4.7 closes those findings with a reviewed 634-case MQL suite and a 26-case offline exporter suite; immutable Sprint 4.7 verification and final evidence are still pending. Static scans confirm no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, or merge authorization.
+The Sprint 4 Architecture manifest remains unchanged. The separate test-only contract manifest compiles with MetaEditor X64 Regular at 0 errors and 0 warnings. Historical Sprint 4.4 evidence executed 238 cases twice with identical signature `6132791249901820115`, and Sprint 4.5 immutable evidence executed 368 cases twice with identical signature `14243830495988534780`. Sprint 4.6 immutable verification executed 561 cases in each of two intentional MT5 Demo/Trial Strategy Tester runs against source `50f0dc5f35f3fafd8604081cee6cb0c07cb9effe`, but that source/evidence is superseded failed-candidate history because the subsequent final independent audit found five Critical safety defects and Major coverage/provenance gaps. Sprint 4.7 closes those findings with a 634-case MQL suite and a 26-case offline exporter suite. Immutable verification against frozen source `008411c67239372968a4f742519984169044b7e4` passed 634/634 in each of two intentional MT5 Demo Strategy Tester runs with identical signature `18433705061502137480`; Production Contract V4 remains Candidate / Unlocked and a new final independent merge audit is still required. Static scans confirm no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, or merge authorization.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -100,7 +101,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.7 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; and Sprint 4.7 closes the resulting safety, coverage, and reproducibility findings before new immutable verification. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize merge, or replace Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.7 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; and Sprint 4.7 closes the resulting safety, coverage, and reproducibility findings with immutable PASS evidence pending a new final independent merge audit. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize merge, or replace Sprint 4 as the authorized baseline.
 
 ## Architecture Boundary
 

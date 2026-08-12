@@ -1,0 +1,37 @@
+{
+    "schema":  "SWV5-SPRINT47-BLOB-MANIFEST-V1",
+    "tested_source_sha":  "008411c67239372968a4f742519984169044b7e4",
+    "hash_authority":  "GIT_BLOB_BYTES_SHA256",
+    "source":  "GIT_INDEX",
+    "line_endings":  "LF",
+    "final_newline":  "EXACTLY_ONE",
+    "dependency_order":  [
+                             "generate semantic evidence",
+                             "stage evidence files",
+                             "hash Git index blobs",
+                             "write this non-circular manifest",
+                             "stage manifest",
+                             "verify index",
+                             "commit",
+                             "verify commit blobs"
+                         ],
+    "self_hash_policy":  "MANIFEST_EXCLUDED",
+    "evidence_files":  [
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_7/COMPILE_REPORT.md",
+                               "sha256":  "4b4abafcdb7086eaf401f093d8e7f64d4b8bbc22ae15ade2653fd82b7524157f"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_7/contract_test_results.json",
+                               "sha256":  "8aec1d1508181af77d3b4cc59c064f5479f4dd07d56517a8158455d05d92fb98"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_7/sprint4_7_tester_evidence.txt",
+                               "sha256":  "85e50ec61427de4a0bd4beeb073c7174c66d53c380a7e94f2bd6649ece542345"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_7/VERIFICATION_REPORT.md",
+                               "sha256":  "cb30faf0b9ab3170c44157466f522fac3dfe7440b42819de1adc880942f16023"
+                           }
+                       ]
+}

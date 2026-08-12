@@ -4,6 +4,16 @@ This file records the authorized evolution of Fusion Pro V5.
 
 ## Unreleased
 
+## Sprint 4.7 Adversarial Safety and Reproducible Immutable Verification
+
+Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; Production Contract V4 remains a Candidate / Unlocked contract with no Architecture Lock, production readiness, runtime authorization, or merge authorization.
+
+- Closed the five Critical safety findings and the coverage/provenance Major findings raised by the final independent audit of Sprint 4.6; Sprint 4.6 remains superseded failed-candidate history.
+- Recorded immutable verification against source `008411c67239372968a4f742519984169044b7e4`: two intentional MT5 Demo Strategy Tester runs each passed 634/634 with 0 failed, 0 skipped, and identical signature `18433705061502137480`.
+- Classified the 634 executable cases as 610 behavioral, 23 supporting pure-function, one conformance-only, and zero weak false-positive cases.
+- Generated reproducible evidence from hash-gated Phase D raw inputs using exact Git-index and committed-blob SHA-256 authority.
+- A new final independent merge audit remains required before any merge or formal approval decision.
+
 ## Sprint 4.6 Final Safety Closure and Immutable Verification
 
 Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; V4 remains an unlocked candidate with no Architecture Lock, production readiness, runtime authorization, or merge authorization.
