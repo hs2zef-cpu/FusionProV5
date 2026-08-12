@@ -2,16 +2,18 @@
 
 ## Status
 
-Candidate policy for the Sprint 4.1 review package. Pending formal approval; not Architecture Locked. Sprint 4 remains the authorized architecture baseline. Sprint 4.7 is corrective contract, test-only, and evidence-reproducibility work within this Candidate / In Review package; it grants no runtime authorization or production-readiness status.
+Candidate policy for the Sprint 4.1 review package. Pending formal approval; not Architecture Locked. Sprint 4 remains the authorized architecture baseline. Sprint 4.8 is corrective contract and test-only work within this Candidate / In Review package; it grants no runtime authorization, production-readiness, merge authorization, or source-freeze status.
 
 ## Current Contract
 
-- Schema version: `4`
-- Minimum compatible version: `4`
-- Policy ID: `SWV5-PRODUCTION-V4`
+- Schema version: `5`
+- Minimum compatible version: `5`
+- Policy ID: `SWV5-PRODUCTION-V5`
 - Sprint 4 version 1 records are architecture artifacts, not production persistence records.
 
-Version 4 is an intentionally incompatible evolution of the unlocked version 3 candidate. It adds durable immutable evidence fingerprint binding, completes Risk authorization rebinding against the full current Risk input, and makes Unit safety derive operation semantics from intent, operation kind, purpose, and current/target exposure. Caller flags are consistency evidence only. Version 3 remains historical candidate work and was never Architecture Locked or authorized for runtime use. Version 2 added deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence. Version 3 corrected earlier review defects by making recovery state explicit, splitting pre- and post-submission identity, making pending requests reconstructible, binding Risk to a canonical account namespace/epoch and account mode, replacing self-attested evidence, making idempotency membership reconstructible, and introducing the earlier Unit safety model.
+Version 5 is an intentionally incompatible evolution of the unlocked version 4 candidate. It closes Sprint 4.8 safety-model sufficiency findings with complete typed authority, risk-projection, broker reconciliation, Hard Kill provenance, and canonical V5 serialization boundaries. Version 4 is a superseded candidate / historical pre-approval artifact and was never Architecture Locked or runtime-authorized.
+
+Version 4 was an intentionally incompatible evolution of the unlocked version 3 candidate. It added durable immutable evidence fingerprint binding, completed Risk authorization rebinding against the full current Risk input, and made Unit safety derive operation semantics from intent, operation kind, purpose, and current/target exposure. Caller flags were consistency evidence only. Version 3 remains historical candidate work and was never Architecture Locked or authorized for runtime use. Version 2 added deterministic validation context, authoritative query completeness, transaction identity, authorization binding, and lease compare-and-set evidence. Version 3 corrected earlier review defects by making recovery state explicit, splitting pre- and post-submission identity, making pending requests reconstructible, binding Risk to a canonical account namespace/epoch and account mode, replacing self-attested evidence, making idempotency membership reconstructible, and introducing the earlier Unit safety model.
 
 The Sprint 4.5 Phase C signature and Unit DTO additions and the Phase D ownership-evidence additions are V4 candidate completion, not a V5 release. V4 has never been approved, locked, emitted by runtime, or accepted as a durable compatibility baseline. Phase D completes the unresolved candidate by binding the authoritative clock and complete observed lease identity into ownership lifecycle and takeover evidence, and by separating immutable ownership-authority fencing from mutable lease-record CAS revision. These corrections therefore complete the same unresolved candidate before formal approval. After V4 approval, the same required-field or interface-signature changes would require a schema increment and migration review.
 

@@ -6,6 +6,30 @@
 #ifndef SW_V5_TEST_ASSERTIONS_MQH
 #define SW_V5_TEST_ASSERTIONS_MQH
 
+#include "..\..\ProductionArchitecture\SW_V5_ProductionCommon.mqh"
+
+string SWV5_TestResultSchemaIdentity()
+{
+   return "SWV5-CONTRACT-TEST-RESULT-V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION);
+}
+
+string SWV5_TestResultProductionPolicy()
+{
+   return SWV5_PRODUCTION_CONTRACT_POLICY;
+}
+
+string g_swv5_test_suite_identity="SPRINT4.8-V5-FULL";
+
+void SWV5_TestSetSuiteIdentity(const string suite_identity)
+{
+   g_swv5_test_suite_identity=suite_identity;
+}
+
+string SWV5_TestSuiteIdentity()
+{
+   return g_swv5_test_suite_identity;
+}
+
 struct SWV5_TestRecord
 {
    string id;
@@ -134,7 +158,8 @@ public:
 
    string SummaryJson(const bool deterministic) const
    {
-      return StringFormat("{\"schema\":\"SWV5-CONTRACT-TEST-RESULT-V4\",\"contract_policy\":\"SWV5-PRODUCTION-V4\",\"implementation\":\"ISWV5-SEMANTIC-REFERENCE\",\"total\":%d,\"passed\":%d,\"failed\":%d,\"skipped\":%d,\"signature\":\"%I64u\",\"deterministic\":%s}",
+      return StringFormat("{\"schema\":\"%s\",\"contract_policy\":\"%s\",\"suite\":\"%s\",\"implementation\":\"ISWV5-SEMANTIC-REFERENCE\",\"total\":%d,\"passed\":%d,\"failed\":%d,\"skipped\":%d,\"signature\":\"%I64u\",\"deterministic\":%s}",
+                          SWV5_TestResultSchemaIdentity(),SWV5_TestResultProductionPolicy(),SWV5_TestSuiteIdentity(),
                           m_total,m_passed,m_failed,m_skipped,m_signature,deterministic ? "true" : "false");
    }
 };

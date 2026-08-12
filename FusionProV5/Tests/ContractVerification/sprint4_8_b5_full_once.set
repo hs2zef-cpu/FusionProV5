@@ -1,0 +1,10 @@
+; TEST ONLY
+; NOT FOR PRODUCTION
+; NO BROKER ACCESS
+InpSprint48PreviousSafetyTargetedOnly=false||false||0||true||N
+InpSprint48MetadataTargetedOnly=false||false||0||true||N
+InpSprint48RoundTripTargetedOnly=false||false||0||true||N
+InpSprint48HistoricalRegressionTargetedOnly=false||false||0||true||N
+InpSprint48CanonicalIntegrityTargetedOnly=false||false||0||true||N
+InpSprint48CanonicalAffectedTargetedOnly=false||false||0||true||N
+InpSprint48HardKillAuthorityTargetedOnly=false||false||0||true||N

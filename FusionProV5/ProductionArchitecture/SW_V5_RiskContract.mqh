@@ -1,7 +1,7 @@
 #ifndef SW_V5_RISK_CONTRACT_MQH
 #define SW_V5_RISK_CONTRACT_MQH
 
-#include "SW_V5_ExecutionContract.mqh"
+#include "SW_V5_UnitSystemContract.mqh"
 
 enum SWV5_RiskDomain
 {
@@ -137,6 +137,143 @@ struct SWV5_RiskMonetaryBasis
    bool                    includes_fee;
 };
 
+struct SWV5_MarginProjectionEvidence
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_OwnershipFence ownership_fence;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_BasketID basket_id;
+   string symbol;
+   ulong symbol_specification_sequence;
+   SWV5_ExecutionIntentType intent_type;
+   int direction;
+   double requested_volume;
+   double requested_price;
+   double current_account_margin;
+   double current_free_margin;
+   double projected_account_margin;
+   double additional_margin;
+   string account_currency;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+   string calculation_reference;
+   datetime observed_at;
+   datetime calculated_at;
+   ulong evidence_sequence;
+   // Reference to the independently supplied Broker Margin Authority record.
+   string authority_record_id;
+   ulong authority_record_sequence;
+   string authority_record_digest;
+   // Canonical V5 typed length-prefixed digest; excludes this field itself.
+   string evidence_digest;
+};
+
+// Independently supplied by the Broker Adapter / Broker Margin Authority.
+// Risk Governance consumes this record but must not reconstruct it from the
+// request-side projection evidence that it validates.
+struct SWV5_MarginAuthorityRecord
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_OwnershipFence ownership_fence;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5_BasketID basket_id;
+   string symbol;
+   ulong symbol_specification_sequence;
+   SWV5_ExecutionIntentType intent_type;
+   int direction;
+   double requested_volume;
+   double requested_price;
+   double current_account_margin;
+   double projected_account_margin;
+   double additional_margin;
+   double current_free_margin;
+   string account_currency;
+   string broker_calculation_reference;
+   ulong observation_sequence;
+   datetime observed_at;
+   datetime calculated_at;
+   string authority_record_id;
+   ulong authority_record_sequence;
+   // Canonical V5 typed length-prefixed digest; excludes only this field.
+   string authority_record_digest;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+};
+
+struct SWV5_BasketRiskProjectionEvidence
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_OwnershipFence ownership_fence;
+   SWV5_BasketID basket_id;
+   ulong basket_state_version;
+   SWV5_ExecutionRequestIdentity request_identity;
+   string symbol;
+   ulong symbol_specification_sequence;
+   double existing_bounded_basket_loss;
+   double incremental_request_bounded_loss;
+   double interaction_or_offset_adjustment;
+   double resulting_basket_maximum_loss;
+   double realized_loss_basis;
+   double unrealized_loss_basis;
+   double accrued_cost_basis;
+   SWV5_RiskMonetaryBasis monetary_basis;
+   string calculation_policy_id;
+   string source_snapshot_digest;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+   datetime observed_at;
+   datetime calculated_at;
+   ulong evidence_sequence;
+   // Reference to the separately supplied Risk Governance authority record.
+   string authority_record_id;
+   ulong authority_record_sequence;
+   string authority_record_digest;
+   // Canonical V5 typed length-prefixed digest; excludes this field itself.
+   string evidence_digest;
+};
+
+// Independent resulting-Basket Risk authority. Broker/live position facts and
+// Basket lifecycle state are inputs to Risk Governance; the caller projection
+// cannot originate this record or its source-snapshot identity.
+struct SWV5_BasketRiskAuthorityRecord
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_AccountRiskNamespace account_namespace;
+   SWV5_OwnershipFence ownership_fence;
+   SWV5_BasketID basket_id;
+   ulong basket_state_version;
+   SWV5_ExecutionRequestIdentity request_identity;
+   string symbol;
+   ulong symbol_specification_sequence;
+   string source_snapshot_id;
+   string source_snapshot_digest;
+   double existing_bounded_basket_loss;
+   double incremental_request_bounded_loss;
+   double interaction_or_offset_adjustment;
+   double resulting_basket_maximum_loss;
+   double realized_loss_basis;
+   double unrealized_loss_basis;
+   double accrued_cost_basis;
+   SWV5_RiskMonetaryBasis monetary_basis;
+   string calculation_policy_id;
+   ulong observation_sequence;
+   datetime observed_at;
+   datetime calculated_at;
+   string authority_record_id;
+   ulong authority_record_sequence;
+   // Canonical V5 typed length-prefixed digest; excludes only this field.
+   string authority_record_digest;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+};
+
 struct SWV5_ProjectedRequestRisk
 {
    SWV5_ContractVersion contract_version;
@@ -150,11 +287,11 @@ struct SWV5_ProjectedRequestRisk
    double   projected_aggregate_volume;
    // Post-operation aggregate notional in monetary_basis account currency.
    double   projected_notional;
-   // Additional margin attributable to this request. Account capacity is
-   // evaluated as current account margin plus projected_margin.
+   SWV5_MarginProjectionEvidence margin_evidence;
+   SWV5_BasketRiskProjectionEvidence basket_risk_evidence;
+   // Non-authoritative compatibility mirrors. V5 validators require exact
+   // equality with the nested authoritative evidence and never trust them alone.
    double   projected_margin;
-   // Conservative bounded loss for the resulting Basket. Exposure-increasing
-   // requests with a protective stop cannot report zero risk.
    double   projected_maximum_loss;
    SWV5_RiskMonetaryBasis monetary_basis;
    datetime calculated_at;
@@ -172,6 +309,11 @@ struct SWV5_RiskEvaluationInput
    SWV5_ExposureRiskSnapshot exposure;
    SWV5_BasketRiskSnapshot   basket;
    SWV5_ProjectedRequestRisk projected;
+   bool has_margin_authority_record;
+   SWV5_MarginAuthorityRecord margin_authority_record;
+   bool has_basket_risk_authority_record;
+   SWV5_BasketRiskAuthorityRecord basket_risk_authority_record;
+   SWV5_SymbolUnitSpecification symbol_specification;
    SWV5_OwnershipFence       ownership_fence;
    SWV5_HardKillState        hard_kill_state;
 };
@@ -230,6 +372,22 @@ public:
    virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,
                                         const SWV5_HardKillState &current_state,
                                         const SWV5_HardKillReleaseEvidence &evidence,
+                                        SWV5_ContractDecision &decision) = 0;
+   virtual bool ValidateHardKillReleaseMode(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &current_state,
+                                        const SWV5_HardKillReleaseEvidence &evidence,
+                                        const SWV5_HardKillReleaseValidationMode mode,
+                                        SWV5_ContractDecision &decision) = 0;
+   // This legacy-shaped mode boundary is valid for CURRENT_EXECUTION only.
+   // HISTORICAL_PERSISTED must use ValidateHistoricalHardKillRelease because
+   // it cannot be authorized without the independent record input.
+   // Historical RELEASED authority is a two-trust-domain validation. The
+   // checkpoint-local evidence is diagnostic/content data; the independently
+   // supplied authority record is the semantic authorization input.
+   virtual bool ValidateHistoricalHardKillRelease(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &persisted_state,
+                                        const SWV5_HardKillReleaseEvidence &checkpoint_evidence,
+                                        const SWV5_HardKillReleaseAuthorityRecord &authority_record,
                                         SWV5_ContractDecision &decision) = 0;
 };
 

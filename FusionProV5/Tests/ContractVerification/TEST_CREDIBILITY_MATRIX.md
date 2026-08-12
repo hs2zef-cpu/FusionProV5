@@ -1,8 +1,8 @@
-# Sprint 4.7 Phase A Test Credibility Matrix
+# Sprint 4.8 Phase B6 V5 Candidate Test Credibility Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
-This matrix classifies every executable ID in the 634-case V4 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
+This matrix classifies every executable ID in the 846-case V5 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
 
 The audit question for every behavioral row is: if the advertised behavior were removed or intentionally broken, would the material assertion fail? Every behavioral row below answers **yes**. No row is classified by test name or intent alone.
 
@@ -10,21 +10,21 @@ The audit question for every behavioral row is: if the advertised behavior were 
 
 | Category | Count | Merge-gating evidence |
 |---|---:|---|
-| `MERGE_GATING_BEHAVIOR` | 52 | YES |
-| `STATE_TRANSITION` | 105 | YES |
-| `NEGATIVE_FAIL_CLOSED` | 415 | YES |
-| `ROUND_TRIP` | 20 | YES |
-| `INVARIANT_BEHAVIOR` | 18 | YES |
-| `SUPPORTING_PURE_FUNCTION` | 23 | NO |
-| `CONFORMANCE_ONLY` | 1 | NO |
+| `MERGE_GATING_BEHAVIOR` | 69 | YES |
+| `STATE_TRANSITION` | 107 | YES |
+| `NEGATIVE_FAIL_CLOSED` | 543 | YES |
+| `ROUND_TRIP` | 7 | YES |
+| `INVARIANT_BEHAVIOR` | 47 | YES |
+| `SUPPORTING_PURE_FUNCTION` | 59 | NO |
+| `CONFORMANCE_ONLY` | 14 | NO |
 | `WEAK_FALSE_POSITIVE` | 0 | NO |
-| **Executable total** | **634** | **610 behavioral; 24 supporting/conformance** |
+| **Executable total** | **846** | **773 behavioral; 73 supporting/conformance** |
 
 ## Complete classification
 
 | Test ID(s) | Category | Production interface / helper | Prior state | Operation | Material assertion/output | Specific broken behavior detected | Gate? |
 |---|---|---|---|---|---|---|---|
-| COM-01 | `MERGE_GATING_BEHAVIOR` | Version policy `EvaluateCompatibility` | Valid V4 candidate/context | Evaluate exact version | Returns true and `EXACT` | Exact compatible version rejected or misclassified | YES |
+| COM-01 | `MERGE_GATING_BEHAVIOR` | Version policy `EvaluateCompatibility` | Valid current V5 candidate/context | Evaluate exact version | Returns true and `EXACT` | Exact compatible version rejected or misclassified | YES |
 | COM-02 | `MERGE_GATING_BEHAVIOR` | Version policy | Older compatible schema | Evaluate | `MIGRATION_REQUIRED` | Older schema treated as exact or unusable | YES |
 | COM-03 | `NEGATIVE_FAIL_CLOSED` | Version policy | Foreign policy ID | Evaluate | `REJECTED` | Unknown policy accepted | YES |
 | COM-04 | `NEGATIVE_FAIL_CLOSED` | Basket `ValidateState` | Valid IDLE; missing authoritative clock | Validate | False and invalid report | Missing clock accepted | YES |
@@ -91,7 +91,7 @@ The audit question for every behavioral row is: if the advertised behavior were 
 | S45F-02 | `ROUND_TRIP` | Persistence plus execution | Returned execution state with fingerprint | Save/load, replay exact and conflicting evidence | Loaded identity survives; exact duplicate; conflict rejected | Durable fingerprint lost across restart | YES |
 | S45BR-01–S45BR-02 | `STATE_TRANSITION` | Basket recovery transition | ACTIVE then returned RECOVERY state | First recovery, exact replay | Identity added once; replay no-op | Recovery not mutated or duplicate re-applied | YES |
 | S45BR-03–S45BR-09 | `NEGATIVE_FAIL_CLOSED` | Basket recovery transition | Returned state after first recovery | Replay with owner/fence/Basket/fingerprint/context/version/counter mutation | DENY; all returned fields unchanged | Known-identity fast path bypasses canonical validation | YES |
-| S45BR-10 | `ROUND_TRIP` | Persistence plus recovery | Returned RECOVERY lifecycle | Configure/load checkpoint, replay original request | Loaded state recognizes exact duplicate without mutation | Restart loses recovery identity | YES |
+| S45BR-10 | `INVARIANT_BEHAVIOR` | Persistence plus recovery | Returned RECOVERY lifecycle | Configure/load checkpoint, replay original request | Loaded state recognizes exact duplicate without mutation | Restart loses recovery identity | YES |
 | S45BO-01, S45BO-09 | `STATE_TRANSITION` | Ownership `Acquire` | UNCLAIMED lease | Acquire | Complete coherent ACQUIRED lease and new fence/revision | Stub/patched lease returned | YES |
 | S45BO-02–S45BO-08 | `NEGATIVE_FAIL_CLOSED` | Ownership `Acquire` | UNCLAIMED lease | Mutate context, namespace, claimant, key dimensions, duration, or CAS revision | DENY; observed lease field-equal | Unclaimed acquire bypasses canonical validation | YES |
 | S45BO-10 | `INVARIANT_BEHAVIOR` | Ownership acquire plus heartbeat validator | UNCLAIMED lease | Acquire then validate returned lease as later lifecycle input | Returned lease is complete and heartbeat-eligible | Acquire result cannot be consumed | YES |
@@ -120,7 +120,7 @@ The audit question for every behavioral row is: if the advertised behavior were 
 | S45DP-04–S45DP-07 | `SUPPORTING_PURE_FUNCTION` | Request-set digest helper | Canonical two-request set | Mutate nested string/numeric/fingerprint or order | Digest changes | Digest omits content/order | NO |
 | S45DP-08–S45DP-12 | `NEGATIVE_FAIL_CLOSED` | Persistence `SavePendingRequests` | Canonical stored/set state | Supply copied digest, count/sequence/namespace mismatch, or stale revision | Save rejects | Invalid header/payload overwrites storage | YES |
 | S45DP-13–S45DP-14 | `SUPPORTING_PURE_FUNCTION` | Canonical set/digest helpers | Independently constructed equal fixtures | Compare independent results, then adversarially mutate content/cardinality | Equal fixtures equal; changed fixtures differ | Self-comparison false positive or constant canonicalizer | NO |
-| S45DP-15–S45DP-16 | `ROUND_TRIP` | Persistence Save/Load | Request set A, then replacement B | Save/load A; save B/load B/latest | Full equality and stale A absent | Save succeeds without storage/replacement semantics | YES |
+| S45DP-15–S45DP-16 | `INVARIANT_BEHAVIOR` | Persistence Save/Load | Request set A, then replacement B | Save/load A; save B/load B/latest | Full equality and stale A absent | Save succeeds without storage/replacement semantics | YES |
 | PER-01 | `INVARIANT_BEHAVIOR` | Persistence `ValidateRecord` | Valid checkpoint | Validate | Loaded/valid | Canonical record rejected | YES |
 | PER-02 | `NEGATIVE_FAIL_CLOSED` | Persistence `ValidateRecord` / `SaveCheckpoint` / `LoadLatest` | Valid canonical checkpoint is saved; copied checkpoint mutates nested recovery attempts while retaining its original non-empty digest and payload size | Validate and save corrupted copy; reload latest | Both corrupted operations reject; stored valid checkpoint remains field-equal | Payload integrity reduced to `payload_digest != "" && payload_size > 0` | YES |
 | PER-03–PER-04 | `NEGATIVE_FAIL_CLOSED` | Persistence record validator | Corrupt sequence or namespace | Validate | False | Corrupt/foreign record accepted | YES |
@@ -161,16 +161,16 @@ The audit question for every behavioral row is: if the advertised behavior were 
 | IFC-26–IFC-27 | `STATE_TRANSITION` | Execution evidence | ACK or pending request | Accept actual ack or partial fill | Returned pending/partial state and residual inspected | Ack confirmation or partial residual defect | YES |
 | IFC-29 | `STATE_TRANSITION` | Statistics accumulator | Existing duplicate identity | Accumulate duplicate | Money stable; duplicate count +1 | Duplicate double-counts | YES |
 | IFC-30–IFC-31, IFC-37 | `INVARIANT_BEHAVIOR` | Basket/Risk interfaces | Identical/valid fixtures | Replay transition, validate state/limits | Equal material outputs or valid report | Determinism/positive invariant broken | YES |
-| IFC-33–IFC-36 | `ROUND_TRIP` | Persistence Configure/Save/Load | Checkpoint or request-set state | Configure/load, save/load empty set, save/load checkpoint after caller mutation | Loaded material state equals pre-mutation source | Invocation-only Save/Load or shallow copy | YES |
+| IFC-33–IFC-36 | `INVARIANT_BEHAVIOR` | Persistence Configure/Save/Load | Checkpoint or request-set state | Configure/load, save/load empty set, save/load checkpoint after caller mutation | Loaded material state equals pre-mutation source | Invocation-only Save/Load or shallow copy | YES |
 | IFC-38 | `CONFORMANCE_ONLY` | Statistics `Finalize` | Complete deterministic fixture | Invoke | Returns nonzero validation flags | Method/signature/output-shape regression; semantic finalize behavior is gated by STA-08 | NO |
 | IFC-39–IFC-40 | `STATE_TRANSITION` | Ownership heartbeat/conflict/release | Active lease | Renew/detect or release | Returned status/sequences/time/expiry/conflict/released state | Remaining ownership methods do not perform advertised transition | YES |
-| PRT-01–PRT-05 | `ROUND_TRIP` | Persistence Configure/Save/Load | Single/multiple/partial/uncertain payloads | Store then load | Field equality, order, and lifecycle content | Shallow/incomplete reconstruction | YES |
+| PRT-01–PRT-05 | `INVARIANT_BEHAVIOR` | Persistence Configure/Save/Load | Single/multiple/partial/uncertain payloads | Store then load | Field equality, order, and lifecycle content | Shallow/incomplete reconstruction | YES |
 | PRT-06–PRT-08 | `NEGATIVE_FAIL_CLOSED` | Persistence | Foreign namespace or corrupt header/digest/revision | Load/save | False; output cleared where applicable | Foreign/corrupt storage accepted | YES |
-| PRT-09–PRT-10 | `ROUND_TRIP` | Persistence | Stored multiple/single records | Repeated load or caller mutation after Save | Independent equal loads; stored state isolated | Nondeterministic or shallow storage | YES |
+| PRT-09–PRT-10 | `INVARIANT_BEHAVIOR` | Persistence | Stored multiple/single records | Repeated load or caller mutation after Save | Independent equal loads; stored state isolated | Nondeterministic or shallow storage | YES |
 | PRT-11 | `NEGATIVE_FAIL_CLOSED` | Persistence `LoadPendingRequests` | Unconfigured store | Load | False, empty output, truncated status | Missing storage treated as valid | YES |
 | S44-01–S44-04 | `MERGE_GATING_BEHAVIOR` | Restart reconciliation | Empty, uncertain, retry-forbidden, or Hard Kill persisted state | Reconcile | Safe/reconcile/retry-forbidden/close-only disposition | Complete-set readiness policy absent | YES |
 | S44-05–S44-09 | `NEGATIVE_FAIL_CLOSED` | Persistence/restart | Residual mismatch or nested/order/revision/digest tamper | Reconcile/save | Halt/reject | Payload/header integrity ignored | YES |
-| S44-10–S44-11 | `ROUND_TRIP` | Persistence Save/LoadLatest | Two-record set then empty replacement | Save/load latest | Latest summary is final record then cleared | Stale latest summary | YES |
+| S44-10–S44-11 | `STATE_TRANSITION` | Persistence Save/LoadLatest | Two-record set then empty replacement | Save/load latest | Latest summary is final record then cleared | Stale latest summary | YES |
 | S44-12 | `MERGE_GATING_BEHAVIOR` | Risk Evaluate/Validate | Complete binding | Evaluate then validate | Complete authorization and projection output | Partial authorization output | YES |
 | S44-13–S44-15 | `NEGATIVE_FAIL_CLOSED` | Risk validator | Missing auth field or changed Hard Kill namespace/generation | Validate | DENY | Safety binding ignored | YES |
 | S44-16–S44-17 | `STATE_TRANSITION` | Recovery/Execution | Initial then returned state | Accept first/second evidence and replay | Durable identity added once; replay stable | State mutation or replay semantics absent | YES |
@@ -187,11 +187,11 @@ The audit question for every behavioral row is: if the advertised behavior were 
 | S46CP-01 | `INVARIANT_BEHAVIOR` | Persistence canonical checkpoint validator | Fully sealed checkpoint | Validate | True | Valid canonical checkpoint rejected | YES |
 | S46CP-02–S46CP-12, S46CP-15, S46CP-18–S46CP-20 | `NEGATIVE_FAIL_CLOSED` | Persistence checkpoint validator/store | Sealed checkpoint with one material payload/header/sequence mutation and stale integrity envelope | Validate/save/load | Reject without corrupting stored state | Checkpoint integrity or sequence binding omitted | YES |
 | S46CP-13–S46CP-14 | `SUPPORTING_PURE_FUNCTION` | Canonical checkpoint serializer/digest | Unicode or independently equal checkpoint fixtures | Serialize/hash | Stable distinct/equal output as applicable | Nondeterministic or encoding-unsafe canonicalizer | NO |
-| S46CP-16–S46CP-17 | `ROUND_TRIP` | Persistence checkpoint Save/Load | Canonical sealed checkpoint | Save, mutate caller, load | Full stored payload reconstructed and isolated | Shallow or incomplete checkpoint storage | YES |
+| S46CP-16–S46CP-17 | `INVARIANT_BEHAVIOR` | Persistence checkpoint Save/Load | Canonical sealed checkpoint | Save, mutate caller, load | Full stored payload reconstructed and isolated | Shallow or incomplete checkpoint storage | YES |
 | S46EI-01–S46EI-02, S46EI-12–S46EI-13 | `STATE_TRANSITION` | Durable event identity set | Empty or populated typed identity set | Insert, replay, accept unseen older identity | Cardinality/order/high-watermark update exactly once | Duplicate application or out-of-order loss | YES |
 | S46EI-10–S46EI-11, S46EI-14, S46EI-19–S46EI-20 | `NEGATIVE_FAIL_CLOSED` | Durable event identity validator | Conflicting fingerprint, malformed encoding, or count mismatch | Validate/insert | Reject with stable prior set | Ambiguous/conflicting durable identity accepted | YES |
 | S46EI-03–S46EI-09, S46EI-16–S46EI-18 | `SUPPORTING_PURE_FUNCTION` | Typed event encoder/digest | Delimiter, Unicode, and individual-field mutations | Encode/hash | Boundary-safe distinct output | Concatenation collision or omitted digest field | NO |
-| S46EI-15 | `ROUND_TRIP` | Persistence checkpoint Save/Load | Checkpoint containing typed identity set | Save/load | Full ordered identity set reconstructed | Durable idempotency lost at restart | YES |
+| S46EI-15 | `INVARIANT_BEHAVIOR` | Persistence checkpoint Save/Load | Checkpoint containing typed identity set | Save/load | Full ordered identity set reconstructed | Durable idempotency lost at restart | YES |
 | S46DR-01, S46DR-09, S46DR-12 | `MERGE_GATING_BEHAVIOR` | Execution `EvaluateRetry` | Current retry candidate with complete current evidence; fresh proof supplied where required | Evaluate | RETRY_ALLOWED | Valid current retry is unusable or mandatory typed proof cannot authorize | YES |
 | S46DR-02–S46DR-08, S46DR-10–S46DR-11, S46DR-13–S46DR-19 | `NEGATIVE_FAIL_CLOSED` | Execution `EvaluateRetry` | One context, contract, owner, deadline, freshness, specification, Basket, budget, lifecycle, or request mutation | Evaluate | DENY | Expired/stale/foreign/unsafe retry allowed | YES |
 | S46DR-20 | `INVARIANT_BEHAVIOR` | Execution `EvaluateRetry` | Valid canonical pending request and proof | Evaluate and compare pre/post request | RETRY_ALLOWED and pending request field-equal | Validation mutates request before actual submission | YES |
@@ -233,3 +233,32 @@ Every case starts from the named valid builder, mutates only the listed field(s)
 | S47-RETRY-01, S47-RETRY-11 | `MERGE_GATING_BEHAVIOR` | `SWV5_TestMakeRetryCandidate` plus current Risk/normalization evidence | No mutation | Explicit eligible lifecycle/state/disposition returns ALLOW; detects unusable whitelist |
 | S47-RETRY-02 through S47-RETRY-10 | `NEGATIVE_FAIL_CLOSED` | Same valid retry envelope | 02 lifecycle 99; 03 policy disposition 99; 04 matching invalid pending/correlation phase; 05 matching invalid pending/policy disposition; 06 retcode class 99; 07 nested submission correlation phase 99; 08 terminal state; 09 reconciliation state; 10 confirmation conflict | DENY; detects blacklist-based fail-open and equal-invalid-value acceptance |
 | S47-RETRY-12 | `INVARIANT_BEHAVIOR` | Same valid retry envelope | No mutation; retain pre-call snapshot | ALLOW and field-equal pending input; detects retry evaluation mutating caller state |
+
+## Sprint 4.8 Phase B5 V5 additions
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-MARGIN-01 through S48-MARGIN-15 | 2 `MERGE_GATING_BEHAVIOR`; 13 `NEGATIVE_FAIL_CLOSED` | Coherent broker-authoritative total-margin equation permits the two tolerance-valid cases; request/account/namespace/fence/spec/freshness/equation/free-margin/cap/non-finite/digest/source mutations deny. |
+| S48-LOSS-01 through S48-LOSS-15 | 2 `MERGE_GATING_BEHAVIOR`; 13 `NEGATIVE_FAIL_CLOSED` | Complete resulting Basket loss includes existing, incremental, adjustment, monetary basis, identity, source and freshness; impaired or underbound projections deny. |
+| S48-NOTIONAL-01 through S48-NOTIONAL-10 | 2 `MERGE_GATING_BEHAVIOR`; 8 `NEGATIVE_FAIL_CLOSED` | Contract size, supported calculation mode, authoritative specification, conversion basis, request price/volume and sequence materially bind aggregate notional. |
+| S48-RST-01 through S48-RST-20 | 1 `MERGE_GATING_BEHAVIOR`; 19 `NEGATIVE_FAIL_CLOSED` | SAFE_TO_RESUME requires exact V5, clean shutdown, MATCHED reconciliation, complete broker vector/query/namespace/ownership bindings and no unresolved state. |
+| S48-HKR-01 through S48-HKR-20 | 3 `MERGE_GATING_BEHAVIOR`; 17 `NEGATIVE_FAIL_CLOSED` | Historical release accepts only complete authority-aligned evidence and rejects stale, forged, foreign, malformed or V4 evidence. |
+| S48-HKA-01, S48-HKA-C-01 through C-12, S48-HKA-A-01 through A-06, S48-HKA-M01, S48-HKA-S01 through S03 | 1 `MERGE_GATING_BEHAVIOR`; 20 `NEGATIVE_FAIL_CLOSED`; 2 `INVARIANT_BEHAVIOR` | An independently supplied authority record is mandatory; resealed checkpoint forgeries and mutated/missing authority halt, while ACTIVE and RELEASE_PENDING remain close-only. |
+| S48-CAN-* | 34 `SUPPORTING_PURE_FUNCTION` | Every V5 safety field changes its canonical digest; typed/order/length/nested-boundary and self-digest exclusion properties are explicit supporting evidence, not interface behavior. |
+| S48-RT-V5-01 through V5-07 | 7 `ROUND_TRIP` | A test-side LP1 decoder constructs a zeroed new DTO from serialized content only; exact reserialization and canonical digest equality are both required. |
+| S48-RT-NEG-01 through NEG-11 | 11 `NEGATIVE_FAIL_CLOSED` | Truncated prefix/payload, impossible length, wrong type/order, missing/trailing content, corrupt nested identity, V4 version, malformed boolean and malformed numeric representation all fail decoding. |
+| S48-META-01 | 1 `CONFORMANCE_ONLY` | Result schema and policy derive from and equal the compiled Production Contract version/policy constants. |
+
+Sprint 4.8 Phase B5 totals: executable 790; `MERGE_GATING_BEHAVIOR` 63; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 516; `ROUND_TRIP` 7; `INVARIANT_BEHAVIOR` 38; `SUPPORTING_PURE_FUNCTION` 57; `CONFORMANCE_ONLY` 2; `WEAK_FALSE_POSITIVE` 0. Behavioral total 731; category sum 790. `ROUND_TRIP` is reserved exclusively for the seven decode-into-new-DTO reconstruction cases.
+
+## Sprint 4.8 Phase B6 additions
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-MAUTH-01 through S48-MAUTH-15 | 2 `MERGE_GATING_BEHAVIOR`; 13 `NEGATIVE_FAIL_CLOSED` | Exposure-increasing ALLOW requires a separately supplied Broker Adapter authority record. Coherently resealed tiny-margin projection, identity/value/source/reference mismatch, missing authority, stale authority, and corrupt authority deny. |
+| S48-BAUTH-01 through S48-BAUTH-15 | 2 `MERGE_GATING_BEHAVIOR`; 13 `NEGATIVE_FAIL_CLOSED` | Resulting Basket risk requires a separately supplied Risk Governance authority record bound to a non-empty source identity. Coherently resealed loss understatement, arbitrary source, impaired Basket, missing/stale/foreign/corrupt authority deny. |
+| S48-PAT-01 through S48-PAT-12 | 2 `MERGE_GATING_BEHAVIOR`; 1 `NEGATIVE_FAIL_CLOSED`; 9 `INVARIANT_BEHAVIOR` | A-to-B and empty replacement update request header, latest record, Basket count, reconciliation vector/revision, checkpoint publication sequence, CAS revision, source digest, payload size and digest atomically; a rejected replacement leaves the prior checkpoint byte-identical. |
+| S48-ID-01 through S48-ID-12 | 12 `CONFORMANCE_ONLY` | Every active implementation reports its V5 identity; result schema/policy, serializer format and Sprint 4.8/V5 suite identity are current, while an explicit V4 decoder input remains rejected. |
+| S48-CAN-AUTH-01 through S48-CAN-AUTH-02 | 2 `SUPPORTING_PURE_FUNCTION` | Exhaustive per-field mutation proves both new authority records' typed LP1 digests cover every semantic field and exclude only the self-digest. |
+
+Sprint 4.8 Phase B6 totals: executable 846; `MERGE_GATING_BEHAVIOR` 69; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 543; `ROUND_TRIP` 7; `INVARIANT_BEHAVIOR` 47; `SUPPORTING_PURE_FUNCTION` 59; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 773; category sum 846.

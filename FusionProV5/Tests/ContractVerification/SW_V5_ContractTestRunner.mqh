@@ -6,8 +6,16 @@
 #ifndef SW_V5_CONTRACT_TEST_RUNNER_MQH
 #define SW_V5_CONTRACT_TEST_RUNNER_MQH
 
+string g_swv5_test_id_filter="";
+
+bool SWV5_TestIdSelected(const string id)
+{
+   return g_swv5_test_id_filter=="" || StringFind(","+g_swv5_test_id_filter+",",","+id+",")>=0;
+}
+
 #include "SW_V5_TestAssertions.mqh"
 #include "SW_V5_InterfaceContractImplementations.mqh"
+#include "SW_V5_CanonicalDecoder.mqh"
 
 string SWV5_TestCaseId(const string prefix,const int number)
 {
@@ -691,6 +699,7 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=15;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("PER",number))) continue;
       SWV5_RestartReconciliationInput engineInput;
       SWV5_TestMakeRestartInput(engineInput);
       SWV5_ContractValidationContext context;
@@ -728,16 +737,19 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             break;
          case 6:
             engineInput.broker.residual_volume+=0.10;
+            engineInput.broker.complete_summary_digest=SWV5_TestBrokerSummaryDigest(engineInput.broker);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_BROKER_AHEAD_HALT;
             expected="broker_ahead_halt";
             break;
          case 7:
             engineInput.broker.residual_volume-=0.10;
+            engineInput.broker.complete_summary_digest=SWV5_TestBrokerSummaryDigest(engineInput.broker);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_PERSISTENCE_AHEAD_HALT;
             expected="persistence_ahead_halt";
             break;
          case 8:
             engineInput.broker.queries.completed_flags&=~SWV5_QUERY_DEALS;
+            engineInput.broker.complete_summary_digest=SWV5_TestBrokerSummaryDigest(engineInput.broker);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_MANUAL_REQUIRED;
             expected="manual_required";
             break;
@@ -747,11 +759,7 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             pending_requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
             pending_requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
             pending_requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
-            SWV5_TestBindRequestSetHeader(engineInput.persisted.pending_request_set,pending_requests,30);
-            engineInput.persisted.has_latest_pending_request=true;
-            engineInput.persisted.latest_pending_request=pending_requests[0];
-            engineInput.broker.pending_request_count=1;
-            SWV5_TestSealCheckpoint(engineInput.persisted);
+            SWV5_TestBindCheckpointRequests(engineInput,pending_requests,30);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                    readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="uncertain_requires_reconciliation";
@@ -776,11 +784,11 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
          case 13:
             ArrayResize(pending_requests,1);
             SWV5_TestMakePersistedRequest(pending_requests[0],2);
-            SWV5_TestBindRequestSetHeader(engineInput.persisted.pending_request_set,pending_requests,30);
+            SWV5_TestBindCheckpointRequests(engineInput,pending_requests,30);
             engineInput.persisted.pending_request_set.request_set_digest="COPIED-FROM-OTHER-PAYLOAD";
-            engineInput.persisted.has_latest_pending_request=true;
-            engineInput.persisted.latest_pending_request=pending_requests[0];
-            engineInput.broker.pending_request_count=1;
+            engineInput.persisted.reconciliation_vector.request_set_digest=engineInput.persisted.pending_request_set.request_set_digest;
+            engineInput.persisted.reconciliation_vector.source_summary_digest=
+               SWV5_TestReconciliationSourceDigest(engineInput.persisted.reconciliation_vector);
             SWV5_TestSealCheckpoint(engineInput.persisted);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
                    readiness==SWV5_RESTART_HALTED;
@@ -1097,6 +1105,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=12;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("XDM",number))) continue;
       SWV5_ContractValidationContext context;
       SWV5_TestMakeContext(context);
       SWV5_RiskEvaluationInput risk_binding;
@@ -1153,11 +1162,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             pending_requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
             pending_requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
             pending_requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
-            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,pending_requests,30);
-            restart.persisted.has_latest_pending_request=true;
-            restart.persisted.latest_pending_request=pending_requests[0];
-            restart.broker.pending_request_count=1;
-            SWV5_TestSealCheckpoint(restart.persisted);
+            SWV5_TestBindCheckpointRequests(restart,pending_requests,30);
             passed=SWV5_TestInterfaceRestart(persistence_contract,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                    readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="uncertain_restart_reconciles_no_blind_retry";
@@ -1240,11 +1245,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             ArrayResize(pending_requests,1);
             SWV5_TestMakePersistedRequest(pending_requests[0],1);
             pending_requests[0].pending_request=acknowledgement.resulting_pending_request;
-            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,pending_requests,30);
-            restart.persisted.has_latest_pending_request=true;
-            restart.persisted.latest_pending_request=pending_requests[0];
-            restart.broker.pending_request_count=1;
-            SWV5_TestSealCheckpoint(restart.persisted);
+            SWV5_TestBindCheckpointRequests(restart,pending_requests,30);
             passed=acknowledgement_ok && acknowledgement.status==SWV5_CONFIRMATION_PENDING &&
                    acknowledgement.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
                    !acknowledgement.event_identity_added &&
@@ -2153,6 +2154,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=11;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("PRT",number))) continue;
       SWV5_ContractValidationContext context;
       SWV5_TestMakeContext(context);
       SWV5_TestPersistenceContract persistence;
@@ -2173,6 +2175,7 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             SWV5_TestBindRequestSetHeader(checkpoint.pending_request_set,configured,31);
             checkpoint.has_latest_pending_request=true;
             checkpoint.latest_pending_request=configured[0];
+            SWV5_TestRefreshCheckpointVector(checkpoint);
             SWV5_TestSealCheckpoint(checkpoint);
             persistence.Configure(checkpoint,configured);
             configured[0].pending_request.intent.request_identity.request_id.correlation_id="CALLER-MUTATED";
@@ -2424,6 +2427,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=25;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("S44",number))) continue;
       SWV5_ContractValidationContext context;
       SWV5_TestMakeContext(context);
       SWV5_TestPersistenceContract persistence;
@@ -2458,11 +2462,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             requests[0].pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
             requests[0].pending_request.state=SWV5_REQUEST_RECONCILIATION_REQUIRED;
             requests[0].pending_request.retry_disposition=SWV5_RETRY_REQUIRES_RECONCILIATION;
-            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
-            restart.persisted.has_latest_pending_request=true;
-            restart.persisted.latest_pending_request=requests[1];
-            restart.broker.pending_request_count=2;
-            SWV5_TestSealCheckpoint(restart.persisted);
+            SWV5_TestBindCheckpointRequests(restart,requests,50);
             SWV5_RestartReadinessDisposition readiness;
             passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="multi_request_uncertain_reconcile";
@@ -2477,11 +2477,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             SWV5_TestMakePersistedRequest(requests[0],1);
             requests[0].pending_request.state=SWV5_REQUEST_CONFIRMATION_PENDING;
             requests[0].pending_request.retry_disposition=SWV5_RETRY_FORBIDDEN;
-            SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
-            restart.persisted.has_latest_pending_request=true;
-            restart.persisted.latest_pending_request=requests[0];
-            restart.broker.pending_request_count=1;
-            SWV5_TestSealCheckpoint(restart.persisted);
+            SWV5_TestBindCheckpointRequests(restart,requests,50);
             SWV5_RestartReadinessDisposition readiness;
             passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RETRY_FORBIDDEN;
             expected="pending_retry_forbidden";
@@ -2755,6 +2751,7 @@ void SWV5_RunSprint45RecoveryValidationTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=10;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("S45BR",number))) continue;
       SWV5_ContractValidationContext context;
       SWV5_TestMakeContext(context);
       SWV5_BasketLifecycleSnapshot initial;
@@ -2783,8 +2780,9 @@ void SWV5_RunSprint45RecoveryValidationTests(SWV5_TestCollector &collector)
       {
          SWV5_PersistedCheckpoint checkpoint;
          SWV5_TestMakeCheckpoint(checkpoint);
-         checkpoint.basket.lifecycle=restored;
-         SWV5_TestSealCheckpoint(checkpoint);
+            checkpoint.basket.lifecycle=restored;
+            SWV5_TestRefreshCheckpointVector(checkpoint);
+            SWV5_TestSealCheckpoint(checkpoint);
          SWV5_PersistedRequestEvidence empty[];
          ArrayResize(empty,0);
          SWV5_TestPersistenceContract persistence;
@@ -3450,6 +3448,7 @@ void SWV5_RunSprint45OwnershipLifecycleTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=33;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("S45DO",number))) continue;
       bool passed=false;
       string expected="fail_closed";
       if(number<=8)
@@ -3586,12 +3585,14 @@ void SWV5_RunSprint45OwnershipLifecycleTests(SWV5_TestCollector &collector)
             current.ownership_fence=acquired.fence;
             current.intent.ownership_fence=acquired.fence;
             current.basket.lifecycle.ownership_fence=acquired.fence;
+            SWV5_TestRefreshRiskInputBindings(current);
             SWV5_ContractValidationContext evaluation_context;
             SWV5_TestMakeContext(evaluation_context);
             const bool evaluated=chain && risk.Evaluate(evaluation_context,current,authorization);
             current.ownership_fence=heartbeat1.fence;
             current.intent.ownership_fence=heartbeat1.fence;
             current.basket.lifecycle.ownership_fence=heartbeat1.fence;
+            SWV5_TestRefreshRiskInputBindings(current);
             SWV5_ContractValidationContext heartbeat_context=evaluation_context;
             heartbeat_context.clock_time+=10;
             heartbeat_context.clock_sequence+=10;
@@ -3631,6 +3632,7 @@ void SWV5_RunSprint45PersistenceCanonicalTests(SWV5_TestCollector &collector)
 {
    for(int number=1;number<=16;number++)
    {
+      if(!SWV5_TestIdSelected(SWV5_TestCaseId("S45DP",number))) continue;
       SWV5_ContractValidationContext context;
       SWV5_TestMakeContext(context);
       SWV5_TestPersistenceContract persistence;
@@ -4852,6 +4854,1042 @@ void SWV5_RunSprint47RetryEnumTests(SWV5_TestCollector &collector)
    }
 }
 
+void SWV5_RunSprint48MarginTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   for(int number=1;number<=15;number++)
+   {
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      SWV5_MarginProjectionEvidence evidence=engineInput.projected.margin_evidence;
+      bool reseal=true;
+      if(number==2){ evidence.additional_margin=0.0; evidence.projected_account_margin=evidence.current_account_margin; }
+      if(number==3){ evidence.additional_margin=context.price_tolerance*2.0; }
+      if(number==4) evidence.request_identity.request_id.attempt_id="WRONG";
+      if(number==5) evidence.symbol="OTHER";
+      if(number==6) evidence.symbol_specification_sequence++;
+      if(number==7){ evidence.observed_at=SWV5_TEST_TIME-120; evidence.calculated_at=SWV5_TEST_TIME-120; }
+      if(number==8) evidence.account_namespace.account_login++;
+      if(number==9) evidence.additional_margin=SWV5_TestNaN();
+      if(number==10) evidence.projected_account_margin=engineInput.account.equity*engineInput.limits.maximum_account_margin_fraction+1.0;
+      if(number==11){ evidence.additional_margin=engineInput.account.free_margin+1.0; evidence.projected_account_margin=evidence.current_account_margin+evidence.additional_margin; }
+      if(number==12) evidence.current_account_margin++;
+      if(number==13){ evidence.evidence_digest="CORRUPT"; reseal=false; }
+      if(number==14) evidence.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
+      if(number==15)
+      {
+         evidence.additional_margin+=context.price_tolerance*0.5;
+         evidence.projected_account_margin+=context.price_tolerance*0.5;
+         engineInput.margin_authority_record.additional_margin=evidence.additional_margin;
+         engineInput.margin_authority_record.projected_account_margin=evidence.projected_account_margin;
+         engineInput.margin_authority_record.authority_record_digest=SWV5_TestMarginAuthorityDigest(engineInput.margin_authority_record);
+         evidence.authority_record_digest=engineInput.margin_authority_record.authority_record_digest;
+      }
+      if(reseal) evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(evidence);
+      engineInput.projected.margin_evidence=evidence;
+      engineInput.projected.projected_margin=evidence.additional_margin;
+      const bool valid=SWV5_TestMarginEvidenceValid(context,engineInput);
+      const bool expect=number==1 || number==15;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-MARGIN",number),"SPRINT4_8_MARGIN",valid==expect,expect?"accepted":"rejected");
+   }
+}
+
+void SWV5_RunSprint48LossTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   for(int number=1;number<=15;number++)
+   {
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      SWV5_BasketRiskProjectionEvidence evidence=engineInput.projected.basket_risk_evidence;
+      bool reseal=true;
+      if(number==2){ evidence.existing_bounded_basket_loss=350.0; evidence.incremental_request_bounded_loss=1.0; evidence.resulting_basket_maximum_loss=351.0; }
+      if(number==3){ evidence.existing_bounded_basket_loss=0.0; }
+      if(number==4) evidence.basket_state_version++;
+      if(number==5){ evidence.observed_at=SWV5_TEST_TIME-120; evidence.calculated_at=SWV5_TEST_TIME-120; }
+      if(number==6) evidence.request_identity.request_id.attempt_id="WRONG";
+      if(number==7) evidence.symbol_specification_sequence++;
+      if(number==8) evidence.resulting_basket_maximum_loss=SWV5_TestNaN();
+      if(number==9) evidence.resulting_basket_maximum_loss=engineInput.limits.maximum_basket_loss+1.0;
+      if(number==10) evidence.resulting_basket_maximum_loss+=1.0;
+      if(number==11) evidence.monetary_basis.account_currency="EUR";
+      if(number==12) evidence.source_snapshot_digest="";
+      if(number==13) evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+      if(number==14){ evidence.evidence_digest="CORRUPT"; reseal=false; }
+      if(number==15)
+      {
+         evidence.interaction_or_offset_adjustment=context.price_tolerance*0.5;
+         evidence.resulting_basket_maximum_loss+=context.price_tolerance*0.5;
+         engineInput.basket_risk_authority_record.interaction_or_offset_adjustment=evidence.interaction_or_offset_adjustment;
+         engineInput.basket_risk_authority_record.resulting_basket_maximum_loss=evidence.resulting_basket_maximum_loss;
+         engineInput.basket_risk_authority_record.authority_record_digest=SWV5_TestBasketRiskAuthorityDigest(engineInput.basket_risk_authority_record);
+         evidence.authority_record_digest=engineInput.basket_risk_authority_record.authority_record_digest;
+      }
+      if(reseal) evidence.evidence_digest=SWV5_TestBasketRiskEvidenceDigest(evidence);
+      engineInput.projected.basket_risk_evidence=evidence;
+      engineInput.projected.projected_maximum_loss=evidence.resulting_basket_maximum_loss;
+      const bool valid=SWV5_TestBasketRiskEvidenceValid(context,engineInput);
+      const bool expect=number==1 || number==15;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-LOSS",number),"SPRINT4_8_BASKET_LOSS",valid==expect,expect?"accepted":"rejected");
+   }
+}
+
+void SWV5_RunSprint48NotionalTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   for(int number=1;number<=10;number++)
+   {
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      if(number==2) engineInput.projected.projected_notional=engineInput.exposure.aggregate_notional+engineInput.intent.normalized_volume*engineInput.intent.normalized_price;
+      if(number==3) engineInput.projected.projected_notional=engineInput.exposure.aggregate_notional+1.0;
+      if(number==4) engineInput.symbol_specification.specification_sequence++;
+      if(number==5) engineInput.projected.monetary_basis.conversion_rate_to_account_currency=0.5;
+      if(number==6) engineInput.symbol_specification.contract_size=0.0;
+      if(number==7) engineInput.symbol_specification.valid_until=SWV5_TEST_TIME-1;
+      if(number==8) engineInput.symbol_specification.symbol="OTHER";
+      if(number==9) engineInput.symbol_specification.calculation_mode=SWV5_SYMBOL_CALCULATION_UNSUPPORTED;
+      const bool valid=SWV5_TestRiskInputCoherent(context,engineInput);
+      const bool expect=number==1 || number==10;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-NOTIONAL",number),"SPRINT4_8_NOTIONAL",valid==expect,expect?"accepted":"rejected");
+   }
+}
+
+void SWV5_RunSprint48RestartTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_RestartReconciliationInput engineInput; SWV5_TestMakeRestartInput(engineInput);
+      if(number==2) engineInput.persisted.basket.lifecycle.reconciliation_state=SWV5_RECONCILIATION_STATE_REQUIRED;
+      if(number==3) engineInput.persisted.basket.lifecycle.reconciliation_state=SWV5_RECONCILIATION_STATE_CONFLICT;
+      if(number==4) engineInput.persisted.basket.lifecycle.reconciliation_state=SWV5_RECONCILIATION_STATE_MANUAL;
+      if(number==5) engineInput.persisted.basket.lifecycle.reconciliation_state=SWV5_RECONCILIATION_STATE_NOT_STARTED;
+      if(number==6) engineInput.persisted.clean_shutdown=false;
+      if(number==7) engineInput.broker.symbol_long_volume+=0.1;
+      if(number==8) engineInput.broker.symbol_short_volume+=0.1;
+      if(number==9) engineInput.broker.symbol_net_volume+=0.1;
+      if(number==10) engineInput.broker.aggregate_position_volume+=0.1;
+      if(number==11) engineInput.broker.residual_volume+=0.1;
+      if(number==12) engineInput.broker.position_count++;
+      if(number==13) engineInput.broker.order_count++;
+      if(number==14) engineInput.broker.pending_request_count++;
+      if(number==15) engineInput.broker.latest_confirmed_correlation.broker_identity.broker_event_id="OTHER";
+      if(number==16) engineInput.broker.latest_broker_event_identity.broker_event_id="OTHER";
+      if(number==17) engineInput.broker.transaction_high_watermark++;
+      if(number==18) engineInput.persisted.reconciliation_vector.request_set_revision="OTHER";
+      if(number==19) engineInput.broker.queries.authoritative_flags=0;
+      if(number==20) engineInput.broker.persistence_namespace.ownership_namespace.server="FOREIGN";
+      if(number>=2 && number<=6) SWV5_TestSealCheckpoint(engineInput.persisted);
+      if(number>=7 && number<=17) engineInput.broker.complete_summary_digest=SWV5_TestBrokerSummaryDigest(engineInput.broker);
+      SWV5_PersistedRequestEvidence empty_requests[]; ArrayResize(empty_requests,0);
+      SWV5_RestartReadinessDisposition readiness; const SWV5_ReconciliationStatus result=SWV5_TestRestartDisposition(context,engineInput,empty_requests,readiness);
+      const bool safe=result==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_SAFE_TO_RESUME;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-RST",number),"SPRINT4_8_RESTART",safe==(number==1),number==1?"safe":"not_safe");
+   }
+}
+
+void SWV5_TestMakeReleasedRestart(SWV5_RestartReconciliationInput &restart);
+bool SWV5_TestRestartIsSafe(const SWV5_ContractValidationContext &context,
+                            const SWV5_RestartReconciliationInput &restart);
+
+void SWV5_RunSprint48HardKillTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_HardKillState state; SWV5_HardKillReleaseAuthorityRecord authority_record;
+      SWV5_TestMakeHistoricalHardKillAuthority(state,authority_record);
+      SWV5_HardKillReleaseEvidence evidence=state.release_evidence; bool reseal=true;
+      if(number==2) evidence.operator_identity.authority_role="";
+      if(number==3) evidence.approving_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
+      if(number==4) evidence.broker_evidence.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
+      if(number==5) evidence.persistence_evidence.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
+      if(number==6) evidence.exposure_evidence.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
+      if(number==7) evidence.latch_generation++;
+      if(number==8) evidence.release_generation++;
+      if(number==9) evidence.persistence_namespace.ownership_namespace.server="FOREIGN";
+      if(number==10) evidence.released_at=evidence.approved_at-1;
+      if(number==11) evidence.released_at=evidence.expires_at;
+      if(number==12) evidence.released_at=evidence.expires_at+1;
+      if(number==13) evidence.release_record_digest="";
+      if(number==14){ evidence.release_record_digest="CORRUPT"; reseal=false; }
+      if(number==15) evidence.exposure_evidence.zero_or_reducing=false;
+      if(number==16) evidence.operator_identity.operator_id="FORGED";
+      if(number==17) evidence.approval_policy_id="";
+      if(number==19) evidence.contract_version.schema_version=4;
+      if(reseal && number!=13) evidence.release_record_digest=SWV5_TestHardKillReleaseDigest(evidence);
+      bool valid=false;
+      if(number==16)
+      {
+         // Exact HKR-16 attack: mutate checkpoint authority content, reseal both
+         // its inner content digest and outer checkpoint digest, but leave the
+         // independently supplied authority record unchanged.
+         SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+         restart.persisted.hard_kill_state.release_evidence.operator_identity.operator_id="FORGED";
+         restart.persisted.hard_kill_state.release_evidence.release_record_digest=
+            SWV5_TestHardKillReleaseDigest(restart.persisted.hard_kill_state.release_evidence);
+         SWV5_TestSealCheckpoint(restart.persisted);
+         valid=SWV5_TestRestartIsSafe(context,restart);
+      }
+      else
+         valid=SWV5_TestHistoricalHardKillReleaseValid(context,state,evidence,authority_record);
+      const bool expect=number==1 || number==18 || number==20;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-HKR",number),"SPRINT4_8_HARD_KILL_HISTORY",valid==expect,expect?"accepted":"rejected");
+   }
+}
+
+void SWV5_TestMakeReleasedRestart(SWV5_RestartReconciliationInput &restart)
+{
+   SWV5_TestMakeRestartInput(restart);
+   SWV5_TestMakeHistoricalHardKillAuthority(restart.persisted.hard_kill_state,restart.release_authority_record);
+   restart.has_release_authority_record=true;
+   restart.persisted.reconciliation_vector.hard_kill_generation=restart.persisted.hard_kill_state.latch_generation;
+   SWV5_TestSealCheckpoint(restart.persisted);
+}
+
+bool SWV5_TestRestartIsSafe(const SWV5_ContractValidationContext &context,
+                            const SWV5_RestartReconciliationInput &restart)
+{
+   SWV5_PersistedRequestEvidence none[]; ArrayResize(none,0);
+   SWV5_RestartReadinessDisposition readiness;
+   const SWV5_ReconciliationStatus status=SWV5_TestRestartDisposition(context,restart,none,readiness);
+   return status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_SAFE_TO_RESUME;
+}
+
+void SWV5_RunSprint48HardKillAuthorityTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+
+   SWV5_RestartReconciliationInput baseline; SWV5_TestMakeReleasedRestart(baseline);
+   SWV5_TestRecordCondition(collector,"S48-HKA-01","SPRINT4_8_HARD_KILL_AUTHORITY",
+                            SWV5_TestRestartIsSafe(context,baseline),"independent_authority_allows_released_restart");
+
+   // Checkpoint-local mutations are fully resealed. The independent authority
+   // input remains unchanged, so rejection proves cross-domain binding rather
+   // than detection of a stale checkpoint digest.
+   for(int number=1;number<=12;number++)
+   {
+      SWV5_RestartReconciliationInput changed=baseline;
+      if(number==1) changed.persisted.hard_kill_state.release_evidence.operator_identity.operator_id="FORGED-OPERATOR";
+      if(number==2) changed.persisted.hard_kill_state.release_evidence.operator_identity.authority_role="FORGED-ROLE";
+      if(number==3) changed.persisted.hard_kill_state.release_evidence.operator_identity.authentication_reference="FORGED-AUTH";
+      if(number==4) changed.persisted.hard_kill_state.release_evidence.approving_component=SWV5_COMPONENT_AUTHORITY_OPERATOR;
+      if(number==5) changed.persisted.hard_kill_state.release_evidence.approval_policy_id="FORGED-POLICY";
+      if(number==6) changed.persisted.hard_kill_state.release_evidence.release_generation++;
+      if(number==7) changed.persisted.hard_kill_state.release_authority_reference.authority_record_id="FORGED-RECORD";
+      if(number==8) changed.persisted.hard_kill_state.release_authority_reference.authority_record_sequence++;
+      if(number==9) changed.persisted.hard_kill_state.release_authority_reference.authority_record_digest="FORGED-DIGEST";
+      if(number==10) changed.persisted.hard_kill_state.release_evidence.broker_evidence.evidence_id="FORGED-BROKER-EVIDENCE";
+      if(number==11) changed.persisted.hard_kill_state.release_evidence.persistence_evidence.evidence_id="FORGED-STORE-EVIDENCE";
+      if(number==12) changed.persisted.hard_kill_state.release_evidence.exposure_evidence.evidence_id="FORGED-EXPOSURE-EVIDENCE";
+      changed.persisted.hard_kill_state.release_evidence.release_record_digest=
+         SWV5_TestHardKillReleaseDigest(changed.persisted.hard_kill_state.release_evidence);
+      SWV5_TestSealCheckpoint(changed.persisted);
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-HKA-C",number),"SPRINT4_8_HARD_KILL_AUTHORITY",
+                               !SWV5_TestRestartIsSafe(context,changed),"resealed_checkpoint_authority_mismatch_halts");
+   }
+
+   for(int number=1;number<=6;number++)
+   {
+      SWV5_RestartReconciliationInput changed=baseline;
+      if(number==1) changed.release_authority_record.operator_identity.operator_id="FORGED-OPERATOR";
+      if(number==2) changed.release_authority_record.approval_policy_id="FORGED-POLICY";
+      if(number==3) changed.release_authority_record.release_generation++;
+      if(number==4) changed.release_authority_record.broker_evidence_reference.evidence_id="FORGED-EVIDENCE";
+      if(number==5) changed.release_authority_record.released_at++;
+      if(number==6) changed.release_authority_record.authority_record_digest="FORGED-DIGEST";
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-HKA-A",number),"SPRINT4_8_HARD_KILL_AUTHORITY",
+                               !SWV5_TestRestartIsSafe(context,changed),"mutated_independent_authority_record_halts");
+   }
+
+   SWV5_RestartReconciliationInput missing=baseline;
+   missing.has_release_authority_record=false;
+   SWV5_TestRecordCondition(collector,"S48-HKA-M01","SPRINT4_8_HARD_KILL_AUTHORITY",
+                            !SWV5_TestRestartIsSafe(context,missing),"released_without_independent_authority_halts");
+
+   SWV5_RestartReconciliationInput active; SWV5_TestMakeRestartInput(active);
+   SWV5_TestMakeHardKill(active.persisted.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
+   active.persisted.reconciliation_vector.hard_kill_generation=active.persisted.hard_kill_state.latch_generation;
+   SWV5_TestSealCheckpoint(active.persisted);
+   SWV5_PersistedRequestEvidence none[]; ArrayResize(none,0); SWV5_RestartReadinessDisposition readiness;
+   const SWV5_ReconciliationStatus active_status=SWV5_TestRestartDisposition(context,active,none,readiness);
+   SWV5_TestRecordCondition(collector,"S48-HKA-S01","SPRINT4_8_HARD_KILL_AUTHORITY",
+                            active_status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_CLOSE_ONLY,
+                            "active_remains_close_only");
+
+   SWV5_RestartReconciliationInput pending; SWV5_TestMakeRestartInput(pending);
+   SWV5_TestMakeValidHardKillRelease(pending.persisted.hard_kill_state);
+   pending.persisted.reconciliation_vector.hard_kill_generation=pending.persisted.hard_kill_state.latch_generation;
+   SWV5_TestSealCheckpoint(pending.persisted);
+   const SWV5_ReconciliationStatus pending_status=SWV5_TestRestartDisposition(context,pending,none,readiness);
+   SWV5_TestRecordCondition(collector,"S48-HKA-S02","SPRINT4_8_HARD_KILL_AUTHORITY",
+                            pending_status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_CLOSE_ONLY,
+                            "release_pending_remains_close_only");
+
+   SWV5_TestRiskContract risk;
+   SWV5_ContractDecision decision;
+   const bool legacy_historical=risk.ValidateHardKillReleaseMode(context,
+                                      baseline.persisted.hard_kill_state,
+                                      baseline.persisted.hard_kill_state.release_evidence,
+                                      SWV5_HARD_KILL_RELEASE_HISTORICAL_PERSISTED,
+                                      decision);
+   SWV5_TestRecordCondition(collector,"S48-HKA-S03","SPRINT4_8_HARD_KILL_AUTHORITY",
+                            !legacy_historical && decision.disposition!=SWV5_DISPOSITION_ALLOW,
+                            "historical_mode_without_independent_record_fails_closed");
+}
+
+bool SWV5_TestReplaceOnce(string &text,const string find,const string replacement)
+{
+   const int at=StringFind(text,find);
+   if(at<0) return false;
+   text=StringSubstr(text,0,at)+replacement+StringSubstr(text,at+StringLen(find));
+   return true;
+}
+
+string SWV5_TestImpossibleFirstLength(const string text)
+{
+   const int first=StringFind(text,":");
+   const int second=StringFind(text,":",first+1);
+   const int third=StringFind(text,":",second+1);
+   if(first<0 || second<0 || third<0) return "";
+   return StringSubstr(text,0,second+1)+"999999999"+StringSubstr(text,third);
+}
+
+string SWV5_TestMalformedFieldPayload(const string text,const string field_prefix,const string replacement_character)
+{
+   const int at=StringFind(text,field_prefix);
+   if(at<0) return "";
+   const int length_start=at+StringLen(field_prefix);
+   const int colon=StringFind(text,":",length_start);
+   if(colon<0 || colon+1>=StringLen(text)) return "";
+   return StringSubstr(text,0,colon+1)+replacement_character+StringSubstr(text,colon+2);
+}
+
+void SWV5_RunSprint48RoundTripTests(SWV5_TestCollector &collector)
+{
+   SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+   SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+   SWV5_HardKillState hard_kill=restart.persisted.hard_kill_state;
+
+   const string margin_text=SWV5_TestCanonicalMarginEvidence(risk.projected.margin_evidence);
+   SWV5_MarginProjectionEvidence margin_new;
+   const bool margin_ok=SWV5_TestDecodeMarginEvidence(margin_text,margin_new) &&
+                        margin_text==SWV5_TestCanonicalMarginEvidence(margin_new) &&
+                        risk.projected.margin_evidence.evidence_digest==margin_new.evidence_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-01","SPRINT4_8_TRUE_ROUND_TRIP",margin_ok,"margin_reconstructed_exactly");
+
+   const string basket_risk_text=SWV5_TestCanonicalBasketRiskEvidence(risk.projected.basket_risk_evidence);
+   SWV5_BasketRiskProjectionEvidence basket_risk_new;
+   const bool basket_risk_ok=SWV5_TestDecodeBasketRiskEvidence(basket_risk_text,basket_risk_new) &&
+                             basket_risk_text==SWV5_TestCanonicalBasketRiskEvidence(basket_risk_new) &&
+                             risk.projected.basket_risk_evidence.evidence_digest==basket_risk_new.evidence_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-02","SPRINT4_8_TRUE_ROUND_TRIP",basket_risk_ok,"basket_risk_reconstructed_exactly");
+
+   const string broker_text=SWV5_TestCanonicalBrokerSummary(restart.broker);
+   SWV5_AuthoritativeBrokerSummary broker_new;
+   const bool broker_ok=SWV5_TestDecodeBrokerSummary(broker_text,broker_new) &&
+                        broker_text==SWV5_TestCanonicalBrokerSummary(broker_new) &&
+                        restart.broker.complete_summary_digest==broker_new.complete_summary_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-03","SPRINT4_8_TRUE_ROUND_TRIP",broker_ok,"broker_summary_reconstructed_exactly");
+
+   const string vector_text=SWV5_TestCanonicalReconciliationVector(restart.persisted.reconciliation_vector);
+   SWV5_PersistedReconciliationVector vector_new;
+   const bool vector_ok=SWV5_TestDecodeReconciliationVector(vector_text,vector_new) &&
+                        vector_text==SWV5_TestCanonicalReconciliationVector(vector_new) &&
+                        SWV5_TestReconciliationVectorDigest(restart.persisted.reconciliation_vector)==SWV5_TestReconciliationVectorDigest(vector_new);
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-04","SPRINT4_8_TRUE_ROUND_TRIP",vector_ok,"reconciliation_vector_reconstructed_exactly");
+
+   const string release_text=SWV5_TestCanonicalHardKillRelease(hard_kill.release_evidence);
+   SWV5_HardKillReleaseEvidence release_new;
+   const bool release_ok=SWV5_TestDecodeHardKillRelease(release_text,release_new) &&
+                         release_text==SWV5_TestCanonicalHardKillRelease(release_new) &&
+                         hard_kill.release_evidence.release_record_digest==release_new.release_record_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-05","SPRINT4_8_TRUE_ROUND_TRIP",release_ok,"hard_kill_release_reconstructed_exactly");
+
+   const string authority_text=SWV5_TestCanonicalHardKillAuthorityRecord(restart.release_authority_record);
+   SWV5_HardKillReleaseAuthorityRecord authority_new;
+   const bool authority_ok=SWV5_TestDecodeHardKillAuthorityRecord(authority_text,authority_new) &&
+                           authority_text==SWV5_TestCanonicalHardKillAuthorityRecord(authority_new) &&
+                           restart.release_authority_record.authority_record_digest==authority_new.authority_record_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-06","SPRINT4_8_TRUE_ROUND_TRIP",authority_ok,"hard_kill_authority_reconstructed_exactly");
+
+   const string checkpoint_text=SWV5_TestCanonicalCheckpointPayload(restart.persisted);
+   SWV5_PersistedCheckpoint checkpoint_new;
+   const bool checkpoint_ok=SWV5_TestDecodeCheckpoint(checkpoint_text,checkpoint_new) &&
+                            checkpoint_text==SWV5_TestCanonicalCheckpointPayload(checkpoint_new) &&
+                            restart.persisted.header.payload_digest==checkpoint_new.header.payload_digest;
+   SWV5_TestRecordCondition(collector,"S48-RT-V5-07","SPRINT4_8_TRUE_ROUND_TRIP",checkpoint_ok,"checkpoint_reconstructed_exactly");
+
+   string malformed=StringSubstr(margin_text,1); SWV5_MarginProjectionEvidence rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-01","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"truncated_prefix_rejected");
+   malformed=StringSubstr(margin_text,0,StringLen(margin_text)-1);
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-02","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"truncated_payload_rejected");
+   malformed=SWV5_TestImpossibleFirstLength(margin_text);
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-03","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"impossible_declared_length_rejected");
+   malformed=margin_text; SWV5_TestReplaceOnce(malformed,"contract_version:x:","contract_version:s:");
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-04","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"malformed_type_rejected");
+   malformed=margin_text; SWV5_TestReplaceOnce(malformed,"basket_id:s:","symbol:s:");
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-05","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"wrong_field_order_rejected");
+   const int missing_at=StringFind(margin_text,"evidence_sequence:u:"); malformed=StringSubstr(margin_text,0,missing_at);
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-06","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"missing_field_rejected");
+   malformed=margin_text+"X";
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-07","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"trailing_bytes_rejected");
+   malformed=margin_text; SWV5_TestReplaceOnce(malformed,"SWV5-PRODUCTION","SWV5-PRODUCTIOX");
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-08","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"corrupt_nested_object_rejected");
+   malformed=margin_text; SWV5_TestReplaceOnce(malformed,"schema_version:i:1:5","schema_version:i:1:4");
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-09","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"v4_contract_version_rejected");
+   malformed=basket_risk_text; SWV5_TestReplaceOnce(malformed,"includes_fee:b:1:1","includes_fee:b:1:2");
+   SWV5_BasketRiskProjectionEvidence basket_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-10","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeBasketRiskEvidence(malformed,basket_rejected),"malformed_boolean_rejected");
+   malformed=SWV5_TestMalformedFieldPayload(margin_text,"requested_volume:d:","X");
+   SWV5_TestRecordCondition(collector,"S48-RT-NEG-11","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"malformed_numeric_rejected");
+}
+
+void SWV5_RunSprint48MetadataConformanceTests(SWV5_TestCollector &collector)
+{
+   const string expected_schema="SWV5-CONTRACT-TEST-RESULT-V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION);
+   const bool passed=SWV5_TestResultSchemaIdentity()==expected_schema &&
+                     SWV5_TestResultProductionPolicy()==SWV5_PRODUCTION_CONTRACT_POLICY;
+   SWV5_TestRecordCondition(collector,"S48-META-01","SPRINT4_8_METADATA_CONFORMANCE",passed,"machine_identity_matches_compiled_contract_constants");
+}
+
+void SWV5_RunSprint48B6MarginAuthorityTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=15;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      if(number==2) engineInput.has_margin_authority_record=false;
+      if(number==3)
+      {
+         engineInput.projected.margin_evidence.additional_margin=context.price_tolerance*2.0;
+         engineInput.projected.margin_evidence.projected_account_margin=
+            engineInput.projected.margin_evidence.current_account_margin+engineInput.projected.margin_evidence.additional_margin;
+         engineInput.projected.projected_margin=engineInput.projected.margin_evidence.additional_margin;
+         engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence);
+      }
+      if(number==4)
+      {
+         engineInput.projected.margin_evidence.additional_margin+=1.0;
+         engineInput.projected.margin_evidence.projected_account_margin+=1.0;
+         engineInput.projected.projected_margin=engineInput.projected.margin_evidence.additional_margin;
+         engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence);
+      }
+      if(number==5){ engineInput.projected.margin_evidence.request_identity.request_id.attempt_id="FORGED"; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==6){ engineInput.projected.margin_evidence.symbol="OTHER"; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==7){ engineInput.projected.margin_evidence.symbol_specification_sequence++; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==8){ engineInput.projected.margin_evidence.requested_volume+=0.01; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==9){ engineInput.projected.margin_evidence.requested_price+=0.10; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==10){ engineInput.projected.margin_evidence.account_namespace.account_login++; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      if(number==11)
+      {
+         engineInput.margin_authority_record.observed_at=SWV5_TEST_TIME-120;
+         engineInput.margin_authority_record.calculated_at=SWV5_TEST_TIME-120;
+         engineInput.margin_authority_record.authority_record_digest=SWV5_TestMarginAuthorityDigest(engineInput.margin_authority_record);
+         engineInput.projected.margin_evidence.observed_at=engineInput.margin_authority_record.observed_at;
+         engineInput.projected.margin_evidence.calculated_at=engineInput.margin_authority_record.calculated_at;
+         engineInput.projected.margin_evidence.authority_record_digest=engineInput.margin_authority_record.authority_record_digest;
+         engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence);
+      }
+      if(number==12)
+      {
+         engineInput.margin_authority_record.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
+         engineInput.margin_authority_record.authority_record_digest=SWV5_TestMarginAuthorityDigest(engineInput.margin_authority_record);
+         engineInput.projected.margin_evidence.authority_record_digest=engineInput.margin_authority_record.authority_record_digest;
+         engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence);
+      }
+      if(number==13) engineInput.margin_authority_record.authority_record_digest="CORRUPT";
+      if(number==14){ engineInput.projected.margin_evidence.authority_record_sequence++; engineInput.projected.margin_evidence.evidence_digest=SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence); }
+      SWV5_TestRiskContract implementation; SWV5_RiskAuthorization authorization;
+      const bool allowed=implementation.Evaluate(context,engineInput,authorization);
+      const bool expected=(number==1 || number==15);
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-MAUTH",number),"SPRINT4_8_MARGIN_AUTHORITY",
+                               allowed==expected,expected ? "independent_broker_margin_authority_allows" : "authority_disagreement_denies");
+   }
+}
+
+void SWV5_RunSprint48B6BasketAuthorityTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=15;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      SWV5_BasketRiskProjectionEvidence evidence=engineInput.projected.basket_risk_evidence;
+      if(number==2) engineInput.has_basket_risk_authority_record=false;
+      if(number==3){ evidence.existing_bounded_basket_loss=1.0; evidence.resulting_basket_maximum_loss=evidence.existing_bounded_basket_loss+evidence.incremental_request_bounded_loss+evidence.interaction_or_offset_adjustment; }
+      if(number==4){ evidence.incremental_request_bounded_loss=1.0; evidence.resulting_basket_maximum_loss=evidence.existing_bounded_basket_loss+evidence.incremental_request_bounded_loss+evidence.interaction_or_offset_adjustment; }
+      if(number==5){ evidence.existing_bounded_basket_loss=1.0; evidence.incremental_request_bounded_loss=1.0; evidence.resulting_basket_maximum_loss=2.0; }
+      if(number==6) evidence.source_snapshot_digest="CALLER-INVENTED-SOURCE";
+      if(number==7) evidence.basket_state_version++;
+      if(number==8) evidence.request_identity.request_id.attempt_id="FORGED";
+      if(number==9) evidence.symbol_specification_sequence++;
+      if(number==10)
+      {
+         evidence.observed_at=SWV5_TEST_TIME-120; evidence.calculated_at=SWV5_TEST_TIME-120;
+         engineInput.basket_risk_authority_record.observed_at=evidence.observed_at;
+         engineInput.basket_risk_authority_record.calculated_at=evidence.calculated_at;
+         engineInput.basket_risk_authority_record.authority_record_digest=SWV5_TestBasketRiskAuthorityDigest(engineInput.basket_risk_authority_record);
+         evidence.authority_record_digest=engineInput.basket_risk_authority_record.authority_record_digest;
+      }
+      if(number==11) evidence.persistence_namespace.ownership_namespace.server="FOREIGN";
+      if(number==12)
+      {
+         evidence.calculation_policy_id="WRONG-RISK-POLICY";
+         engineInput.basket_risk_authority_record.calculation_policy_id=evidence.calculation_policy_id;
+         engineInput.basket_risk_authority_record.authority_record_digest=SWV5_TestBasketRiskAuthorityDigest(engineInput.basket_risk_authority_record);
+         evidence.authority_record_digest=engineInput.basket_risk_authority_record.authority_record_digest;
+      }
+      if(number==13) engineInput.basket_risk_authority_record.authority_record_digest="CORRUPT";
+      if(number==14){ evidence.existing_bounded_basket_loss=1.0; evidence.incremental_request_bounded_loss=1.0; evidence.interaction_or_offset_adjustment=0.0; evidence.resulting_basket_maximum_loss=2.0; }
+      if((number>=3 && number<=12) || number==14)
+      {
+         evidence.evidence_digest=SWV5_TestBasketRiskEvidenceDigest(evidence);
+         engineInput.projected.basket_risk_evidence=evidence;
+         engineInput.projected.projected_maximum_loss=evidence.resulting_basket_maximum_loss;
+      }
+      SWV5_TestRiskContract implementation; SWV5_RiskAuthorization authorization;
+      const bool allowed=implementation.Evaluate(context,engineInput,authorization);
+      const bool expected=(number==1 || number==15);
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-BAUTH",number),"SPRINT4_8_BASKET_AUTHORITY",
+                               allowed==expected,expected ? "independent_resulting_basket_authority_allows" : "authority_or_source_disagreement_denies");
+   }
+}
+
+void SWV5_RunSprint48B6PersistenceAtomicityTests(SWV5_TestCollector &collector)
+{
+   SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+   SWV5_PersistedCheckpoint checkpoint; SWV5_TestMakeCheckpoint(checkpoint);
+   SWV5_PersistedRequestEvidence empty[]; ArrayResize(empty,0);
+   SWV5_TestPersistenceContract persistence; persistence.Configure(checkpoint,empty);
+   SWV5_PersistedRequestEvidence set_a[],set_b[]; ArrayResize(set_a,1); ArrayResize(set_b,1);
+   SWV5_TestMakePersistedRequest(set_a[0],1); SWV5_TestMakePersistedRequest(set_b[0],2);
+   SWV5_PersistedRequestSetHeader header_a,header_b;
+   SWV5_TestBindRequestSetHeader(header_a,set_a,40); SWV5_TestBindRequestSetHeader(header_b,set_b,41);
+   SWV5_ContractDecision decision; SWV5_PersistenceLoadResult load_result;
+   const bool saved_a=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,set_a,header_a,decision);
+   SWV5_PersistedCheckpoint state_a; const bool loaded_a=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,state_a,load_result);
+   const string store_a=(loaded_a ? state_a.header.store_revision : "");
+   const bool saved_b=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,set_b,header_b,decision);
+   SWV5_PersistedCheckpoint state_b; const bool loaded_b=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,state_b,load_result);
+   SWV5_PersistedRequestEvidence loaded_requests[];
+   const bool requests_b=persistence.LoadPendingRequests(context,checkpoint.header.persistence_namespace,loaded_requests,load_result);
+   const bool base=saved_a && loaded_a && saved_b && loaded_b && requests_b && ArraySize(loaded_requests)==1;
+   SWV5_TestRecordCondition(collector,"S48-PAT-01","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.reconciliation_vector.pending_request_count==1 && state_b.reconciliation_vector.request_set_digest==header_b.request_set_digest && state_b.reconciliation_vector.request_set_revision==header_b.request_index_revision,"complete_vector_b");
+   SWV5_TestRecordCondition(collector,"S48-PAT-02","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.has_latest_pending_request && SWV5_TestPersistedRequestEqual(state_b.latest_pending_request,set_b[0]),"latest_request_b");
+   SWV5_TestRecordCondition(collector,"S48-PAT-03","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.pending_request_set.request_count==1 && state_b.reconciliation_vector.pending_request_count==1 && state_b.basket.lifecycle.pending_request_count==1,"pending_count_coherent_everywhere");
+   SWV5_TestRecordCondition(collector,"S48-PAT-04","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.pending_request_set.request_set_digest==state_b.reconciliation_vector.request_set_digest && state_b.pending_request_set.request_index_revision==state_b.reconciliation_vector.request_set_revision,"digest_revision_coherent_everywhere");
+   SWV5_TestRecordCondition(collector,"S48-PAT-05","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.reconciliation_vector.reconciliation_revision==41 && state_b.reconciliation_vector.reconciliation_revision>state_a.reconciliation_vector.reconciliation_revision,"reconciliation_revision_advanced");
+   SWV5_TestRecordCondition(collector,"S48-PAT-06","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.header.record_sequence==41,"record_sequence_advanced");
+   SWV5_TestRecordCondition(collector,"S48-PAT-07","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.header.previous_record_sequence==40,"previous_sequence_is_a");
+   SWV5_TestRecordCondition(collector,"S48-PAT-08","SPRINT4_8_PERSISTENCE_ATOMICITY",base && state_b.header.store_revision!="" && state_b.header.store_revision!=store_a && SWV5_TestPersistenceRecordValid(context,state_b),"cas_revision_and_checkpoint_seal_coherent");
+
+   SWV5_PersistedRequestSetHeader empty_header; SWV5_TestBindRequestSetHeader(empty_header,empty,42);
+   const bool emptied=persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,empty,empty_header,decision);
+   SWV5_PersistedCheckpoint state_empty; const bool loaded_empty=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,state_empty,load_result);
+   SWV5_TestRecordCondition(collector,"S48-PAT-09","SPRINT4_8_PERSISTENCE_ATOMICITY",emptied && loaded_empty && !state_empty.has_latest_pending_request && state_empty.pending_request_set.request_count==0 && state_empty.reconciliation_vector.pending_request_count==0 && state_empty.basket.lifecycle.pending_request_count==0,"empty_replacement_clears_all_request_state");
+
+   const string before_failure=SWV5_TestCanonicalCheckpointPayload(state_empty);
+   SWV5_PersistedRequestSetHeader invalid_header; SWV5_TestBindRequestSetHeader(invalid_header,set_b,43); invalid_header.request_set_digest="CORRUPT";
+   const bool rejected=!persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,set_b,invalid_header,decision);
+   SWV5_PersistedCheckpoint after_failure; const bool loaded_after=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,after_failure,load_result);
+   SWV5_TestRecordCondition(collector,"S48-PAT-10","SPRINT4_8_PERSISTENCE_ATOMICITY",rejected && loaded_after && before_failure==SWV5_TestCanonicalCheckpointPayload(after_failure),"failed_replace_is_atomic");
+   SWV5_TestRecordCondition(collector,"S48-PAT-11","SPRINT4_8_PERSISTENCE_ATOMICITY",loaded_after && SWV5_TestPersistenceRecordValid(context,after_failure),"load_latest_observes_complete_post_save_state");
+   SWV5_TestRecordCondition(collector,"S48-PAT-12","SPRINT4_8_PERSISTENCE_ATOMICITY",loaded_after && after_failure.reconciliation_vector.source_summary_digest==SWV5_TestReconciliationSourceDigest(after_failure.reconciliation_vector),"source_summary_is_full_vector_digest");
+}
+
+void SWV5_RunSprint48B6IdentityTests(SWV5_TestCollector &collector)
+{
+   const string suffix="/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION);
+   SWV5_TestVersionPolicy version; SWV5_TestBasketStateContract state; SWV5_TestBasketContract basket;
+   SWV5_TestExecutionContract execution; SWV5_TestPersistenceContract persistence; SWV5_TestRiskContract risk;
+   SWV5_TestStatisticsContract statistics; SWV5_TestOwnershipContract ownership; SWV5_TestUnitSystemContract units;
+   SWV5_TestRecordCondition(collector,"S48-ID-01","SPRINT4_8_V5_IDENTITY",version.ContractName()=="ISWV5ContractVersionPolicy"+suffix,"version_policy_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-02","SPRINT4_8_V5_IDENTITY",state.ContractName()=="ISWV5BasketStateMachineContract"+suffix,"state_machine_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-03","SPRINT4_8_V5_IDENTITY",basket.ContractName()=="ISWV5BasketContract"+suffix,"basket_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-04","SPRINT4_8_V5_IDENTITY",execution.ContractName()=="ISWV5ExecutionContract"+suffix,"execution_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-05","SPRINT4_8_V5_IDENTITY",persistence.ContractName()=="ISWV5PersistenceContract"+suffix,"persistence_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-06","SPRINT4_8_V5_IDENTITY",risk.ContractName()=="ISWV5RiskContract"+suffix,"risk_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-07","SPRINT4_8_V5_IDENTITY",statistics.ContractName()=="ISWV5StatisticsContract"+suffix,"statistics_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-08","SPRINT4_8_V5_IDENTITY",ownership.ContractName()=="ISWV5InstanceOwnershipContract"+suffix,"ownership_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-09","SPRINT4_8_V5_IDENTITY",units.ContractName()=="ISWV5UnitSystemContract"+suffix,"unit_system_v5");
+   SWV5_TestRecordCondition(collector,"S48-ID-10","SPRINT4_8_V5_IDENTITY",SWV5_TestResultSchemaIdentity()=="SWV5-CONTRACT-TEST-RESULT-V5" && SWV5_TestResultProductionPolicy()==SWV5_PRODUCTION_CONTRACT_POLICY,"machine_schema_policy_v5");
+   SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+   const string expected_margin_digest=SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-MARGIN-PROJECTION-V5-LP1")+SWV5_TestCanonicalMarginEvidence(engineInput.projected.margin_evidence));
+   SWV5_TestRecordCondition(collector,"S48-ID-11","SPRINT4_8_V5_IDENTITY",expected_margin_digest==SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence),"active_serializer_format_v5");
+   SWV5_MarginProjectionEvidence rejected; string historical=SWV5_TestCanonicalMarginEvidence(engineInput.projected.margin_evidence); SWV5_TestReplaceOnce(historical,"schema_version:i:1:5","schema_version:i:1:4");
+   SWV5_TestRecordCondition(collector,"S48-ID-12","SPRINT4_8_V5_IDENTITY",StringFind(SWV5_TestSuiteIdentity(),"SPRINT4.8-V5-")==0 && !SWV5_TestDecodeMarginEvidence(historical,rejected),"current_suite_v5_and_historical_v4_rejected");
+}
+
+bool SWV5_TestMonetaryBasisMutationChangesBasketDigest(const int number)
+{
+   SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+   const string original=SWV5_TestBasketRiskEvidenceDigest(risk.projected.basket_risk_evidence);
+   SWV5_BasketRiskProjectionEvidence changed=risk.projected.basket_risk_evidence;
+   switch(number)
+   {
+      case 1: changed.monetary_basis.contract_version.schema_version++; break;
+      case 2: changed.monetary_basis.calculation_basis=(SWV5_RiskCalculationBasis)99; break;
+      case 3: changed.monetary_basis.sign_convention=(SWV5_RiskSignConvention)99; break;
+      case 4: changed.monetary_basis.includes_realized=!changed.monetary_basis.includes_realized; break;
+      case 5: changed.monetary_basis.includes_unrealized=!changed.monetary_basis.includes_unrealized; break;
+      case 6: changed.monetary_basis.includes_commission=!changed.monetary_basis.includes_commission; break;
+      case 7: changed.monetary_basis.includes_swap=!changed.monetary_basis.includes_swap; break;
+      case 8: changed.monetary_basis.includes_fee=!changed.monetary_basis.includes_fee; break;
+      case 9: changed.monetary_basis.currency+=".MUTATED"; break;
+      case 10: changed.monetary_basis.account_currency+=".MUTATED"; break;
+      case 11: changed.monetary_basis.conversion_rate_to_account_currency+=0.25; break;
+      case 12: changed.monetary_basis.conversion_source+=".MUTATED"; break;
+      case 13: changed.monetary_basis.valuation_at++; break;
+      default: return false;
+   }
+   return original!=SWV5_TestBasketRiskEvidenceDigest(changed);
+}
+
+bool SWV5_TestMarginAuthorityAllFieldsDigestBound()
+{
+   for(int number=1;number<=25;number++)
+   {
+      SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+      SWV5_MarginAuthorityRecord changed=risk.margin_authority_record;
+      const string original=SWV5_TestMarginAuthorityDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.account_namespace.snapshot_sequence++; break;
+         case 4: changed.ownership_fence.takeover_generation++; break;
+         case 5: changed.request_identity.request_id.attempt_id+="X"; break;
+         case 6: changed.basket_id.value+="X"; break;
+         case 7: changed.symbol+="X"; break;
+         case 8: changed.symbol_specification_sequence++; break;
+         case 9: changed.intent_type=(SWV5_ExecutionIntentType)99; break;
+         case 10: changed.direction=-changed.direction; break;
+         case 11: changed.requested_volume+=0.01; break;
+         case 12: changed.requested_price+=0.01; break;
+         case 13: changed.current_account_margin+=1.0; break;
+         case 14: changed.projected_account_margin+=1.0; break;
+         case 15: changed.additional_margin+=1.0; break;
+         case 16: changed.current_free_margin+=1.0; break;
+         case 17: changed.account_currency+="X"; break;
+         case 18: changed.broker_calculation_reference+="X"; break;
+         case 19: changed.observation_sequence++; break;
+         case 20: changed.observed_at++; break;
+         case 21: changed.calculated_at++; break;
+         case 22: changed.authority_record_id+="X"; break;
+         case 23: changed.authority_record_sequence++; break;
+         case 24: changed.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION; break;
+         case 25: changed.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT; break;
+      }
+      if(original==SWV5_TestMarginAuthorityDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestBasketAuthorityAllFieldsDigestBound()
+{
+   for(int number=1;number<=27;number++)
+   {
+      SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+      SWV5_BasketRiskAuthorityRecord changed=risk.basket_risk_authority_record;
+      const string original=SWV5_TestBasketRiskAuthorityDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.account_namespace.snapshot_sequence++; break;
+         case 4: changed.ownership_fence.takeover_generation++; break;
+         case 5: changed.basket_id.value+="X"; break;
+         case 6: changed.basket_state_version++; break;
+         case 7: changed.request_identity.request_id.attempt_id+="X"; break;
+         case 8: changed.symbol+="X"; break;
+         case 9: changed.symbol_specification_sequence++; break;
+         case 10: changed.source_snapshot_id+="X"; break;
+         case 11: changed.source_snapshot_digest+="X"; break;
+         case 12: changed.existing_bounded_basket_loss+=1.0; break;
+         case 13: changed.incremental_request_bounded_loss+=1.0; break;
+         case 14: changed.interaction_or_offset_adjustment+=1.0; break;
+         case 15: changed.resulting_basket_maximum_loss+=1.0; break;
+         case 16: changed.realized_loss_basis+=1.0; break;
+         case 17: changed.unrealized_loss_basis+=1.0; break;
+         case 18: changed.accrued_cost_basis+=1.0; break;
+         case 19: changed.monetary_basis.conversion_source+="X"; break;
+         case 20: changed.calculation_policy_id+="X"; break;
+         case 21: changed.observation_sequence++; break;
+         case 22: changed.observed_at++; break;
+         case 23: changed.calculated_at++; break;
+         case 24: changed.authority_record_id+="X"; break;
+         case 25: changed.authority_record_sequence++; break;
+         case 26: changed.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION; break;
+         case 27: changed.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT; break;
+      }
+      if(original==SWV5_TestBasketRiskAuthorityDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestMarginAllFieldsDigestBound()
+{
+   for(int number=1;number<=23;number++)
+   {
+      SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+      SWV5_MarginProjectionEvidence changed=risk.projected.margin_evidence;
+      const string original=SWV5_TestMarginEvidenceDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.account_namespace.snapshot_sequence++; break;
+         case 4: changed.ownership_fence.takeover_generation++; break;
+         case 5: changed.request_identity.request_id.attempt_id+="X"; break;
+         case 6: changed.basket_id.value+="X"; break;
+         case 7: changed.symbol+="X"; break;
+         case 8: changed.symbol_specification_sequence++; break;
+         case 9: changed.intent_type=(SWV5_ExecutionIntentType)99; break;
+         case 10: changed.direction=-changed.direction; break;
+         case 11: changed.requested_volume+=0.01; break;
+         case 12: changed.requested_price+=1.0; break;
+         case 13: changed.current_account_margin+=1.0; break;
+         case 14: changed.current_free_margin+=1.0; break;
+         case 15: changed.projected_account_margin+=1.0; break;
+         case 16: changed.additional_margin+=1.0; break;
+         case 17: changed.account_currency+="X"; break;
+         case 18: changed.issuing_component=(SWV5_ComponentAuthority)99; break;
+         case 19: changed.authority_source=(SWV5_AuthoritySource)99; break;
+         case 20: changed.calculation_reference+="X"; break;
+         case 21: changed.observed_at++; break;
+         case 22: changed.calculated_at++; break;
+         case 23: changed.evidence_sequence++; break;
+      }
+      if(original==SWV5_TestMarginEvidenceDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestBasketRiskAllFieldsDigestBound()
+{
+   for(int number=1;number<=24;number++)
+   {
+      SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+      SWV5_BasketRiskProjectionEvidence changed=risk.projected.basket_risk_evidence;
+      const string original=SWV5_TestBasketRiskEvidenceDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.account_namespace.snapshot_sequence++; break;
+         case 4: changed.ownership_fence.takeover_generation++; break;
+         case 5: changed.basket_id.value+="X"; break;
+         case 6: changed.basket_state_version++; break;
+         case 7: changed.request_identity.request_id.attempt_id+="X"; break;
+         case 8: changed.symbol+="X"; break;
+         case 9: changed.symbol_specification_sequence++; break;
+         case 10: changed.existing_bounded_basket_loss+=1.0; break;
+         case 11: changed.incremental_request_bounded_loss+=1.0; break;
+         case 12: changed.interaction_or_offset_adjustment+=1.0; break;
+         case 13: changed.resulting_basket_maximum_loss+=1.0; break;
+         case 14: changed.realized_loss_basis+=1.0; break;
+         case 15: changed.unrealized_loss_basis+=1.0; break;
+         case 16: changed.accrued_cost_basis+=1.0; break;
+         case 17: changed.monetary_basis.includes_fee=!changed.monetary_basis.includes_fee; break;
+         case 18: changed.calculation_policy_id+="X"; break;
+         case 19: changed.source_snapshot_digest+="X"; break;
+         case 20: changed.issuing_component=(SWV5_ComponentAuthority)99; break;
+         case 21: changed.authority_source=(SWV5_AuthoritySource)99; break;
+         case 22: changed.observed_at++; break;
+         case 23: changed.calculated_at++; break;
+         case 24: changed.evidence_sequence++; break;
+      }
+      if(original==SWV5_TestBasketRiskEvidenceDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestUnitSpecificationAllFieldsBound()
+{
+   for(int number=1;number<=23;number++)
+   {
+      SWV5_SymbolUnitSpecification changed; SWV5_TestMakeSymbolSpecification(changed);
+      const string original=SWV5_TestSymbolUnitSpecificationDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.symbol+="X"; break;
+         case 3: changed.specification_sequence++; break;
+         case 4: changed.digits++; break;
+         case 5: changed.point_size*=2.0; break;
+         case 6: changed.tick_size*=2.0; break;
+         case 7: changed.pip_size*=2.0; break;
+         case 8: changed.tick_value_profit+=1.0; break;
+         case 9: changed.tick_value_loss+=1.0; break;
+         case 10: changed.contract_size+=1.0; break;
+         case 11: changed.calculation_mode=(SWV5_SymbolCalculationMode)99; break;
+         case 12: changed.tick_value_basis_volume+=1.0; break;
+         case 13: changed.volume_minimum+=0.01; break;
+         case 14: changed.volume_maximum+=0.01; break;
+         case 15: changed.volume_step+=0.01; break;
+         case 16: changed.stops_level_points++; break;
+         case 17: changed.freeze_level_points++; break;
+         case 18: changed.account_currency+="X"; break;
+         case 19: changed.tick_value_currency+="X"; break;
+         case 20: changed.authority_source=(SWV5_AuthoritySource)99; break;
+         case 21: changed.observed_at++; break;
+         case 22: changed.valid_until++; break;
+         case 23: changed.complete=!changed.complete; break;
+      }
+      if(original==SWV5_TestSymbolUnitSpecificationDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestBrokerSummaryAllFieldsDigestBound()
+{
+   for(int number=1;number<=18;number++)
+   {
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeRestartInput(restart);
+      SWV5_AuthoritativeBrokerSummary changed=restart.broker;
+      const string original=SWV5_TestBrokerSummaryDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.symbol_long_volume+=0.01; break;
+         case 4: changed.symbol_short_volume+=0.01; break;
+         case 5: changed.symbol_net_volume+=0.01; break;
+         case 6: changed.aggregate_position_volume+=0.01; break;
+         case 7: changed.residual_volume+=0.01; break;
+         case 8: changed.position_count++; break;
+         case 9: changed.order_count++; break;
+         case 10: changed.pending_request_count++; break;
+         case 11: changed.latest_confirmed_correlation.phase=(SWV5_ExecutionLifecyclePhase)99; break;
+         case 12: changed.latest_broker_event_identity.transaction_sequence++; break;
+         case 13: changed.transaction_high_watermark++; break;
+         case 14: changed.observation_sequence++; break;
+         case 15: changed.account_mode=(SWV5_AccountPositionMode)99; break;
+         case 16: changed.queries.completed_flags^=SWV5_QUERY_DEALS; break;
+         case 17: changed.observed_at++; break;
+         case 18: changed.authority=(SWV5_AuthoritySource)99; break;
+      }
+      if(original==SWV5_TestBrokerSummaryDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestReconciliationAllFieldsDigestBound()
+{
+   for(int number=1;number<=24;number++)
+   {
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeRestartInput(restart);
+      SWV5_PersistedReconciliationVector changed=restart.persisted.reconciliation_vector;
+      const string original=SWV5_TestReconciliationVectorDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.basket_id.value+="X"; break;
+         case 4: changed.account_mode=(SWV5_AccountPositionMode)99; break;
+         case 5: changed.symbol_long_volume+=0.01; break;
+         case 6: changed.symbol_short_volume+=0.01; break;
+         case 7: changed.symbol_net_volume+=0.01; break;
+         case 8: changed.aggregate_position_volume+=0.01; break;
+         case 9: changed.basket_open_volume+=0.01; break;
+         case 10: changed.residual_volume+=0.01; break;
+         case 11: changed.position_count++; break;
+         case 12: changed.order_count++; break;
+         case 13: changed.pending_request_count++; break;
+         case 14: changed.latest_confirmed_correlation.phase=(SWV5_ExecutionLifecyclePhase)99; break;
+         case 15: changed.latest_broker_event_identity.transaction_sequence++; break;
+         case 16: changed.transaction_high_watermark++; break;
+         case 17: changed.request_set_digest+="X"; break;
+         case 18: changed.request_set_revision+="X"; break;
+         case 19: changed.basket_state=(SWV5_BasketState)99; break;
+         case 20: changed.basket_state_version++; break;
+         case 21: changed.hard_kill_generation++; break;
+         case 22: changed.ownership_fence.takeover_generation++; break;
+         case 23: changed.reconciliation_revision++; break;
+         case 24: changed.source_summary_digest+="X"; break;
+      }
+      if(original==SWV5_TestReconciliationVectorDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestHardKillReleaseAllFieldsDigestBound()
+{
+   for(int number=1;number<=22;number++)
+   {
+      SWV5_HardKillState state; SWV5_TestMakeHistoricalHardKillRelease(state);
+      SWV5_HardKillReleaseEvidence changed=state.release_evidence;
+      const string original=SWV5_TestHardKillReleaseDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.release_id+="X"; break;
+         case 4: changed.latch_id+="X"; break;
+         case 5: changed.latch_generation++; break;
+         case 6: changed.release_generation++; break;
+         case 7: changed.approval_policy_id+="X"; break;
+         case 8: changed.approval_sequence++; break;
+         case 9: changed.operator_identity.operator_id+="X"; break;
+         case 10: changed.operator_identity.authority_role+="X"; break;
+         case 11: changed.operator_identity.authentication_reference+="X"; break;
+         case 12: changed.operator_identity.authenticated_at++; break;
+         case 13: changed.approving_component=(SWV5_ComponentAuthority)99; break;
+         case 14: changed.broker_evidence.state_digest+="X"; break;
+         case 15: changed.persistence_evidence.state_digest+="X"; break;
+         case 16: changed.exposure_evidence.observed_exposure_volume+=0.01; break;
+         case 17: changed.approved_at++; break;
+         case 18: changed.released_at++; break;
+         case 19: changed.expires_at++; break;
+         case 20: changed.release_record_sequence++; break;
+         case 21: changed.audit_reference+="X"; break;
+         case 22: changed.broker_evidence.authority_source=(SWV5_AuthoritySource)99; break;
+      }
+      if(original==SWV5_TestHardKillReleaseDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestHardKillAuthorityAllFieldsDigestBound()
+{
+   for(int number=1;number<=24;number++)
+   {
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+      SWV5_HardKillReleaseAuthorityRecord changed=restart.release_authority_record;
+      const string original=SWV5_TestHardKillAuthorityRecordDigest(changed);
+      switch(number)
+      {
+         case 1: changed.contract_version.schema_version++; break;
+         case 2: changed.persistence_namespace.basket_id.value+="X"; break;
+         case 3: changed.account_namespace.snapshot_sequence++; break;
+         case 4: changed.latch_id+="X"; break;
+         case 5: changed.latch_generation++; break;
+         case 6: changed.release_id+="X"; break;
+         case 7: changed.release_generation++; break;
+         case 8: changed.operator_identity.operator_id+="X"; break;
+         case 9: changed.operator_identity.authority_role+="X"; break;
+         case 10: changed.operator_identity.authentication_reference+="X"; break;
+         case 11: changed.operator_identity.authenticated_at++; break;
+         case 12: changed.approving_component=(SWV5_ComponentAuthority)99; break;
+         case 13: changed.approval_policy_id+="X"; break;
+         case 14: changed.approval_sequence++; break;
+         case 15: changed.broker_evidence_reference.state_digest+="X"; break;
+         case 16: changed.persistence_evidence_reference.state_digest+="X"; break;
+         case 17: changed.exposure_evidence_reference.observed_exposure_volume+=0.01; break;
+         case 18: changed.approved_at++; break;
+         case 19: changed.released_at++; break;
+         case 20: changed.expires_at++; break;
+         case 21: changed.release_record_sequence++; break;
+         case 22: changed.authority_record_id+="X"; break;
+         case 23: changed.issuing_component=(SWV5_ComponentAuthority)99; break;
+         case 24: changed.authority_source=(SWV5_AuthoritySource)99; break;
+      }
+      if(original==SWV5_TestHardKillAuthorityRecordDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestHardKillAuthorityReferenceAllFieldsBound()
+{
+   for(int number=1;number<=7;number++)
+   {
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+      SWV5_HardKillReleaseAuthorityReference changed=restart.persisted.hard_kill_state.release_authority_reference;
+      const string original=SWV5_TestCanonicalHash(SWV5_TestCanonicalHardKillAuthorityReference(changed));
+      if(number==1) changed.contract_version.schema_version++;
+      if(number==2) changed.authority_record_id+="X";
+      if(number==3) changed.authority_record_sequence++;
+      if(number==4) changed.authority_record_digest+="X";
+      if(number==5) changed.release_id+="X";
+      if(number==6) changed.latch_generation++;
+      if(number==7) changed.release_generation++;
+      if(original==SWV5_TestCanonicalHash(SWV5_TestCanonicalHardKillAuthorityReference(changed))) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestCheckpointAllAuthoritativeDomainsBound()
+{
+   for(int number=1;number<=12;number++)
+   {
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+      SWV5_PersistedCheckpoint changed=restart.persisted;
+      const string original=SWV5_TestCheckpointPayloadDigest(changed);
+      switch(number)
+      {
+         case 1: changed.header.record_sequence++; break;
+         case 2: changed.header.ownership_fence.takeover_generation++; break;
+         case 3: changed.basket.lifecycle.state_version++; break;
+         case 4: changed.last_confirmed_correlation.broker_identity.transaction_sequence++; break;
+         case 5: changed.pending_request_set.request_set_digest+="X"; break;
+         case 6: changed.has_latest_pending_request=!changed.has_latest_pending_request; break;
+         case 7: changed.latest_pending_request.record_sequence++; break;
+         case 8: changed.hard_kill_state.release_authority_reference.authority_record_id+="X"; break;
+         case 9: changed.reconciliation_vector.request_set_revision+="X"; break;
+         case 10: changed.clean_shutdown=!changed.clean_shutdown; break;
+         case 11: changed.header.written_at++; break;
+         case 12: changed.hard_kill_state.release_evidence.operator_identity.authority_role+="X"; break;
+      }
+      if(original==SWV5_TestCheckpointPayloadDigest(changed)) return false;
+   }
+   return true;
+}
+
+bool SWV5_TestCanonicalNestedSerializerReuse()
+{
+   SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+   SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+   return StringFind(SWV5_TestCanonicalBasketRiskEvidence(risk.projected.basket_risk_evidence),
+                     SWV5_TestCanonicalRiskMonetaryBasis(risk.projected.basket_risk_evidence.monetary_basis))>=0 &&
+          StringFind(SWV5_TestCanonicalHardKillRelease(restart.persisted.hard_kill_state.release_evidence),
+                     SWV5_TestCanonicalTypedReconciliation(restart.persisted.hard_kill_state.release_evidence.broker_evidence))>=0 &&
+          StringFind(SWV5_TestCanonicalHardKillAuthorityRecord(restart.release_authority_record),
+                     SWV5_TestCanonicalExposureEvidence(restart.release_authority_record.exposure_evidence_reference))>=0 &&
+          StringFind(SWV5_TestCanonicalCheckpointPayload(restart.persisted),
+                     SWV5_TestCanonicalReconciliationVector(restart.persisted.reconciliation_vector))>=0;
+}
+
+void SWV5_RunSprint48CanonicalIntegrityTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=13;number++)
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-CAN-MB",number),"SPRINT4_8_CANONICAL_INTEGRITY",
+                               SWV5_TestMonetaryBasisMutationChangesBasketDigest(number),"monetary_basis_mutation_changes_basket_risk_digest");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-01","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestMarginAllFieldsDigestBound(),"all_margin_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-02","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestBasketRiskAllFieldsDigestBound(),"all_basket_risk_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-03","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestUnitSpecificationAllFieldsBound(),"all_unit_specification_fields_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-04","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestBrokerSummaryAllFieldsDigestBound(),"all_broker_summary_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-05","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestReconciliationAllFieldsDigestBound(),"all_reconciliation_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-06","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestHardKillReleaseAllFieldsDigestBound(),"all_hard_kill_release_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-07","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestHardKillAuthorityAllFieldsDigestBound(),"all_authority_record_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-08","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestHardKillAuthorityReferenceAllFieldsBound(),"all_authority_reference_fields_checkpoint_bindable");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DTO-09","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestCheckpointAllAuthoritativeDomainsBound(),"checkpoint_all_authoritative_domains_bound");
+
+   SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
+   SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
+   SWV5_MarginProjectionEvidence margin=risk.projected.margin_evidence; const string margin_digest=SWV5_TestMarginEvidenceDigest(margin); margin.evidence_digest+="X";
+   SWV5_BasketRiskProjectionEvidence loss=risk.projected.basket_risk_evidence; const string loss_digest=SWV5_TestBasketRiskEvidenceDigest(loss); loss.evidence_digest+="X";
+   SWV5_AuthoritativeBrokerSummary broker=restart.broker; const string broker_digest=SWV5_TestBrokerSummaryDigest(broker); broker.complete_summary_digest+="X";
+   SWV5_HardKillReleaseEvidence release=restart.persisted.hard_kill_state.release_evidence; const string release_digest=SWV5_TestHardKillReleaseDigest(release); release.release_record_digest+="X";
+   SWV5_HardKillReleaseAuthorityRecord authority=restart.release_authority_record; const string authority_digest=SWV5_TestHardKillAuthorityRecordDigest(authority); authority.authority_record_digest+="X";
+   SWV5_PersistedCheckpoint checkpoint=restart.persisted; const string checkpoint_digest=SWV5_TestCheckpointPayloadDigest(checkpoint); checkpoint.header.payload_digest+="X"; checkpoint.header.payload_size++;
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-01","SPRINT4_8_CANONICAL_INTEGRITY",margin_digest==SWV5_TestMarginEvidenceDigest(margin),"margin_self_digest_excluded");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-02","SPRINT4_8_CANONICAL_INTEGRITY",loss_digest==SWV5_TestBasketRiskEvidenceDigest(loss),"basket_risk_self_digest_excluded");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-03","SPRINT4_8_CANONICAL_INTEGRITY",broker_digest==SWV5_TestBrokerSummaryDigest(broker),"broker_self_digest_excluded");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-04","SPRINT4_8_CANONICAL_INTEGRITY",release_digest==SWV5_TestHardKillReleaseDigest(release),"release_self_digest_excluded");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-05","SPRINT4_8_CANONICAL_INTEGRITY",authority_digest==SWV5_TestHardKillAuthorityRecordDigest(authority),"authority_self_digest_excluded");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-06","SPRINT4_8_CANONICAL_INTEGRITY",checkpoint_digest==SWV5_TestCheckpointPayloadDigest(checkpoint),"checkpoint_integrity_envelope_excluded");
+
+   const string a=SWV5_TestCanonicalField("a","s","1"),b=SWV5_TestCanonicalField("b","i","1");
+   SWV5_TestRecordCondition(collector,"S48-CAN-FMT-01","SPRINT4_8_CANONICAL_INTEGRITY",a+b!=b+a,"adjacent_field_order_distinct");
+   SWV5_TestRecordCondition(collector,"S48-CAN-FMT-02","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestCanonicalField("v","s","1")!=SWV5_TestCanonicalIntegerField("v",1),"string_integer_type_distinct");
+   SWV5_TestRecordCondition(collector,"S48-CAN-FMT-03","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestCanonicalField("v","s","")!="","empty_field_not_missing");
+   SWV5_TestRecordCondition(collector,"S48-CAN-FMT-04","SPRINT4_8_CANONICAL_INTEGRITY",StringSubstr(a,0,StringLen(a)-1)!=a,"truncation_changes_representation");
+   const string split1=SWV5_TestCanonicalField("a","s","1")+SWV5_TestCanonicalField("b","s","23");
+   const string split2=SWV5_TestCanonicalField("a","s","12")+SWV5_TestCanonicalField("b","s","3");
+   SWV5_TestRecordCondition(collector,"S48-CAN-FMT-05","SPRINT4_8_CANONICAL_INTEGRITY",split1!=split2,"length_prefix_prevents_concatenation_ambiguity");
+   SWV5_TestRecordCondition(collector,"S48-CAN-DRIFT-01","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestCanonicalNestedSerializerReuse(),"parent_reuses_nested_canonical_serializers");
+   SWV5_TestRecordCondition(collector,"S48-CAN-AUTH-01","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestMarginAuthorityAllFieldsDigestBound(),"all_margin_authority_fields_digest_bound");
+   SWV5_TestRecordCondition(collector,"S48-CAN-AUTH-02","SPRINT4_8_CANONICAL_INTEGRITY",SWV5_TestBasketAuthorityAllFieldsDigestBound(),"all_basket_authority_fields_digest_bound");
+}
+
 void SWV5_RunContractSuite(SWV5_TestCollector &collector)
 {
    SWV5_RunCommonTests(collector);
@@ -4874,6 +5912,19 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunSprint47HardKillExpiryTests(collector);
    SWV5_RunSprint47CheckpointSemanticTests(collector);
    SWV5_RunSprint47RetryEnumTests(collector);
+   SWV5_RunSprint48MarginTests(collector);
+   SWV5_RunSprint48LossTests(collector);
+   SWV5_RunSprint48NotionalTests(collector);
+   SWV5_RunSprint48RestartTests(collector);
+   SWV5_RunSprint48HardKillTests(collector);
+   SWV5_RunSprint48HardKillAuthorityTests(collector);
+   SWV5_RunSprint48CanonicalIntegrityTests(collector);
+   SWV5_RunSprint48RoundTripTests(collector);
+   SWV5_RunSprint48MetadataConformanceTests(collector);
+   SWV5_RunSprint48B6MarginAuthorityTests(collector);
+   SWV5_RunSprint48B6BasketAuthorityTests(collector);
+   SWV5_RunSprint48B6PersistenceAtomicityTests(collector);
+   SWV5_RunSprint48B6IdentityTests(collector);
    SWV5_RunSprint45RecoveryValidationTests(collector);
    SWV5_RunSprint45UnclaimedAcquireTests(collector);
    SWV5_RunSprint45RiskBindingTests(collector);
@@ -4900,7 +5951,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==634 && first.Skipped()==0;
+   const bool complete=first.Total()==846 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -4961,7 +6012,7 @@ bool SWV5_RunSprint46OwnershipRegressionVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==34 && first.Skipped()==0;
+   const bool complete=first.Total()==36 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -5288,6 +6339,189 @@ bool SWV5_RunSprint47RetryEnumTargetedVerification()
    SWV5_TestCollector first,replay;
    SWV5_RunSprint47RetryEnumTests(first); SWV5_RunSprint47RetryEnumTests(replay);
    const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==12 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48HardKillAuthorityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48HardKillTests(first);
+   SWV5_RunSprint48HardKillAuthorityTests(first);
+   SWV5_RunSprint48HardKillTests(replay);
+   SWV5_RunSprint48HardKillAuthorityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==43 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48CanonicalIntegrityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48CanonicalIntegrityTests(first);
+   SWV5_RunSprint48CanonicalIntegrityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==36 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48CanonicalAffectedTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48LossTests(first); SWV5_RunSprint48MarginTests(first); SWV5_RunSprint48NotionalTests(first);
+   SWV5_RunSprint48RestartTests(first); SWV5_RunSprint48HardKillTests(first); SWV5_RunSprint48HardKillAuthorityTests(first);
+   SWV5_RunSprint48LossTests(replay); SWV5_RunSprint48MarginTests(replay); SWV5_RunSprint48NotionalTests(replay);
+   SWV5_RunSprint48RestartTests(replay); SWV5_RunSprint48HardKillTests(replay); SWV5_RunSprint48HardKillAuthorityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==103 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+void SWV5_RunSprint48HistoricalRegressionSet(SWV5_TestCollector &collector)
+{
+   g_swv5_test_id_filter="S45BR-10,S45DO-32,S45DP-16,PER-06,PER-07,PER-08,PER-09,PER-13,XDM-03,XDM-11,PRT-01,S44-02,S44-03,S44-10,S44-11";
+   SWV5_RunSprint45RecoveryValidationTests(collector);
+   SWV5_RunSprint45OwnershipLifecycleTests(collector);
+   SWV5_RunSprint45PersistenceCanonicalTests(collector);
+   SWV5_RunPersistenceTests(collector);
+   SWV5_RunCrossDomainTests(collector);
+   SWV5_RunPersistenceRoundTripTests(collector);
+   SWV5_RunSprint44SemanticTests(collector);
+   g_swv5_test_id_filter="";
+}
+
+bool SWV5_RunSprint48HistoricalRegressionTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48HistoricalRegressionSet(first);
+   SWV5_RunSprint48HistoricalRegressionSet(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
+                            first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
+                            first.Signature()==replay.Signature();
+   const bool complete=first.Total()==15 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
+               first.Total(),first.Passed(),first.Failed(),first.Skipped(),
+               deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48RoundTripTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48RoundTripTests(first); SWV5_RunSprint48RoundTripTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==18 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48MetadataTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48MetadataConformanceTests(first); SWV5_RunSprint48MetadataConformanceTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==1 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+void SWV5_RunSprint48PreviousSafetySet(SWV5_TestCollector &collector)
+{
+   SWV5_RunSprint45ExecutionAuthorityTests(collector);
+   SWV5_RunSprint45FingerprintTests(collector);
+   SWV5_RunSprint46ExecutionEnvelopeTests(collector);
+   SWV5_RunSprint47NonFiniteTests(collector);
+   SWV5_RunSprint47HardKillExpiryTests(collector);
+   SWV5_RunSprint47CheckpointSemanticTests(collector);
+   SWV5_RunSprint46DurableIdentityTests(collector);
+   SWV5_RunSprint46FingerprintUniquenessTests(collector);
+   SWV5_RunSprint47RetryEnumTests(collector);
+   SWV5_RunOwnershipTests(collector);
+   SWV5_RunSprint45OwnershipLifecycleTests(collector);
+   SWV5_RunPersistenceTests(collector);
+   SWV5_RunPersistenceRoundTripTests(collector);
+   SWV5_RunSprint45PersistenceCanonicalTests(collector);
+}
+
+bool SWV5_RunSprint48PreviousSafetyTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48PreviousSafetySet(first); SWV5_RunSprint48PreviousSafetySet(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==235 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48B6MarginAuthorityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48B6MarginAuthorityTests(first); SWV5_RunSprint48B6MarginAuthorityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==15 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48B6BasketAuthorityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48B6BasketAuthorityTests(first); SWV5_RunSprint48B6BasketAuthorityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==15 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48B6PersistenceAtomicityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48B6PersistenceAtomicityTests(first); SWV5_RunSprint48B6PersistenceAtomicityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==12 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48B6IdentityTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48B6IdentityTests(first); SWV5_RunSprint48B6IdentityTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
    const bool complete=first.Total()==12 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");

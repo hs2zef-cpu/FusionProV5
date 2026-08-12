@@ -1,0 +1,6 @@
+; TEST ONLY
+; NOT FOR PRODUCTION
+; NO BROKER ACCESS
+InpSprint48CanonicalIntegrityTargetedOnly=true||false||0||true||N
+InpSprint48CanonicalAffectedTargetedOnly=false||false||0||true||N
+InpSprint48HardKillAuthorityTargetedOnly=false||false||0||true||N

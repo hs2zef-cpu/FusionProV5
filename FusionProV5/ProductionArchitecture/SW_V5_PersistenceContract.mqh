@@ -56,7 +56,10 @@ struct SWV5_PersistenceRecordHeader
    SWV5_OwnershipFence ownership_fence;
    ulong                record_sequence;
    ulong                previous_record_sequence;
-   // SWV5-CHECKPOINT-V4-LP1 binds every persisted field except these two
+   // Store/CAS revision for this checkpoint publication. It advances with
+   // every successful mutation and remains separate from ownership fencing.
+   string               store_revision;
+   // SWV5-CHECKPOINT-V5-LP1 binds every persisted field except these two
    // integrity-envelope members. payload_size is the canonical MQL string
    // character count; payload_digest is the deterministic canonical hash.
    // This is integrity-contract evidence, not cryptographic tamper resistance.
@@ -87,6 +90,36 @@ struct SWV5_PersistedRequestSetHeader
    ulong                record_sequence;
 };
 
+struct SWV5_PersistedReconciliationVector
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_BasketID basket_id;
+   SWV5_AccountPositionMode account_mode;
+   double symbol_long_volume;
+   double symbol_short_volume;
+   double symbol_net_volume;
+   double aggregate_position_volume;
+   double basket_open_volume;
+   double residual_volume;
+   uint position_count;
+   uint order_count;
+   uint pending_request_count;
+   SWV5_ExecutionCorrelation latest_confirmed_correlation;
+   SWV5_BrokerExecutionIdentity latest_broker_event_identity;
+   ulong transaction_high_watermark;
+   string request_set_digest;
+   string request_set_revision;
+   SWV5_BasketState basket_state;
+   ulong basket_state_version;
+   ulong hard_kill_generation;
+   SWV5_OwnershipFence ownership_fence;
+   ulong reconciliation_revision;
+   // Digest of the complete reconciliation-vector source state excluding only
+   // this field. It is not a copied broker-summary digest or authority proof.
+   string source_summary_digest;
+};
+
 struct SWV5_PersistedCheckpoint
 {
    SWV5_PersistenceRecordHeader header;
@@ -96,6 +129,7 @@ struct SWV5_PersistedCheckpoint
    bool                         has_latest_pending_request;
    SWV5_PersistedRequestEvidence latest_pending_request;
    SWV5_HardKillState           hard_kill_state;
+   SWV5_PersistedReconciliationVector reconciliation_vector;
    bool                         clean_shutdown;
 };
 
@@ -111,12 +145,20 @@ struct SWV5_AuthoritativeBrokerSummary
 {
    SWV5_ContractVersion  contract_version;
    SWV5_PersistenceNamespace persistence_namespace;
+   double                symbol_long_volume;
+   double                symbol_short_volume;
+   double                symbol_net_volume;
    double                aggregate_position_volume;
    double                residual_volume;
    uint                  position_count;
    uint                  order_count;
    uint                  pending_request_count;
    SWV5_ExecutionCorrelation latest_confirmed_correlation;
+   SWV5_BrokerExecutionIdentity latest_broker_event_identity;
+   ulong                 transaction_high_watermark;
+   ulong                 observation_sequence;
+   // Digest of every broker-summary field except this digest field itself.
+   string                complete_summary_digest;
    SWV5_AccountPositionMode account_mode;
    SWV5_AuthoritativeQuerySet queries;
    datetime              observed_at;
@@ -131,6 +173,10 @@ struct SWV5_RestartReconciliationInput
    SWV5_AuthoritativeBrokerSummary broker;
    SWV5_OwnershipFence           claimant_fence;
    SWV5_PersistenceLoadStatus   persistence_status;
+   // RELEASED checkpoints require this independently obtained authority input.
+   // It must never be reconstructed from persisted.hard_kill_state.
+   bool                         has_release_authority_record;
+   SWV5_HardKillReleaseAuthorityRecord release_authority_record;
 };
 
 struct SWV5_RestartReconciliationResult

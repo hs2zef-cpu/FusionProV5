@@ -41,6 +41,14 @@ enum SWV5_UnitOperationSemantic
    SWV5_UNIT_OPERATION_LIMIT_TARGET = 7
 };
 
+enum SWV5_SymbolCalculationMode
+{
+   SWV5_SYMBOL_CALCULATION_UNSUPPORTED = 0,
+   // Sprint 4.8 V5 supports the XAU quantity model only:
+   // notional = volume * contract_size * price * account-currency conversion.
+   SWV5_SYMBOL_CALCULATION_XAU_QUANTITY = 1
+};
+
 const ulong SWV5_UNIT_POINT_VALID = 1;
 const ulong SWV5_UNIT_TICK_VALID = 2;
 const ulong SWV5_UNIT_PIP_EXPLICIT = 4;
@@ -64,6 +72,7 @@ struct SWV5_SymbolUnitSpecification
    double tick_value_profit;
    double tick_value_loss;
    double contract_size;
+   SWV5_SymbolCalculationMode calculation_mode;
    double tick_value_basis_volume;
    double volume_minimum;
    double volume_maximum;
@@ -72,6 +81,7 @@ struct SWV5_SymbolUnitSpecification
    int    freeze_level_points;
    string account_currency;
    string tick_value_currency;
+   SWV5_AuthoritySource authority_source;
    datetime observed_at;
    datetime valid_until;
    bool   complete;

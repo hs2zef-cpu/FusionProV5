@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 4.7 Adversarial Safety and Evidence Reproducibility Candidate
+Sprint 4.8 Production Contract V5 Candidate
 
 ### Date
 
@@ -14,7 +14,7 @@ Sprint 4.7 Adversarial Safety and Evidence Reproducibility Candidate
 
 **CANDIDATE / IN REVIEW**
 
-Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4.7 immutable verification passed against frozen source `008411c67239372968a4f742519984169044b7e4`; the candidate remains pending a new final independent merge audit and formal approval. Sprint 4.1 is not Architecture Locked and grants no runtime authorization.
+Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or source-freeze claim is made.
 
 ## Current Authorized Baseline
 
@@ -30,7 +30,7 @@ Review-candidate compile manifest:
 
 `SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5` (test only)
 
-Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 introduced the V3 corrective package, Sprint 4.4 completed its remaining semantic findings, Sprint 4.5 advanced the unresolved candidate to V4, and Sprint 4.6 produced historical candidate evidence that subsequently failed final independent merge audit. Sprint 4.7 closes the five resulting Critical safety findings and the coverage/provenance Major findings. None is a production or runtime authorization.
+Sprint 4.2 is an authorized verification sub-sprint within this candidate branch. Sprint 4.3 introduced V3, Sprint 4.4 completed remaining semantic findings, and Sprint 4.5 advanced the unresolved candidate to V4. Sprint 4.6 is failed-candidate history and Sprint 4.7 is superseded immutable V4 history. Sprint 4.8 is the current V5 corrective candidate. None is a production or runtime authorization.
 
 ## Frozen Signal Baseline
 
@@ -44,7 +44,8 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Current State
 
-- Production contract version 4 corrective candidate (minimum compatible version 4)
+- Production Contract V5 corrective candidate (minimum compatible version 5)
+- Production Contract V4 superseded candidate / historical pre-approval artifact
 - Deterministic validation context required by every contract interface
 - Contract compatibility and migration policy documented
 - Execution host and Hedging-only initial account-mode decisions recorded
@@ -75,6 +76,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Perform a new final independent merge audit of the Sprint 4.7 candidate and its reproducible immutable evidence. That audit remains required before any merge or formal approval decision. Sprint 4 Architecture remains the authorized baseline until approval.
+Review the Sprint 4.8 Phase B5 V5 candidate source, test credibility, and documentation for source freeze. Immutable verification, evidence generation, merge, and formal approval require later separate authorization. Sprint 4 Architecture remains the authorized baseline until approval.
 
 Do not merge or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.

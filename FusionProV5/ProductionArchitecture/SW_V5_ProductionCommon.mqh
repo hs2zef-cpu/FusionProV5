@@ -2,9 +2,9 @@
 #define SW_V5_PRODUCTION_COMMON_MQH
 
 #define SWV5_PRODUCTION_CONTRACT_NAME "SWV5-PRODUCTION"
-#define SWV5_PRODUCTION_CONTRACT_VERSION 4
-#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 4
-#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V4"
+#define SWV5_PRODUCTION_CONTRACT_VERSION 5
+#define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 5
+#define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V5"
 
 // Canonical numeric safety boundary for all Production Contract validators.
 // Comparisons are never a substitute for this check because NaN can evade
@@ -50,7 +50,13 @@ enum SWV5_AuthoritySource
    SWV5_AUTHORITY_LIVE_BROKER_STATE = 3,
    SWV5_AUTHORITY_DEAL_HISTORY = 4,
    SWV5_AUTHORITY_TRANSACTION_EVENT = 5,
-   SWV5_AUTHORITY_OPERATOR = 6
+   SWV5_AUTHORITY_OPERATOR = 6,
+   // Independently supplied by the approved Hard Kill release-authority
+   // boundary. Persistence may store a reference, but cannot issue this source.
+   SWV5_AUTHORITY_HARD_KILL_RELEASE_RECORD = 7,
+   // Independently supplied Risk Governance authority record. This is distinct
+   // from a caller projection and from its local content-integrity digest.
+   SWV5_AUTHORITY_RISK_GOVERNANCE_RECORD = 8
 };
 
 enum SWV5_ConfirmationStatus
@@ -192,9 +198,9 @@ enum SWV5_DurableFingerprintPolicy
 struct SWV5_DurableEventIdentitySet
 {
    SWV5_ContractVersion contract_version;
-   // V4 candidate encoding is SWV5-DURABLE-EVENT-SET-V4-LP1: ordered,
-   // typed, length-prefixed identity entries. Legacy delimiter indexes fail
-   // closed; no runtime migration exists because V4 is not approved/locked.
+   // Current candidate encoding derives its V5 format identity from the
+   // canonical contract version. Legacy delimiter/V4 indexes fail closed;
+   // no runtime migration exists because V5 is not approved/locked.
    // IDENTITY_ONLY forbids fingerprint entries. REQUIRED enforces exactly one
    // canonical fingerprint mapping for every accepted identity in event order.
    SWV5_DurableFingerprintPolicy fingerprint_policy;
@@ -301,6 +307,13 @@ enum SWV5_HardKillLatchState
    SWV5_HARD_KILL_RELEASED = 3
 };
 
+enum SWV5_HardKillReleaseValidationMode
+{
+   SWV5_HARD_KILL_RELEASE_MODE_INVALID = 0,
+   SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION = 1,
+   SWV5_HARD_KILL_RELEASE_HISTORICAL_PERSISTED = 2
+};
+
 struct SWV5_HardKillReleaseEvidence
 {
    // The outer persistence namespace scopes every nested evidence record.
@@ -311,14 +324,68 @@ struct SWV5_HardKillReleaseEvidence
    string                latch_id;
    ulong                 latch_generation;
    ulong                 release_generation;
+   string                approval_policy_id;
+   ulong                 approval_sequence;
    SWV5_OperatorIdentity operator_identity;
    SWV5_ComponentAuthority approving_component;
    SWV5_TypedReconciliationEvidence broker_evidence;
    SWV5_TypedReconciliationEvidence persistence_evidence;
    SWV5_ExposureReductionEvidence exposure_evidence;
    datetime              approved_at;
+   datetime              released_at;
    datetime              expires_at;
+   ulong                 release_record_sequence;
+   // Digest of every release field except this digest field itself.
+   string                release_record_digest;
    string                audit_reference;
+};
+
+// Content integrity and release authority are deliberately separate domains.
+// This reference is persisted in the checkpoint and is covered by the
+// checkpoint digest. It cannot establish authority without the independently
+// supplied record whose identity, sequence and digest it names.
+struct SWV5_HardKillReleaseAuthorityReference
+{
+   SWV5_ContractVersion contract_version;
+   string               authority_record_id;
+   ulong                authority_record_sequence;
+   string               authority_record_digest;
+   string               release_id;
+   ulong                latch_generation;
+   ulong                release_generation;
+};
+
+// Independent Hard Kill release authority input. Risk Governance owns and
+// issues this record at the approved release-authority boundary. Persistence
+// may retain/transport it separately, but a checkpoint may never originate or
+// reconstruct it. The digest is deterministic content integrity relative to
+// this independently supplied input; it is not a cryptographic signature and
+// does not protect against compromise of both trust domains.
+struct SWV5_HardKillReleaseAuthorityRecord
+{
+   SWV5_ContractVersion contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_AccountRiskNamespace account_namespace;
+   string               latch_id;
+   ulong                latch_generation;
+   string               release_id;
+   ulong                release_generation;
+   SWV5_OperatorIdentity operator_identity;
+   SWV5_ComponentAuthority approving_component;
+   string               approval_policy_id;
+   ulong                approval_sequence;
+   SWV5_TypedReconciliationEvidence broker_evidence_reference;
+   SWV5_TypedReconciliationEvidence persistence_evidence_reference;
+   SWV5_ExposureReductionEvidence exposure_evidence_reference;
+   datetime             approved_at;
+   datetime             released_at;
+   datetime             expires_at;
+   ulong                release_record_sequence;
+   string               authority_record_id;
+   // Canonical V5 typed length-prefixed digest; excludes only this field.
+   string               authority_record_digest;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
 };
 
 struct SWV5_HardKillState
@@ -334,6 +401,7 @@ struct SWV5_HardKillState
    string                       activation_authority;
    ulong                        release_generation;
    SWV5_HardKillReleaseEvidence release_evidence;
+   SWV5_HardKillReleaseAuthorityReference release_authority_reference;
 };
 
 const ulong SWV5_QUERY_POSITIONS = 1;

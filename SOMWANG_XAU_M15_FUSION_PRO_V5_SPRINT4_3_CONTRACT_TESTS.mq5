@@ -2,7 +2,7 @@
 //| TEST ONLY                                                        |
 //| NOT FOR PRODUCTION                                               |
 //| NO BROKER ACCESS                                                 |
-//| Sprint 4.7 Phase A deterministic contract verification.         |
+//| Sprint 4.8 V5 deterministic contract verification.              |
 //+------------------------------------------------------------------+
 #property strict
 #property version "5.60"
@@ -32,11 +32,33 @@ input bool InpSprint47NonFiniteTargetedOnly=false;
 input bool InpSprint47HardKillTargetedOnly=false;
 input bool InpSprint47CheckpointTargetedOnly=false;
 input bool InpSprint47RetryEnumTargetedOnly=false;
+input bool InpSprint48HardKillAuthorityTargetedOnly=false;
+input bool InpSprint48CanonicalIntegrityTargetedOnly=false;
+input bool InpSprint48CanonicalAffectedTargetedOnly=false;
+input bool InpSprint48HistoricalRegressionTargetedOnly=false;
+input bool InpSprint48RoundTripTargetedOnly=false;
+input bool InpSprint48MetadataTargetedOnly=false;
+input bool InpSprint48PreviousSafetyTargetedOnly=false;
+input bool InpSprint48B6MarginAuthorityTargetedOnly=false;
+input bool InpSprint48B6BasketAuthorityTargetedOnly=false;
+input bool InpSprint48B6PersistenceAtomicityTargetedOnly=false;
+input bool InpSprint48B6IdentityTargetedOnly=false;
 
 bool g_swv5_contract_tests_passed=false;
 
 string SWV5_SelectedSuiteName()
 {
+   if(InpSprint48B6IdentityTargetedOnly) return "SPRINT4.8-V5-IDENTITY";
+   if(InpSprint48B6PersistenceAtomicityTargetedOnly) return "SPRINT4.8-V5-PERSISTENCE-ATOMICITY";
+   if(InpSprint48B6BasketAuthorityTargetedOnly) return "SPRINT4.8-V5-BASKET-AUTHORITY";
+   if(InpSprint48B6MarginAuthorityTargetedOnly) return "SPRINT4.8-V5-MARGIN-AUTHORITY";
+   if(InpSprint48PreviousSafetyTargetedOnly) return "SPRINT4.8-PREVIOUS-SAFETY";
+   if(InpSprint48MetadataTargetedOnly) return "SPRINT4.8-METADATA-CONFORMANCE";
+   if(InpSprint48RoundTripTargetedOnly) return "SPRINT4.8-TRUE-ROUND-TRIP";
+   if(InpSprint48HistoricalRegressionTargetedOnly) return "SPRINT4.8-HISTORICAL-REGRESSIONS";
+   if(InpSprint48CanonicalIntegrityTargetedOnly) return "SPRINT4.8-CANONICAL-INTEGRITY";
+   if(InpSprint48CanonicalAffectedTargetedOnly) return "SPRINT4.8-CANONICAL-AFFECTED";
+   if(InpSprint48HardKillAuthorityTargetedOnly) return "SPRINT4.8-HARD-KILL-AUTHORITY";
    if(InpSprint47RiskProjectionTargetedOnly) return "SPRINT4.7-RISK-PROJECTION";
    if(InpSprint47NonFiniteTargetedOnly) return "SPRINT4.7-NONFINITE";
    if(InpSprint47HardKillTargetedOnly) return "SPRINT4.7-HARD-KILL-EXPIRY";
@@ -60,11 +82,22 @@ string SWV5_SelectedSuiteName()
    if(InpPhaseCTargetedOnly) return "SPRINT4.5-PHASE-C";
    if(InpPhaseBTargetedOnly) return "SPRINT4.5-PHASE-B";
    if(InpPhaseATargetedOnly) return "SPRINT4.5-PHASE-A";
-   return "SPRINT4.7-FULL";
+   return "SPRINT4.8-V5-FULL";
 }
 
 bool SWV5_RunSelectedSuite()
 {
+   if(InpSprint48B6IdentityTargetedOnly) return SWV5_RunSprint48B6IdentityTargetedVerification();
+   if(InpSprint48B6PersistenceAtomicityTargetedOnly) return SWV5_RunSprint48B6PersistenceAtomicityTargetedVerification();
+   if(InpSprint48B6BasketAuthorityTargetedOnly) return SWV5_RunSprint48B6BasketAuthorityTargetedVerification();
+   if(InpSprint48B6MarginAuthorityTargetedOnly) return SWV5_RunSprint48B6MarginAuthorityTargetedVerification();
+   if(InpSprint48PreviousSafetyTargetedOnly) return SWV5_RunSprint48PreviousSafetyTargetedVerification();
+   if(InpSprint48MetadataTargetedOnly) return SWV5_RunSprint48MetadataTargetedVerification();
+   if(InpSprint48RoundTripTargetedOnly) return SWV5_RunSprint48RoundTripTargetedVerification();
+   if(InpSprint48HistoricalRegressionTargetedOnly) return SWV5_RunSprint48HistoricalRegressionTargetedVerification();
+   if(InpSprint48CanonicalIntegrityTargetedOnly) return SWV5_RunSprint48CanonicalIntegrityTargetedVerification();
+   if(InpSprint48CanonicalAffectedTargetedOnly) return SWV5_RunSprint48CanonicalAffectedTargetedVerification();
+   if(InpSprint48HardKillAuthorityTargetedOnly) return SWV5_RunSprint48HardKillAuthorityTargetedVerification();
    if(InpSprint47RiskProjectionTargetedOnly) return SWV5_RunSprint47RiskProjectionTargetedVerification();
    if(InpSprint47NonFiniteTargetedOnly) return SWV5_RunSprint47NonFiniteTargetedVerification();
    if(InpSprint47HardKillTargetedOnly) return SWV5_RunSprint47HardKillTargetedVerification();
@@ -94,6 +127,7 @@ bool SWV5_RunSelectedSuite()
 int OnInit()
 {
    const string suite=SWV5_SelectedSuiteName();
+   SWV5_TestSetSuiteIdentity(suite);
    Print("SWV5_RUN_METADATA suite="+suite+" fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false");
    g_swv5_contract_tests_passed=SWV5_RunSelectedSuite();
    PrintFormat("SWV5_CONTRACT_TEST_RUNNER verdict=%s",g_swv5_contract_tests_passed ? "PASS" : "FAIL");

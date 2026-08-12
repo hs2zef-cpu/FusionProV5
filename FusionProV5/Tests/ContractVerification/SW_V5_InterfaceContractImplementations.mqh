@@ -27,7 +27,7 @@ void SWV5_TestSetDecision(const SWV5_ContractValidationContext &context,
 class SWV5_TestVersionPolicy : public ISWV5ContractVersionPolicy
 {
 public:
-   virtual string ContractName() { return "ISWV5ContractVersionPolicy/V4"; }
+   virtual string ContractName() { return "ISWV5ContractVersionPolicy/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool EvaluateCompatibility(const SWV5_ContractValidationContext &context,
                                       const SWV5_ContractVersion &candidate,
                                       SWV5_ContractCompatibilityResult &result)
@@ -43,7 +43,7 @@ public:
 class SWV5_TestBasketStateContract : public ISWV5BasketStateMachineContract
 {
 public:
-   virtual string ContractName() { return "ISWV5BasketStateMachineContract/V4"; }
+   virtual string ContractName() { return "ISWV5BasketStateMachineContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateState(const SWV5_ContractValidationContext &context,
                               const SWV5_BasketLifecycleSnapshot &snapshot,
                               SWV5_BasketInvariantReport &report)
@@ -152,7 +152,7 @@ public:
 class SWV5_TestBasketContract : public ISWV5BasketContract
 {
 public:
-   virtual string ContractName() { return "ISWV5BasketContract/V4"; }
+   virtual string ContractName() { return "ISWV5BasketContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateAggregate(const SWV5_ContractValidationContext &context,
                                   const SWV5_BasketAggregate &basket,
                                   SWV5_BasketValidationResult &result)
@@ -189,7 +189,7 @@ public:
 class SWV5_TestExecutionContract : public ISWV5ExecutionContract
 {
 public:
-   virtual string ContractName() { return "ISWV5ExecutionContract/V4"; }
+   virtual string ContractName() { return "ISWV5ExecutionContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateIntent(const SWV5_ContractValidationContext &context,const SWV5_ExecutionIntent &intent,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestIntentValid(context,intent);
@@ -391,7 +391,7 @@ public:
       CopyRequests(requests);
       m_requests_configured=true;
    }
-   virtual string ContractName() { return "ISWV5PersistenceContract/V4"; }
+   virtual string ContractName() { return "ISWV5PersistenceContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateRecord(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
    {
       const bool valid=SWV5_TestPersistenceRecordValid(context,checkpoint);
@@ -457,7 +457,8 @@ public:
    {
       const bool checkpoint_coherent=!m_checkpoint_configured ||
                                      SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace);
-      const bool monotonic_revision=!m_requests_configured || set_header.record_sequence>m_request_set_header.record_sequence;
+      const bool monotonic_revision=(!m_requests_configured || set_header.record_sequence>m_request_set_header.record_sequence) &&
+                                    (!m_checkpoint_configured || set_header.record_sequence>m_checkpoint.header.record_sequence);
       const bool valid=SWV5_TestContextValid(context) && checkpoint_coherent &&
                         monotonic_revision &&
                         RequestSetValid(context,persistence_namespace,requests,set_header);
@@ -476,6 +477,22 @@ public:
                m_checkpoint.latest_pending_request=requests[ArraySize(requests)-1];
              else
                 ZeroMemory(m_checkpoint.latest_pending_request);
+             // The V5 reconciliation vector is part of the persisted source of
+             // truth and must evolve atomically with request-set replacement.
+             m_checkpoint.reconciliation_vector.pending_request_count=set_header.request_count;
+             m_checkpoint.reconciliation_vector.request_set_digest=set_header.request_set_digest;
+             m_checkpoint.reconciliation_vector.request_set_revision=set_header.request_index_revision;
+             m_checkpoint.reconciliation_vector.reconciliation_revision=set_header.record_sequence;
+             m_checkpoint.basket.lifecycle.pending_request_count=set_header.request_count;
+             m_checkpoint.header.previous_record_sequence=m_checkpoint.header.record_sequence;
+             m_checkpoint.header.record_sequence=set_header.record_sequence;
+             m_checkpoint.header.written_at=context.clock_time;
+             m_checkpoint.header.store_revision=SWV5_TestCanonicalHash(
+                SWV5_TestCanonicalField("format","s","SWV5-CHECKPOINT-STORE-REVISION-V5-LP1")+
+                SWV5_TestCanonicalField("prior_store_revision","s",m_checkpoint.header.store_revision)+
+                SWV5_TestCanonicalUnsignedField("record_sequence",m_checkpoint.header.record_sequence)+
+                SWV5_TestCanonicalField("request_set_revision","s",set_header.request_index_revision));
+             m_checkpoint.reconciliation_vector.source_summary_digest=SWV5_TestReconciliationSourceDigest(m_checkpoint.reconciliation_vector);
              SWV5_TestSealCheckpoint(m_checkpoint);
           }
       }
@@ -512,7 +529,7 @@ public:
 class SWV5_TestRiskContract : public ISWV5RiskContract
 {
 public:
-   virtual string ContractName() { return "ISWV5RiskContract/V4"; }
+   virtual string ContractName() { return "ISWV5RiskContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateLimits(const SWV5_ContractValidationContext &context,const SWV5_RiskLimits &limits,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestContextValid(context) && SWV5_TestRiskLimitsComplete(context,limits);
@@ -561,9 +578,9 @@ public:
       authorization.authorized_limit_price=engineInput.intent.normalized_limit_price;
       authorization.risk_snapshot_epoch=engineInput.account_namespace.snapshot_epoch;
       authorization.risk_snapshot_sequence=engineInput.account_namespace.snapshot_sequence;
-      authorization.authorized_projected_loss=engineInput.projected.projected_maximum_loss;
+      authorization.authorized_projected_loss=engineInput.projected.basket_risk_evidence.resulting_basket_maximum_loss;
       authorization.authorized_projected_notional=engineInput.projected.projected_notional;
-      authorization.authorized_projected_margin=engineInput.projected.projected_margin;
+      authorization.authorized_projected_margin=engineInput.projected.margin_evidence.additional_margin;
       authorization.hard_kill_latch_id=engineInput.hard_kill_state.latch_id;
       authorization.hard_kill_latch_generation=engineInput.hard_kill_state.latch_generation;
       authorization.monetary_basis=engineInput.projected.monetary_basis;
@@ -581,9 +598,23 @@ public:
    }
    virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,const SWV5_HardKillState &current_state,const SWV5_HardKillReleaseEvidence &evidence,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestHardKillReleaseValid(context,current_state,evidence) &&
+      return ValidateHardKillReleaseMode(context,current_state,evidence,SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION,decision);
+   }
+   virtual bool ValidateHardKillReleaseMode(const SWV5_ContractValidationContext &context,const SWV5_HardKillState &current_state,const SWV5_HardKillReleaseEvidence &evidence,const SWV5_HardKillReleaseValidationMode mode,SWV5_ContractDecision &decision)
+   {
+      const bool valid=mode==SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION &&
+                       SWV5_TestHardKillReleaseValid(context,current_state,evidence,mode) &&
                        SWV5_TestNamespaceEqual(current_state.persistence_namespace,evidence.persistence_namespace);
       SWV5_TestSetDecision(context,valid,(valid ? "HARD_KILL_RELEASE_VALID" : "HARD_KILL_RELEASE_REJECTED"),decision);
+      return valid;
+   }
+   virtual bool ValidateHistoricalHardKillRelease(const SWV5_ContractValidationContext &context,const SWV5_HardKillState &persisted_state,const SWV5_HardKillReleaseEvidence &checkpoint_evidence,const SWV5_HardKillReleaseAuthorityRecord &authority_record,SWV5_ContractDecision &decision)
+   {
+      const bool valid=SWV5_TestHistoricalHardKillReleaseValid(context,persisted_state,checkpoint_evidence,authority_record);
+      SWV5_TestSetDecision(context,valid,
+                           valid ? "HARD_KILL_HISTORICAL_AUTHORITY_VERIFIED" : "HARD_KILL_HISTORICAL_AUTHORITY_MISMATCH",
+                           decision);
+      if(!valid) decision.disposition=SWV5_DISPOSITION_HALT;
       return valid;
    }
 };
@@ -591,7 +622,7 @@ public:
 class SWV5_TestStatisticsContract : public ISWV5StatisticsContract
 {
 public:
-   virtual string ContractName() { return "ISWV5StatisticsContract/V4"; }
+   virtual string ContractName() { return "ISWV5StatisticsContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateDeal(const SWV5_ContractValidationContext &validation_context,const SWV5_AuthoritativeDeal &deal,const SWV5_StatisticsBuildContext &context,SWV5_ContractDecision &decision)
    {
       const bool valid=SWV5_TestDealValid(deal,context);
@@ -651,7 +682,7 @@ public:
 class SWV5_TestOwnershipContract : public ISWV5InstanceOwnershipContract
 {
 public:
-   virtual string ContractName() { return "ISWV5InstanceOwnershipContract/V4"; }
+   virtual string ContractName() { return "ISWV5InstanceOwnershipContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool Acquire(const SWV5_ContractValidationContext &context,const SWV5_OwnershipClaim &claim,const SWV5_InstanceLease &observed,SWV5_OwnershipDecision &decision)
    {
       const bool unclaimed=observed.status==SWV5_LOCK_UNCLAIMED;
@@ -679,7 +710,7 @@ public:
          if(observed.status==SWV5_LOCK_EXPIRED)
             decision.resulting_lease.fence.takeover_generation=claim.takeover_evidence.proposed_takeover_generation;
          decision.resulting_lease.fence.fencing_token_digest=SWV5_TestCanonicalHash(
-             SWV5_TestCanonicalField("format","s","SWV5-OWNERSHIP-FENCE-V4")+
+             SWV5_TestCanonicalField("format","s","SWV5-OWNERSHIP-FENCE-V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION))+
              SWV5_TestCanonicalField("ownership_namespace","x",SWV5_TestCanonicalOwnershipKey(claim.claimant.key))+
              SWV5_TestCanonicalField("owner","x",SWV5_TestCanonicalOwner(claim.claimant))+
              SWV5_TestCanonicalUnsignedField("lease_version",decision.resulting_lease.fence.lease_version)+
@@ -745,7 +776,7 @@ public:
 class SWV5_TestUnitSystemContract : public ISWV5UnitSystemContract
 {
 public:
-   virtual string ContractName() { return "ISWV5UnitSystemContract/V4"; }
+   virtual string ContractName() { return "ISWV5UnitSystemContract/V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION); }
    virtual bool ValidateSpecification(const SWV5_ContractValidationContext &context,const SWV5_SymbolUnitSpecification &specification,SWV5_UnitValidationResult &result)
    {
       const bool valid=SWV5_TestSpecificationValid(context,specification);

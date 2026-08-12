@@ -1,4 +1,4 @@
-# Sprint 4.7 Phase A V4 Candidate Interface Coverage Matrix
+# Sprint 4.8 Phase B6 V5 Candidate Interface Coverage Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -28,3 +28,17 @@ The concrete implementations are deterministic in-memory test doubles marked `TE
 - `ISWV5PersistenceContract.ValidateRecord` and `ReconcileRestart`: S47-CHK-01 through S47-CHK-18.
 
 These cases prove the public test-only implementations against causal projection, non-finite, exclusive-expiry, resealed-semantic-corruption, and invalid-enum adversaries.
+
+## Sprint 4.8 Phase B5 V5 additions
+
+- `ISWV5RiskContract.Evaluate` and its canonical reference validation: S48-MARGIN-01 through S48-MARGIN-15, S48-LOSS-01 through S48-LOSS-15, and S48-NOTIONAL-01 through S48-NOTIONAL-10.
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-RST-01 through S48-RST-20 and S48-HKA-*.
+- `ISWV5RiskContract.ValidateHardKillRelease` plus independent release-authority validation: S48-HKR-* and S48-HKA-*.
+- The test-only decoder does not add a production interface. S48-RT-V5-01 through V5-07 reconstruct the seven required DTOs from canonical strings; S48-RT-NEG-01 through NEG-11 enforce parser failure boundaries.
+- S48-CAN-* verifies canonical-field coverage as supporting pure-function evidence. S48-META-01 verifies machine identity against the compiled V5 constants.
+
+## Sprint 4.8 Phase B6 additions
+
+- `ISWV5RiskContract.Evaluate`: S48-MAUTH-01 through S48-MAUTH-15 and S48-BAUTH-01 through S48-BAUTH-15 verify independently supplied Broker Margin and Risk Governance authority boundaries.
+- `ISWV5PersistenceContract.SavePendingRequests`, `LoadLatest`, and `LoadPendingRequests`: S48-PAT-01 through S48-PAT-12 verify successful and failed replacement atomicity.
+- Every active test-only implementation `ContractName()`: S48-ID-01 through S48-ID-09; S48-ID-10 through S48-ID-12 cover result, serializer, suite and decoder identities.

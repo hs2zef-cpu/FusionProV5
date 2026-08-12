@@ -1,4 +1,4 @@
-# Sprint 4.7 Phase A V4 Candidate Verification Traceability Matrix
+# Sprint 4.8 Phase B6 V5 Candidate Verification Traceability Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -46,3 +46,27 @@ Phase E1 adds `S46E1-01` through `S46E1-15` for typed fingerprint policy, exact 
 The per-ID credibility category and mutation-resistance rationale are authoritative in `TEST_CREDIBILITY_MATRIX.md`.
 
 Sprint 4.7 Phase A retains the unlocked V4 candidate shape. It adds canonical validation behavior only; no DTO or interface signature changed.
+
+## Sprint 4.8 Phase B5 V5 traceability
+
+| Requirement | Contract field/interface | Executable IDs | Material evidence |
+|---|---|---|---|
+| Additional broker-authoritative margin | `SWV5_MarginProjectionEvidence`; Risk evaluation | S48-MARGIN-01 through S48-MARGIN-15 | Complete request/account/namespace/fence/spec/freshness binding and `projected = current + additional`; tiny positive understatement denies. |
+| Complete resulting Basket loss | `SWV5_BasketRiskProjectionEvidence`, nested `SWV5_RiskMonetaryBasis` | S48-LOSS-01 through S48-LOSS-15 | Existing + incremental + adjustment = resulting maximum; full monetary/source/freshness identity bound. |
+| Aggregate notional | `SWV5_SymbolUnitSpecification`, Risk projection | S48-NOTIONAL-01 through S48-NOTIONAL-10 | Contract size, calculation mode, price, volume, conversion and specification sequence all materially enforced. |
+| Restart semantic authority | `ReconcileRestart`, persisted reconciliation vector, broker summary | S48-RST-01 through S48-RST-20 | Only clean MATCHED exact-V5 complete reconciliation is safe; dirty/unresolved/incomplete/mismatch states halt or reconcile. |
+| Independent Hard Kill release authority | `SWV5_HardKillReleaseAuthorityRecord`, `ValidateHardKillRelease`, restart | S48-HKR-*, S48-HKA-* | Checkpoint content integrity cannot originate release authority; missing/forged/stale authority fails closed. |
+| Canonical V5 field coverage | V5 DTO serializers/digests | S48-CAN-* | Typed length-prefixed, ordered, nested canonical binding covers all authoritative fields. |
+| True reconstructive round trip | Seven required V5 DTOs and test-side LP1 decoder | S48-RT-V5-01 through V5-07 | Serialized input alone constructs a brand-new DTO; exact bytes and digest must match. |
+| Decoder fail-closed boundary | LP1 name/type/length/order/nesting/scalars/version | S48-RT-NEG-01 through NEG-11 | Every malformed/truncated/unsupported input is rejected with no default-field reconstruction. |
+| Machine metadata identity | `SWV5_PRODUCTION_CONTRACT_VERSION`, `SWV5_PRODUCTION_CONTRACT_POLICY` | S48-META-01 | Reported V5 schema/policy derive from the single compiled source of truth. |
+
+## Sprint 4.8 Phase B6 traceability
+
+| Requirement | Contract field/interface | Executable IDs | Material evidence |
+|---|---|---|---|
+| Independent broker margin authority | `SWV5_MarginAuthorityRecord`, projection authority reference, `ISWV5RiskContract.Evaluate` | S48-MAUTH-01 through S48-MAUTH-15 | Missing or mismatched authority denies; a coherently resealed tiny caller projection cannot override the unchanged Broker Adapter record. |
+| Independent resulting-Basket-risk authority | `SWV5_BasketRiskAuthorityRecord`, source snapshot identity/digest, projection authority reference | S48-BAUTH-01 through S48-BAUTH-15 | Understated caller projection and arbitrary source identity deny against unchanged Risk Governance authority, including impaired-Basket scenarios. |
+| Atomic request-set replacement | Checkpoint header, request set/latest, Basket pending count, reconciliation vector/revision/source digest, CAS revision | S48-PAT-01 through S48-PAT-12, S45DP-16, S44-10 through S44-11 | A-to-B and empty replacement publish one coherent checkpoint; rejected replacement preserves the previous checkpoint. |
+| V5 identity closure | All test-only `ContractName()` methods, serializer/result/suite identities, decoder exact version | S48-ID-01 through S48-ID-12 | Active identities derive V5 from canonical constants; historical V4 input remains fail-closed. |
+| New authority canonical coverage | Typed LP1 serializers/digests for both authority DTOs | S48-CAN-AUTH-01 through S48-CAN-AUTH-02 | Every authority field changes its digest; only the self-digest is excluded. |
