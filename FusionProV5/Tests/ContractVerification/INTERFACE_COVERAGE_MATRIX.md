@@ -1,4 +1,4 @@
-# Sprint 4.6 Phase E1 V4 Candidate Interface Coverage Matrix
+# Sprint 4.7 Phase A V4 Candidate Interface Coverage Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -17,3 +17,14 @@
 Phase E1 direct coverage adds persistence `ValidateRecord`, `SaveCheckpoint`, `Configure`, and `LoadLatest` cases `S46E1-16` through `S46E1-18`, Statistics `AccumulateDeal` case `S46E1-19`, and Execution `AcceptTransactionEvidence` case `S46E1-20`. The pure canonical integrity, classification, and append reference path is covered by `S46E1-01` through `S46E1-15`.
 
 The concrete implementations are deterministic in-memory test doubles marked `TEST ONLY`, `NOT FOR PRODUCTION`, and `NO BROKER ACCESS`. Interface compilation proves signature conformance; behavioral credibility is assessed separately in `TEST_CREDIBILITY_MATRIX.md`.
+
+## Sprint 4.7 Phase A additions
+
+- `ISWV5RiskContract.Evaluate`: S47-RISK-01 through S47-RISK-18 and S47-NUM-01 through S47-NUM-11.
+- `ISWV5RiskContract.ValidateHardKillRelease`: S47-HK-01 through S47-HK-07.
+- `ISWV5ExecutionContract.AcceptTransactionEvidence`: S47-NUM-12 through S47-NUM-17.
+- `ISWV5ExecutionContract.EvaluateRetry`: S47-RETRY-01 through S47-RETRY-12.
+- `ISWV5PersistenceContract.SavePendingRequests`: S47-NUM-18.
+- `ISWV5PersistenceContract.ValidateRecord` and `ReconcileRestart`: S47-CHK-01 through S47-CHK-18.
+
+These cases prove the public test-only implementations against causal projection, non-finite, exclusive-expiry, resealed-semantic-corruption, and invalid-enum adversaries.

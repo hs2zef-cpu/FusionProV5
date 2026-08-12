@@ -6,6 +6,14 @@
 #define SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION 4
 #define SWV5_PRODUCTION_CONTRACT_POLICY "SWV5-PRODUCTION-V4"
 
+// Canonical numeric safety boundary for all Production Contract validators.
+// Comparisons are never a substitute for this check because NaN can evade
+// ordinary ordered comparisons.
+bool SWV5_IsFiniteNumber(const double value)
+{
+   return MathIsValidNumber(value);
+}
+
 enum SWV5_AccountPositionMode
 {
    SWV5_ACCOUNT_MODE_UNKNOWN = 0,

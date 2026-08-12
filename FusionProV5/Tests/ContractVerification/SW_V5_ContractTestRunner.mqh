@@ -683,7 +683,7 @@ bool SWV5_TestPER02Behavior()
    SWV5_PersistedCheckpoint loaded;
    const bool original_preserved=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
                                  loaded.basket.lifecycle.cumulative_recovery_attempts==checkpoint.basket.lifecycle.cumulative_recovery_attempts &&
-                                 SWV5_TestPersistenceRecordValid(loaded);
+                                 SWV5_TestPersistenceRecordValid(context,loaded);
    return baseline_valid && stale_digest_retained && rejected && original_preserved;
 }
 
@@ -751,6 +751,7 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             engineInput.persisted.has_latest_pending_request=true;
             engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(engineInput.persisted);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                    readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="uncertain_requires_reconciliation";
@@ -767,6 +768,7 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             break;
          case 12:
             SWV5_TestMakeHardKill(engineInput.persisted.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
+            SWV5_TestSealCheckpoint(engineInput.persisted);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                    readiness==SWV5_RESTART_CLOSE_ONLY;
             expected="active_latch_close_only";
@@ -779,6 +781,7 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             engineInput.persisted.has_latest_pending_request=true;
             engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(engineInput.persisted);
             passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
                    readiness==SWV5_RESTART_HALTED;
             expected="payload_digest_conflict";
@@ -787,8 +790,9 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             engineInput.persistence_namespace.ownership_namespace.broker_identity="";
             engineInput.persisted.header.persistence_namespace=engineInput.persistence_namespace;
             engineInput.broker.persistence_namespace=engineInput.persistence_namespace;
-            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT;
-            expected="composite_namespace_required";
+            SWV5_TestSealCheckpoint(engineInput.persisted);
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,readiness)==SWV5_RECONCILIATION_CORRUPT_HALT && readiness==SWV5_RESTART_HALTED;
+            expected="semantically_invalid_composite_namespace_halts";
             break;
          case 15:
             ArrayResize(pending_requests,1);
@@ -798,9 +802,10 @@ void SWV5_RunPersistenceTests(SWV5_TestCollector &collector)
             engineInput.persisted.has_latest_pending_request=true;
             engineInput.persisted.latest_pending_request=pending_requests[0];
             engineInput.broker.pending_request_count=1;
-            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+            SWV5_TestSealCheckpoint(engineInput.persisted);
+            passed=SWV5_TestInterfaceRestart(implementation,context,engineInput,pending_requests,readiness)==SWV5_RECONCILIATION_CORRUPT_HALT &&
                    readiness==SWV5_RESTART_HALTED;
-            expected="membership_conflict";
+            expected="semantically_invalid_membership_halts";
             break;
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("PER",number),"PERSISTENCE",passed,expected);
@@ -1152,6 +1157,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             restart.persisted.has_latest_pending_request=true;
             restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(restart.persisted);
             passed=SWV5_TestInterfaceRestart(persistence_contract,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
                    readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="uncertain_restart_reconciles_no_blind_retry";
@@ -1238,6 +1244,7 @@ void SWV5_RunCrossDomainTests(SWV5_TestCollector &collector)
             restart.persisted.has_latest_pending_request=true;
             restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(restart.persisted);
             passed=acknowledgement_ok && acknowledgement.status==SWV5_CONFIRMATION_PENDING &&
                    acknowledgement.evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY &&
                    !acknowledgement.event_identity_added &&
@@ -1778,9 +1785,9 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             restart.persisted.pending_request_set.request_set_digest="PENDING-SET";
             restart.persisted.latest_pending_request.pending_request.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN;
             SWV5_RestartReadinessDisposition readiness;
-            passed=SWV5_TestInterfaceRestart(persistence,context,restart,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,readiness)==SWV5_RECONCILIATION_CORRUPT_HALT &&
                    readiness==SWV5_RESTART_HALTED;
-            expected="uncertain_request_halted";
+            expected="unsealed_uncertain_request_corrupt_halt";
             break;
          }
          case 9:
@@ -1964,10 +1971,12 @@ void SWV5_RunInterfaceCorrectionTests(SWV5_TestCollector &collector)
             restart.persisted.has_latest_pending_request=true;
             restart.persisted.latest_pending_request=pending_requests[0];
             restart.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(restart.persisted);
             SWV5_RestartReadinessDisposition readiness;
-            passed=SWV5_TestInterfaceRestart(persistence,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT &&
+            SWV5_TestSealCheckpoint(restart.persisted);
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,pending_requests,readiness)==SWV5_RECONCILIATION_CORRUPT_HALT &&
                    readiness==SWV5_RESTART_HALTED;
-            expected="persisted_mode_mismatch_rejected";
+            expected="persisted_mode_mismatch_corrupt_halt";
             break;
          }
          case 29:
@@ -2214,6 +2223,8 @@ void SWV5_RunPersistenceRoundTripTests(SWV5_TestCollector &collector)
             saved[0].pending_request.cumulative_confirmed_volume=0.04;
             saved[0].pending_request.residual_requested_volume=0.06;
             saved[0].pending_request.latest_authoritative_confirmation.correlation.phase=SWV5_EXECUTION_PHASE_PARTIAL_FILL;
+            saved[0].pending_request.latest_authoritative_confirmation.correlation.broker_identity.broker_event_id="EVENT-PARTIAL-0001";
+            saved[0].pending_request.latest_authoritative_confirmation.correlation.broker_identity.transaction_sequence=401;
             saved[0].pending_request.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_PARTIAL;
             saved[0].pending_request.latest_authoritative_confirmation.cumulative_confirmed_volume=0.04;
             saved[0].pending_request.latest_authoritative_confirmation.residual_volume=0.06;
@@ -2451,6 +2462,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             restart.persisted.has_latest_pending_request=true;
             restart.persisted.latest_pending_request=requests[1];
             restart.broker.pending_request_count=2;
+            SWV5_TestSealCheckpoint(restart.persisted);
             SWV5_RestartReadinessDisposition readiness;
             passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RECONCILIATION_REQUIRED;
             expected="multi_request_uncertain_reconcile";
@@ -2469,6 +2481,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             restart.persisted.has_latest_pending_request=true;
             restart.persisted.latest_pending_request=requests[0];
             restart.broker.pending_request_count=1;
+            SWV5_TestSealCheckpoint(restart.persisted);
             SWV5_RestartReadinessDisposition readiness;
             passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_RETRY_FORBIDDEN;
             expected="pending_retry_forbidden";
@@ -2479,6 +2492,7 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             SWV5_RestartReconciliationInput restart;
             SWV5_TestMakeRestartInput(restart);
             SWV5_TestMakeHardKill(restart.persisted.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
+            SWV5_TestSealCheckpoint(restart.persisted);
             SWV5_PersistedRequestEvidence requests[];
             ArrayResize(requests,0);
             SWV5_RestartReadinessDisposition readiness;
@@ -2502,8 +2516,9 @@ void SWV5_RunSprint44SemanticTests(SWV5_TestCollector &collector)
             restart.persisted.latest_pending_request=requests[0];
             restart.broker.pending_request_count=1;
             SWV5_RestartReadinessDisposition readiness;
-            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_CONFLICT_HALT && readiness==SWV5_RESTART_HALTED;
-            expected="partial_residual_mismatch_halts";
+            SWV5_TestSealCheckpoint(restart.persisted);
+            passed=SWV5_TestInterfaceRestart(persistence,context,restart,requests,readiness)==SWV5_RECONCILIATION_CORRUPT_HALT && readiness==SWV5_RESTART_HALTED;
+            expected="partial_residual_semantic_corruption_halts";
             break;
          }
          case 6:
@@ -4020,7 +4035,7 @@ void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
       string expected="mutation_rejected";
       if(number==1)
       {
-         passed=SWV5_TestPersistenceRecordValid(checkpoint) &&
+         passed=SWV5_TestPersistenceRecordValid(context,checkpoint) &&
                 checkpoint.header.payload_digest==SWV5_TestCheckpointPayloadDigest(checkpoint) &&
                 checkpoint.header.payload_size==SWV5_TestCheckpointPayloadSize(checkpoint);
          expected="valid_canonical_checkpoint";
@@ -4058,7 +4073,7 @@ void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
          checkpoint.latest_pending_request.pending_request.authorization_identity="AUTH|:;, spaces\n雪";
          other.latest_pending_request.pending_request.authorization_identity="AUTH|:;, spaces\n雪";
          SWV5_TestSealCheckpoint(checkpoint); SWV5_TestSealCheckpoint(other);
-         passed=SWV5_TestPersistenceRecordValid(checkpoint) && SWV5_TestPersistenceRecordValid(other) &&
+         passed=SWV5_TestPersistenceRecordValid(context,checkpoint) && SWV5_TestPersistenceRecordValid(context,other) &&
                 checkpoint.header.payload_digest==other.header.payload_digest && checkpoint.header.payload_size==other.header.payload_size;
          expected="unicode_delimiter_payload_deterministic";
       }
@@ -4076,7 +4091,7 @@ void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
          SWV5_TestSealCheckpoint(checkpoint);
          const string digest_a=checkpoint.header.payload_digest;
          checkpoint.latest_pending_request.pending_request.authorization_identity="NESTED-B";
-         passed=!SWV5_TestPersistenceRecordValid(checkpoint) && digest_a!=SWV5_TestCheckpointPayloadDigest(checkpoint);
+         passed=!SWV5_TestPersistenceRecordValid(context,checkpoint) && digest_a!=SWV5_TestCheckpointPayloadDigest(checkpoint);
          expected="one_nested_character_changes_digest";
       }
       else if(number==16)
@@ -4604,6 +4619,239 @@ void SWV5_RunSprint46RetryFreshnessTests(SWV5_TestCollector &collector)
    }
 }
 
+void SWV5_RunSprint47RiskProjectionTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=18;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+      SWV5_TestRiskContract implementation; SWV5_RiskAuthorization authorization;
+      bool expect_allow=(number==1 || number==18);
+      if(number==2) engineInput.projected.projected_volume=0.0;
+      if(number==3) engineInput.projected.projected_symbol_volume=engineInput.exposure.symbol_long_volume+engineInput.exposure.symbol_short_volume;
+      if(number==4) engineInput.projected.projected_aggregate_volume=engineInput.exposure.aggregate_volume;
+      if(number==5) engineInput.projected.projected_notional=0.0;
+      if(number==6) engineInput.projected.projected_margin=0.0;
+      if(number==7) engineInput.account.free_margin=engineInput.projected.projected_margin-context.price_tolerance*2.0;
+      if(number==8) engineInput.account.margin=engineInput.account.equity*engineInput.limits.maximum_account_margin_fraction-engineInput.projected.projected_margin+1.0;
+      if(number==9)
+      {
+         engineInput.intent.intent_type=SWV5_INTENT_INCREASE;
+         SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_ACTIVE);
+         engineInput.projected.projected_volume=engineInput.basket.lifecycle.aggregate_open_volume;
+      }
+      if(number==10)
+      {
+         engineInput.intent.intent_type=SWV5_INTENT_REDUCE;
+         SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_ACTIVE);
+         engineInput.projected.projected_volume=0.40;
+         engineInput.projected.projected_symbol_volume=0.20;
+         engineInput.projected.projected_aggregate_volume=0.20;
+         engineInput.projected.projected_notional=480.0;
+         engineInput.projected.projected_margin=0.0;
+      }
+      if(number==11)
+      {
+         engineInput.intent.intent_type=SWV5_INTENT_CLOSE; engineInput.intent.normalized_volume=0.30;
+         SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_ACTIVE);
+         engineInput.projected.projected_volume=0.01; engineInput.projected.projected_symbol_volume=0.0;
+         engineInput.projected.projected_aggregate_volume=0.0; engineInput.projected.projected_notional=0.0; engineInput.projected.projected_margin=0.0;
+      }
+      if(number==12)
+      {
+         engineInput.intent.intent_type=SWV5_INTENT_CANCEL_PENDING; engineInput.intent.direction=0;
+         engineInput.intent.normalized_volume=0.0; engineInput.intent.normalized_price=0.0;
+         engineInput.intent.normalized_stop_price=0.0; engineInput.intent.normalized_limit_price=0.0;
+         engineInput.projected.projected_volume=0.10; engineInput.projected.projected_symbol_volume=0.30;
+         engineInput.projected.projected_aggregate_volume=0.30; engineInput.projected.projected_notional=720.0;
+         engineInput.projected.projected_margin=0.0; engineInput.projected.projected_maximum_loss=0.0;
+      }
+      if(number==13) engineInput.projected.projected_symbol_volume=engineInput.projected.projected_volume-context.volume_tolerance*2.0;
+      if(number==14) engineInput.projected.projected_aggregate_volume=engineInput.projected.projected_symbol_volume-context.volume_tolerance*2.0;
+      if(number==15) engineInput.projected.projected_maximum_loss=0.0;
+      if(number==16) engineInput.exposure.account_namespace.server="FOREIGN-SERVER";
+      if(number==17) engineInput.exposure.symbol_long_volume=0.20;
+      if(number==18)
+      {
+         engineInput.projected.projected_volume-=context.volume_tolerance*0.5;
+         engineInput.projected.projected_symbol_volume-=context.volume_tolerance*0.5;
+         engineInput.projected.projected_aggregate_volume-=context.volume_tolerance*0.5;
+         engineInput.projected.projected_notional-=context.price_tolerance*0.5;
+      }
+      const bool allowed=implementation.Evaluate(context,engineInput,authorization);
+      const bool passed=(expect_allow ? allowed && authorization.disposition==SWV5_RISK_ALLOW :
+                                       !allowed && authorization.disposition!=SWV5_RISK_ALLOW && authorization.authorization_id=="");
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S47-RISK",number),"SPRINT4_7_RISK_PROJECTION",passed,
+                               expect_allow ? "causally_bound_projection_allowed" : "understated_or_incoherent_projection_rejected");
+   }
+}
+
+void SWV5_RunSprint47NonFiniteTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=18;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      bool passed=false;
+      if(number<=11)
+      {
+         SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
+         const double nan=SWV5_TestNaN();
+         if(number==1) engineInput.intent.normalized_volume=nan;
+         if(number==2) engineInput.intent.normalized_price=nan;
+         if(number==3) engineInput.projected.projected_volume=nan;
+         if(number==4) engineInput.projected.projected_symbol_volume=nan;
+         if(number==5) engineInput.projected.projected_aggregate_volume=nan;
+         if(number==6) engineInput.projected.projected_notional=nan;
+         if(number==7) engineInput.projected.projected_margin=nan;
+         if(number==8) engineInput.projected.projected_maximum_loss=nan;
+         if(number==9) engineInput.account.equity=nan;
+         if(number==10) engineInput.account.free_margin=nan;
+         if(number==11) engineInput.limits.maximum_basket_loss=nan;
+         SWV5_TestRiskContract implementation; SWV5_RiskAuthorization authorization;
+         passed=!implementation.Evaluate(context,engineInput,authorization) && authorization.disposition!=SWV5_RISK_ALLOW && authorization.authorization_id=="";
+      }
+      else if(number<=17)
+      {
+         SWV5_PendingRequest pending; SWV5_TestMakePending(pending);
+         SWV5_TransactionEvidence evidence;
+         if(number>=16) SWV5_TestMakeAcknowledgementTransaction(pending,evidence);
+         else SWV5_TestMakeTransaction(pending,evidence,0.04);
+         if(number==12 || number==16) evidence.confirmed_volume=SWV5_TestNaN();
+         if(number==13 || number==17) evidence.confirmed_price=SWV5_TestNaN();
+         if(number==14) evidence.confirmed_volume=SWV5_TestPositiveInfinity();
+         if(number==15) evidence.confirmed_price=SWV5_TestPositiveInfinity();
+         SWV5_TestExecutionContract implementation;
+         passed=SWV5_TestExecutionRejectsWithoutMutation(implementation,context,pending,evidence);
+      }
+      else
+      {
+         SWV5_PersistedRequestEvidence requests[]; ArrayResize(requests,1); SWV5_TestMakePersistedRequest(requests[0],1);
+         requests[0].pending_request.latest_authoritative_confirmation.cumulative_confirmed_volume=SWV5_TestNaN();
+         SWV5_PersistedRequestSetHeader header; SWV5_TestBindRequestSetHeader(header,requests,50);
+         SWV5_TestPersistenceContract implementation; SWV5_ContractDecision decision;
+         passed=!implementation.SavePendingRequests(context,requests[0].persistence_namespace,requests,header,decision);
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S47-NUM",number),"SPRINT4_7_NONFINITE",passed,"nonfinite_rejected_without_authoritative_mutation");
+   }
+}
+
+void SWV5_RunSprint47HardKillExpiryTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=7;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_HardKillState state; SWV5_TestMakeValidHardKillRelease(state);
+      SWV5_HardKillReleaseEvidence evidence=state.release_evidence;
+      if(number==2 || number==7) context.clock_time=evidence.expires_at;
+      if(number==3) context.clock_time=evidence.expires_at+1;
+      if(number==4) evidence.expires_at=evidence.approved_at;
+      if(number==5) evidence.expires_at=0;
+      if(number==6) evidence.expires_at=evidence.approved_at-1;
+      const SWV5_HardKillState original=state;
+      SWV5_TestRiskContract implementation; SWV5_ContractDecision decision;
+      const bool allowed=implementation.ValidateHardKillRelease(context,state,evidence,decision);
+      bool passed=(number==1 ? allowed && decision.disposition==SWV5_DISPOSITION_ALLOW :
+                               !allowed && decision.disposition!=SWV5_DISPOSITION_ALLOW);
+      if(number==7) passed=passed && state.state==original.state && state.latch_id==original.latch_id &&
+                                     state.latch_generation==original.latch_generation && state.release_generation==original.release_generation;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S47-HK",number),"SPRINT4_7_HARD_KILL_EXPIRY",passed,
+                               number==1 ? "exclusive_interval_valid" : "expired_or_invalid_release_denied_latch_unchanged");
+   }
+}
+
+void SWV5_TestPrepareCheckpointPending(SWV5_RestartReconciliationInput &restart,
+                                        SWV5_PersistedRequestEvidence &request)
+{
+   SWV5_TestMakePersistedRequest(request,1);
+   SWV5_PersistedRequestEvidence requests[]; ArrayResize(requests,1); requests[0]=request;
+   SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
+   restart.persisted.has_latest_pending_request=true;
+   restart.persisted.latest_pending_request=request;
+   restart.broker.pending_request_count=1;
+}
+
+void SWV5_RunSprint47CheckpointSemanticTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=18;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_RestartReconciliationInput restart; SWV5_TestMakeRestartInput(restart);
+      SWV5_PersistedRequestEvidence requests[]; ArrayResize(requests,0);
+      const bool pending_case=(number==3 || number==4 || number==8 || number==9 || number==10 || number==11 || number==12 || number==13);
+      if(pending_case)
+      {
+         ArrayResize(requests,1); SWV5_TestPrepareCheckpointPending(restart,requests[0]);
+         if(number==3) requests[0].pending_request.lifecycle_phase=(SWV5_ExecutionLifecyclePhase)99;
+         if(number==4) requests[0].pending_request.retry_disposition=(SWV5_RetryDisposition)99;
+         if(number==8) requests[0].account_mode=(SWV5_AccountPositionMode)99;
+         if(number==9) requests[0].pending_request.residual_requested_volume=-0.01;
+         if(number==10) requests[0].pending_request.cumulative_confirmed_volume=requests[0].pending_request.intent.normalized_volume+0.01;
+         if(number==11) requests[0].pending_request.intent.intent_type=(SWV5_ExecutionIntentType)99;
+         if(number==12) requests[0].pending_request.intent.direction=2;
+         if(number==13)
+         {
+            requests[0].pending_request.accepted_event_identities.canonical_event_index="impossible";
+            requests[0].pending_request.accepted_event_identities.identity_set_digest=SWV5_TestEventSetDigest(requests[0].pending_request.accepted_event_identities);
+         }
+         SWV5_TestBindRequestSetHeader(restart.persisted.pending_request_set,requests,50);
+         restart.persisted.latest_pending_request=requests[0];
+      }
+      if(number==1) restart.persisted.hard_kill_state.state=(SWV5_HardKillLatchState)99;
+      if(number==2) restart.persisted.basket.lifecycle.state=(SWV5_BasketState)99;
+      if(number==5) restart.persisted.last_confirmed_correlation.phase=(SWV5_ExecutionLifecyclePhase)99;
+      if(number==6) SWV5_TestSetForeignContractIdentity(restart.persisted.header.contract_version);
+      if(number==7) restart.persisted.header.persistence_namespace.ownership_namespace.server="FOREIGN-SERVER";
+      if(number==14) restart.persisted.hard_kill_state.state=SWV5_HARD_KILL_ACTIVE;
+      if(number==15)
+      {
+         restart.persisted.hard_kill_state.state=SWV5_HARD_KILL_RELEASE_PENDING;
+         restart.persisted.hard_kill_state.release_evidence.release_id="RELEASE-INVALID";
+         restart.persisted.hard_kill_state.release_evidence.release_generation=restart.persisted.hard_kill_state.release_generation;
+      }
+      if(number==16) restart.persisted.header.ownership_fence.ownership_namespace.server="FOREIGN-SERVER";
+      SWV5_TestSealCheckpoint(restart.persisted);
+      if(number==17) restart.persistence_namespace.ownership_namespace.server="FOREIGN-SERVER";
+      if(number==18) restart.broker.persistence_namespace.ownership_namespace.server="FOREIGN-SERVER";
+      const bool integrity_valid=restart.persisted.header.payload_digest==SWV5_TestCheckpointPayloadDigest(restart.persisted) &&
+                                 restart.persisted.header.payload_size==SWV5_TestCheckpointPayloadSize(restart.persisted);
+      SWV5_TestPersistenceContract implementation; SWV5_RestartReadinessDisposition readiness;
+      const SWV5_ReconciliationStatus status=SWV5_TestInterfaceRestart(implementation,context,restart,requests,readiness);
+      const bool passed=integrity_valid && readiness!=SWV5_RESTART_SAFE_TO_RESUME &&
+                        status!=SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED;
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S47-CHK",number),"SPRINT4_7_CHECKPOINT_SEMANTICS",passed,
+                               "resealed_integrity_valid_semantic_corruption_halts_restart");
+   }
+}
+
+void SWV5_RunSprint47RetryEnumTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=12;number++)
+   {
+      SWV5_ContractValidationContext context; SWV5_TestMakeContext(context);
+      SWV5_PendingRequest pending; SWV5_TestMakeRetryCandidate(pending); const SWV5_PendingRequest original=pending;
+      SWV5_RetryPolicy policy; SWV5_TestMakeRetryPolicy(context,policy);
+      SWV5_RetryRiskFreshnessEvidence risk; SWV5_TestMakeRetryRiskEvidence(context,pending,risk);
+      SWV5_RetryNormalizationFreshnessEvidence normalization; SWV5_TestMakeRetryNormalizationEvidence(context,pending,normalization);
+      const bool expect_allow=(number==1 || number==11 || number==12);
+      if(number==2) pending.lifecycle_phase=(SWV5_ExecutionLifecyclePhase)99;
+      if(number==3) policy.disposition=(SWV5_RetryDisposition)99;
+      if(number==4) { pending.lifecycle_phase=(SWV5_ExecutionLifecyclePhase)99; pending.latest_retcode.correlation.phase=(SWV5_ExecutionLifecyclePhase)99; }
+      if(number==5) { pending.retry_disposition=(SWV5_RetryDisposition)99; policy.disposition=(SWV5_RetryDisposition)99; }
+      if(number==6) pending.latest_retcode_classification.classification=(SWV5_ResultRetcodeClass)99;
+      if(number==7) pending.latest_retcode.correlation.phase=(SWV5_ExecutionLifecyclePhase)99;
+      if(number==8) { pending.lifecycle_phase=SWV5_EXECUTION_PHASE_COMPLETED; pending.state=SWV5_REQUEST_CONFIRMED; }
+      if(number==9) { pending.lifecycle_phase=SWV5_EXECUTION_PHASE_UNCERTAIN; pending.state=SWV5_REQUEST_RECONCILIATION_REQUIRED; }
+      if(number==10) pending.latest_authoritative_confirmation.status=SWV5_CONFIRMATION_CONFLICT;
+      SWV5_TestExecutionContract implementation; SWV5_ContractDecision decision;
+      const bool allowed=implementation.EvaluateRetry(context,pending,policy,risk,normalization,decision);
+      bool passed=(expect_allow ? allowed && decision.disposition==SWV5_DISPOSITION_ALLOW :
+                                 !allowed && decision.disposition==SWV5_DISPOSITION_DENY);
+      if(number==12) passed=passed && SWV5_TestPendingRequestEqual(pending,original);
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S47-RETRY",number),"SPRINT4_7_RETRY_ENUM",passed,
+                               expect_allow ? "explicit_retry_whitelist_allowed_without_mutation" : "unknown_or_ineligible_enum_denied");
+   }
+}
+
 void SWV5_RunContractSuite(SWV5_TestCollector &collector)
 {
    SWV5_RunCommonTests(collector);
@@ -4621,6 +4869,11 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunSprint46DurableIdentityTests(collector);
    SWV5_RunSprint46FingerprintUniquenessTests(collector);
    SWV5_RunSprint46RetryFreshnessTests(collector);
+   SWV5_RunSprint47RiskProjectionTests(collector);
+   SWV5_RunSprint47NonFiniteTests(collector);
+   SWV5_RunSprint47HardKillExpiryTests(collector);
+   SWV5_RunSprint47CheckpointSemanticTests(collector);
+   SWV5_RunSprint47RetryEnumTests(collector);
    SWV5_RunSprint45RecoveryValidationTests(collector);
    SWV5_RunSprint45UnclaimedAcquireTests(collector);
    SWV5_RunSprint45RiskBindingTests(collector);
@@ -4647,7 +4900,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==561 && first.Skipped()==0;
+   const bool complete=first.Total()==634 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -4983,6 +5236,61 @@ bool SWV5_RunS4421TargetedVerification()
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
                deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint47RiskProjectionTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint47RiskProjectionTests(first); SWV5_RunSprint47RiskProjectionTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==18 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint47NonFiniteTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint47NonFiniteTests(first); SWV5_RunSprint47NonFiniteTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==18 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint47HardKillTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint47HardKillExpiryTests(first); SWV5_RunSprint47HardKillExpiryTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==7 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint47CheckpointTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint47CheckpointSemanticTests(first); SWV5_RunSprint47CheckpointSemanticTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==18 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint47RetryEnumTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint47RetryEnumTests(first); SWV5_RunSprint47RetryEnumTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==12 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
    return first.AllPassed() && deterministic && complete;
 }
 

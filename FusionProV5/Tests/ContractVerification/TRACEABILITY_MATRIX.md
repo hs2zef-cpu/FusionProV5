@@ -1,4 +1,4 @@
-# Sprint 4.6 Phase E1 V4 Candidate Verification Traceability Matrix
+# Sprint 4.7 Phase A V4 Candidate Verification Traceability Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -31,6 +31,18 @@
 | Cross-domain gate ordering | Unit/Risk/Persistence/Execution interfaces | XDM-01–XDM-12 | Coherent path succeeds; stale owner, Hard Kill, residual, restart, and spec failures close safely |
 | Determinism | Complete inputs and returned DTOs | COM-05, S45CU-16, S45DP-13–S45DP-14 plus suite replay | Independent identical inputs produce identical material results and signatures |
 
+## Sprint 4.7 Phase A additions
+
+| Requirement | Contract field/interface | Executable IDs | Material evidence |
+|---|---|---|---|
+| Risk projection/request/current-exposure causality | `SWV5_RiskEvaluationInput.intent`, `exposure`, `basket`, `projected`; `ISWV5RiskContract.Evaluate` | S47-RISK-01 through S47-RISK-18 | OPEN/INCREASE lower bounds, REDUCE/CLOSE/CANCEL semantics, current exposure coherence, tolerance acceptance, cleared denial output |
+| Canonical finite-number boundary | `SWV5_IsFiniteNumber`; Risk, pending, transaction, confirmation numeric fields | S47-NUM-01 through S47-NUM-18 | NaN/+Infinity denied before comparisons; transaction and persistence paths preserve state |
+| Exclusive Hard Kill release interval | `SWV5_HardKillReleaseEvidence.approved_at/expires_at`; `ValidateHardKillRelease` | S47-HK-01 through S47-HK-07 | Only `approved_at <= now < expires_at` permits release; equality denies without latch mutation |
+| Checkpoint semantic authority | Checkpoint header/Basket/correlation/pending/Hard Kill plus `ValidateRecord` and `ReconcileRestart` | S47-CHK-01 through S47-CHK-18 | Correctly resealed semantic corruption and foreign restart/broker bindings halt; integrity alone never resumes |
+| Retry enum allowlist | Pending lifecycle/state, retry dispositions, retcode class, nested correlation phase; `EvaluateRetry` | S47-RETRY-01 through S47-RETRY-12 | Explicit eligible values allow; unknown/equal-invalid/terminal/conflict values deny; input remains unchanged |
+
 Phase E1 adds `S46E1-01` through `S46E1-15` for typed fingerprint policy, exact one-to-one identity/fingerprint mapping, canonical order, deterministic classification, and fail-closed duplicate/conflicting/orphan/malformed/count/digest cases. `S46E1-16` through `S46E1-18` trace ambiguous mappings through checkpoint validation, save, configure, and load; `S46E1-19` preserves statistics one-count-only behavior; `S46E1-20` preserves execution exposure, residual, and event state on conflict.
 
 The per-ID credibility category and mutation-resistance rationale are authoritative in `TEST_CREDIBILITY_MATRIX.md`.
+
+Sprint 4.7 Phase A retains the unlocked V4 candidate shape. It adds canonical validation behavior only; no DTO or interface signature changed.

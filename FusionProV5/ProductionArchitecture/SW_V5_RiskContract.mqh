@@ -142,13 +142,19 @@ struct SWV5_ProjectedRequestRisk
    SWV5_ContractVersion contract_version;
    SWV5_AccountRiskNamespace account_namespace;
    string   symbol;
+   // Post-operation gross Basket, symbol and account exposure. Under the
+   // HEDGING policy these fields must causally account for the requested
+   // operation; they are not caller-supplied limit hints.
    double   projected_volume;
    double   projected_symbol_volume;
    double   projected_aggregate_volume;
+   // Post-operation aggregate notional in monetary_basis account currency.
    double   projected_notional;
    // Additional margin attributable to this request. Account capacity is
    // evaluated as current account margin plus projected_margin.
    double   projected_margin;
+   // Conservative bounded loss for the resulting Basket. Exposure-increasing
+   // requests with a protective stop cannot report zero risk.
    double   projected_maximum_loss;
    SWV5_RiskMonetaryBasis monetary_basis;
    datetime calculated_at;

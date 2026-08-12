@@ -10,6 +10,16 @@
 
 const datetime SWV5_TEST_TIME=D'2026.08.05 12:00:00';
 
+double SWV5_TestNaN()
+{
+   return MathArcsin(2.0);
+}
+
+double SWV5_TestPositiveInfinity()
+{
+   return MathPow(10.0,400.0);
+}
+
 string SWV5_TestCanonicalHash(const string value);
 string SWV5_TestCanonicalField(const string name,const string type,const string value);
 string SWV5_TestCanonicalIntegerField(const string name,const long value);
@@ -442,7 +452,7 @@ void SWV5_TestMakeRiskAuthorization(SWV5_RiskAuthorization &authorization)
    authorization.risk_snapshot_epoch=77;
    authorization.risk_snapshot_sequence=101;
    authorization.authorized_projected_loss=125.0;
-   authorization.authorized_projected_notional=240.0;
+   authorization.authorized_projected_notional=960.0;
    authorization.authorized_projected_margin=24.0;
    authorization.hard_kill_latch_id="HARD-KILL-0001";
    authorization.hard_kill_latch_generation=4;
@@ -498,7 +508,9 @@ void SWV5_TestMakeRiskInput(SWV5_RiskEvaluationInput &engineInput)
    engineInput.exposure.complete=true;
    SWV5_TestMakeVersion(engineInput.basket.contract_version);
    engineInput.basket.account_namespace=engineInput.account_namespace;
-   SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_ACTIVE);
+   // OPEN targets an empty Basket. Existing 0.30 symbol/account exposure is
+   // deliberately external to this Basket so causal projection is exercised.
+   SWV5_TestMakeLifecycle(engineInput.basket.lifecycle,SWV5_BASKET_IDLE);
    engineInput.basket.realized_net=0.0;
    engineInput.basket.unrealized_net=0.0;
    engineInput.basket.maximum_adverse_net=0.0;
@@ -509,7 +521,7 @@ void SWV5_TestMakeRiskInput(SWV5_RiskEvaluationInput &engineInput)
    engineInput.projected.projected_volume=0.10;
    engineInput.projected.projected_symbol_volume=0.40;
    engineInput.projected.projected_aggregate_volume=0.40;
-   engineInput.projected.projected_notional=240.0;
+   engineInput.projected.projected_notional=960.0;
    engineInput.projected.projected_margin=24.0;
    engineInput.projected.projected_maximum_loss=125.0;
    SWV5_TestMakeMonetaryBasis(engineInput.projected.monetary_basis);
@@ -828,10 +840,10 @@ void SWV5_TestMakePersistedRequest(SWV5_PersistedRequestEvidence &record,const i
    record.pending_request.authorization_identity="RISK-AUTH-"+suffix;
    record.pending_request.intent.risk_authorization_id=record.pending_request.authorization_identity;
    record.pending_request.normalization_identity="NORMALIZATION-"+suffix;
-   record.pending_request.last_changed_at=SWV5_TEST_TIME+ordinal;
+   record.pending_request.last_changed_at=SWV5_TEST_TIME-ordinal;
    record.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
    record.record_sequence=20+(ulong)ordinal;
-   record.recorded_at=SWV5_TEST_TIME+ordinal;
+   record.recorded_at=SWV5_TEST_TIME;
 }
 
 string SWV5_TestCanonicalHash(const string value)

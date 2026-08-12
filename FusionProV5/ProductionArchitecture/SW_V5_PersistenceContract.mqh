@@ -1,6 +1,9 @@
 #ifndef SW_V5_PERSISTENCE_CONTRACT_MQH
 #define SW_V5_PERSISTENCE_CONTRACT_MQH
 
+// A matching payload digest proves integrity only. Restart authority also
+// requires independent semantic validation of every persisted component.
+
 #include "SW_V5_ExecutionContract.mqh"
 
 enum SWV5_PersistenceLoadStatus

@@ -355,11 +355,12 @@ private:
       m_request_count=count;
    }
 
-   bool RequestSetValid(const SWV5_PersistenceNamespace &persistence_namespace,
+   bool RequestSetValid(const SWV5_ContractValidationContext &context,
+                        const SWV5_PersistenceNamespace &persistence_namespace,
                         const SWV5_PersistedRequestEvidence &requests[],
                         const SWV5_PersistedRequestSetHeader &set_header)
    {
-      return SWV5_TestRequestSetValid(persistence_namespace,requests,set_header);
+      return SWV5_TestRequestSetValid(context,persistence_namespace,requests,set_header);
    }
 public:
    SWV5_TestPersistenceContract()
@@ -371,11 +372,13 @@ public:
    }
    void Configure(const SWV5_PersistedCheckpoint &checkpoint,const SWV5_PersistedRequestEvidence &requests[])
    {
+      SWV5_ContractValidationContext context;
+      SWV5_TestMakeContext(context);
       ClearRequests();
       m_checkpoint_configured=false;
-      if(!SWV5_TestPersistenceRecordValid(checkpoint))
+      if(!SWV5_TestPersistenceRecordValid(context,checkpoint))
          return;
-      if(!RequestSetValid(checkpoint.header.persistence_namespace,requests,checkpoint.pending_request_set))
+      if(!RequestSetValid(context,checkpoint.header.persistence_namespace,requests,checkpoint.pending_request_set))
          return;
       if((ArraySize(requests)==0 && checkpoint.has_latest_pending_request) ||
          (ArraySize(requests)>0 && (!checkpoint.has_latest_pending_request ||
@@ -391,7 +394,7 @@ public:
    virtual string ContractName() { return "ISWV5PersistenceContract/V4"; }
    virtual bool ValidateRecord(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_PersistenceLoadResult &result)
    {
-      const bool valid=SWV5_TestContextValid(context) && SWV5_TestPersistenceRecordValid(checkpoint);
+      const bool valid=SWV5_TestPersistenceRecordValid(context,checkpoint);
       result.contract_version=context.expected_version;
       result.status=(valid ? SWV5_PERSISTENCE_LOADED : SWV5_PERSISTENCE_CHECKSUM_FAILED);
       result.corruption_disposition=(valid ? SWV5_CORRUPTION_REJECT_RECORD : SWV5_CORRUPTION_HALT_AND_RECONCILE);
@@ -402,7 +405,7 @@ public:
    {
       const bool valid=m_checkpoint_configured && SWV5_TestContextValid(context) &&
                         SWV5_TestNamespaceEqual(persistence_namespace,m_checkpoint.header.persistence_namespace) &&
-                        SWV5_TestPersistenceRecordValid(m_checkpoint);
+                        SWV5_TestPersistenceRecordValid(context,m_checkpoint);
       if(valid) checkpoint=m_checkpoint;
       result.contract_version=context.expected_version;
       result.status=(valid ? SWV5_PERSISTENCE_LOADED : SWV5_PERSISTENCE_NOT_FOUND);
@@ -415,7 +418,7 @@ public:
       bool records_valid=true;
       for(int index=0;index<ArraySize(m_requests);index++)
       {
-         if(!SWV5_TestPersistedRequestValid(m_requests[index],m_storage_namespace))
+         if(!SWV5_TestPersistedRequestValid(context,m_requests[index],m_storage_namespace))
          {
             records_valid=false;
             break;
@@ -429,7 +432,7 @@ public:
                                       m_request_set_header.record_sequence==m_checkpoint.pending_request_set.record_sequence);
       const bool valid=m_requests_configured && SWV5_TestContextValid(context) &&
                         SWV5_TestNamespaceEqual(persistence_namespace,m_storage_namespace) &&
-                        RequestSetValid(m_storage_namespace,m_requests,m_request_set_header) &&
+                        RequestSetValid(context,m_storage_namespace,m_requests,m_request_set_header) &&
                         m_request_count==ArraySize(m_requests) &&
                        m_request_count==(int)m_request_set_header.request_count &&
                        m_request_set_header.request_set_digest!="" &&
@@ -457,7 +460,7 @@ public:
       const bool monotonic_revision=!m_requests_configured || set_header.record_sequence>m_request_set_header.record_sequence;
       const bool valid=SWV5_TestContextValid(context) && checkpoint_coherent &&
                         monotonic_revision &&
-                        RequestSetValid(persistence_namespace,requests,set_header);
+                        RequestSetValid(context,persistence_namespace,requests,set_header);
       if(valid)
       {
          ClearRequests();
@@ -481,7 +484,7 @@ public:
    }
    virtual bool SaveCheckpoint(const SWV5_ContractValidationContext &context,const SWV5_PersistedCheckpoint &checkpoint,SWV5_ContractDecision &decision)
    {
-      const bool valid=SWV5_TestContextValid(context) && SWV5_TestPersistenceRecordValid(checkpoint);
+      const bool valid=SWV5_TestPersistenceRecordValid(context,checkpoint);
       if(valid)
       {
          m_checkpoint=checkpoint;
@@ -495,7 +498,7 @@ public:
    virtual bool ReconcileRestart(const SWV5_ContractValidationContext &context,const SWV5_RestartReconciliationInput &engineInput,const SWV5_PersistedRequestEvidence &pending_requests[],SWV5_RestartReconciliationResult &result)
    {
       result.contract_version=context.expected_version;
-      result.status=SWV5_TestRestartDisposition(engineInput,pending_requests,result.readiness_disposition);
+      result.status=SWV5_TestRestartDisposition(context,engineInput,pending_requests,result.readiness_disposition);
       result.required_state=(result.status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED ? engineInput.persisted.basket.lifecycle.state : SWV5_BASKET_HALTED);
       result.reason_flags=(result.readiness_disposition==SWV5_RESTART_SAFE_TO_RESUME ? 0 : 1);
       result.diagnostic=(result.readiness_disposition==SWV5_RESTART_SAFE_TO_RESUME ? "SAFE_TO_RESUME" :

@@ -1,0 +1,26 @@
+; TEST ONLY
+; NOT FOR PRODUCTION
+; NO BROKER ACCESS
+InpPhaseATargetedOnly=false||false||0||true||N
+InpPhaseBTargetedOnly=false||false||0||true||N
+InpPhaseCTargetedOnly=false||false||0||true||N
+InpPhaseDTargetedOnly=false||false||0||true||N
+InpPhaseETargetedOnly=false||false||0||true||N
+InpS4421TargetedOnly=false||false||0||true||N
+InpSprint46PhaseATargetedOnly=false||false||0||true||N
+InpSprint46OwnershipRegressionOnly=false||false||0||true||N
+InpSprint46PhaseBTargetedOnly=false||false||0||true||N
+InpSprint46RiskRegressionOnly=false||false||0||true||N
+InpSprint46CheckpointTargetedOnly=false||false||0||true||N
+InpSprint46EventIdentityTargetedOnly=false||false||0||true||N
+InpSprint46PersistenceRegressionOnly=false||false||0||true||N
+InpSprint46StatisticsRegressionOnly=false||false||0||true||N
+InpSprint46ExecutionFingerprintRegressionOnly=false||false||0||true||N
+InpSprint46E1FingerprintTargetedOnly=false||false||0||true||N
+InpSprint46RetryTargetedOnly=false||false||0||true||N
+InpPER02TargetedOnly=false||false||0||true||N
+InpSprint47RiskProjectionTargetedOnly=false||false||0||true||N
+InpSprint47NonFiniteTargetedOnly=false||false||0||true||N
+InpSprint47HardKillTargetedOnly=false||false||0||true||N
+InpSprint47CheckpointTargetedOnly=false||false||0||true||N
+InpSprint47RetryEnumTargetedOnly=true||false||0||true||N

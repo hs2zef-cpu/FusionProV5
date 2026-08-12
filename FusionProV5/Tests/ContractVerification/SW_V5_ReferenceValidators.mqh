@@ -9,6 +9,9 @@
 #include "SW_V5_TestFixtures.mqh"
 
 bool SWV5_TestReadCanonicalField(const string canonical,int &offset,const string expected_name,const string expected_type,string &value);
+bool SWV5_TestHardKillReleaseValid(const SWV5_ContractValidationContext &context,
+                                   const SWV5_HardKillState &state,
+                                   const SWV5_HardKillReleaseEvidence &evidence);
 
 enum SWV5_TestBasketRule
 {
@@ -19,7 +22,8 @@ enum SWV5_TestBasketRule
 
 bool SWV5_TestNear(const double left,const double right,const double tolerance)
 {
-   return MathAbs(left-right)<=tolerance;
+   return SWV5_IsFiniteNumber(left) && SWV5_IsFiniteNumber(right) &&
+          SWV5_IsFiniteNumber(tolerance) && tolerance>=0.0 && MathAbs(left-right)<=tolerance;
 }
 
 bool SWV5_TestVersionEqual(const SWV5_ContractVersion &left,const SWV5_ContractVersion &right)
@@ -32,7 +36,7 @@ bool SWV5_TestVersionEqual(const SWV5_ContractVersion &left,const SWV5_ContractV
 
 bool SWV5_TestVersionValid(const SWV5_ContractVersion &version)
 {
-   return version.contract_name!="" &&
+   return version.contract_name==SWV5_PRODUCTION_CONTRACT_NAME &&
           version.schema_version==SWV5_PRODUCTION_CONTRACT_VERSION &&
           version.minimum_compatible_version==SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION &&
           version.policy_id==SWV5_PRODUCTION_CONTRACT_POLICY;
@@ -46,8 +50,147 @@ bool SWV5_TestContextValid(const SWV5_ContractValidationContext &context)
           context.clock_time>0 &&
           context.clock_sequence>0 &&
           context.evaluation_sequence>0 &&
-          context.price_tolerance>=0.0 &&
-          context.volume_tolerance>=0.0;
+          SWV5_IsFiniteNumber(context.price_tolerance) && context.price_tolerance>=0.0 &&
+          SWV5_IsFiniteNumber(context.volume_tolerance) && context.volume_tolerance>=0.0;
+}
+
+bool SWV5_TestExecutionPhaseValid(const SWV5_ExecutionLifecyclePhase phase)
+{
+   switch(phase)
+   {
+      case SWV5_EXECUTION_PHASE_INTENT:
+      case SWV5_EXECUTION_PHASE_SUBMISSION:
+      case SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT:
+      case SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION:
+      case SWV5_EXECUTION_PHASE_PARTIAL_FILL:
+      case SWV5_EXECUTION_PHASE_COMPLETED:
+      case SWV5_EXECUTION_PHASE_REJECTED:
+      case SWV5_EXECUTION_PHASE_UNCERTAIN: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestRetryEligiblePhase(const SWV5_ExecutionLifecyclePhase phase)
+{
+   switch(phase)
+   {
+      case SWV5_EXECUTION_PHASE_SUBMISSION:
+      case SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestIntentTypeValid(const SWV5_ExecutionIntentType intent_type)
+{
+   switch(intent_type)
+   {
+      case SWV5_INTENT_OPEN:
+      case SWV5_INTENT_INCREASE:
+      case SWV5_INTENT_REDUCE:
+      case SWV5_INTENT_CLOSE:
+      case SWV5_INTENT_CANCEL_PENDING: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestPendingStateValid(const SWV5_PendingRequestState state)
+{
+   switch(state)
+   {
+      case SWV5_REQUEST_CREATED:
+      case SWV5_REQUEST_RISK_AUTHORIZED:
+      case SWV5_REQUEST_SUBMISSION_PENDING:
+      case SWV5_REQUEST_ACKNOWLEDGED:
+      case SWV5_REQUEST_CONFIRMATION_PENDING:
+      case SWV5_REQUEST_CONFIRMED:
+      case SWV5_REQUEST_PARTIALLY_CONFIRMED:
+      case SWV5_REQUEST_REJECTED:
+      case SWV5_REQUEST_EXPIRED:
+      case SWV5_REQUEST_RECONCILIATION_REQUIRED:
+      case SWV5_REQUEST_CANCELLED: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestRetryEligiblePendingState(const SWV5_PendingRequestState state)
+{
+   switch(state)
+   {
+      case SWV5_REQUEST_SUBMISSION_PENDING:
+      case SWV5_REQUEST_ACKNOWLEDGED:
+      case SWV5_REQUEST_CONFIRMATION_PENDING: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestRetryDispositionValid(const SWV5_RetryDisposition disposition)
+{
+   switch(disposition)
+   {
+      case SWV5_RETRY_FORBIDDEN:
+      case SWV5_RETRY_AFTER_REVALIDATION:
+      case SWV5_RETRY_AFTER_BACKOFF:
+      case SWV5_RETRY_REQUIRES_NEW_AUTHORIZATION:
+      case SWV5_RETRY_REQUIRES_RECONCILIATION: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestRetryDispositionEligible(const SWV5_RetryDisposition disposition)
+{
+   switch(disposition)
+   {
+      case SWV5_RETRY_AFTER_REVALIDATION:
+      case SWV5_RETRY_AFTER_BACKOFF:
+      case SWV5_RETRY_REQUIRES_NEW_AUTHORIZATION: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestRetcodeClassValid(const SWV5_ResultRetcodeClass value)
+{
+   switch(value)
+   {
+      case SWV5_RETCODE_UNCLASSIFIED:
+      case SWV5_RETCODE_ACCEPTED_PENDING_CONFIRMATION:
+      case SWV5_RETCODE_SYNCHRONOUS_DEAL_REPORTED_PENDING_EVIDENCE:
+      case SWV5_RETCODE_REJECTED_PERMANENT:
+      case SWV5_RETCODE_REJECTED_TRANSIENT:
+      case SWV5_RETCODE_PRICE_CHANGED:
+      case SWV5_RETCODE_VOLUME_CHANGED:
+      case SWV5_RETCODE_MARKET_CLOSED:
+      case SWV5_RETCODE_CONNECTION_UNCERTAIN:
+      case SWV5_RETCODE_OWNERSHIP_CONFLICT:
+      case SWV5_RETCODE_RECONCILIATION_REQUIRED: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestConfirmationStatusValid(const SWV5_ConfirmationStatus value)
+{
+   switch(value)
+   {
+      case SWV5_CONFIRMATION_NOT_STARTED:
+      case SWV5_CONFIRMATION_PENDING:
+      case SWV5_CONFIRMATION_CONFIRMED:
+      case SWV5_CONFIRMATION_REJECTED:
+      case SWV5_CONFIRMATION_PARTIAL:
+      case SWV5_CONFIRMATION_EXPIRED:
+      case SWV5_CONFIRMATION_CONFLICT: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestHardKillStateValid(const SWV5_HardKillLatchState value)
+{
+   switch(value)
+   {
+      case SWV5_HARD_KILL_INACTIVE:
+      case SWV5_HARD_KILL_ACTIVE:
+      case SWV5_HARD_KILL_RELEASE_PENDING:
+      case SWV5_HARD_KILL_RELEASED: return true;
+   }
+   return false;
 }
 
 SWV5_ContractCompatibility SWV5_TestCompatibility(const SWV5_ContractVersion &candidate,
@@ -160,7 +303,8 @@ bool SWV5_TestCorrelationEqual(const SWV5_ExecutionCorrelation &left,const SWV5_
 bool SWV5_TestCorrelationComplete(const SWV5_ExecutionCorrelation &correlation)
 {
    if(!SWV5_TestVersionValid(correlation.contract_version) ||
-      !SWV5_TestRequestIdentityComplete(correlation.request_identity))
+      !SWV5_TestRequestIdentityComplete(correlation.request_identity) ||
+      !SWV5_TestExecutionPhaseValid(correlation.phase))
       return false;
    if(correlation.phase==SWV5_EXECUTION_PHASE_INTENT || correlation.phase==SWV5_EXECUTION_PHASE_SUBMISSION)
       return correlation.broker_identity.order_ticket==0 && correlation.broker_identity.deal_ticket==0 &&
@@ -169,11 +313,21 @@ bool SWV5_TestCorrelationComplete(const SWV5_ExecutionCorrelation &correlation)
    if(!SWV5_TestVersionValid(correlation.broker_identity.contract_version))
       return false;
    if(correlation.phase==SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT)
-      return correlation.broker_identity.order_ticket>0;
-   return correlation.broker_identity.broker_event_id!="" &&
-          correlation.broker_identity.transaction_sequence>0 &&
-          (correlation.broker_identity.order_ticket>0 || correlation.broker_identity.deal_ticket>0 ||
-           correlation.broker_identity.position_identifier>0);
+      return correlation.broker_identity.order_ticket>0 &&
+             correlation.broker_identity.deal_ticket==0 && correlation.broker_identity.position_identifier==0;
+   switch(correlation.phase)
+   {
+      case SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION:
+      case SWV5_EXECUTION_PHASE_PARTIAL_FILL:
+      case SWV5_EXECUTION_PHASE_COMPLETED:
+      case SWV5_EXECUTION_PHASE_REJECTED:
+      case SWV5_EXECUTION_PHASE_UNCERTAIN:
+         return correlation.broker_identity.broker_event_id!="" &&
+                correlation.broker_identity.transaction_sequence>0 &&
+                (correlation.broker_identity.order_ticket>0 || correlation.broker_identity.deal_ticket>0 ||
+                 correlation.broker_identity.position_identifier>0);
+   }
+   return false;
 }
 
 bool SWV5_TestEventIdentitySetContains(const SWV5_DurableEventIdentitySet &set,
@@ -1039,6 +1193,12 @@ bool SWV5_TestExecutionCorrelationVersionsExact(const SWV5_ContractValidationCon
 bool SWV5_TestExecutionIntentSemanticsValid(const SWV5_ContractValidationContext &context,
                                             const SWV5_ExecutionIntent &intent)
 {
+   if(!SWV5_TestIntentTypeValid(intent.intent_type) ||
+      !SWV5_IsFiniteNumber(intent.normalized_volume) ||
+      !SWV5_IsFiniteNumber(intent.normalized_price) ||
+      !SWV5_IsFiniteNumber(intent.normalized_stop_price) ||
+      !SWV5_IsFiniteNumber(intent.normalized_limit_price))
+      return false;
    const bool trading_intent=(intent.intent_type==SWV5_INTENT_OPEN ||
                               intent.intent_type==SWV5_INTENT_INCREASE ||
                               intent.intent_type==SWV5_INTENT_REDUCE ||
@@ -1094,6 +1254,16 @@ bool SWV5_TestPendingExecutionEnvelopeValid(const SWV5_ContractValidationContext
 {
    if(!SWV5_TestExecutionVersionExact(context,pending.contract_version) ||
       !SWV5_TestIntentValid(context,pending.intent) ||
+      !SWV5_TestExecutionPhaseValid(pending.lifecycle_phase) ||
+      !SWV5_TestPendingStateValid(pending.state) ||
+      !SWV5_TestRetryDispositionValid(pending.retry_disposition) ||
+      !SWV5_TestRetcodeClassValid(pending.latest_retcode_classification.classification) ||
+      !SWV5_TestRetryDispositionValid(pending.latest_retcode_classification.retry_disposition) ||
+      !SWV5_TestConfirmationStatusValid(pending.latest_authoritative_confirmation.status) ||
+      !SWV5_IsFiniteNumber(pending.cumulative_confirmed_volume) ||
+      !SWV5_IsFiniteNumber(pending.residual_requested_volume) ||
+      !SWV5_IsFiniteNumber(pending.latest_authoritative_confirmation.cumulative_confirmed_volume) ||
+      !SWV5_IsFiniteNumber(pending.latest_authoritative_confirmation.residual_volume) ||
       pending.account_mode!=SWV5_ACCOUNT_MODE_HEDGING || pending.account_mode!=pending.intent.account_mode ||
       !SWV5_TestExecutionVersionExact(context,pending.latest_submission.contract_version) ||
       !SWV5_TestExecutionRequestIdentityValid(context,pending.latest_submission.request_identity) ||
@@ -1107,6 +1277,7 @@ bool SWV5_TestPendingExecutionEnvelopeValid(const SWV5_ContractValidationContext
       !SWV5_TestExecutionFenceBelongsToNamespace(context,pending.latest_retcode.ownership_fence,pending.latest_retcode.persistence_namespace) ||
       !SWV5_TestFenceEqual(pending.latest_retcode.ownership_fence,pending.intent.ownership_fence) ||
       !SWV5_TestExecutionCorrelationVersionsExact(context,pending.latest_retcode.correlation) ||
+      !SWV5_TestCorrelationComplete(pending.latest_retcode.correlation) ||
       !SWV5_TestRequestIdentityEqual(pending.latest_retcode.correlation.request_identity,pending.intent.request_identity) ||
       pending.latest_retcode.observed_at<pending.latest_submission.submitted_at ||
       pending.latest_retcode.observed_at>context.clock_time ||
@@ -1116,6 +1287,7 @@ bool SWV5_TestPendingExecutionEnvelopeValid(const SWV5_ContractValidationContext
       pending.latest_retcode_classification.decision.evaluated_schema_version!=context.expected_version.schema_version ||
       !SWV5_TestExecutionVersionExact(context,pending.latest_authoritative_confirmation.contract_version) ||
       !SWV5_TestExecutionCorrelationVersionsExact(context,pending.latest_authoritative_confirmation.correlation) ||
+      !SWV5_TestCorrelationComplete(pending.latest_authoritative_confirmation.correlation) ||
       !SWV5_TestRequestIdentityEqual(pending.latest_authoritative_confirmation.correlation.request_identity,pending.intent.request_identity) ||
       !SWV5_TestExecutionVersionExact(context,pending.accepted_event_identities.contract_version) ||
       pending.accepted_event_identities.fingerprint_policy!=SWV5_DURABLE_FINGERPRINT_REQUIRED ||
@@ -1126,6 +1298,46 @@ bool SWV5_TestPendingExecutionEnvelopeValid(const SWV5_ContractValidationContext
       !SWV5_TestNear(pending.cumulative_confirmed_volume+pending.residual_requested_volume,
                      pending.intent.normalized_volume,context.volume_tolerance))
       return false;
+   bool state_phase_coherent=false;
+   switch(pending.state)
+   {
+      case SWV5_REQUEST_CREATED:
+      case SWV5_REQUEST_RISK_AUTHORIZED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_INTENT); break;
+      case SWV5_REQUEST_SUBMISSION_PENDING:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_SUBMISSION); break;
+      case SWV5_REQUEST_ACKNOWLEDGED:
+      case SWV5_REQUEST_CONFIRMATION_PENDING:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_ACKNOWLEDGEMENT); break;
+      case SWV5_REQUEST_CONFIRMED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_COMPLETED); break;
+      case SWV5_REQUEST_PARTIALLY_CONFIRMED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_PARTIAL_FILL); break;
+      case SWV5_REQUEST_REJECTED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_REJECTED); break;
+      case SWV5_REQUEST_EXPIRED:
+      case SWV5_REQUEST_RECONCILIATION_REQUIRED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_UNCERTAIN); break;
+      case SWV5_REQUEST_CANCELLED:
+         state_phase_coherent=(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_REJECTED ||
+                               pending.lifecycle_phase==SWV5_EXECUTION_PHASE_COMPLETED); break;
+   }
+   if(!state_phase_coherent)
+      return false;
+   if(pending.latest_authoritative_confirmation.status==SWV5_CONFIRMATION_NOT_STARTED)
+      return pending.latest_authoritative_confirmation.authority==SWV5_AUTHORITY_NONE &&
+             pending.latest_authoritative_confirmation.confirmation_sequence==0 &&
+             pending.latest_authoritative_confirmation.confirmed_at==0 &&
+             SWV5_TestNear(pending.latest_authoritative_confirmation.cumulative_confirmed_volume,pending.cumulative_confirmed_volume,context.volume_tolerance) &&
+             SWV5_TestNear(pending.latest_authoritative_confirmation.residual_volume,pending.residual_requested_volume,context.volume_tolerance);
+   if(pending.latest_authoritative_confirmation.status==SWV5_CONFIRMATION_PARTIAL ||
+      pending.latest_authoritative_confirmation.status==SWV5_CONFIRMATION_CONFIRMED)
+      return pending.latest_authoritative_confirmation.authority!=SWV5_AUTHORITY_NONE &&
+             pending.latest_authoritative_confirmation.confirmation_sequence>0 &&
+             pending.latest_authoritative_confirmation.confirmed_at>0 &&
+             pending.latest_authoritative_confirmation.confirmed_at<=context.clock_time &&
+             SWV5_TestNear(pending.latest_authoritative_confirmation.cumulative_confirmed_volume,pending.cumulative_confirmed_volume,context.volume_tolerance) &&
+             SWV5_TestNear(pending.latest_authoritative_confirmation.residual_volume,pending.residual_requested_volume,context.volume_tolerance);
    return true;
 }
 
@@ -1136,6 +1348,18 @@ bool SWV5_TestRetryFreshnessValid(const SWV5_ContractValidationContext &context,
                                   const SWV5_RetryNormalizationFreshnessEvidence &normalization_evidence)
 {
    if(!SWV5_TestContextValid(context) || !SWV5_TestPendingExecutionEnvelopeValid(context,pending) ||
+      !SWV5_TestRetryEligiblePhase(pending.lifecycle_phase) ||
+      !SWV5_TestRetryEligiblePendingState(pending.state) ||
+      !SWV5_TestRetryDispositionValid(policy.disposition) ||
+      !SWV5_TestRetryDispositionValid(pending.retry_disposition) ||
+      !SWV5_TestRetryDispositionEligible(policy.disposition) ||
+      !SWV5_TestRetcodeClassValid(pending.latest_retcode_classification.classification) ||
+      pending.latest_retcode_classification.classification==SWV5_RETCODE_UNCLASSIFIED ||
+      !SWV5_IsFiniteNumber(risk_evidence.authorized_volume) ||
+      !SWV5_IsFiniteNumber(normalization_evidence.normalized_volume) ||
+      !SWV5_IsFiniteNumber(normalization_evidence.normalized_price) ||
+      !SWV5_IsFiniteNumber(normalization_evidence.normalized_stop_price) ||
+      !SWV5_IsFiniteNumber(normalization_evidence.normalized_limit_price) ||
       !SWV5_TestExecutionVersionExact(context,policy.contract_version) || policy.maximum_attempts==0 ||
       pending.submission_attempt_count>=policy.maximum_attempts ||
       policy.disposition==SWV5_RETRY_FORBIDDEN || policy.disposition==SWV5_RETRY_REQUIRES_RECONCILIATION ||
@@ -1261,7 +1485,9 @@ bool SWV5_TestTransactionEnvelopeValid(const SWV5_ContractValidationContext &con
                                         const SWV5_PendingRequest &pending,
                                         const SWV5_TransactionEvidence &evidence)
 {
-   if(!SWV5_TestPendingExecutionEnvelopeValid(context,pending) ||
+   if(!SWV5_IsFiniteNumber(evidence.confirmed_volume) ||
+      !SWV5_IsFiniteNumber(evidence.confirmed_price) ||
+      !SWV5_TestPendingExecutionEnvelopeValid(context,pending) ||
       !SWV5_TestExecutionVersionExact(context,evidence.contract_version) ||
       !SWV5_TestExecutionNamespaceValid(context,evidence.persistence_namespace) ||
       !SWV5_TestNamespaceEqual(pending.intent.persistence_namespace,evidence.persistence_namespace) ||
@@ -1311,6 +1537,11 @@ SWV5_ConfirmationStatus SWV5_TestConfirmExecution(const SWV5_ContractValidationC
    confirmed_volume=pending.cumulative_confirmed_volume;
    residual_volume=pending.residual_requested_volume;
    evidence_disposition=SWV5_TRANSACTION_EVIDENCE_INVALID;
+   if(!SWV5_IsFiniteNumber(pending.cumulative_confirmed_volume) ||
+      !SWV5_IsFiniteNumber(pending.residual_requested_volume) ||
+      !SWV5_IsFiniteNumber(evidence.confirmed_volume) ||
+      !SWV5_IsFiniteNumber(evidence.confirmed_price))
+      return SWV5_CONFIRMATION_CONFLICT;
    evidence_disposition=SWV5_TestTransactionEvidenceDisposition(evidence);
    if(evidence_disposition==SWV5_TRANSACTION_EVIDENCE_ACKNOWLEDGEMENT_ONLY ||
       evidence_disposition==SWV5_TRANSACTION_EVIDENCE_RECONCILIATION_REQUIRED)
@@ -1456,64 +1687,156 @@ bool SWV5_TestPersistedRequestEqual(const SWV5_PersistedRequestEvidence &left,
           left.recorded_at==right.recorded_at;
 }
 
-bool SWV5_TestPersistedRequestValid(const SWV5_PersistedRequestEvidence &record,
+bool SWV5_TestPersistedRequestValid(const SWV5_ContractValidationContext &context,
+                                    const SWV5_PersistedRequestEvidence &record,
                                     const SWV5_PersistenceNamespace &expected_namespace)
 {
    const SWV5_PendingRequest pending=record.pending_request;
-   return SWV5_TestVersionValid(record.contract_version) &&
+   return SWV5_TestContextValid(context) &&
+          SWV5_TestExecutionVersionExact(context,record.contract_version) &&
           SWV5_TestNamespaceEqual(record.persistence_namespace,expected_namespace) &&
-          SWV5_TestFenceComplete(record.ownership_fence) &&
-          SWV5_TestVersionValid(pending.contract_version) &&
-          SWV5_TestVersionValid(pending.intent.contract_version) &&
-          SWV5_TestRequestIdentityComplete(pending.intent.request_identity) &&
-          pending.intent.normalized_volume>0.0 && pending.intent.normalized_price>0.0 &&
-          pending.intent.symbol_specification_sequence>0 && pending.intent.expected_basket_version>0 &&
-          pending.intent.risk_authorization_id!="" && pending.intent.authorization_expires_at>0 &&
+          SWV5_TestExecutionNamespaceValid(context,record.persistence_namespace) &&
+          SWV5_TestExecutionFenceBelongsToNamespace(context,record.ownership_fence,record.persistence_namespace) &&
+          SWV5_TestPendingExecutionEnvelopeValid(context,pending) &&
           SWV5_TestNamespaceEqual(pending.intent.persistence_namespace,expected_namespace) &&
           SWV5_TestFenceEqual(record.ownership_fence,pending.intent.ownership_fence) &&
           record.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
           pending.account_mode==record.account_mode &&
           pending.intent.account_mode==record.account_mode &&
-          SWV5_TestVersionValid(pending.latest_submission.contract_version) &&
-          SWV5_TestRequestIdentityEqual(pending.latest_submission.request_identity,pending.intent.request_identity) &&
-          SWV5_TestVersionValid(pending.latest_retcode.contract_version) &&
-          SWV5_TestNamespaceEqual(pending.latest_retcode.persistence_namespace,expected_namespace) &&
-          SWV5_TestFenceEqual(pending.latest_retcode.ownership_fence,record.ownership_fence) &&
-          SWV5_TestRequestIdentityEqual(pending.latest_retcode.correlation.request_identity,pending.intent.request_identity) &&
-          SWV5_TestVersionValid(pending.latest_retcode_classification.contract_version) &&
-          pending.latest_retcode_classification.mapping_policy_id!="" &&
-          SWV5_TestVersionValid(pending.latest_authoritative_confirmation.contract_version) &&
-          SWV5_TestRequestIdentityEqual(pending.latest_authoritative_confirmation.correlation.request_identity,pending.intent.request_identity) &&
           pending.accepted_event_identities.fingerprint_policy==SWV5_DURABLE_FINGERPRINT_REQUIRED &&
           SWV5_TestEventSetIntegrityValid(pending.accepted_event_identities) &&
           pending.authorization_identity!="" && pending.normalization_identity!="" &&
-          pending.last_changed_at>0 && record.record_sequence>0 && record.recorded_at>0;
+          pending.last_changed_at>0 && pending.last_changed_at<=context.clock_time &&
+          record.record_sequence>0 && record.recorded_at>=pending.last_changed_at && record.recorded_at<=context.clock_time;
 }
 
-bool SWV5_TestPersistenceRecordValid(const SWV5_PersistedCheckpoint &checkpoint)
+bool SWV5_TestBasketStateValueValid(const SWV5_BasketState state)
 {
-   return SWV5_TestVersionValid(checkpoint.header.contract_version) &&
-           SWV5_TestNamespaceComplete(checkpoint.header.persistence_namespace) &&
-           SWV5_TestVersionValid(checkpoint.basket.contract_version) &&
-           SWV5_TestVersionValid(checkpoint.last_confirmed_correlation.contract_version) &&
-           SWV5_TestVersionValid(checkpoint.pending_request_set.contract_version) &&
-           SWV5_TestVersionValid(checkpoint.hard_kill_state.contract_version) &&
+   switch(state)
+   {
+      case SWV5_BASKET_IDLE:
+      case SWV5_BASKET_OPENING:
+      case SWV5_BASKET_ACTIVE:
+      case SWV5_BASKET_RECOVERY:
+      case SWV5_BASKET_CLOSING:
+      case SWV5_BASKET_HALTED:
+      case SWV5_BASKET_ERROR: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestReconciliationStateValid(const SWV5_ReconciliationState state)
+{
+   switch(state)
+   {
+      case SWV5_RECONCILIATION_STATE_NOT_STARTED:
+      case SWV5_RECONCILIATION_STATE_MATCHED:
+      case SWV5_RECONCILIATION_STATE_REQUIRED:
+      case SWV5_RECONCILIATION_STATE_CONFLICT:
+      case SWV5_RECONCILIATION_STATE_MANUAL: return true;
+   }
+   return false;
+}
+
+bool SWV5_TestCheckpointBasketSemanticValid(const SWV5_ContractValidationContext &context,
+                                             const SWV5_BasketAggregate &basket,
+                                             const SWV5_PersistenceNamespace &expected_namespace,
+                                             const SWV5_OwnershipFence &expected_fence)
+{
+   if(!SWV5_TestExecutionVersionExact(context,basket.contract_version) ||
+      !SWV5_TestExecutionVersionExact(context,basket.lifecycle.contract_version) ||
+      !SWV5_TestNamespaceEqual(basket.persistence_namespace,expected_namespace) ||
+      basket.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      basket.lifecycle.basket_id.value!=expected_namespace.basket_id.value ||
+      !SWV5_TestFenceEqual(basket.lifecycle.ownership_fence,expected_fence) ||
+      !SWV5_TestBasketStateValueValid(basket.lifecycle.state) || basket.lifecycle.state_version==0 ||
+      !SWV5_TestReconciliationStateValid(basket.lifecycle.reconciliation_state) ||
+      !SWV5_TestEventSetIntegrityValid(basket.lifecycle.accepted_recovery_evidence) ||
+      !SWV5_TestQueriesComplete(basket.lifecycle.broker_queries) ||
+      !SWV5_IsFiniteNumber(basket.initial_volume) || !SWV5_IsFiniteNumber(basket.aggregate_closed_volume) ||
+      !SWV5_IsFiniteNumber(basket.lifecycle.aggregate_open_volume) || !SWV5_IsFiniteNumber(basket.lifecycle.residual_volume) ||
+      basket.initial_volume<0.0 || basket.aggregate_closed_volume<0.0 ||
+      basket.aggregate_closed_volume>basket.initial_volume+context.volume_tolerance ||
+      basket.lifecycle.aggregate_open_volume<0.0 || basket.lifecycle.residual_volume<0.0 ||
+      basket.opened_at<=0 || basket.updated_at<basket.opened_at || basket.updated_at>context.clock_time ||
+      basket.lifecycle.state_entered_at<=0 || basket.lifecycle.state_entered_at>context.clock_time)
+      return false;
+   if(basket.lifecycle.state==SWV5_BASKET_IDLE)
+      return SWV5_TestNear(basket.lifecycle.aggregate_open_volume,0.0,context.volume_tolerance) &&
+             SWV5_TestNear(basket.lifecycle.residual_volume,0.0,context.volume_tolerance) &&
+             basket.lifecycle.live_position_count==0 && basket.lifecycle.live_order_count==0 &&
+             basket.lifecycle.pending_request_count==0 && basket.close_verification==SWV5_CLOSE_ZERO_RESIDUAL_CONFIRMED;
+   if(basket.lifecycle.state==SWV5_BASKET_ACTIVE || basket.lifecycle.state==SWV5_BASKET_RECOVERY ||
+      basket.lifecycle.state==SWV5_BASKET_CLOSING)
+      return basket.lifecycle.aggregate_open_volume>context.volume_tolerance && basket.lifecycle.live_position_count>0;
+   return true;
+}
+
+bool SWV5_TestCheckpointHardKillSemanticValid(const SWV5_ContractValidationContext &context,
+                                               const SWV5_HardKillState &state,
+                                               const SWV5_PersistenceNamespace &expected_namespace)
+{
+   if(!SWV5_TestExecutionVersionExact(context,state.contract_version) ||
+      !SWV5_TestNamespaceEqual(state.persistence_namespace,expected_namespace) ||
+      !SWV5_TestRiskAccountNamespaceComplete(context,state.account_namespace) ||
+      !SWV5_TestRiskAccountNamespaceBelongsToPersistence(state.account_namespace,expected_namespace) ||
+      !SWV5_TestHardKillStateValid(state.state) || state.latch_id=="" || state.latch_generation==0 ||
+      !SWV5_TestExecutionVersionExact(context,state.release_evidence.contract_version) ||
+      !SWV5_TestExecutionVersionExact(context,state.release_evidence.broker_evidence.contract_version) ||
+      !SWV5_TestExecutionVersionExact(context,state.release_evidence.persistence_evidence.contract_version) ||
+      !SWV5_TestExecutionVersionExact(context,state.release_evidence.exposure_evidence.contract_version) ||
+      !SWV5_TestNamespaceEqual(state.release_evidence.persistence_namespace,expected_namespace) ||
+      state.release_evidence.latch_id!=state.latch_id || state.release_evidence.latch_generation!=state.latch_generation)
+      return false;
+   switch(state.state)
+   {
+      case SWV5_HARD_KILL_INACTIVE:
+         return state.activation_reason=="" && state.release_generation==0 && state.release_evidence.release_id=="";
+      case SWV5_HARD_KILL_ACTIVE:
+         return state.activation_reason!="" && state.activated_at>0 && state.activated_at<=context.clock_time &&
+                state.activation_authority!="" && state.release_evidence.release_id=="";
+      case SWV5_HARD_KILL_RELEASE_PENDING:
+         return SWV5_TestHardKillReleaseValid(context,state,state.release_evidence);
+      case SWV5_HARD_KILL_RELEASED:
+         return state.release_generation>0 && state.release_evidence.release_id!="" &&
+                state.release_evidence.release_generation==state.release_generation &&
+                state.release_evidence.operator_identity.operator_id!="" &&
+                state.release_evidence.operator_identity.authentication_reference!="" &&
+                state.release_evidence.approved_at>0 && state.release_evidence.expires_at>state.release_evidence.approved_at &&
+                state.release_evidence.broker_evidence.evidence_id!="" &&
+                state.release_evidence.persistence_evidence.evidence_id!="" &&
+                state.release_evidence.exposure_evidence.evidence_id!="" && state.release_evidence.audit_reference!="";
+   }
+   return false;
+}
+
+bool SWV5_TestPersistenceRecordValid(const SWV5_ContractValidationContext &context,
+                                     const SWV5_PersistedCheckpoint &checkpoint)
+{
+   return SWV5_TestContextValid(context) &&
+           SWV5_TestExecutionVersionExact(context,checkpoint.header.contract_version) &&
+           SWV5_TestExecutionNamespaceValid(context,checkpoint.header.persistence_namespace) &&
+           SWV5_TestExecutionFenceBelongsToNamespace(context,checkpoint.header.ownership_fence,checkpoint.header.persistence_namespace) &&
+           SWV5_TestExecutionVersionExact(context,checkpoint.pending_request_set.contract_version) &&
            SWV5_TestNamespaceEqual(checkpoint.header.persistence_namespace,checkpoint.basket.persistence_namespace) &&
            SWV5_TestNamespaceEqual(checkpoint.header.persistence_namespace,checkpoint.hard_kill_state.persistence_namespace) &&
            SWV5_TestFenceEqual(checkpoint.header.ownership_fence,checkpoint.basket.lifecycle.ownership_fence) &&
-          checkpoint.header.record_sequence>checkpoint.header.previous_record_sequence &&
+           checkpoint.header.record_sequence>checkpoint.header.previous_record_sequence &&
            checkpoint.header.payload_digest==SWV5_TestCheckpointPayloadDigest(checkpoint) &&
            checkpoint.header.payload_size==SWV5_TestCheckpointPayloadSize(checkpoint) &&
-           checkpoint.header.written_at>0 &&
+           checkpoint.header.written_at>0 && checkpoint.header.written_at<=context.clock_time &&
            checkpoint.header.persistence_namespace.basket_id.value==checkpoint.basket.lifecycle.basket_id.value &&
-           checkpoint.basket.lifecycle.accepted_recovery_evidence.fingerprint_policy==SWV5_DURABLE_FINGERPRINT_REQUIRED &&
-           SWV5_TestEventSetIntegrityValid(checkpoint.basket.lifecycle.accepted_recovery_evidence) &&
+           SWV5_TestCheckpointBasketSemanticValid(context,checkpoint.basket,checkpoint.header.persistence_namespace,checkpoint.header.ownership_fence) &&
+           SWV5_TestCorrelationComplete(checkpoint.last_confirmed_correlation) &&
+           checkpoint.last_confirmed_correlation.phase==SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION &&
+           SWV5_TestCheckpointHardKillSemanticValid(context,checkpoint.hard_kill_state,checkpoint.header.persistence_namespace) &&
            ((!checkpoint.has_latest_pending_request && checkpoint.pending_request_set.request_count==0) ||
             (checkpoint.has_latest_pending_request && checkpoint.pending_request_set.request_count>0 &&
-             SWV5_TestPersistedRequestValid(checkpoint.latest_pending_request,checkpoint.header.persistence_namespace)));
+             SWV5_TestPersistedRequestValid(context,checkpoint.latest_pending_request,checkpoint.header.persistence_namespace)));
 }
 
-bool SWV5_TestRequestSetValid(const SWV5_PersistenceNamespace &persistence_namespace,
+bool SWV5_TestRequestSetValid(const SWV5_ContractValidationContext &context,
+                              const SWV5_PersistenceNamespace &persistence_namespace,
                               const SWV5_PersistedRequestEvidence &requests[],
                               const SWV5_PersistedRequestSetHeader &header)
 {
@@ -1526,7 +1849,7 @@ bool SWV5_TestRequestSetValid(const SWV5_PersistenceNamespace &persistence_names
    ulong previous_sequence=0;
    for(int index=0;index<ArraySize(requests);index++)
    {
-      if(!SWV5_TestPersistedRequestValid(requests[index],persistence_namespace) ||
+      if(!SWV5_TestPersistedRequestValid(context,requests[index],persistence_namespace) ||
          requests[index].record_sequence<=previous_sequence || requests[index].record_sequence>header.record_sequence)
          return false;
       previous_sequence=requests[index].record_sequence;
@@ -1534,13 +1857,27 @@ bool SWV5_TestRequestSetValid(const SWV5_PersistenceNamespace &persistence_names
    return true;
 }
 
-SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_RestartReconciliationInput &engineInput,
+SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidationContext &context,
+                                                        const SWV5_RestartReconciliationInput &engineInput,
                                                         const SWV5_PersistedRequestEvidence &pending_requests[],
                                                         SWV5_RestartReadinessDisposition &readiness)
 {
    readiness=SWV5_RESTART_HALTED;
-   if(engineInput.persistence_status!=SWV5_PERSISTENCE_LOADED)
+   if(!SWV5_TestContextValid(context) ||
+      !SWV5_TestExecutionVersionExact(context,engineInput.contract_version) ||
+      engineInput.persistence_status!=SWV5_PERSISTENCE_LOADED ||
+      !SWV5_TestPersistenceRecordValid(context,engineInput.persisted))
       return SWV5_RECONCILIATION_CORRUPT_HALT;
+   if(!SWV5_TestExecutionVersionExact(context,engineInput.broker.contract_version) ||
+      !SWV5_TestExecutionNamespaceValid(context,engineInput.broker.persistence_namespace) ||
+      engineInput.broker.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      engineInput.broker.authority!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
+      engineInput.broker.observed_at<=0 || engineInput.broker.observed_at>context.clock_time ||
+      !SWV5_IsFiniteNumber(engineInput.broker.aggregate_position_volume) ||
+      !SWV5_IsFiniteNumber(engineInput.broker.residual_volume) ||
+      engineInput.broker.aggregate_position_volume<0.0 || engineInput.broker.residual_volume<0.0 ||
+      !SWV5_TestCorrelationComplete(engineInput.broker.latest_confirmed_correlation))
+      return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(!SWV5_TestNamespaceComplete(engineInput.persistence_namespace))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(!SWV5_TestNamespaceEqual(engineInput.persistence_namespace,engineInput.persisted.header.persistence_namespace) ||
@@ -1557,7 +1894,7 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_RestartReconcil
    if(persisted_volume>broker_volume+0.0000001)
       return SWV5_RECONCILIATION_PERSISTENCE_AHEAD_HALT;
    if(engineInput.persisted.pending_request_set.request_count!=engineInput.broker.pending_request_count ||
-      !SWV5_TestRequestSetValid(engineInput.persistence_namespace,pending_requests,engineInput.persisted.pending_request_set))
+      !SWV5_TestRequestSetValid(context,engineInput.persistence_namespace,pending_requests,engineInput.persisted.pending_request_set))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(ArraySize(pending_requests)==0)
    {
@@ -1610,6 +1947,7 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_RestartReconcil
 bool SWV5_TestMonetaryBasisComplete(const SWV5_RiskMonetaryBasis &basis)
 {
    return SWV5_TestVersionValid(basis.contract_version) && basis.currency!="" && basis.account_currency!="" &&
+          SWV5_IsFiniteNumber(basis.conversion_rate_to_account_currency) &&
           basis.conversion_rate_to_account_currency>0.0 && basis.conversion_source!="" && basis.valuation_at>0 &&
           basis.calculation_basis!=SWV5_RISK_BASIS_UNDEFINED && basis.sign_convention!=SWV5_RISK_SIGN_UNDEFINED &&
           basis.includes_realized && basis.includes_unrealized && basis.includes_commission && basis.includes_swap && basis.includes_fee;
@@ -1645,6 +1983,10 @@ bool SWV5_TestMonetaryBasisEqual(const SWV5_RiskMonetaryBasis &left,
 bool SWV5_TestRiskLimitsComplete(const SWV5_RiskLimits &limits)
 {
    return SWV5_TestVersionValid(limits.contract_version) && limits.contract_id!="" &&
+          SWV5_IsFiniteNumber(limits.minimum_equity) && SWV5_IsFiniteNumber(limits.maximum_daily_net_loss) &&
+          SWV5_IsFiniteNumber(limits.maximum_account_margin_fraction) && SWV5_IsFiniteNumber(limits.maximum_basket_loss) &&
+          SWV5_IsFiniteNumber(limits.maximum_basket_volume) && SWV5_IsFiniteNumber(limits.maximum_symbol_volume) &&
+          SWV5_IsFiniteNumber(limits.maximum_aggregate_volume) && SWV5_IsFiniteNumber(limits.maximum_aggregate_notional) &&
           limits.minimum_equity>0.0 && limits.maximum_daily_net_loss>0.0 &&
           limits.maximum_account_margin_fraction>0.0 && limits.maximum_account_margin_fraction<=1.0 &&
           limits.maximum_basket_loss>0.0 && limits.maximum_basket_volume>0.0 &&
@@ -1770,8 +2112,84 @@ bool SWV5_TestRiskInputCoherent(const SWV5_ContractValidationContext &context,
                                  SWV5_TestAccountNamespaceEqual(current.account_namespace,current.basket.account_namespace,true) &&
                                  SWV5_TestAccountNamespaceEqual(current.account_namespace,current.projected.account_namespace,true) &&
                                  SWV5_TestAccountNamespaceEqual(current.account_namespace,current.hard_kill_state.account_namespace,true);
+   const double current_symbol_volume=current.exposure.symbol_long_volume+current.exposure.symbol_short_volume;
+   const double current_basket_volume=current.basket.lifecycle.aggregate_open_volume;
+   const double request_volume=current.intent.normalized_volume;
+   const double requested_notional=request_volume*current.intent.normalized_price*
+                                   current.projected.monetary_basis.conversion_rate_to_account_currency;
+   const bool exposure_increasing=(current.intent.intent_type==SWV5_INTENT_OPEN ||
+                                   current.intent.intent_type==SWV5_INTENT_INCREASE);
+   double expected_basket=current_basket_volume;
+   double expected_symbol=current_symbol_volume;
+   double expected_aggregate=current.exposure.aggregate_volume;
+   if(exposure_increasing)
+   {
+      expected_basket+=(current.intent.intent_type==SWV5_INTENT_OPEN ? request_volume : request_volume);
+      expected_symbol+=request_volume;
+      expected_aggregate+=request_volume;
+   }
+   else if(current.intent.intent_type==SWV5_INTENT_REDUCE)
+   {
+      expected_basket=MathMax(0.0,current_basket_volume-request_volume);
+      expected_symbol=MathMax(0.0,current_symbol_volume-request_volume);
+      expected_aggregate=MathMax(0.0,current.exposure.aggregate_volume-request_volume);
+   }
+   else if(current.intent.intent_type==SWV5_INTENT_CLOSE)
+   {
+      expected_basket=0.0;
+      expected_symbol=MathMax(0.0,current_symbol_volume-current_basket_volume);
+      expected_aggregate=MathMax(0.0,current.exposure.aggregate_volume-current_basket_volume);
+   }
    const double permitted_margin=current.account.equity*current.limits.maximum_account_margin_fraction;
+   const double minimum_bounded_loss=request_volume*MathAbs(current.intent.normalized_price-current.intent.normalized_stop_price)*
+                                     current.projected.monetary_basis.conversion_rate_to_account_currency;
+   const bool all_numeric_finite=
+      SWV5_IsFiniteNumber(current.account.balance) && SWV5_IsFiniteNumber(current.account.equity) &&
+      SWV5_IsFiniteNumber(current.account.margin) && SWV5_IsFiniteNumber(current.account.free_margin) &&
+      SWV5_IsFiniteNumber(current.account.daily_realized_net) && SWV5_IsFiniteNumber(current.account.daily_unrealized_net) &&
+      SWV5_IsFiniteNumber(current.exposure.symbol_long_volume) && SWV5_IsFiniteNumber(current.exposure.symbol_short_volume) &&
+      SWV5_IsFiniteNumber(current.exposure.symbol_net_volume) && SWV5_IsFiniteNumber(current.exposure.aggregate_volume) &&
+      SWV5_IsFiniteNumber(current.exposure.aggregate_notional) && SWV5_IsFiniteNumber(current.basket.lifecycle.aggregate_open_volume) &&
+      SWV5_IsFiniteNumber(current.basket.lifecycle.residual_volume) && SWV5_IsFiniteNumber(current.basket.realized_net) &&
+      SWV5_IsFiniteNumber(current.basket.unrealized_net) && SWV5_IsFiniteNumber(current.basket.maximum_adverse_net) &&
+      SWV5_IsFiniteNumber(current.projected.projected_volume) && SWV5_IsFiniteNumber(current.projected.projected_symbol_volume) &&
+      SWV5_IsFiniteNumber(current.projected.projected_aggregate_volume) && SWV5_IsFiniteNumber(current.projected.projected_notional) &&
+      SWV5_IsFiniteNumber(current.projected.projected_margin) && SWV5_IsFiniteNumber(current.projected.projected_maximum_loss);
+   const bool operation_coherent=
+      (current.intent.intent_type!=SWV5_INTENT_OPEN ||
+       (current.basket.lifecycle.state==SWV5_BASKET_IDLE && current_basket_volume<=context.volume_tolerance)) &&
+      ((current.intent.intent_type!=SWV5_INTENT_INCREASE && current.intent.intent_type!=SWV5_INTENT_REDUCE &&
+        current.intent.intent_type!=SWV5_INTENT_CLOSE) ||
+       (current.basket.lifecycle.state==SWV5_BASKET_ACTIVE && current_basket_volume>context.volume_tolerance)) &&
+      current.exposure.symbol_long_volume>=0.0 && current.exposure.symbol_short_volume>=0.0 &&
+      SWV5_TestNear(current.exposure.symbol_net_volume,
+                    current.exposure.symbol_long_volume-current.exposure.symbol_short_volume,context.volume_tolerance) &&
+      current.exposure.aggregate_volume+context.volume_tolerance>=current_symbol_volume &&
+      current.exposure.aggregate_notional>=0.0 &&
+      (current.intent.intent_type==SWV5_INTENT_CANCEL_PENDING ?
+       SWV5_TestNear(current.projected.projected_volume,current_basket_volume,context.volume_tolerance) &&
+       SWV5_TestNear(current.projected.projected_symbol_volume,current_symbol_volume,context.volume_tolerance) &&
+       SWV5_TestNear(current.projected.projected_aggregate_volume,current.exposure.aggregate_volume,context.volume_tolerance) &&
+       SWV5_TestNear(current.projected.projected_notional,current.exposure.aggregate_notional,context.price_tolerance) &&
+       SWV5_TestNear(current.projected.projected_margin,0.0,context.price_tolerance) :
+       SWV5_TestNear(current.projected.projected_volume,expected_basket,context.volume_tolerance) &&
+       SWV5_TestNear(current.projected.projected_symbol_volume,expected_symbol,context.volume_tolerance) &&
+       SWV5_TestNear(current.projected.projected_aggregate_volume,expected_aggregate,context.volume_tolerance)) &&
+      (!exposure_increasing ||
+       (current.projected.projected_notional+context.price_tolerance>=current.exposure.aggregate_notional+requested_notional &&
+        current.projected.projected_margin>context.price_tolerance &&
+        current.intent.normalized_stop_price>0.0 &&
+        current.projected.projected_maximum_loss+context.price_tolerance>=minimum_bounded_loss)) &&
+      (current.intent.intent_type!=SWV5_INTENT_REDUCE ||
+       (request_volume<=current_basket_volume+context.volume_tolerance &&
+        ((current.intent.direction>0 && request_volume<=current.exposure.symbol_long_volume+context.volume_tolerance) ||
+         (current.intent.direction<0 && request_volume<=current.exposure.symbol_short_volume+context.volume_tolerance)) &&
+        current.projected.projected_notional<=current.exposure.aggregate_notional+context.price_tolerance)) &&
+      (current.intent.intent_type!=SWV5_INTENT_CLOSE ||
+       (SWV5_TestNear(request_volume,current_basket_volume,context.volume_tolerance) &&
+        current.projected.projected_notional<=current.exposure.aggregate_notional+context.price_tolerance));
    return SWV5_TestContextValid(context) &&
+           all_numeric_finite && operation_coherent &&
            SWV5_TestRiskVersionExact(context,current.contract_version) &&
            SWV5_TestIntentValid(context,current.intent) &&
            SWV5_TestRiskAccountNamespaceComplete(context,current.account_namespace) &&
@@ -1897,7 +2315,7 @@ bool SWV5_TestHardKillReleaseValid(const SWV5_ContractValidationContext &context
                           evidence.persistence_evidence.observed_at<=evidence.approved_at &&
                           evidence.exposure_evidence.observed_at<=evidence.approved_at &&
                           evidence.approved_at>0 && evidence.approved_at<=context.clock_time &&
-                          evidence.expires_at>evidence.approved_at && evidence.expires_at>=context.clock_time;
+                          evidence.expires_at>evidence.approved_at && context.clock_time<evidence.expires_at;
    return SWV5_TestContextValid(context) && versions_valid && namespace_valid &&
           state.state==SWV5_HARD_KILL_RELEASE_PENDING && state.latch_id!="" && state.latch_generation>0 &&
           evidence.release_id!="" && evidence.latch_id==state.latch_id && evidence.latch_generation==state.latch_generation &&
@@ -1916,6 +2334,8 @@ bool SWV5_TestHardKillReleaseValid(const SWV5_ContractValidationContext &context
           evidence.exposure_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
           evidence.exposure_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
           evidence.exposure_evidence.evidence_sequence>0 &&
+          SWV5_IsFiniteNumber(evidence.exposure_evidence.observed_exposure_volume) &&
+          SWV5_IsFiniteNumber(evidence.exposure_evidence.prior_exposure_volume) &&
           evidence.exposure_evidence.observed_exposure_volume>=0.0 && evidence.exposure_evidence.prior_exposure_volume>=0.0 &&
           evidence.exposure_evidence.observed_exposure_volume<=evidence.exposure_evidence.prior_exposure_volume+context.volume_tolerance &&
           evidence.audit_reference!="";

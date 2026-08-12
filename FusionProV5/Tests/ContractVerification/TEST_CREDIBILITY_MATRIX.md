@@ -1,8 +1,8 @@
-# Sprint 4.6 Phase E1 Test Credibility Matrix
+# Sprint 4.7 Phase A Test Credibility Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
-This matrix classifies every executable ID in the 561-case V4 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
+This matrix classifies every executable ID in the 634-case V4 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
 
 The audit question for every behavioral row is: if the advertised behavior were removed or intentionally broken, would the material assertion fail? Every behavioral row below answers **yes**. No row is classified by test name or intent alone.
 
@@ -10,15 +10,15 @@ The audit question for every behavioral row is: if the advertised behavior were 
 
 | Category | Count | Merge-gating evidence |
 |---|---:|---|
-| `MERGE_GATING_BEHAVIOR` | 47 | YES |
+| `MERGE_GATING_BEHAVIOR` | 52 | YES |
 | `STATE_TRANSITION` | 105 | YES |
-| `NEGATIVE_FAIL_CLOSED` | 348 | YES |
+| `NEGATIVE_FAIL_CLOSED` | 415 | YES |
 | `ROUND_TRIP` | 20 | YES |
-| `INVARIANT_BEHAVIOR` | 17 | YES |
+| `INVARIANT_BEHAVIOR` | 18 | YES |
 | `SUPPORTING_PURE_FUNCTION` | 23 | NO |
 | `CONFORMANCE_ONLY` | 1 | NO |
 | `WEAK_FALSE_POSITIVE` | 0 | NO |
-| **Executable total** | **561** | **537 behavioral; 24 supporting/conformance** |
+| **Executable total** | **634** | **610 behavioral; 24 supporting/conformance** |
 
 ## Complete classification
 
@@ -215,3 +215,21 @@ The Phase E rewrite removed all known false-positive patterns:
 - PER-02 now begins with a valid saved checkpoint, mutates a material nested recovery field while retaining the old non-empty digest and size, and requires validation/save rejection plus intact reload of the prior state.
 
 No executable ID was removed. Helper-only canonical/equality cases are retained as supporting evidence and are excluded from the behavioral count.
+
+## Sprint 4.7 Phase A adversarial additions
+
+Every case starts from the named valid builder, mutates only the listed field(s), invokes the public test implementation, and asserts the material disposition plus unchanged authoritative state where mutation is possible. Removing the targeted canonical predicate makes the corresponding case fail.
+
+| IDs | Category | Valid baseline | Exact mutations by ID | Material assertion / defect detected |
+|---|---|---|---|---|
+| S47-RISK-01, S47-RISK-18 | `MERGE_GATING_BEHAVIOR` | `SWV5_TestMakeRiskInput` OPEN with external current exposure | 01 none; 18 all exposure/notional projections within tolerance | `Evaluate` returns complete ALLOW; detects an over-strict or unusable causal invariant |
+| S47-RISK-02 through S47-RISK-17 | `NEGATIVE_FAIL_CLOSED` | Same valid OPEN | 02 Basket volume zero; 03 symbol unchanged; 04 aggregate unchanged; 05 notional zero; 06 margin zero; 07 free margin shortfall; 08 account cap exceeded; 09 INCREASE does not increase Basket; 10 REDUCE increases Basket; 11 CLOSE leaves residual; 12 CANCEL adds exposure; 13 Basket above symbol; 14 symbol above aggregate; 15 loss zero; 16 foreign exposure namespace; 17 long/net mismatch | No ALLOW and authorization cleared; detects projection-as-unbound-caller-assertion and incoherent current exposure |
+| S47-NUM-01 through S47-NUM-11 | `NEGATIVE_FAIL_CLOSED` | Valid Risk input | NaN in intent volume/price, six projection fields, equity, free margin, or a floating limit respectively | `Evaluate` denies with cleared authorization; detects NaN comparison bypass |
+| S47-NUM-12 through S47-NUM-17 | `NEGATIVE_FAIL_CLOSED` | Valid pending request and transaction/acknowledgement | NaN volume, NaN price, +Infinity volume, +Infinity price, acknowledgement NaN volume, acknowledgement NaN price | `AcceptTransactionEvidence` rejects and returns field-equal pending exposure/durable identity state; detects non-finite authoritative mutation |
+| S47-NUM-18 | `NEGATIVE_FAIL_CLOSED` | Valid persisted pending request set | NaN in latest authoritative cumulative confirmation | `SavePendingRequests` denies; detects restart-persistable non-finite state |
+| S47-HK-01 | `MERGE_GATING_BEHAVIOR` | Complete independent release evidence | Current time strictly before expiry | Release validates; detects unusable exclusive interval |
+| S47-HK-02 through S47-HK-07 | `NEGATIVE_FAIL_CLOSED` | Same release evidence | 02 exact expiry; 03 after expiry; 04 expiry equals approval; 05 zero expiry; 06 reversed ordering; 07 exact expiry with state snapshot | DENY; 07 additionally proves latch/generation unchanged; detects equality-at-expiry authority |
+| S47-CHK-01 through S47-CHK-18 | `NEGATIVE_FAIL_CLOSED` | Valid checkpoint/restart input, then canonical reseal | 01 Hard Kill enum; 02 Basket enum; 03 pending lifecycle; 04 retry disposition; 05 correlation phase; 06 contract identity; 07 namespace; 08 account mode; 09 negative residual; 10 confirmed above request; 11 intent enum; 12 direction; 13 durable index; 14 incomplete ACTIVE latch; 15 incoherent RELEASE_PENDING generation; 16 foreign fence; 17 foreign restart namespace; 18 foreign broker namespace | Digest and size remain valid but `ReconcileRestart` never returns SAFE/matched; detects integrity-only restart authority |
+| S47-RETRY-01, S47-RETRY-11 | `MERGE_GATING_BEHAVIOR` | `SWV5_TestMakeRetryCandidate` plus current Risk/normalization evidence | No mutation | Explicit eligible lifecycle/state/disposition returns ALLOW; detects unusable whitelist |
+| S47-RETRY-02 through S47-RETRY-10 | `NEGATIVE_FAIL_CLOSED` | Same valid retry envelope | 02 lifecycle 99; 03 policy disposition 99; 04 matching invalid pending/correlation phase; 05 matching invalid pending/policy disposition; 06 retcode class 99; 07 nested submission correlation phase 99; 08 terminal state; 09 reconciliation state; 10 confirmation conflict | DENY; detects blacklist-based fail-open and equal-invalid-value acceptance |
+| S47-RETRY-12 | `INVARIANT_BEHAVIOR` | Same valid retry envelope | No mutation; retain pre-call snapshot | ALLOW and field-equal pending input; detects retry evaluation mutating caller state |

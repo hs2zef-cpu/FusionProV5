@@ -2,7 +2,7 @@
 
 ## Status
 
-Candidate policy for the Sprint 4.1 review package. Pending formal approval; not Architecture Locked. Sprint 4 remains the authorized architecture baseline. Sprint 4.6 is corrective contract and test-only work within this Candidate / In Review package; it grants no runtime authorization or production-readiness status.
+Candidate policy for the Sprint 4.1 review package. Pending formal approval; not Architecture Locked. Sprint 4 remains the authorized architecture baseline. Sprint 4.7 is corrective contract, test-only, and evidence-reproducibility work within this Candidate / In Review package; it grants no runtime authorization or production-readiness status.
 
 ## Current Contract
 
@@ -20,6 +20,8 @@ Sprint 4.6 Phase C keeps schema V4. It replaces the candidate-only checkpoint an
 Sprint 4.6 Phase D also keeps schema V4 even though `EvaluateRetry()` gains mandatory typed Risk and normalization freshness evidence and therefore changes an interface signature. This is an explicit pre-approval exception for completing the still-unlocked V4 candidate: V4 has never been approved, Architecture Locked, emitted by runtime, or accepted as a durable compatibility baseline. The typed evidence closes a known unsafe omission before the candidate can be reviewed for approval. After V4 approval, the same interface-signature or required-evidence change would require a schema increment and migration review under the table below.
 
 Sprint 4.6 Phase E1 also keeps schema V4 while adding the mandatory typed `fingerprint_policy` field to the candidate-only durable identity set. `IDENTITY_ONLY` explicitly forbids fingerprint mappings for statistics deduplication; `REQUIRED` requires exactly one canonical mapping per accepted authoritative identity in event order for execution and recovery. This is an explicit pre-approval DTO-shape correction: V4 remains unlocked, has never been emitted by runtime, and has no durable production records to migrate. After V4 approval, adding or changing this field or either policy meaning would require a schema increment and migration review.
+
+Sprint 4.7 also keeps schema V4. It strengthens canonical validation for request-bound Risk projections, non-finite numeric evidence, exclusive Hard Kill expiry, semantic checkpoint/restart authority, and retry enum allowlisting without changing any DTO or interface signature. Because V4 remains an unlocked, unapproved candidate with no runtime-authorized durable state, these corrections complete the existing V4 candidate rather than creating V5. Equivalent semantic changes after approval require a schema increment and migration/ADR review under the policy below.
 
 Phase D request-set identity uses deterministic typed length-prefixed fields in fixed DTO and array order. Strings are encoded with their field name, type, character length, and exact value, so delimiters and Unicode content remain unambiguous. Signed integers, unsigned integers, enums, booleans, and datetimes use locale-independent decimal text. Doubles use fixed 16-decimal point notation with deterministic negative-zero normalization. Request arrays are order-sensitive: every record is bound to its explicit zero-based order index, and implementations do not sort silently.
 

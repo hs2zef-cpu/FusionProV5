@@ -1,4 +1,4 @@
-# Sprint 4.6 Phase E1 V4 Candidate Executable Test Inventory
+# Sprint 4.7 Phase A V4 Candidate Executable Test Inventory
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -32,8 +32,13 @@
 | Sprint 4.6 durable event identity | S46EI-01–S46EI-20 | 20 | 0 | 4 | 5 | 1 | 0 | 10 | 0 | 0 |
 | Sprint 4.6 retry freshness | S46DR-01–S46DR-20 | 20 | 3 | 0 | 16 | 0 | 1 | 0 | 0 | 0 |
 | Sprint 4.6 fingerprint uniqueness | S46E1-01 through S46E1-20 | 20 | 1 | 2 | 15 | 0 | 2 | 0 | 0 | 0 |
-| **Total** |  | **561** | **47** | **105** | **348** | **20** | **17** | **23** | **1** | **0** |
+| Sprint 4.7 Risk projection binding | S47-RISK-01 through S47-RISK-18 | 18 | 2 | 0 | 16 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.7 non-finite rejection | S47-NUM-01 through S47-NUM-18 | 18 | 0 | 0 | 18 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.7 Hard Kill expiry | S47-HK-01 through S47-HK-07 | 7 | 1 | 0 | 6 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.7 checkpoint semantics | S47-CHK-01 through S47-CHK-18 | 18 | 0 | 0 | 18 | 0 | 0 | 0 | 0 | 0 |
+| Sprint 4.7 retry enum whitelist | S47-RETRY-01 through S47-RETRY-12 | 12 | 2 | 0 | 9 | 0 | 1 | 0 | 0 | 0 |
+| **Total** |  | **634** | **52** | **105** | **415** | **20** | **18** | **23** | **1** | **0** |
 
-`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 537. The remaining 24 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. The complete per-ID rationale is in `TEST_CREDIBILITY_MATRIX.md`.
+`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 610. The remaining 24 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. The complete per-ID rationale is in `TEST_CREDIBILITY_MATRIX.md`.
 
 The suite is deterministic, in-memory, and test-only. It does not query terminal time, accounts, positions, orders, history, symbols, files, network, or randomness.

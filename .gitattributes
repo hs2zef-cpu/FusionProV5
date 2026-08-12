@@ -3,3 +3,4 @@
 *.mqh text eol=crlf
 *.md  text eol=lf
 *.txt text eol=lf
+FusionProV5/Evidence/** text eol=lf

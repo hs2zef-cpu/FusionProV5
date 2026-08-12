@@ -1,6 +1,9 @@
 #ifndef SW_V5_EXECUTION_CONTRACT_MQH
 #define SW_V5_EXECUTION_CONTRACT_MQH
 
+// Numeric transaction evidence is authoritative only after every consumed
+// double passes SWV5_IsFiniteNumber. Invalid enum values are never retryable.
+
 #include "SW_V5_BasketContract.mqh"
 
 enum SWV5_ExecutionIntentType
