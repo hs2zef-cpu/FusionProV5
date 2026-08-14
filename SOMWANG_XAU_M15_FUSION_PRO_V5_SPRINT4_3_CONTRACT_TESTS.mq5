@@ -5,7 +5,7 @@
 //| Sprint 4.8 V5 deterministic contract verification.              |
 //+------------------------------------------------------------------+
 #property strict
-#property version "5.60"
+#property version "5.90"
 
 #include "FusionProV5\Tests\ContractVerification\SW_V5_ContractTestRunner.mqh"
 
@@ -43,11 +43,33 @@ input bool InpSprint48B6MarginAuthorityTargetedOnly=false;
 input bool InpSprint48B6BasketAuthorityTargetedOnly=false;
 input bool InpSprint48B6PersistenceAtomicityTargetedOnly=false;
 input bool InpSprint48B6IdentityTargetedOnly=false;
+input bool InpSprint48B7FullReconciliationTargetedOnly=false;
+input bool InpSprint48B7RestartTargetedOnly=false;
+input bool InpSprint48B8QueryTargetedOnly=false;
+input bool InpSprint48B8FreshnessTargetedOnly=false;
+input bool InpSprint48B8RestartTargetedOnly=false;
+input bool InpSprint48B8FullReconciliationTargetedOnly=false;
+input bool InpSprint48B9QueryAuthorityTargetedOnly=false;
+input bool InpSprint48B9RequestFixtureTargetedOnly=false;
+input bool InpSprint48B10QueryMaskTargetedOnly=false;
+input bool InpSprint48B10SnapshotTargetedOnly=false;
+input bool InpSprint48B10QueryPublicationTargetedOnly=false;
 
 bool g_swv5_contract_tests_passed=false;
 
 string SWV5_SelectedSuiteName()
 {
+   if(InpSprint48B10QueryPublicationTargetedOnly) return "SPRINT4.8-B10-QUERY-PUBLICATION";
+   if(InpSprint48B10SnapshotTargetedOnly) return "SPRINT4.8-B10-SNAPSHOT-LABEL";
+   if(InpSprint48B10QueryMaskTargetedOnly) return "SPRINT4.8-B10-QUERY-MASK";
+   if(InpSprint48B9RequestFixtureTargetedOnly) return "SPRINT4.8-B9-REQUEST-FIXTURE";
+   if(InpSprint48B9QueryAuthorityTargetedOnly) return "SPRINT4.8-B9-QUERY-AUTHORITY";
+   if(InpSprint48B8FullReconciliationTargetedOnly) return "SPRINT4.8-B8-FULL-RECONCILIATION";
+   if(InpSprint48B8RestartTargetedOnly) return "SPRINT4.8-B8-RESTART";
+   if(InpSprint48B8FreshnessTargetedOnly) return "SPRINT4.8-B8-FRESHNESS";
+   if(InpSprint48B8QueryTargetedOnly) return "SPRINT4.8-B8-QUERY-AUTHORITY";
+   if(InpSprint48B7RestartTargetedOnly) return "SPRINT4.8-B7-RESTART";
+   if(InpSprint48B7FullReconciliationTargetedOnly) return "SPRINT4.8-B7-FULL-RECONCILIATION";
    if(InpSprint48B6IdentityTargetedOnly) return "SPRINT4.8-V5-IDENTITY";
    if(InpSprint48B6PersistenceAtomicityTargetedOnly) return "SPRINT4.8-V5-PERSISTENCE-ATOMICITY";
    if(InpSprint48B6BasketAuthorityTargetedOnly) return "SPRINT4.8-V5-BASKET-AUTHORITY";
@@ -87,6 +109,17 @@ string SWV5_SelectedSuiteName()
 
 bool SWV5_RunSelectedSuite()
 {
+   if(InpSprint48B10QueryPublicationTargetedOnly) return SWV5_RunSprint48B10QueryPublicationTargetedVerification();
+   if(InpSprint48B10SnapshotTargetedOnly) return SWV5_RunSprint48B10SnapshotTargetedVerification();
+   if(InpSprint48B10QueryMaskTargetedOnly) return SWV5_RunSprint48B10QueryMaskTargetedVerification();
+   if(InpSprint48B9RequestFixtureTargetedOnly) return SWV5_RunSprint48B9RequestFixtureTargetedVerification();
+   if(InpSprint48B9QueryAuthorityTargetedOnly) return SWV5_RunSprint48B9QueryAuthorityTargetedVerification();
+   if(InpSprint48B8FullReconciliationTargetedOnly) return SWV5_RunSprint48B8FullReconciliationTargetedVerification();
+   if(InpSprint48B8RestartTargetedOnly) return SWV5_RunSprint48B8RestartTargetedVerification();
+   if(InpSprint48B8FreshnessTargetedOnly) return SWV5_RunSprint48B8FreshnessTargetedVerification();
+   if(InpSprint48B8QueryTargetedOnly) return SWV5_RunSprint48B8QueryTargetedVerification();
+   if(InpSprint48B7RestartTargetedOnly) return SWV5_RunSprint48B7RestartTargetedVerification();
+   if(InpSprint48B7FullReconciliationTargetedOnly) return SWV5_RunSprint48B7FullReconciliationTargetedVerification();
    if(InpSprint48B6IdentityTargetedOnly) return SWV5_RunSprint48B6IdentityTargetedVerification();
    if(InpSprint48B6PersistenceAtomicityTargetedOnly) return SWV5_RunSprint48B6PersistenceAtomicityTargetedVerification();
    if(InpSprint48B6BasketAuthorityTargetedOnly) return SWV5_RunSprint48B6BasketAuthorityTargetedVerification();

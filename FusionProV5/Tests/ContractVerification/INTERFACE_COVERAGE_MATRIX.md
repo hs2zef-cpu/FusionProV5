@@ -1,4 +1,4 @@
-# Sprint 4.8 Phase B6 V5 Candidate Interface Coverage Matrix
+# Sprint 4.8 Phase B10 V5 Candidate Interface Coverage Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -8,7 +8,7 @@
 | `ISWV5BasketStateMachineContract` | `ValidateState`, `ValidateTransition` | COM-04–COM-06, COM-12, BSM-01–BSM-49, BAS-02, IFC-01–IFC-03, IFC-30–IFC-31, S44-16, S45BR-01–S45BR-10 |
 | `ISWV5BasketContract` | `ValidateAggregate`, `ValidatePartialClose`, `ValidateCloseCompletion` | BAS-01, BAS-03–BAS-08, XDM-04, XDM-12 |
 | `ISWV5ExecutionContract` | `ValidateIntent`, `ValidatePhaseTransition`, `ClassifyResultRetcode`, `AcceptTransactionEvidence`, `EvaluateRetry` | EXE-01–EXE-16, XDM-01–XDM-02, XDM-07, XDM-11, IFC-04–IFC-06, IFC-24–IFC-27, IFC-32, S44-17–S44-18, S45A-01–S45A-10, S45F-01–S45F-02, S46AE-01–S46AE-42, S46DR-01–S46DR-20 |
-| `ISWV5PersistenceContract` | `ValidateRecord`, `Configure`, `LoadLatest`, `LoadPendingRequests`, `SavePendingRequests`, `SaveCheckpoint`, `ReconcileRestart` | PER-01–PER-15, XDM-01, XDM-03, XDM-08, XDM-11, IFC-07–IFC-08, IFC-28, IFC-33–IFC-36, PRT-01–PRT-11, S44-01–S44-11, S45BR-10, S45F-02, S45DP-08–S45DP-12, S45DP-15–S45DP-16, S46CP-01–S46CP-20, S46EI-15 |
+| `ISWV5PersistenceContract` | `ValidateRecord`, `Configure`, `LoadLatest`, `LoadPendingRequests`, `SavePendingRequests`, `SaveCheckpoint`, `ReconcileRestart`, `PublishRestartQueryWatermarks` | PER-01–PER-15, XDM-01, XDM-03, XDM-08, XDM-11, IFC-07–IFC-08, IFC-28, IFC-33–IFC-36, PRT-01–PRT-11, S44-01–S44-11, S45BR-10, S45F-02, S45DP-08–S45DP-12, S45DP-15–S45DP-16, S46CP-01–S46CP-20, S46EI-15, S48-QPUB-01–S48-QPUB-12 |
 | `ISWV5RiskContract` | `ValidateLimits`, `Evaluate`, `ValidateAuthorization`, `ValidateHardKillRelease` | RSK-01–RSK-16, XDM-01, XDM-05–XDM-06, XDM-09–XDM-10, IFC-09–IFC-13, IFC-22–IFC-23, IFC-37, S44-12–S44-15, S45CR-01–S45CR-29, S45DO-32–S45DO-33, S46BR-01–S46BR-31, S46BH-01–S46BH-40 |
 | `ISWV5StatisticsContract` | `ValidateDeal`, `AccumulateDeal`, `Finalize` | STA-01–STA-13, IFC-29, IFC-38, S44-19–S44-20 |
 | `ISWV5InstanceOwnershipContract` | `Acquire`, `Heartbeat`, `DetectConflict`, `Release` | COM-09, OWN-01–OWN-11, IFC-19–IFC-21, IFC-39–IFC-40, S44-21–S44-25, S45BO-01–S45BO-10, S45DO-01–S45DO-33 |
@@ -42,3 +42,31 @@ These cases prove the public test-only implementations against causal projection
 - `ISWV5RiskContract.Evaluate`: S48-MAUTH-01 through S48-MAUTH-15 and S48-BAUTH-01 through S48-BAUTH-15 verify independently supplied Broker Margin and Risk Governance authority boundaries.
 - `ISWV5PersistenceContract.SavePendingRequests`, `LoadLatest`, and `LoadPendingRequests`: S48-PAT-01 through S48-PAT-12 verify successful and failed replacement atomicity.
 - Every active test-only implementation `ContractName()`: S48-ID-01 through S48-ID-09; S48-ID-10 through S48-ID-12 cover result, serializer, suite and decoder identities.
+
+## Sprint 4.8 Phase B7 additions
+
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-RFULL-01 through S48-RFULL-20 materially cover the complete independently owned Broker Adapter exposure vector and Execution pending-request/reconciliation-authority vector.
+- The test-only decoder adds S48-RT-V5-15 for reconstructive round trip of `SWV5_AuthoritativeRestartRequestSummary`; S48-CAN-DTO-10 proves all its fields are digest-bound.
+
+## Sprint 4.8 Phase B8 additions
+
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-QRY-01 through S48-QRY-10 prove the V5 contract - not the caller - defines exact Broker and Execution masks whose union covers all five required query domains.
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-RAUTH-01 through S48-RAUTH-04 separately enforce the Execution issuer and Execution/Pending-Request authority source.
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-FRESH-01 through S48-FRESH-10 enforce deterministic 60-second freshness, checkpoint-time ordering, and sequence coherence.
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-RFULL-21 through S48-RFULL-26 add isolated reduced-mask, stale broker/request, wrong-source, exact-boundary, and fully fresh vectors; all mismatch cases start from SAFE and preserve the checkpoint.
+- `SWV5_TestDecodeRestartRequestSummary`: S48-RT-NEG-12 rejects omitted authority-source content.
+
+## Sprint 4.8 Phase B9 additions
+
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-QAUTH-01 through S48-QAUTH-10 require owner-specific, independently fresh nested query authority whose sequence advances beyond the persisted Broker or Execution high-watermark. Fresh wrapper metadata cannot refresh an old nested snapshot.
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-RFIX-01 through S48-RFIX-02 prove Persistence and Execution request metadata are independent inputs and that coherent one-sided mutation remains unsafe.
+- `SWV5_TestDecodeQuerySnapshot`: S48-RT-V5-16 performs a true new-object reconstruction; S48-RT-NEG-13 rejects missing query time or authority provenance.
+- `Export-Sprint48Evidence.ps1`: EXP48-47 and EXP48-57 prove each deterministic stream is independently complete; EXP48-58 through EXP48-64 validate the source-bound offline result; EXP48-65 through EXP48-66 prove VerifyIndex and VerifyCommit reject hash-valid but semantically fabricated evidence.
+
+## Sprint 4.8 Phase B10 additions
+
+- `ISWV5PersistenceContract.ReconcileRestart`: S48-QRY-01 through S48-QRY-13 enforce closed-world owner masks; S48-QID-01 through S48-QID-03 prove `snapshot_id` is diagnostic and cannot bypass timestamp/sequence anti-replay.
+- `ISWV5PersistenceContract.ReconcileRestart`: SAFE results expose a digest-bound `SWV5_AcceptedQueryWatermarkProposal` derived from the validated Broker and Execution query sequences.
+- `ISWV5PersistenceContract.PublishRestartQueryWatermarks`: S48-QPUB-01 through S48-QPUB-12 verify atomic monotonic high-watermark publication, CAS fencing, replay rejection, owner separation, coherent checkpoint metadata, and failure atomicity.
+- `SWV5_TestDecodeAcceptedQueryWatermarkProposal`: S48-RT-V5-17 performs new-object reconstruction; S48-CAN-DTO-12 covers every proposal field.
+- `Export-Sprint48Evidence.ps1`: EXP48-68 through EXP48-73 prove VerifyIndex and VerifyCommit independently derive the source tree and rebuild the canonical verification-source digest against direct and internally recomputed forgeries.

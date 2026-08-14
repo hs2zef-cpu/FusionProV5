@@ -56,7 +56,10 @@ enum SWV5_AuthoritySource
    SWV5_AUTHORITY_HARD_KILL_RELEASE_RECORD = 7,
    // Independently supplied Risk Governance authority record. This is distinct
    // from a caller projection and from its local content-integrity digest.
-   SWV5_AUTHORITY_RISK_GOVERNANCE_RECORD = 8
+   SWV5_AUTHORITY_RISK_GOVERNANCE_RECORD = 8,
+   // Independently supplied durable Execution/Pending-Request state used to
+   // corroborate request identity and revision during restart reconciliation.
+   SWV5_AUTHORITY_EXECUTION_REQUEST_STATE = 9
 };
 
 enum SWV5_ConfirmationStatus
@@ -409,6 +412,12 @@ const ulong SWV5_QUERY_ORDERS = 2;
 const ulong SWV5_QUERY_DEALS = 4;
 const ulong SWV5_QUERY_TRANSACTIONS = 8;
 const ulong SWV5_QUERY_PENDING_REQUESTS = 16;
+// Closed-world V5 query-domain policy. Any bit outside this exact union is
+// undefined and must fail closed before it can be treated as completed or
+// authoritative.
+const ulong SWV5_QUERY_KNOWN_FLAGS_V5 =
+   SWV5_QUERY_POSITIONS|SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS|
+   SWV5_QUERY_TRANSACTIONS|SWV5_QUERY_PENDING_REQUESTS;
 
 struct SWV5_AuthoritativeQuerySet
 {
@@ -417,6 +426,17 @@ struct SWV5_AuthoritativeQuerySet
    ulong                completed_flags;
    ulong                authoritative_flags;
    ulong                observation_sequence;
+   // Time at which this exact query set completed. This is independently
+   // freshness-checked and must not be synthesized from an enclosing record.
+   datetime             observed_at;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+   // Diagnostic issuer label only. This field is content-integrity bound but
+   // is not an authority credential and is not used for freshness/anti-replay.
+   // Authority comes from exact owner/source, timestamp, sequence, closed
+   // query masks, and the persisted owner-specific high-watermark.
+   string               snapshot_id;
+   string               snapshot_digest;
 };
 
 struct SWV5_ContractDecision

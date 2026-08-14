@@ -70,3 +70,45 @@ Sprint 4.7 Phase A retains the unlocked V4 candidate shape. It adds canonical va
 | Atomic request-set replacement | Checkpoint header, request set/latest, Basket pending count, reconciliation vector/revision/source digest, CAS revision | S48-PAT-01 through S48-PAT-12, S45DP-16, S44-10 through S44-11 | A-to-B and empty replacement publish one coherent checkpoint; rejected replacement preserves the previous checkpoint. |
 | V5 identity closure | All test-only `ContractName()` methods, serializer/result/suite identities, decoder exact version | S48-ID-01 through S48-ID-12 | Active identities derive V5 from canonical constants; historical V4 input remains fail-closed. |
 | New authority canonical coverage | Typed LP1 serializers/digests for both authority DTOs | S48-CAN-AUTH-01 through S48-CAN-AUTH-02 | Every authority field changes its digest; only the self-digest is excluded. |
+
+## Sprint 4.8 Phase B7 traceability
+
+| Requirement | Contract field/interface | Executable IDs | Material evidence |
+|---|---|---|---|
+| Complete broker exposure reconciliation | `SWV5_AuthoritativeBrokerSummary`, `basket_id`, `basket_open_volume`, Broker Adapter authority | S48-RFULL-01 through S48-RFULL-02, S48-RFULL-06 through S48-RFULL-20 | Every independently broker-observed exposure, count, identity, sequence, namespace, and digest dimension is compared; one-field coherent mutations remain unsafe. |
+| Independent pending-request reconciliation | `SWV5_AuthoritativeRestartRequestSummary`, Execution authority, request count/digest/revision | S48-RFULL-03 through S48-RFULL-04, S48-RFULL-16 through S48-RFULL-18 | Count equality cannot hide a different request set; missing/stale/mismatched independently sealed authority fails closed. |
+| Independent reconciliation revision | `SWV5_AuthoritativeRestartRequestSummary.reconciliation_revision` | S48-RFULL-05 | Persistence publication revision must be corroborated by the independently supplied Execution restart snapshot, not copied into Broker Adapter evidence. |
+| Restart-authority canonical round trip | Canonical serializer/digest and decoder | S48-CAN-DTO-10, S48-RT-V5-15 | All fields affect the digest and decode into a new exact DTO. |
+
+## Sprint 4.8 Phase B8 traceability
+
+| Requirement | Contract field/interface | Test ID | Verification |
+|---|---|---|---|
+| Contract-defined mandatory restart queries | Broker/Execution query-mask constants and `SWV5_TestRestartQuerySnapshotValid` | S48-QRY-01 through S48-QRY-10, S48-RFULL-21 | Broker positions/orders/deals/transactions and Execution pending requests are exact owner-specific masks whose union is fixed by V5; caller flags cannot downgrade either gate. |
+| Independent request authority source | `SWV5_AuthoritativeRestartRequestSummary.authority`, `.authority_source` | S48-RAUTH-01 through S48-RAUTH-04, S48-RFULL-24 | Execution issuer and Execution/Pending-Request trust source are independently required and digest-bound. |
+| Bounded restart freshness | `SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5`, broker/request `observed_at` | S48-FRESH-01 through S48-FRESH-08, S48-RFULL-22 through S48-RFULL-25 | Zero, future, pre-checkpoint, and older-than-60-second evidence fails; exact 60-second age is accepted. |
+| Sequence coherence without cross-domain aliasing | query/broker/request `observation_sequence`, validation-context `evaluation_sequence` | S48-FRESH-09 through S48-FRESH-10 | Independent streams may differ; each is nonzero/current and query evidence cannot be newer than its enclosing broker summary. |
+| Isolated request revision mismatch | `request_set_revision`, request-summary digest, checkpoint payload | S48-RST-18 | The case proves a safe baseline, mutates and reseals only independent request authority, and verifies byte-identical valid persistence before rejection. |
+| Authority-source reconstruction | canonical restart-request serializer/decoder | S48-CAN-DTO-10, S48-RT-V5-15, S48-RT-NEG-12 | Source is serialized, digest-sensitive, reconstructed from input, and mandatory during decode. |
+
+## Sprint 4.8 Phase B9 traceability
+
+| Requirement | Contract field/interface | Test ID | Verification |
+|---|---|---|---|
+| Query snapshot authority is independent of wrapper metadata | `SWV5_AuthoritativeQuerySet.observed_at`, `.issuing_component`, `.authority_source`, `.snapshot_digest`; diagnostic-only `.snapshot_id` | S48-QAUTH-01 through S48-QAUTH-06, S48-QAUTH-09 through S48-QAUTH-10 | Old, zero, future, post-wrapper, or coherently resealed stale nested evidence denies; exact boundary and current snapshots allow. The diagnostic label supplies no trust. |
+| Owner-specific anti-replay sequence | persisted `broker_query_sequence_high_watermark`, `request_query_sequence_high_watermark`; nested query `observation_sequence` | S48-QAUTH-07 through S48-QAUTH-08 | Each query stream must advance beyond its persisted owner-specific high-watermark without aliasing Broker and Execution clocks. |
+| Split query ownership | broker query flags vs Execution pending-request query flags | S48-QRY-01 through S48-QRY-10, S48-QAUTH-09 | Broker Adapter owns positions/orders/deals/transactions; Execution owns pending-request query state; their exact union is the V5 restart requirement. |
+| Independent request-side fixtures | `SWV5_TestBindCheckpointRequests` explicit semantic inputs and independently built `SWV5_AuthoritativeRestartRequestSummary` | S48-RFIX-01 through S48-RFIX-02 | Persistence and Execution values no longer originate from the same fixture object; one-side coherent mutation is detected while the other remains unchanged. |
+| Query canonical reconstruction | query serializer/digest and test-side decoder | S48-CAN-DTO-11, S48-RT-V5-16, S48-RT-NEG-13 | Every authority field is digest-bound, reconstructs into a new object, and missing timestamp/provenance fails closed. |
+| Semantic evidence verification | exporter semantic core and source-bound offline result | EXP48-47, EXP48-57 through EXP48-67 | Either replay stream truncation, malformed/missing offline result/case, or hash-valid fabricated evidence is rejected by generation and both Git verification modes. |
+
+## Sprint 4.8 Phase B10 traceability
+
+| Requirement | Contract field/interface | Test ID | Verification |
+|---|---|---|---|
+| Closed-world query masks | `SWV5_QUERY_KNOWN_FLAGS_V5`, owner-specific required masks, restart validator | S48-QRY-01 through S48-QRY-13 | Exact owner masks pass; missing, zero, reduced, version-drifted, and unknown completed/authoritative/required bits fail after canonical resealing. |
+| Diagnostic-only snapshot label | `SWV5_AuthoritativeQuerySet.snapshot_id` | S48-QID-01 through S48-QID-03 | Empty/arbitrary labels do not grant or deny authority; a fresh-looking label cannot bypass owner-specific sequence anti-replay. |
+| Accepted-query proposal | `SWV5_RestartReconciliationResult.accepted_query_watermarks` | S48-QPUB-01 through S48-QPUB-02, S48-QPUB-12 | Only SAFE reconciliation emits the two validated owner-specific sequences and current CAS/revision linkage. |
+| Atomic anti-replay publication | `ISWV5PersistenceContract.PublishRestartQueryWatermarks` | S48-QPUB-03 through S48-QPUB-11 | Both anchors, reconciliation/record sequence, written time, store revision, source/payload digests and size publish atomically; replay, rollback, swapping and CAS failure reject without state mutation. |
+| Proposal canonical reconstruction | proposal serializer/digest/decoder | S48-CAN-DTO-12, S48-RT-V5-17 | Every proposal semantic is digest-bound and reconstructs into a fresh zeroed DTO. |
+| Evidence root of trust | Git-derived tree and canonical B10 verification-source digest core | EXP48-68 through EXP48-73 | Index and commit verification reject a repeated fake tree, direct digest forgery, and recomputed digest over a forged independently derivable source-blob input. |

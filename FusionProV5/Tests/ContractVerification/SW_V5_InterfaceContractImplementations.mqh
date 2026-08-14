@@ -512,8 +512,62 @@ public:
       SWV5_TestSetDecision(context,valid,(valid ? "CHECKPOINT_SAVED" : "CHECKPOINT_REJECTED"),decision);
       return valid;
    }
+   virtual bool PublishRestartQueryWatermarks(const SWV5_ContractValidationContext &context,
+                                              const SWV5_RestartReconciliationInput &reconciliation_input,
+                                              const SWV5_PersistedRequestEvidence &pending_requests[],
+                                              const SWV5_AcceptedQueryWatermarkProposal &proposal,
+                                              SWV5_PersistedCheckpoint &published_checkpoint,
+                                              SWV5_ContractDecision &decision)
+   {
+      ZeroMemory(published_checkpoint);
+      SWV5_RestartReadinessDisposition source_readiness=SWV5_RESTART_HALTED;
+      const SWV5_ReconciliationStatus source_status=
+         SWV5_TestRestartDisposition(context,reconciliation_input,pending_requests,source_readiness);
+      SWV5_AcceptedQueryWatermarkProposal expected_proposal;
+      const bool source_safe=source_status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED &&
+                             source_readiness==SWV5_RESTART_SAFE_TO_RESUME &&
+                             SWV5_TestBuildAcceptedQueryWatermarkProposal(context,reconciliation_input,source_readiness,expected_proposal);
+      bool valid=m_checkpoint_configured && source_safe && SWV5_TestContextValid(context) &&
+                 SWV5_TestPersistenceRecordValid(context,m_checkpoint) &&
+                 SWV5_TestCanonicalCheckpointPayload(reconciliation_input.persisted)==SWV5_TestCanonicalCheckpointPayload(m_checkpoint) &&
+                 SWV5_TestCanonicalAcceptedQueryWatermarkProposal(proposal)==SWV5_TestCanonicalAcceptedQueryWatermarkProposal(expected_proposal) &&
+                 SWV5_TestAcceptedQueryWatermarkProposalValid(context,m_checkpoint,proposal) &&
+                 context.clock_time>=m_checkpoint.header.written_at;
+      SWV5_PersistedCheckpoint candidate;
+      if(valid)
+      {
+         candidate=m_checkpoint;
+         candidate.reconciliation_vector.broker_query_sequence_high_watermark=
+            proposal.accepted_broker_query_high_watermark;
+         candidate.reconciliation_vector.request_query_sequence_high_watermark=
+            proposal.accepted_execution_query_high_watermark;
+         candidate.reconciliation_vector.reconciliation_revision=proposal.next_reconciliation_revision;
+         candidate.header.previous_record_sequence=m_checkpoint.header.record_sequence;
+         candidate.header.record_sequence=m_checkpoint.header.record_sequence+1;
+         candidate.header.written_at=context.clock_time;
+         candidate.header.store_revision=SWV5_TestCanonicalHash(
+            SWV5_TestCanonicalField("format","s","SWV5-RESTART-QUERY-PUBLICATION-V5-LP1")+
+            SWV5_TestCanonicalField("prior_store_revision","s",m_checkpoint.header.store_revision)+
+            SWV5_TestCanonicalUnsignedField("record_sequence",candidate.header.record_sequence)+
+            SWV5_TestCanonicalUnsignedField("broker_query_high_watermark",proposal.accepted_broker_query_high_watermark)+
+            SWV5_TestCanonicalUnsignedField("execution_query_high_watermark",proposal.accepted_execution_query_high_watermark)+
+            SWV5_TestCanonicalUnsignedField("reconciliation_revision",proposal.next_reconciliation_revision));
+         candidate.reconciliation_vector.source_summary_digest=
+            SWV5_TestReconciliationSourceDigest(candidate.reconciliation_vector);
+         SWV5_TestSealCheckpoint(candidate);
+         valid=SWV5_TestPersistenceRecordValid(context,candidate);
+      }
+      if(valid)
+      {
+         m_checkpoint=candidate;
+         published_checkpoint=candidate;
+      }
+      SWV5_TestSetDecision(context,valid,(valid ? "RESTART_QUERY_WATERMARKS_PUBLISHED" : "RESTART_QUERY_WATERMARK_PUBLICATION_REJECTED"),decision);
+      return valid;
+   }
    virtual bool ReconcileRestart(const SWV5_ContractValidationContext &context,const SWV5_RestartReconciliationInput &engineInput,const SWV5_PersistedRequestEvidence &pending_requests[],SWV5_RestartReconciliationResult &result)
    {
+      ZeroMemory(result);
       result.contract_version=context.expected_version;
       result.status=SWV5_TestRestartDisposition(context,engineInput,pending_requests,result.readiness_disposition);
       result.required_state=(result.status==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED ? engineInput.persisted.basket.lifecycle.state : SWV5_BASKET_HALTED);
@@ -521,7 +575,9 @@ public:
       result.diagnostic=(result.readiness_disposition==SWV5_RESTART_SAFE_TO_RESUME ? "SAFE_TO_RESUME" :
                          (result.readiness_disposition==SWV5_RESTART_RECONCILIATION_REQUIRED ? "RECONCILIATION_REQUIRED" :
                           (result.readiness_disposition==SWV5_RESTART_RETRY_FORBIDDEN ? "RETRY_FORBIDDEN" :
-                           (result.readiness_disposition==SWV5_RESTART_CLOSE_ONLY ? "CLOSE_ONLY" : "HALTED"))));
+                            (result.readiness_disposition==SWV5_RESTART_CLOSE_ONLY ? "CLOSE_ONLY" : "HALTED"))));
+      result.has_accepted_query_watermark_proposal=
+         SWV5_TestBuildAcceptedQueryWatermarkProposal(context,engineInput,result.readiness_disposition,result.accepted_query_watermarks);
       return result.readiness_disposition==SWV5_RESTART_SAFE_TO_RESUME;
    }
 };

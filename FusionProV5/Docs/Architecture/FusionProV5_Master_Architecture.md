@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 2.9 |
-| Date | 2026-08-12 |
+| Version | 3.3 |
+| Date | 2026-08-14 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Review Candidate | **Sprint 4.1 Contract Hardening** |
@@ -28,6 +28,10 @@
 | 2.7 | 2026-08-12 | Recorded that Sprint 4.6 evidence became superseded failed-candidate history after final independent audit, and recorded Sprint 4.7 adversarial safety, coverage, and Git-blob evidence-reproducibility closure pending immutable verification. |
 | 2.8 | 2026-08-12 | Recorded Sprint 4.7 immutable verification PASS against frozen source `008411c67239372968a4f742519984169044b7e4`: two intentional MT5 Demo Strategy Tester runs passed 634/634 with identical signature; final independent merge audit remains required and candidate governance remains unchanged. |
 | 2.9 | 2026-08-12 | Recorded Sprint 4.8 source freeze and immutable verification PASS against source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89`: two intentional MT5 Demo Strategy Tester runs passed 846/846 with identical signature, and reproducible Git-blob evidence packaging completed; final independent merge audit remains required and candidate governance remains unchanged. |
+| 3.0 | 2026-08-12 | Recorded the failed final audit of the prior Sprint 4.8 source/evidence as immutable superseded history and opened Phase B7 corrective Candidate / In Review work without a current final source freeze, Architecture Lock, runtime authorization, production readiness, or merge authorization. |
+| 3.1 | 2026-08-14 | Phase B8 contract-defined the five mandatory restart query domains, separated Execution request authority source, and added deterministic restart freshness and sequence-coherence policy. Candidate remains unlocked and unapproved. |
+| 3.2 | 2026-08-14 | Phase B9 separated Broker and Execution query-snapshot authority, added owner-specific persisted anti-replay high-watermarks, independent request fixtures, and semantic evidence verification. Candidate remains unlocked and unapproved. |
+| 3.3 | 2026-08-14 | Phase B10 closed the V5 query-domain mask, classified snapshot identifiers as diagnostic labels, defined atomic publication of accepted owner-specific query high-watermarks, and established Git-derived evidence tree and canonical verification-digest reconstruction. Candidate remains unlocked, unapproved, and not source-frozen. |
 
 ## Purpose
 
@@ -59,7 +63,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V5 corrective candidate; minimum compatible version 5
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review and remain unlocked. Sprint 4.8 source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` is frozen; two immutable verification runs passed 846/846 with identical signature `12393352988365616976`, and reproducible Git-blob evidence packaging is complete. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
+The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review and remain unlocked. Source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` was technically frozen and two immutable verification runs passed 846/846 with identical signature `12393352988365616976`; evidence commit `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` packaged those facts. The later final independent audit failed, so both are immutable superseded failed-audit history, not current merge evidence. Phase B10 is corrective source with no current final source freeze; it closes unknown query-bit acceptance, removes authority claims from diagnostic snapshot labels, defines atomic publication of accepted Broker and Execution anti-replay high-watermarks, and makes evidence validation derive Git source identity and rebuild the canonical verification-source digest. A new source review and separately authorized freeze/evidence cycle are required. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -102,7 +106,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.7 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; and Sprint 4.7 closes the resulting safety, coverage, and reproducibility findings with immutable PASS evidence pending a new final independent merge audit. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize merge, or replace Sprint 4 as the authorized baseline.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.8 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; Sprint 4.7 is superseded V4 history; and the prior Sprint 4.8 source/evidence is superseded failed-audit V5 history. Phase B10 is current Candidate / In Review corrective work and has no current final source freeze. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize production readiness, authorize merge, or replace Sprint 4 as the authorized baseline. A technical freeze of a specific tested commit makes evidence immutable but never constitutes Architecture Lock or formal approval.
 
 ## Architecture Boundary
 
@@ -391,6 +395,8 @@ No v17 source code may be reproduced or copied. The audit is used only to identi
 |---|---|---|---|
 | Persisted state was not reliably reconciled with broker state. | Restart can duplicate, abandon, or misclassify exposure. | Not currently because Fusion owns no trades. | Use versioned persistence and reconcile positions, orders, and history before resuming. |
 | Runtime state depended heavily on globals. | State can disappear or become contradictory after reload. | Signal snapshots are rebuilt safely; future execution remains exposed. | Execution state must be versioned, validated, and reconstructable. |
+
+For the unlocked Production Contract V5 candidate, restart query evidence is an independently authoritative nested snapshot. Broker Adapter owns positions, orders, deals, and transactions query completion; Execution owns pending-request query completion. Each snapshot has its own observation time, sequence, component/source provenance, stable identity, and canonical digest. Persistence owns separate prior-accepted Broker-query and Execution-query sequence high-watermarks. A restart query must be no older than 60 seconds under the explicit validation clock, must not postdate its enclosing authority summary, and must advance beyond its matching persisted high-watermark. Wrapper freshness, transaction sequence, request-set revision, and reconciliation revision are not substitutes for query freshness or query anti-replay authority.
 
 ### Statistics Lessons
 

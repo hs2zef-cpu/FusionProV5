@@ -124,6 +124,8 @@ public:
       m_total++;
       m_skipped++;
       m_signature=SWV5_TestHashAppend(m_signature,id+"|"+domain+"|SKIP|"+reason);
+      PrintFormat("SWV5_TEST id=%s domain=%s outcome=SKIP expected=executed actual=skipped detail=%s",
+                  id,domain,reason);
    }
 
    int Total() const

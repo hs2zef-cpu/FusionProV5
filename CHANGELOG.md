@@ -1,8 +1,47 @@
 # Changelog
 
+### Sprint 4.8 Phase B10 query-domain, anti-replay publication, and evidence-root closure
+
+- Closed the V5 query-domain mask so unknown bits fail closed in required, completed, and authoritative masks.
+- Classified `snapshot_id` as a diagnostic, integrity-bound label rather than authority or anti-replay evidence.
+- Added a typed SAFE-reconciliation proposal and explicit atomic Persistence publication for separate Broker and Execution accepted-query high-watermarks.
+- Added monotonicity, replay-after-publication, owner-separation, coherent-checkpoint, CAS, and failure-atomicity verification.
+- Made VerifyIndex and VerifyCommit independently derive the tested Git tree and rebuild one canonically framed verification-source digest from source identity, raw-hash claims, parsed run semantics, and source-bound Git blobs.
+- Expanded the candidate suite to 934 executable cases; the single authorized local MT5 Trial Strategy Tester run passed 934/934 with signature `11631338912972649069`.
+- Expanded the offline exporter suite to 73 cases; all 73 passed with signature `aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37`.
+- Governance remains Candidate / In Review / Unlocked. No source freeze, Architecture Lock, runtime authorization, production-readiness claim, merge authorization, commit, or push is implied.
+
+### Sprint 4.8 Phase B9 query snapshot authority and semantic evidence closure
+
+- Made Broker and Execution restart query snapshots independently identified, timestamped, sequenced, source-bound, and digest-protected.
+- Added owner-specific persisted query-sequence high-watermarks so fresh wrappers cannot replay stale nested query evidence.
+- Separated Broker positions/orders/deals/transactions query ownership from Execution pending-request query ownership.
+- Removed the shared persistence-to-authority request fixture path and added one-sided mutation tests.
+- Upgraded evidence verification from hash-only checks to source-bound semantic validation of both tester streams and a machine-readable 67/67 offline exporter result.
+- Added canonical, reconstruction, malformed-input, and regression cases; the candidate suite now contains 914 executable tests.
+- Governance remains Candidate / In Review / Unlocked. No source freeze, Architecture Lock, runtime authorization, production-readiness claim, merge authorization, commit, or push is implied.
+
+### Sprint 4.8 Phase B8 restart authority closure
+
+- Replaced caller-selected restart query completeness with the V5 contract-defined positions, orders, deals, transactions, and pending-request mask.
+- Added distinct Execution/Pending-Request `authority_source` binding with canonical serialization, strict decoding, digest sensitivity, and negative tests.
+- Added an inclusive 60-second deterministic restart freshness limit, checkpoint-time ordering, and query-to-broker sequence coherence without aliasing independent streams.
+- Repaired S48-RST-18 to prove its own safe baseline, isolated resealed request-revision mutation, and byte-identical valid persisted checkpoint.
+- Expanded RFULL plus direct query/freshness/authority cases and added exporter rejection of an old 868-ID stream against newer source inventory.
+- Governance remains Candidate / In Review / Unlocked. No source freeze, Architecture Lock, runtime authorization, production-readiness claim, merge authorization, commit, or push is implied.
+
 This file records the authorized evolution of Fusion Pro V5.
 
 ## Unreleased
+
+### Sprint 4.8 Phase B7 complete reconciliation and evidence-parser correction
+
+Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW** branch. Sprint 4 remains the authorized baseline; Production Contract V5 remains unlocked with no Architecture Lock, production readiness, runtime authorization, or merge authorization.
+
+- Separated broker-observed exposure, execution-owned pending-request identity, and persistence-owned checkpoint state for complete restart reconciliation.
+- Added independently supplied Basket open-volume and request-set/reconciliation dimensions, explicit fail-closed comparisons, adversarial full-vector tests, and canonical reconstructive coverage.
+- Strengthened the evidence exporter to validate the exact immutable test-ID inventory and every individual `SWV5_TEST` record against the machine summary.
+- Marked source `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` and evidence `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` as immutable superseded failed-audit history. Phase B7 has no current final source freeze; a new source review and evidence cycle are required.
 
 ## Sprint 4.8 Production Contract V5 and Reproducible Immutable Verification
 
@@ -13,6 +52,8 @@ Governance status: corrective work inside the Sprint 4.1 **CANDIDATE / IN REVIEW
 - Classified the 846 executable cases as 773 behavioral, 59 supporting pure-function, 14 conformance-only, and zero weak false-positive cases.
 - Added deterministic Sprint 4.8 evidence tooling with offline validation and exact Git index/commit blob-byte SHA-256 authority.
 - A final independent merge audit remains required before any merge or formal approval decision.
+
+The later final independent audit failed on complete reconciliation sufficiency, test credibility, exact result-record parsing, and governance wording. The successful run facts remain historical, but this source/evidence pair is superseded and is not current merge evidence.
 
 ## Sprint 4.7 Adversarial Safety and Reproducible Immutable Verification
 

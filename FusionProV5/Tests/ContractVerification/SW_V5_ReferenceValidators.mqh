@@ -630,13 +630,58 @@ SWV5_StatisticsIdentityDisposition SWV5_TestAppendExecutionEvidence(const SWV5_T
                                             fingerprint,current,next);
 }
 
+bool SWV5_TestRestartEvidenceFresh(const SWV5_ContractValidationContext &context,
+                                   const datetime observed_at,
+                                   const datetime checkpoint_written_at)
+{
+   if(observed_at<=0 || observed_at>context.clock_time || observed_at<checkpoint_written_at)
+      return false;
+   const long age=(long)context.clock_time-(long)observed_at;
+   return age>=0 && age<=SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5;
+}
+
 bool SWV5_TestQueriesComplete(const SWV5_AuthoritativeQuerySet &queries)
 {
    return SWV5_TestVersionValid(queries.contract_version) &&
           queries.required_flags>0 &&
-          (queries.completed_flags&queries.required_flags)==queries.required_flags &&
-          (queries.authoritative_flags&queries.required_flags)==queries.required_flags &&
-          queries.observation_sequence>0;
+          (queries.required_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          (queries.completed_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          (queries.authoritative_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          queries.completed_flags==queries.required_flags &&
+          queries.authoritative_flags==queries.required_flags &&
+          queries.observation_sequence>0 && queries.observed_at>0 &&
+          queries.issuing_component!=SWV5_COMPONENT_AUTHORITY_NONE &&
+          queries.authority_source!=SWV5_AUTHORITY_NONE &&
+          queries.snapshot_digest==SWV5_TestQuerySnapshotDigest(queries);
+}
+
+bool SWV5_TestRestartQuerySnapshotValid(const SWV5_ContractValidationContext &context,
+                                        const SWV5_AuthoritativeQuerySet &queries,
+                                        const ulong expected_flags,
+                                        const SWV5_ComponentAuthority expected_component,
+                                        const SWV5_AuthoritySource expected_source,
+                                        const ulong enclosing_observation_sequence,
+                                        const datetime enclosing_observed_at,
+                                        const datetime checkpoint_written_at,
+                                        const ulong persisted_sequence_high_watermark)
+{
+   return expected_flags!=0 &&
+          (expected_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          SWV5_TestVersionEqual(queries.contract_version,context.expected_version) &&
+          queries.required_flags==expected_flags &&
+          (queries.completed_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          (queries.authoritative_flags&~SWV5_QUERY_KNOWN_FLAGS_V5)==0 &&
+          queries.completed_flags==expected_flags &&
+          queries.authoritative_flags==expected_flags &&
+          queries.observation_sequence>persisted_sequence_high_watermark &&
+          enclosing_observation_sequence>0 &&
+          queries.observation_sequence<=enclosing_observation_sequence &&
+          enclosing_observation_sequence<=context.evaluation_sequence &&
+          SWV5_TestRestartEvidenceFresh(context,queries.observed_at,checkpoint_written_at) &&
+          queries.observed_at<=enclosing_observed_at &&
+          queries.issuing_component==expected_component &&
+          queries.authority_source==expected_source &&
+          queries.snapshot_digest==SWV5_TestQuerySnapshotDigest(queries);
 }
 
 SWV5_TestBasketRule SWV5_TestBasketPairRule(const SWV5_BasketState from_state,const SWV5_BasketState to_state)
@@ -1813,6 +1858,8 @@ bool SWV5_TestReconciliationVectorValid(const SWV5_ContractValidationContext &co
           SWV5_TestCorrelationEqual(persisted_vector.latest_confirmed_correlation,checkpoint.last_confirmed_correlation) &&
           SWV5_TestBrokerIdentityEqual(persisted_vector.latest_broker_event_identity,checkpoint.last_confirmed_correlation.broker_identity) &&
           persisted_vector.transaction_high_watermark==persisted_vector.latest_broker_event_identity.transaction_sequence &&
+          persisted_vector.broker_query_sequence_high_watermark>0 &&
+          persisted_vector.request_query_sequence_high_watermark>0 &&
           persisted_vector.request_set_digest==checkpoint.pending_request_set.request_set_digest &&
           persisted_vector.request_set_revision==checkpoint.pending_request_set.request_index_revision &&
           persisted_vector.basket_state==checkpoint.basket.lifecycle.state && persisted_vector.basket_state_version==checkpoint.basket.lifecycle.state_version &&
@@ -1926,21 +1973,39 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidat
       !SWV5_TestExecutionNamespaceValid(context,engineInput.broker.persistence_namespace) ||
       engineInput.broker.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
       engineInput.broker.authority!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
-      engineInput.broker.observed_at<=0 || engineInput.broker.observed_at>context.clock_time ||
+      !SWV5_TestRestartEvidenceFresh(context,engineInput.broker.observed_at,engineInput.persisted.header.written_at) ||
       !SWV5_IsFiniteNumber(engineInput.broker.aggregate_position_volume) ||
+      !SWV5_IsFiniteNumber(engineInput.broker.basket_open_volume) ||
       !SWV5_IsFiniteNumber(engineInput.broker.residual_volume) ||
-      engineInput.broker.aggregate_position_volume<0.0 || engineInput.broker.residual_volume<0.0 ||
+      engineInput.broker.aggregate_position_volume<0.0 || engineInput.broker.basket_open_volume<0.0 || engineInput.broker.residual_volume<0.0 ||
+      engineInput.broker.basket_id.value=="" ||
       !SWV5_TestCorrelationComplete(engineInput.broker.latest_confirmed_correlation) ||
       !SWV5_TestVersionValid(engineInput.broker.latest_broker_event_identity.contract_version) ||
       engineInput.broker.latest_broker_event_identity.broker_event_id=="" ||
       engineInput.broker.latest_broker_event_identity.transaction_sequence==0 ||
       engineInput.broker.transaction_high_watermark==0 || engineInput.broker.observation_sequence==0 ||
+      engineInput.broker.observation_sequence>context.evaluation_sequence ||
       engineInput.broker.complete_summary_digest!=SWV5_TestBrokerSummaryDigest(engineInput.broker))
+      return SWV5_RECONCILIATION_CONFLICT_HALT;
+   const SWV5_AuthoritativeRestartRequestSummary restart_requests=engineInput.restart_requests;
+   if(!SWV5_TestExecutionVersionExact(context,restart_requests.contract_version) ||
+      !SWV5_TestExecutionNamespaceValid(context,restart_requests.persistence_namespace) ||
+      restart_requests.basket_id.value=="" || restart_requests.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      restart_requests.request_set_digest=="" || restart_requests.request_set_revision=="" ||
+      restart_requests.reconciliation_revision==0 || restart_requests.observation_sequence==0 ||
+      restart_requests.observation_sequence>context.evaluation_sequence ||
+      !SWV5_TestRestartEvidenceFresh(context,restart_requests.observed_at,engineInput.persisted.header.written_at) ||
+      restart_requests.authority!=SWV5_COMPONENT_AUTHORITY_EXECUTION ||
+      restart_requests.authority_source!=SWV5_AUTHORITY_EXECUTION_REQUEST_STATE ||
+      restart_requests.complete_summary_digest!=SWV5_TestRestartRequestSummaryDigest(restart_requests))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(!SWV5_TestNamespaceComplete(engineInput.persistence_namespace))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(!SWV5_TestNamespaceEqual(engineInput.persistence_namespace,engineInput.persisted.header.persistence_namespace) ||
-      !SWV5_TestNamespaceEqual(engineInput.persistence_namespace,engineInput.broker.persistence_namespace))
+      !SWV5_TestNamespaceEqual(engineInput.persistence_namespace,engineInput.broker.persistence_namespace) ||
+      !SWV5_TestNamespaceEqual(engineInput.persistence_namespace,restart_requests.persistence_namespace) ||
+      engineInput.broker.basket_id.value!=engineInput.persistence_namespace.basket_id.value ||
+      restart_requests.basket_id.value!=engineInput.persistence_namespace.basket_id.value)
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(!SWV5_TestFenceEqual(engineInput.claimant_fence,engineInput.persisted.header.ownership_fence))
       return SWV5_RECONCILIATION_OWNERSHIP_CONFLICT_HALT;
@@ -1951,7 +2016,27 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidat
                                                 engineInput.persisted.hard_kill_state.release_evidence,
                                                 engineInput.release_authority_record)))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
-   if(!SWV5_TestQueriesComplete(engineInput.broker.queries))
+   const SWV5_PersistedReconciliationVector persisted_vector=engineInput.persisted.reconciliation_vector;
+   const bool broker_queries_valid=SWV5_TestRestartQuerySnapshotValid(context,
+                                                                      engineInput.broker.queries,
+                                                                      SWV5_RESTART_BROKER_QUERY_FLAGS_V5,
+                                                                      SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,
+                                                                      SWV5_AUTHORITY_LIVE_BROKER_STATE,
+                                                                      engineInput.broker.observation_sequence,
+                                                                      engineInput.broker.observed_at,
+                                                                      engineInput.persisted.header.written_at,
+                                                                      persisted_vector.broker_query_sequence_high_watermark);
+   const bool request_query_valid=SWV5_TestRestartQuerySnapshotValid(context,
+                                                                    restart_requests.pending_request_query,
+                                                                    SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5,
+                                                                    SWV5_COMPONENT_AUTHORITY_EXECUTION,
+                                                                    SWV5_AUTHORITY_EXECUTION_REQUEST_STATE,
+                                                                    restart_requests.observation_sequence,
+                                                                    restart_requests.observed_at,
+                                                                    engineInput.persisted.header.written_at,
+                                                                    persisted_vector.request_query_sequence_high_watermark);
+   if((SWV5_RESTART_BROKER_QUERY_FLAGS_V5|SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5)!=SWV5_RESTART_REQUIRED_QUERY_FLAGS_V5 ||
+      !broker_queries_valid || !request_query_valid)
       return SWV5_RECONCILIATION_MANUAL_REQUIRED;
    if(!engineInput.persisted.clean_shutdown ||
       engineInput.persisted.basket.lifecycle.reconciliation_state!=SWV5_RECONCILIATION_STATE_MATCHED)
@@ -1959,16 +2044,19 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidat
       readiness=SWV5_RESTART_RECONCILIATION_REQUIRED;
       return SWV5_RECONCILIATION_MANUAL_REQUIRED;
    }
-   const SWV5_PersistedReconciliationVector persisted_vector=engineInput.persisted.reconciliation_vector;
    if(!SWV5_TestNear(engineInput.broker.symbol_long_volume,persisted_vector.symbol_long_volume,context.volume_tolerance) ||
       !SWV5_TestNear(engineInput.broker.symbol_short_volume,persisted_vector.symbol_short_volume,context.volume_tolerance) ||
       !SWV5_TestNear(engineInput.broker.symbol_net_volume,persisted_vector.symbol_net_volume,context.volume_tolerance) ||
       !SWV5_TestNear(engineInput.broker.aggregate_position_volume,persisted_vector.aggregate_position_volume,context.volume_tolerance) ||
+      !SWV5_TestNear(engineInput.broker.basket_open_volume,persisted_vector.basket_open_volume,context.volume_tolerance) ||
       engineInput.broker.position_count!=persisted_vector.position_count || engineInput.broker.order_count!=persisted_vector.order_count ||
-      engineInput.broker.pending_request_count!=persisted_vector.pending_request_count ||
+      restart_requests.pending_request_count!=persisted_vector.pending_request_count ||
       !SWV5_TestCorrelationEqual(engineInput.broker.latest_confirmed_correlation,persisted_vector.latest_confirmed_correlation) ||
       !SWV5_TestBrokerIdentityEqual(engineInput.broker.latest_broker_event_identity,persisted_vector.latest_broker_event_identity) ||
       engineInput.broker.transaction_high_watermark!=persisted_vector.transaction_high_watermark ||
+      restart_requests.request_set_digest!=persisted_vector.request_set_digest ||
+      restart_requests.request_set_revision!=persisted_vector.request_set_revision ||
+      restart_requests.reconciliation_revision!=persisted_vector.reconciliation_revision ||
       persisted_vector.request_set_digest!=engineInput.persisted.pending_request_set.request_set_digest ||
       persisted_vector.request_set_revision!=engineInput.persisted.pending_request_set.request_index_revision)
       return SWV5_RECONCILIATION_CONFLICT_HALT;
@@ -1981,7 +2069,7 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidat
       return SWV5_RECONCILIATION_BROKER_AHEAD_HALT;
    if(persisted_volume>broker_volume+0.0000001)
       return SWV5_RECONCILIATION_PERSISTENCE_AHEAD_HALT;
-   if(engineInput.persisted.pending_request_set.request_count!=engineInput.broker.pending_request_count ||
+   if(engineInput.persisted.pending_request_set.request_count!=restart_requests.pending_request_count ||
       !SWV5_TestRequestSetValid(context,engineInput.persistence_namespace,pending_requests,engineInput.persisted.pending_request_set))
       return SWV5_RECONCILIATION_CONFLICT_HALT;
    if(ArraySize(pending_requests)==0)
@@ -2030,6 +2118,54 @@ SWV5_ReconciliationStatus SWV5_TestRestartDisposition(const SWV5_ContractValidat
    else
       readiness=SWV5_RESTART_SAFE_TO_RESUME;
    return SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED;
+}
+
+bool SWV5_TestBuildAcceptedQueryWatermarkProposal(const SWV5_ContractValidationContext &context,
+                                                   const SWV5_RestartReconciliationInput &engineInput,
+                                                   const SWV5_RestartReadinessDisposition readiness,
+                                                   SWV5_AcceptedQueryWatermarkProposal &proposal)
+{
+   ZeroMemory(proposal);
+   if(readiness!=SWV5_RESTART_SAFE_TO_RESUME)
+      return false;
+   const ulong next_reconciliation_revision=engineInput.persisted.reconciliation_vector.reconciliation_revision+1;
+   const ulong next_record_sequence=engineInput.persisted.header.record_sequence+1;
+   if(next_reconciliation_revision<=engineInput.persisted.reconciliation_vector.reconciliation_revision ||
+      next_record_sequence<=engineInput.persisted.header.record_sequence)
+      return false;
+   SWV5_TestMakeVersion(proposal.contract_version);
+   proposal.persistence_namespace=engineInput.persistence_namespace;
+   proposal.ownership_fence=engineInput.claimant_fence;
+   proposal.expected_store_revision=engineInput.persisted.header.store_revision;
+   proposal.expected_record_sequence=engineInput.persisted.header.record_sequence;
+   proposal.accepted_broker_query_high_watermark=engineInput.broker.queries.observation_sequence;
+   proposal.accepted_execution_query_high_watermark=engineInput.restart_requests.pending_request_query.observation_sequence;
+   proposal.broker_snapshot_observation_sequence=engineInput.broker.queries.observation_sequence;
+   proposal.execution_snapshot_observation_sequence=engineInput.restart_requests.pending_request_query.observation_sequence;
+   proposal.next_reconciliation_revision=next_reconciliation_revision;
+   SWV5_TestSealAcceptedQueryWatermarkProposal(proposal);
+   return true;
+}
+
+bool SWV5_TestAcceptedQueryWatermarkProposalValid(const SWV5_ContractValidationContext &context,
+                                                   const SWV5_PersistedCheckpoint &current,
+                                                   const SWV5_AcceptedQueryWatermarkProposal &proposal)
+{
+   const ulong next_record_sequence=current.header.record_sequence+1;
+   const ulong next_reconciliation_revision=current.reconciliation_vector.reconciliation_revision+1;
+   return SWV5_TestExecutionVersionExact(context,proposal.contract_version) &&
+          SWV5_TestNamespaceEqual(proposal.persistence_namespace,current.header.persistence_namespace) &&
+          SWV5_TestFenceEqual(proposal.ownership_fence,current.header.ownership_fence) &&
+          proposal.expected_store_revision!="" && proposal.expected_store_revision==current.header.store_revision &&
+          proposal.expected_record_sequence==current.header.record_sequence &&
+          next_record_sequence>current.header.record_sequence &&
+          proposal.accepted_broker_query_high_watermark==proposal.broker_snapshot_observation_sequence &&
+          proposal.accepted_execution_query_high_watermark==proposal.execution_snapshot_observation_sequence &&
+          proposal.accepted_broker_query_high_watermark>current.reconciliation_vector.broker_query_sequence_high_watermark &&
+          proposal.accepted_execution_query_high_watermark>current.reconciliation_vector.request_query_sequence_high_watermark &&
+          next_reconciliation_revision>current.reconciliation_vector.reconciliation_revision &&
+          proposal.next_reconciliation_revision==next_reconciliation_revision &&
+          proposal.proposal_digest==SWV5_TestAcceptedQueryWatermarkProposalDigest(proposal);
 }
 
 bool SWV5_TestMonetaryBasisComplete(const SWV5_RiskMonetaryBasis &basis)

@@ -1,8 +1,8 @@
-# Sprint 4.8 Phase B6 V5 Candidate Test Credibility Matrix
+# Sprint 4.8 Phase B10 V5 Candidate Test Credibility Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
-This matrix classifies every executable ID in the 846-case V5 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
+This matrix classifies every executable ID in the 934-case V5 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
 
 The audit question for every behavioral row is: if the advertised behavior were removed or intentionally broken, would the material assertion fail? Every behavioral row below answers **yes**. No row is classified by test name or intent alone.
 
@@ -10,15 +10,15 @@ The audit question for every behavioral row is: if the advertised behavior were 
 
 | Category | Count | Merge-gating evidence |
 |---|---:|---|
-| `MERGE_GATING_BEHAVIOR` | 69 | YES |
-| `STATE_TRANSITION` | 107 | YES |
-| `NEGATIVE_FAIL_CLOSED` | 543 | YES |
-| `ROUND_TRIP` | 7 | YES |
-| `INVARIANT_BEHAVIOR` | 47 | YES |
-| `SUPPORTING_PURE_FUNCTION` | 59 | NO |
+| `MERGE_GATING_BEHAVIOR` | 85 | YES |
+| `STATE_TRANSITION` | 109 | YES |
+| `NEGATIVE_FAIL_CLOSED` | 606 | YES |
+| `ROUND_TRIP` | 10 | YES |
+| `INVARIANT_BEHAVIOR` | 48 | YES |
+| `SUPPORTING_PURE_FUNCTION` | 62 | NO |
 | `CONFORMANCE_ONLY` | 14 | NO |
 | `WEAK_FALSE_POSITIVE` | 0 | NO |
-| **Executable total** | **846** | **773 behavioral; 73 supporting/conformance** |
+| **Executable total** | **934** | **858 behavioral; 76 supporting/conformance** |
 
 ## Complete classification
 
@@ -262,3 +262,50 @@ Sprint 4.8 Phase B5 totals: executable 790; `MERGE_GATING_BEHAVIOR` 63; `STATE_T
 | S48-CAN-AUTH-01 through S48-CAN-AUTH-02 | 2 `SUPPORTING_PURE_FUNCTION` | Exhaustive per-field mutation proves both new authority records' typed LP1 digests cover every semantic field and exclude only the self-digest. |
 
 Sprint 4.8 Phase B6 totals: executable 846; `MERGE_GATING_BEHAVIOR` 69; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 543; `ROUND_TRIP` 7; `INVARIANT_BEHAVIOR` 47; `SUPPORTING_PURE_FUNCTION` 59; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 773; category sum 846.
+
+## Sprint 4.8 Phase B7 additions
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-RFULL-01, S48-RFULL-20 | 2 `MERGE_GATING_BEHAVIOR` | Independently built Broker Adapter exposure and Execution request-authority snapshots exactly match a valid persisted vector and reach SAFE_TO_RESUME. |
+| S48-RFULL-02 through S48-RFULL-19 | 18 `NEGATIVE_FAIL_CLOSED` | Each case mutates one independently owned broker/execution dimension, reseals the applicable authority summary, leaves the persisted checkpoint byte-identical, and requires restart to remain unsafe. Removing the corresponding comparison makes its test fail. |
+| S48-CAN-DTO-10 | 1 `SUPPORTING_PURE_FUNCTION` | Every Execution-owned restart-request-summary field changes its typed canonical digest. |
+| S48-RT-V5-15 | 1 `ROUND_TRIP` | A zeroed new restart-request-authority DTO reconstructs from canonical text and reserializes exactly with the same digest. |
+
+Sprint 4.8 Phase B7 totals: executable 868; `MERGE_GATING_BEHAVIOR` 71; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 561; `ROUND_TRIP` 8; `INVARIANT_BEHAVIOR` 47; `SUPPORTING_PURE_FUNCTION` 60; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 794; category sum 868.
+
+## Sprint 4.8 Phase B8 additions
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-QRY-01 through S48-QRY-10 | 2 `MERGE_GATING_BEHAVIOR`; 8 `NEGATIVE_FAIL_CLOSED` | Restart uses fixed V5 owner-specific masks whose union covers five domains. Reduced completion, every missing mandatory domain, caller mask downgrade, and version drift fail; complete and explicitly owned inputs behave as defined. |
+| S48-RAUTH-01 through S48-RAUTH-04 | 1 `MERGE_GATING_BEHAVIOR`; 3 `NEGATIVE_FAIL_CLOSED` | Execution is the issuer and `EXECUTION_REQUEST_STATE` is the distinct trust source; wrong component or source fails despite coherent resealing. |
+| S48-FRESH-01 through S48-FRESH-10 | 4 `MERGE_GATING_BEHAVIOR`; 6 `NEGATIVE_FAIL_CLOSED` | Valid nonzero, digest-correct observations test stale, future, inclusive age boundary, independent stream sequences, and query/enclosing-summary sequence order without hidden clocks. |
+| S48-RFULL-21 through S48-RFULL-26 | 2 `MERGE_GATING_BEHAVIOR`; 4 `NEGATIVE_FAIL_CLOSED` | Every case proves a safe baseline and immutable checkpoint before isolated reduced-query, stale broker/request, wrong-source, boundary, or fully fresh reconciliation behavior. |
+| S48-RT-NEG-12 | 1 `NEGATIVE_FAIL_CLOSED` | A restart-request authority record with omitted `authority_source` cannot decode. |
+
+Sprint 4.8 Phase B8 totals: executable 899; `MERGE_GATING_BEHAVIOR` 80; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 583; `ROUND_TRIP` 8; `INVARIANT_BEHAVIOR` 47; `SUPPORTING_PURE_FUNCTION` 60; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 825; category sum 899.
+
+## Sprint 4.8 Phase B9 additions
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-QAUTH-01 through S48-QAUTH-10 | 2 `MERGE_GATING_BEHAVIOR`; 8 `NEGATIVE_FAIL_CLOSED` | Independently Broker- and Execution-owned nested query snapshots require exact mask, source, issuer, digest, timestamp and a sequence newer than the persisted owner-specific high-watermark. The content-bound label is diagnostic only. A fresh enclosing wrapper cannot refresh stale nested evidence. |
+| S48-RFIX-01 through S48-RFIX-02 | 2 `NEGATIVE_FAIL_CLOSED` | Persistence request metadata and Execution request authority are built independently. Coherently mutating either side leaves the other byte-identical and restart remains unsafe. |
+| S48-CAN-DTO-11 | 1 `SUPPORTING_PURE_FUNCTION` | Every query-snapshot authority field changes its typed canonical digest, with only the self-digest excluded. |
+| S48-RT-V5-16 | 1 `ROUND_TRIP` | A zeroed new query-snapshot DTO reconstructs from canonical text and reserializes exactly with the same digest. |
+| S48-RT-NEG-13 | 1 `NEGATIVE_FAIL_CLOSED` | Missing query timestamp or authority provenance cannot decode as a valid query snapshot. |
+
+Sprint 4.8 Phase B9 totals: executable 914; `MERGE_GATING_BEHAVIOR` 82; `STATE_TRANSITION` 107; `NEGATIVE_FAIL_CLOSED` 594; `ROUND_TRIP` 9; `INVARIANT_BEHAVIOR` 47; `SUPPORTING_PURE_FUNCTION` 61; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 839; category sum 914.
+
+## Sprint 4.8 Phase B10 additions and reclassification
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-QRY-01 through S48-QRY-13 | 1 `MERGE_GATING_BEHAVIOR`; 12 `NEGATIVE_FAIL_CLOSED` | The exact owner mask is accepted once; missing, reduced, zero, version-drifted, or unknown completed/authoritative/required bits fail after the affected snapshot and wrapper are resealed. Former false-positive S48-QRY-07 now rejects undefined bit 32. |
+| S48-QID-01 through S48-QID-03 | 2 `MERGE_GATING_BEHAVIOR`; 1 `NEGATIVE_FAIL_CLOSED` | Arbitrary or empty diagnostic labels do not change a valid authority decision after resealing; a fresh-looking label cannot bypass sequence anti-replay. |
+| S48-QPUB-01 through S48-QPUB-12 | 2 `MERGE_GATING_BEHAVIOR`; 2 `STATE_TRANSITION`; 7 `NEGATIVE_FAIL_CLOSED`; 1 `INVARIANT_BEHAVIOR` | SAFE reconciliation emits owner-specific accepted watermarks; atomic publication advances both and checkpoint metadata; replays, rollback, aliasing, CAS failure, and non-SAFE publication fail without mutating stored state. |
+| S48-CAN-DTO-12 | 1 `SUPPORTING_PURE_FUNCTION` | Every accepted-watermark proposal field changes its typed canonical digest; only the proposal self-digest is excluded. |
+| S48-RT-V5-17 | 1 `ROUND_TRIP` | A zeroed accepted-watermark proposal reconstructs from canonical text and reserializes exactly with the same digest. |
+
+Sprint 4.8 Phase B10 totals: executable 934; `MERGE_GATING_BEHAVIOR` 85; `STATE_TRANSITION` 109; `NEGATIVE_FAIL_CLOSED` 606; `ROUND_TRIP` 10; `INVARIANT_BEHAVIOR` 48; `SUPPORTING_PURE_FUNCTION` 62; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 858; category sum 934.

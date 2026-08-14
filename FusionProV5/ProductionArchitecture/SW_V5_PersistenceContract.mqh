@@ -49,6 +49,22 @@ enum SWV5_RestartReadinessDisposition
    SWV5_RESTART_HALTED = 4
 };
 
+// V5 restart safety policy. The complete requirement is contract-defined and
+// split by semantic owner: Broker Adapter owns broker-observed domains while
+// Execution owns the pending-request query. No caller-supplied mask can weaken
+// either partition or the complete union.
+const ulong SWV5_RESTART_BROKER_QUERY_FLAGS_V5 =
+   SWV5_QUERY_POSITIONS|SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS|
+   SWV5_QUERY_TRANSACTIONS;
+const ulong SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5 = SWV5_QUERY_PENDING_REQUESTS;
+const ulong SWV5_RESTART_REQUIRED_QUERY_FLAGS_V5 =
+   SWV5_RESTART_BROKER_QUERY_FLAGS_V5|SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5;
+
+// An observation exactly this old remains valid. Older, zero, future, or
+// pre-checkpoint observations fail closed. Validation uses the supplied
+// authoritative context clock only; no hidden live clock is permitted.
+const long SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5 = 60;
+
 struct SWV5_PersistenceRecordHeader
 {
    SWV5_ContractVersion contract_version;
@@ -108,6 +124,10 @@ struct SWV5_PersistedReconciliationVector
    SWV5_ExecutionCorrelation latest_confirmed_correlation;
    SWV5_BrokerExecutionIdentity latest_broker_event_identity;
    ulong transaction_high_watermark;
+   // Independently persisted anti-replay anchors for the two query-authority
+   // streams. A restart observation must advance beyond these high-watermarks.
+   ulong broker_query_sequence_high_watermark;
+   ulong request_query_sequence_high_watermark;
    string request_set_digest;
    string request_set_revision;
    SWV5_BasketState basket_state;
@@ -149,10 +169,13 @@ struct SWV5_AuthoritativeBrokerSummary
    double                symbol_short_volume;
    double                symbol_net_volume;
    double                aggregate_position_volume;
+   // Broker Adapter observation for this namespace/Basket. This is not read
+   // from the persisted reconciliation vector.
+   SWV5_BasketID         basket_id;
+   double                basket_open_volume;
    double                residual_volume;
    uint                  position_count;
    uint                  order_count;
-   uint                  pending_request_count;
    SWV5_ExecutionCorrelation latest_confirmed_correlation;
    SWV5_BrokerExecutionIdentity latest_broker_event_identity;
    ulong                 transaction_high_watermark;
@@ -165,18 +188,64 @@ struct SWV5_AuthoritativeBrokerSummary
    SWV5_AuthoritySource  authority;
 };
 
+// Execution owns the durable pending-request view used during restart. Broker
+// Adapter cannot legitimately issue request-set identity or reconciliation
+// publication revisions, and Persistence cannot independently corroborate its
+// own stored values. This snapshot must therefore be supplied independently
+// by the Execution/Pending-Request authority boundary.
+struct SWV5_AuthoritativeRestartRequestSummary
+{
+   SWV5_ContractVersion       contract_version;
+   SWV5_PersistenceNamespace  persistence_namespace;
+   SWV5_BasketID              basket_id;
+   SWV5_AccountPositionMode   account_mode;
+   uint                       pending_request_count;
+   string                     request_set_digest;
+   string                     request_set_revision;
+   ulong                      reconciliation_revision;
+   ulong                      observation_sequence;
+   datetime                   observed_at;
+   SWV5_ComponentAuthority    authority;
+   SWV5_AuthoritySource       authority_source;
+   // Execution-owned completion evidence for the pending-request query. It is
+   // separate from Broker Adapter query evidence by construction.
+   SWV5_AuthoritativeQuerySet pending_request_query;
+   // Canonical digest of every field above; excluded from its own preimage.
+   string                     complete_summary_digest;
+};
+
 struct SWV5_RestartReconciliationInput
 {
    SWV5_ContractVersion          contract_version;
    SWV5_PersistenceNamespace     persistence_namespace;
    SWV5_PersistedCheckpoint      persisted;
    SWV5_AuthoritativeBrokerSummary broker;
+   SWV5_AuthoritativeRestartRequestSummary restart_requests;
    SWV5_OwnershipFence           claimant_fence;
    SWV5_PersistenceLoadStatus   persistence_status;
    // RELEASED checkpoints require this independently obtained authority input.
    // It must never be reconstructed from persisted.hard_kill_state.
    bool                         has_release_authority_record;
    SWV5_HardKillReleaseAuthorityRecord release_authority_record;
+};
+
+// Pure reconciliation output proposed for a separate atomic Persistence
+// publication. The accepted values are derived from validated Broker and
+// Execution query snapshots; callers may not substitute arbitrary counters.
+struct SWV5_AcceptedQueryWatermarkProposal
+{
+   SWV5_ContractVersion      contract_version;
+   SWV5_PersistenceNamespace persistence_namespace;
+   SWV5_OwnershipFence       ownership_fence;
+   string                    expected_store_revision;
+   ulong                     expected_record_sequence;
+   ulong                     accepted_broker_query_high_watermark;
+   ulong                     accepted_execution_query_high_watermark;
+   ulong                     broker_snapshot_observation_sequence;
+   ulong                     execution_snapshot_observation_sequence;
+   ulong                     next_reconciliation_revision;
+   // Canonical digest of every field above; excluded from its own preimage.
+   string                    proposal_digest;
 };
 
 struct SWV5_RestartReconciliationResult
@@ -187,6 +256,8 @@ struct SWV5_RestartReconciliationResult
    SWV5_BasketState          required_state;
    ulong                     reason_flags;
    string                    diagnostic;
+   bool                      has_accepted_query_watermark_proposal;
+   SWV5_AcceptedQueryWatermarkProposal accepted_query_watermarks;
 };
 
 class ISWV5PersistenceContract
@@ -212,6 +283,17 @@ public:
    virtual bool SaveCheckpoint(const SWV5_ContractValidationContext &context,
                                const SWV5_PersistedCheckpoint &checkpoint,
                                SWV5_ContractDecision &decision) = 0;
+   // Atomically advances the two owner-specific restart query anti-replay
+   // anchors and all checkpoint publication metadata under store/CAS fencing.
+   // The exact reconciliation input and request set are revalidated so a
+   // caller-fabricated proposal cannot publish. Failure must leave the
+   // previously published checkpoint unchanged.
+   virtual bool PublishRestartQueryWatermarks(const SWV5_ContractValidationContext &context,
+                                              const SWV5_RestartReconciliationInput &reconciliation_input,
+                                              const SWV5_PersistedRequestEvidence &pending_requests[],
+                                              const SWV5_AcceptedQueryWatermarkProposal &proposal,
+                                              SWV5_PersistedCheckpoint &published_checkpoint,
+                                              SWV5_ContractDecision &decision) = 0;
    virtual bool ReconcileRestart(const SWV5_ContractValidationContext &context,
                                  const SWV5_RestartReconciliationInput &engineInput,
                                  const SWV5_PersistedRequestEvidence &pending_requests[],

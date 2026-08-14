@@ -8,13 +8,13 @@ Sprint 4.8 Production Contract V5 Candidate
 
 ### Date
 
-2026-08-12
+2026-08-14
 
 ### Status
 
 **CANDIDATE / IN REVIEW**
 
-Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. Sprint 4.8 source is frozen and immutable verification evidence is packaged, but no Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
+Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. The prior Sprint 4.8 source and evidence are immutable superseded failed-audit history. Phase B10 has no current final source freeze; a new source review and separately authorized freeze/evidence cycle are required. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
 
 ## Current Authorized Baseline
 
@@ -72,14 +72,15 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Sprint 4.7 immutable verification: 634 passed, 0 failed, 0 skipped in each of two intentional MT5 Demo Strategy Tester runs; identical signature `18433705061502137480`; tested source `008411c67239372968a4f742519984169044b7e4`
 - Sprint 4.7 credibility: 610 behavioral, 23 supporting pure-function, 1 conformance-only, 0 weak false-positive; 634 total
 - Sprint 4.7 exporter offline verification: 26 passed, 0 failed, 0 skipped; repository hashes are exact Git index/commit blob-byte SHA-256 values
-- Sprint 4.8 frozen source: `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89`; source tree `13b9a0dc020dbdd293e648c5a6f4c4d1cba05147`
+- Sprint 4.8 prior technically frozen source: `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89`; source tree `13b9a0dc020dbdd293e648c5a6f4c4d1cba05147`; now immutable superseded failed-audit history
 - Sprint 4.8 immutable verification: 846 passed, 0 failed, 0 skipped in each of two intentional MT5 Demo Strategy Tester runs; identical signature `12393352988365616976`
 - Sprint 4.8 credibility: 773 behavioral, 59 supporting pure-function, 14 conformance-only, 0 weak false-positive; 846 total
-- Sprint 4.8 reproducible evidence packaging: complete using hash-gated Phase D raw inputs and exact Git index/commit blob-byte SHA-256 authority
+- Sprint 4.8 prior reproducible evidence commit: `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3`; immutable superseded failed-audit history, not current merge evidence
+- Sprint 4.8 Phase B10: current Candidate / In Review corrective source; closed query masks, diagnostic-only snapshot labels, explicit atomic owner-specific anti-replay publication, and Git-derived evidence root-of-trust added; local verification passed 934/934 MQL cases with signature `11631338912972649069` and 73/73 offline exporter cases with signature `aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37`; no current final source freeze or final merge evidence
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action
 
-Perform the final independent merge audit of the frozen Sprint 4.8 V5 candidate source and reproducible evidence. Merge and formal approval require later separate authorization. Sprint 4 Architecture remains the authorized baseline until approval.
+Complete Phase B10 verification and source review. If approved separately, create a new source freeze followed by immutable verification and evidence generation. Merge and formal approval require later separate authorization. Sprint 4 Architecture remains the authorized baseline until approval.
 
 Do not merge or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.
