@@ -6,7 +6,9 @@
 [CmdletBinding()]
 param(
     [string]$ExporterPath,
-    [string]$ResultPath
+    [string]$ResultPath,
+    [switch]$BuildParserOnly,
+    [switch]$ServerParserOnly
 )
 
 Set-StrictMode -Version Latest
@@ -44,7 +46,7 @@ try {
     Write-Lf (Join-Path $repo '.gitattributes') "* text=auto`n*.md text eol=lf`n*.txt text eol=lf`n*.json text eol=lf`nFusionProV5/Evidence/** text eol=lf"
     Write-Lf $inventory "| Domain | IDs | Total |`n|---|---|---:|`n| Fixture | FX-001 through FX-934 | 934 |`n| **Total** |  | **934** |"
     Write-Lf (Join-Path $testDir 'TEST_ID_INVENTORY.txt') "# fixture canonical IDs`nFX-001..934"
-    $exporterIds=@();foreach($n in 1..41){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 46..64){$exporterIds+='EXP48-'+$n.ToString('D2')};$exporterIds+='EXP48-67';foreach($n in 42..45){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 65..66){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 68..82){$exporterIds+='EXP48-'+$n.ToString('D2')}
+    $exporterIds=@();foreach($n in 1..41){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 46..64){$exporterIds+='EXP48-'+$n.ToString('D2')};$exporterIds+='EXP48-67';foreach($n in 42..45){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 65..66){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 68..107){$exporterIds+='EXP48-'+$n.ToString('D2')}
     Write-Lf (Join-Path $testDir 'EXPORTER_TEST_ID_INVENTORY.txt') ("# exact exporter regression execution order`n"+($exporterIds-join"`n"))
     $matrixValid=@'
 | Category | Count | Merge-gating evidence |
@@ -68,7 +70,7 @@ INVARIANT_BEHAVIOR|FX-811..858
 SUPPORTING_PURE_FUNCTION|FX-859..920
 CONFORMANCE_ONLY|FX-921..934
 '@
-    Write-Lf $matrix $matrixValid;Write-Lf $credibilityInventory $credibilityValid;Write-Lf $manifest '// fixture manifest';Write-Lf $ini '[Tester]';Write-Lf $set 'Fixture=true'
+    Write-Lf $matrix $matrixValid;Write-Lf $credibilityInventory $credibilityValid;Write-Lf $manifest '// fixture manifest';Write-Lf $ini "[Tester]`nSymbol=EURUSD`nPeriod=M1";Write-Lf $set 'Fixture=true'
     Git @('-C',$repo,'add','.')|Out-Null;Git @('-C',$repo,'-c','user.name=SWV5 Test','-c','user.email=swv5-test@example.invalid','commit','--quiet','-m','fixture source')|Out-Null
     $sourceCommit=Git @('-C',$repo,'rev-parse','HEAD');$sourceTree=Git @('-C',$repo,'rev-parse','HEAD^{tree}')
     $manifestBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5")
@@ -84,9 +86,16 @@ CONFORMANCE_ONLY|FX-921..934
     $compileOk="Result: 0 errors, 0 warnings, 100 ms elapsed, cpu='X64 Regular'"
     $machine='SWV5_MACHINE_RESULT {"schema":"SWV5-CONTRACT-TEST-RESULT-V5","contract_policy":"SWV5-PRODUCTION-V5","suite":"SPRINT4.8-V5-FULL","total":934,"passed":934,"failed":0,"skipped":0,"signature":"12393352988365616976","deterministic":true}'
     $caseLines=@();for($n=1;$n-le934;$n++){$caseLines += ('SWV5_TEST id=FX-'+$n.ToString('D3')+' domain=FIXTURE outcome=PASS expected=pass actual=pass detail=')};$caseBlock=($caseLines-join"`n")
+    $metaTesterLine='AB 0 10:00:00.000 Startup MetaTester 5 build 6090, 31 Jul 2026'
+    $agentAuthorizationLine='AB 0 10:00:00.001 Network authorized (agent build 6090)'
+    $loginBuildLine='AB 0 10:00:00.001 127.0.0.1 login (build 6090)'
+    $serverGenerationLine='AB 0 10:00:00.002 Tester EURUSD,M1 (Exness-MT5Trial6): generating based on real ticks'
+    $serverTestingLine='AB 0 10:00:00.002 Tester EURUSD,M1 (Exness-MT5Trial6): testing of Fixture.ex5'
     $runBase=@"
-AB 0 10:00:00.001 authorized (agent build 6090)
-AB 0 10:00:00.002 EURUSD,M1 (Exness-MT5Trial6): testing of Fixture.ex5
+$metaTesterLine
+$loginBuildLine
+$serverGenerationLine
+AB 0 10:00:00.002 Tester EURUSD,M1: testing of Fixture.ex5 started with inputs:
 SWV5_RUN_METADATA suite=SPRINT4.8-V5-FULL fixture_account_mode=HEDGING fixture_broker=TEST-BROKER fixture_server=TEST-SERVER broker_access=false
 $caseBlock
 $caseBlock
@@ -101,10 +110,10 @@ AB 0 10:00:00.003 OnTester result 1
         Write-Lf $offlineResult ($value|ConvertTo-Json -Depth 6)
     }
     function Set-Baseline {Write-Lf $archLog $compileOk;Write-Lf $testLog $compileOk;Write-Lf $run1Log $runBase;Write-Lf $run2Log ($runBase.Replace('10:00:00','10:01:00'));[IO.File]::WriteAllBytes($ex5,[byte[]](1,4,8,16,32,64));Set-OfflineBaseline}
-    function Get-Digest([string]$Commit,[string]$Tree,[string]$CredibilitySha=''){
+    function Get-Digest([string]$Commit,[string]$Tree,[string]$CredibilitySha='',[string]$TerminalBuild='6090',[string]$Server='Exness-MT5Trial6'){
         $sourceCredibilityBlob=Git @('-C',$repo,'rev-parse',"${Commit}:FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_ID_INVENTORY.txt")
         if([string]::IsNullOrWhiteSpace($CredibilitySha)){$CredibilitySha=Get-BlobSha $sourceCredibilityBlob}
-        $lines=@('format=SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$(Get-Sha $archLog)","test_compile_raw_sha256=$(Get-Sha $testLog)","run_1_raw_sha256=$(Get-Sha $run1Log)","run_2_raw_sha256=$(Get-Sha $run2Log)","exporter_test_results_raw_sha256=$(Get-Sha $offlineResult)",'run_1_signature=12393352988365616976','run_2_signature=12393352988365616976','schema=SWV5-CONTRACT-TEST-RESULT-V5','production_policy=SWV5-PRODUCTION-V5','suite=SPRINT4.8-V5-FULL','terminal_build=6090','server=Exness-MT5Trial6','account_mode=HEDGING','ontester=1',"test_manifest_git_blob_sha256=$(Get-BlobSha $manifestBlob)","credibility_inventory_git_blob_sha256=$CredibilitySha","run_config_ini_sha256=$(Get-BlobSha $iniBlob)","run_config_set_sha256=$(Get-BlobSha $setBlob)","compiled_test_ex5_sha256=$(Get-Sha $ex5)","exporter_git_blob_sha256=$fixtureExporterSha","exporter_test_script_git_blob_sha256=$fixtureTestScriptSha")
+        $lines=@('format=SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$(Get-Sha $archLog)","test_compile_raw_sha256=$(Get-Sha $testLog)","run_1_raw_sha256=$(Get-Sha $run1Log)","run_2_raw_sha256=$(Get-Sha $run2Log)","exporter_test_results_raw_sha256=$(Get-Sha $offlineResult)",'run_1_signature=12393352988365616976','run_2_signature=12393352988365616976','schema=SWV5-CONTRACT-TEST-RESULT-V5','production_policy=SWV5-PRODUCTION-V5','suite=SPRINT4.8-V5-FULL',"terminal_build=$TerminalBuild","server=$Server",'account_mode=HEDGING','ontester=1',"test_manifest_git_blob_sha256=$(Get-BlobSha $manifestBlob)","credibility_inventory_git_blob_sha256=$CredibilitySha","run_config_ini_sha256=$(Get-BlobSha $iniBlob)","run_config_set_sha256=$(Get-BlobSha $setBlob)","compiled_test_ex5_sha256=$(Get-Sha $ex5)","exporter_git_blob_sha256=$fixtureExporterSha","exporter_test_script_git_blob_sha256=$fixtureTestScriptSha")
         return Get-ShaBytes $Utf8NoBom.GetBytes(($lines-join"`n"))
     }
     function Get-DigestFromInputs([string]$Commit,[string]$Tree,[object]$Inputs){
@@ -113,6 +122,77 @@ AB 0 10:00:00.003 OnTester result 1
     }
     function Get-Args([string]$Commit,[string]$Tree,[string]$Output){return @('-Mode','Generate','-RepositoryRoot',$repo,'-OutputDirectory',$Output,'-ArchitectureCompileLog',$archLog,'-TestCompileLog',$testLog,'-Run1Log',$run1Log,'-Run2Log',$run2Log,'-CompiledTestEx5',$ex5,'-ExporterTestResults',$offlineResult,'-ExpectedTestTotal','934','-ExpectedDeterministicSignature','12393352988365616976','-TestedSourceSha',$Commit,'-ExpectedSourceTreeSha',$Tree,'-ExpectedArchitectureCompileLogSha256',(Get-Sha $archLog),'-ExpectedTestCompileLogSha256',(Get-Sha $testLog),'-ExpectedRun1LogSha256',(Get-Sha $run1Log),'-ExpectedRun2LogSha256',(Get-Sha $run2Log),'-ExpectedCompiledTestEx5Sha256',(Get-Sha $ex5),'-ExpectedExporterTestResultsSha256',(Get-Sha $offlineResult),'-ExpectedVerificationSourceDigest',(Get-Digest $Commit $Tree))}
     function Negative([string]$Id,[string]$Name,[scriptblock]$Arrange,[scriptblock]$Adjust=$null){Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline;&$Arrange;$a=Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot $Id);if($null-ne$Adjust){$a=&$Adjust $a};$r=Invoke-Exporter $a "$Id.out";Record $Id $Name ($r.ExitCode-ne 0)}
+    function Run-BuildParserTests {
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        $d3Style=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-83')) 'EXP48-83.out'
+        Record 'EXP48-83' 'D3-style MetaTester authority without agent-authorization record passes' ($d3Style.ExitCode-eq0)
+
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        Write-Lf $run1Log ($runBase.Replace($metaTesterLine,$metaTesterLine+"`n"+$metaTesterLine))
+        $duplicate=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-84')) 'EXP48-84.out'
+        Record 'EXP48-84' 'duplicate identical authoritative build records pass' ($duplicate.ExitCode-eq0)
+
+        Negative 'EXP48-85' 'consistently wrong MetaTester and login build rejected' {Write-Lf $run1Log ($runBase.Replace('build 6090','build 6089'))}
+        Negative 'EXP48-86' 'conflicting MetaTester and login build identities rejected' {Write-Lf $run1Log ($runBase.Replace($loginBuildLine,$loginBuildLine.Replace('6090','6089')))}
+        Negative 'EXP48-87' 'login-only build evidence without MetaTester authority rejected' {Write-Lf $run1Log ($runBase.Replace($metaTesterLine+"`n",''))}
+        Negative 'EXP48-88' 'malformed MetaTester build record rejected' {Write-Lf $run1Log ($runBase.Replace('MetaTester 5 build 6090','MetaTester 5 build X6090'))}
+        Negative 'EXP48-89' 'unrelated payload containing 6090 without supported build record rejected' {Write-Lf $run1Log ("AB 0 09:59:59.999 Payload unrelated_value=6090`n"+$runBase.Replace($metaTesterLine+"`n",'').Replace($loginBuildLine+"`n",''))}
+
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        Write-Lf $run2Log ($runBase.Replace('build 6090','build 6089').Replace('10:00:00','10:01:00'))
+        $runDisagreement=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-90')) 'EXP48-90.out'
+        Record 'EXP48-90' 'Run 1 and Run 2 resolved build disagreement rejected' ($runDisagreement.ExitCode-ne0)
+
+        Negative 'EXP48-91' 'raw resolved build and machine semantic build disagreement rejected' {Write-Lf $run1Log ($runBase.Replace('"deterministic":true}','"deterministic":true,"terminal_build":6089}'))}
+        Negative 'EXP48-92' 'raw resolved build and verification-source canonical build disagreement rejected' {} {param($a)$i=[Array]::IndexOf($a,'-ExpectedVerificationSourceDigest');$a[$i+1]=Get-Digest $sourceCommit $sourceTree '' '6089';return $a}
+    }
+
+    function Run-ServerParserTests {
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        $d3Server=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-93')) 'EXP48-93.out'
+        Record 'EXP48-93' 'D3 generating-based-on-real-ticks server authority passes' ($d3Server.ExitCode-eq0)
+
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        Write-Lf $run1Log ($runBase.Replace($serverGenerationLine,$serverTestingLine))
+        $legacyServer=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-94')) 'EXP48-94.out'
+        Record 'EXP48-94' 'legacy structured testing-of server authority passes' ($legacyServer.ExitCode-eq0)
+
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        Write-Lf $run1Log ($runBase.Replace($serverGenerationLine,$serverGenerationLine+"`n"+$serverTestingLine))
+        $duplicateServer=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-95')) 'EXP48-95.out'
+        Record 'EXP48-95' 'duplicate identical authoritative server records pass' ($duplicateServer.ExitCode-eq0)
+
+        Negative 'EXP48-96' 'conflicting recognized server identities rejected' {Write-Lf $run1Log ($runBase.Replace($serverGenerationLine,$serverGenerationLine+"`n"+$serverTestingLine.Replace('Exness-MT5Trial6','Other-MT5Trial')))}
+        Negative 'EXP48-97' 'consistently wrong Trial server rejected' {Write-Lf $run1Log ($runBase.Replace('Exness-MT5Trial6','Other-MT5Trial'))}
+        Negative 'EXP48-98' 'missing authoritative server record rejected' {Write-Lf $run1Log ($runBase.Replace($serverGenerationLine+"`n",''))}
+        Negative 'EXP48-99' 'server record missing closing parenthesis rejected' {Write-Lf $run1Log ($runBase.Replace('(Exness-MT5Trial6): generating','(Exness-MT5Trial6: generating'))}
+        Negative 'EXP48-100' 'empty server token rejected' {Write-Lf $run1Log ($runBase.Replace('(Exness-MT5Trial6): generating','(): generating'))}
+        Negative 'EXP48-101' 'truncated structured server record rejected' {Write-Lf $run1Log ($runBase.Replace('generating based on real ticks','generating based on real'))}
+        Negative 'EXP48-102' 'unrelated text containing expected server is not authority' {Write-Lf $run1Log ("AB 0 09:59:59.999 Payload expected_server=Exness-MT5Trial6`n"+$runBase.Replace($serverGenerationLine+"`n",''))}
+
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null;Set-Baseline
+        Write-Lf $run2Log ($runBase.Replace('Exness-MT5Trial6','Other-MT5Trial').Replace('10:00:00','10:01:00'))
+        $serverDisagreement=Invoke-Exporter (Get-Args $sourceCommit $sourceTree (Join-Path $tempRoot 'EXP48-103')) 'EXP48-103.out'
+        Record 'EXP48-103' 'Run 1 and Run 2 resolved server disagreement rejected' ($serverDisagreement.ExitCode-ne0)
+
+        Negative 'EXP48-104' 'raw resolved server and machine semantic server disagreement rejected' {Write-Lf $run1Log ($runBase.Replace('"deterministic":true}','"deterministic":true,"server":"Other-MT5Trial"}'))}
+        Negative 'EXP48-105' 'raw resolved server and verification-source canonical server disagreement rejected' {} {param($a)$i=[Array]::IndexOf($a,'-ExpectedVerificationSourceDigest');$a[$i+1]=Get-Digest $sourceCommit $sourceTree '' '6090' 'Other-MT5Trial';return $a}
+        Negative 'EXP48-106' 'valid server token from non-Trial environment rejected' {Write-Lf $run1Log ($runBase.Replace('Exness-MT5Trial6','Exness-MT5Real6'))}
+        Negative 'EXP48-107' 'server record instrument differing from source-bound run config rejected' {Write-Lf $run1Log ($runBase.Replace('EURUSD,M1 (Exness-MT5Trial6)','XAUUSD,M15 (Exness-MT5Trial6)'))}
+    }
+
+    if($BuildParserOnly){
+        Run-BuildParserTests
+        $targeted=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-BUILD-PARSER-TEST-V1';total=10;passed=$passed;failed=$failed;skipped=0;cases=$records}
+        $targetedJson=$targeted|ConvertTo-Json -Depth 6;if(-not[string]::IsNullOrWhiteSpace($ResultPath)){Write-Lf $ResultPath $targetedJson};$targetedJson
+        if($failed-ne0-or$passed-ne10){exit 1};exit 0
+    }
+    if($ServerParserOnly){
+        Run-ServerParserTests
+        $targeted=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-SERVER-PARSER-TEST-V1';total=15;passed=$passed;failed=$failed;skipped=0;cases=$records}
+        $targetedJson=$targeted|ConvertTo-Json -Depth 6;if(-not[string]::IsNullOrWhiteSpace($ResultPath)){Write-Lf $ResultPath $targetedJson};$targetedJson
+        if($failed-ne0-or$passed-ne15){exit 1};exit 0
+    }
 
     Set-Baseline;$outA=Join-Path $repo 'OutA';$outB=Join-Path $repo 'OutB';$a=Invoke-Exporter (Get-Args $sourceCommit $sourceTree $outA) 'valid-a.out';Record 'EXP48-01' 'valid explicit generation' ($a.ExitCode-eq 0)
     $b=Invoke-Exporter (Get-Args $sourceCommit $sourceTree $outB) 'valid-b.out';$names=@('COMPILE_REPORT.md','VERIFICATION_REPORT.md','contract_test_results.json','sprint4_8_tester_evidence.txt','exporter_test_results.json');$same=$b.ExitCode-eq 0;foreach($n in $names){$same=$same-and((Get-Sha(Join-Path $outA $n))-eq(Get-Sha(Join-Path $outB $n)))};Record 'EXP48-02' 'repeated generation byte-identical' $same
@@ -257,7 +337,10 @@ AB 0 10:00:00.003 OnTester result 1
     $balancedWrong=$credibilityValid.Replace('NEGATIVE_FAIL_CLOSED|FX-195..800',"INVARIANT_BEHAVIOR|FX-195`nNEGATIVE_FAIL_CLOSED|FX-196..800").Replace('INVARIANT_BEHAVIOR|FX-811..858',"NEGATIVE_FAIL_CLOSED|FX-811`nINVARIANT_BEHAVIOR|FX-812..858")
     Credibility-Source-Negative 'EXP48-82' 'internally balanced totals with wrong per-ID mapping are rejected' $balancedWrong $matrixValid $true
 
-    $final=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=(Get-Sha $ExporterPath);test_script_sha256=(Get-Sha $PSCommandPath);generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4';total=82;passed=$passed;failed=$failed;skipped=0;signature=(Get-ShaBytes $Utf8NoBom.GetBytes((@($records|ForEach-Object{$_.id+'|'+$_.name+'|'+$_.passed})-join"`n")));cases=$records}
+    Run-BuildParserTests
+    Run-ServerParserTests
+
+    $final=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=(Get-Sha $ExporterPath);test_script_sha256=(Get-Sha $PSCommandPath);generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4';total=$exporterIds.Count;passed=$passed;failed=$failed;skipped=0;signature=(Get-ShaBytes $Utf8NoBom.GetBytes((@($records|ForEach-Object{$_.id+'|'+$_.name+'|'+$_.passed})-join"`n")));cases=$records}
     $finalJson=$final|ConvertTo-Json -Depth 6;if(-not[string]::IsNullOrWhiteSpace($ResultPath)){Write-Lf $ResultPath $finalJson};$finalJson
-    if($failed-ne0-or$passed-ne82){exit 1};exit 0
+    if($failed-ne0-or$passed-ne$exporterIds.Count){exit 1};exit 0
 } finally {if(Test-Path -LiteralPath $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force}}

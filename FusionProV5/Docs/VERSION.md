@@ -14,7 +14,7 @@ Sprint 4.8 Production Contract V5 Candidate
 
 **CANDIDATE / IN REVIEW**
 
-Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and evidence `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` are immutable superseded failed-final-audit history. Phase B11 is the current uncommitted successor technical candidate and is not source-frozen; final evidence and a new independent merge audit remain future work. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
+Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and evidence `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` are immutable superseded failed-final-audit history. Phase B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` is superseded development history after its evidence exporter rejected valid D3 build and server records. Phase B11.2 is the current uncommitted successor technical candidate on top of B11.1 and is not source-frozen; final evidence and a new independent merge audit remain future work. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
 
 ## Current Authorized Baseline
 
@@ -77,12 +77,15 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Sprint 4.8 credibility: 773 behavioral, 59 supporting pure-function, 14 conformance-only, 0 weak false-positive; 846 total
 - Sprint 4.8 prior reproducible evidence commit: `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3`; immutable superseded failed-audit history, not current merge evidence
 - Sprint 4.8 B10.1 superseded failed-final-audit source/evidence: `e56e51e72dc5fd9ee47d847781a545134b092059` / `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91`
-- Sprint 4.8 Phase B11 current state: Candidate / In Review / Unlocked, working changes uncommitted, not source-frozen, no final evidence
-- Sprint 4.8 Phase B11 executable inventory target: 969 MQL cases and 82 exporter offline cases; credibility is derived per ID rather than declared by aggregate authority
+- Sprint 4.8 Phase B11.2 current state: Candidate / In Review / Unlocked, working changes uncommitted, not source-frozen, no final repository evidence
+- Sprint 4.8 Phase B11.2 inventories: 969 unchanged MQL cases and 107 exporter offline cases; credibility remains derived per ID rather than declared by aggregate authority
+- Terminal-build evidence resolves from mandatory structured MetaTester process identity plus optional consistent agent-authorization and login corroboration; all ten dedicated build cases pass
+- Tester-server evidence resolves independently per run from allowlisted structured generation or legacy execution records, requires source-bound symbol/timeframe, rejects ambiguity and malformed evidence, and preserves the exact `Exness-MT5Trial6` Trial/Demo allowlist; all fifteen dedicated server cases pass
+- Exact immutable D3 Generate passes offline with build `6090`, server `Exness-MT5Trial6`, 969/969 executable cases, and deterministic signature `18372369681406354017`; no D3 raw file was changed or regenerated
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action
 
-Perform a focused B11 source review and, only after separate approval, create a new immutable source freeze. Immutable verification, reproducible evidence, and a final independent merge audit must then be repeated against that successor commit. Sprint 4 Architecture remains the authorized baseline until formal approval.
+Perform a focused source review of the combined B11.1 build resolver and B11.2 server resolver. Only after that review may a new immutable source freeze be separately approved. Immutable verification, reproducible evidence, and a final independent merge audit must then be repeated against that successor commit. Sprint 4 Architecture remains the authorized baseline until formal approval.
 
 Do not merge or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.

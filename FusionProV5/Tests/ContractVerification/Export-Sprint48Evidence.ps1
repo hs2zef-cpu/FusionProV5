@@ -173,6 +173,13 @@ function Get-ExpectedIds([string]$Repo,[string]$Revision,[string]$RelativePath,[
 }
 function Get-ExpectedTestIds([string]$Repo,[string]$Revision) { return ,(Get-ExpectedIds $Repo $Revision $TestIdInventoryRelative 'MQL test-ID') }
 function Get-ExpectedExporterTestIds([string]$Repo,[string]$Revision) { return ,(Get-ExpectedIds $Repo $Revision $ExporterTestInventoryRelative 'exporter test-ID') }
+function Get-RunConfigSemantics([string]$Repo,[string]$Revision) {
+    $text=Normalize-Lf (Get-GitBlobText $Repo $Revision $ConfigIniRelative)
+    $symbols=[regex]::Matches($text,'(?m)^Symbol=([^\s=]+)\s*$')
+    $periods=[regex]::Matches($text,'(?m)^Period=([^\s=]+)\s*$')
+    if($symbols.Count-ne1-or$periods.Count-ne1){Fail 'source-bound run config must contain exactly one Symbol and Period'}
+    return [pscustomobject][ordered]@{Symbol=$symbols[0].Groups[1].Value;Timeframe=$periods[0].Groups[1].Value}
+}
 
 function Test-ExporterOfflineResultObject([object]$Result,[string]$Repo,[string]$Source,[string]$Label) {
     $ids=Get-ExpectedExporterTestIds $Repo $Source
@@ -194,7 +201,63 @@ function Read-ExporterOfflineResult([string]$Path,[string]$Repo,[string]$Source,
     try{$result=(Read-RawText $Path)|ConvertFrom-Json}catch{Fail "$Label offline exporter result is invalid JSON"}
     return Test-ExporterOfflineResultObject $result $Repo $Source $Label
 }
-function Read-RunText([string]$Text,[string]$Label,[string]$RawSha,[string[]]$ExpectedIds) {
+function Resolve-TesterBuildEvidence([string]$Text,[string]$Label) {
+    $normalized=Normalize-Lf $Text
+    $recordPrefix='(?m)^[A-Z]{2}\s+0\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+'
+    $metaCandidatePattern=$recordPrefix+'Startup\s+MetaTester 5 build[^\r\n]*$'
+    $metaPattern=$recordPrefix+'Startup\s+MetaTester 5 build ([1-9]\d*)(?:,\s*[^\r\n]+)?\s*$'
+    $agentCandidatePattern=$recordPrefix+'[^\r\n]*\bauthorized \(agent build[^\r\n]*$'
+    $agentPattern=$recordPrefix+'[^\r\n]*\bauthorized \(agent build ([1-9]\d*)\)\s*$'
+    $loginCandidatePattern=$recordPrefix+'[^\r\n]*\blogin \(build[^\r\n]*$'
+    $loginPattern=$recordPrefix+'[^\r\n]*\blogin \(build ([1-9]\d*)\)\s*$'
+
+    $metaCandidates=[regex]::Matches($normalized,$metaCandidatePattern)
+    $meta=[regex]::Matches($normalized,$metaPattern)
+    $agentCandidates=[regex]::Matches($normalized,$agentCandidatePattern)
+    $agent=[regex]::Matches($normalized,$agentPattern)
+    $loginCandidates=[regex]::Matches($normalized,$loginCandidatePattern)
+    $login=[regex]::Matches($normalized,$loginPattern)
+    if($metaCandidates.Count-ne$meta.Count-or$agentCandidates.Count-ne$agent.Count-or$loginCandidates.Count-ne$login.Count){Fail "$Label malformed tester-build evidence"}
+    if($meta.Count-eq0){Fail "$Label contains no authoritative MetaTester build identity"}
+
+    $values=@()
+    foreach($match in @($meta)+@($agent)+@($login)){$values+=$match.Groups[1].Value}
+    $distinct=@($values|Select-Object -Unique)
+    if($distinct.Count-ne1){Fail "$Label conflicting tester-build identities"}
+    if($distinct[0]-ne$ExpectedBuild){Fail "$Label terminal build mismatch"}
+    return [pscustomobject][ordered]@{Build=$distinct[0];MetaTesterRecords=$meta.Count;AgentAuthorizationRecords=$agent.Count;LoginRecords=$login.Count}
+}
+function Resolve-TesterServerEvidence([string]$Text,[string]$Label,[object]$MachineResult,[string]$ExpectedSymbol,[string]$ExpectedTimeframe) {
+    $normalized=Normalize-Lf $Text
+    $recordPrefix='(?m)^[A-Z]{2}\s+0\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+'
+    $candidatePattern=$recordPrefix+'Tester\s+[^\s,():]+,[^\s,():]+\s+\([^\r\n]*$'
+    $generationPattern=$recordPrefix+'Tester\s+([^\s,():]+),([^\s,():]+)\s+\(([^()\s]+)\):\s+generating based on real ticks\s*$'
+    $testingPattern=$recordPrefix+'Tester\s+([^\s,():]+),([^\s,():]+)\s+\(([^()\s]+)\):\s+testing of\s+\S[^\r\n]*$'
+
+    $candidates=[regex]::Matches($normalized,$candidatePattern)
+    $generation=[regex]::Matches($normalized,$generationPattern)
+    $testing=[regex]::Matches($normalized,$testingPattern)
+    $records=@($generation)+@($testing)
+    if($candidates.Count-ne$records.Count){Fail "$Label malformed tester-server evidence"}
+    if($records.Count-eq0){Fail "$Label contains no authoritative tester-server identity"}
+
+    $servers=@()
+    foreach($record in $records){
+        if($record.Groups[1].Value-ne$ExpectedSymbol-or$record.Groups[2].Value-ne$ExpectedTimeframe){Fail "$Label tester-server instrument differs from source-bound run config"}
+        $server=$record.Groups[3].Value
+        if([string]::IsNullOrWhiteSpace($server)){Fail "$Label empty tester-server identity"}
+        $servers+=$server
+    }
+    $distinct=@($servers|Select-Object -Unique)
+    if($distinct.Count-ne1){Fail "$Label conflicting tester-server identities"}
+    $resolved=$distinct[0]
+    if($resolved-notmatch'(?i)(?:demo|trial)'){Fail "$Label server is not an isolated Demo/Trial environment"}
+    if($resolved-ne$ExpectedServer){Fail "$Label Demo/Trial server mismatch"}
+    $machineServer=$MachineResult.PSObject.Properties['server']
+    if($null-ne$machineServer-and([string]$machineServer.Value-notmatch'^[^()\s]+$'-or[string]$machineServer.Value-ne$resolved)){Fail "$Label machine-result server mismatch"}
+    return [pscustomobject][ordered]@{Server=$resolved;GenerationRecords=$generation.Count;LegacyTestingRecords=$testing.Count;Symbol=$ExpectedSymbol;Timeframe=$ExpectedTimeframe}
+}
+function Read-RunText([string]$Text,[string]$Label,[string]$RawSha,[string[]]$ExpectedIds,[string]$ExpectedSymbol,[string]$ExpectedTimeframe) {
     $normalized = Normalize-Lf $Text
     $machines = [regex]::Matches($normalized,'SWV5_MACHINE_RESULT\s+(\{[^\r\n]+\})')
     if ($machines.Count -ne 1) { Fail "$Label must contain exactly one SWV5_MACHINE_RESULT" }
@@ -214,15 +277,17 @@ function Read-RunText([string]$Text,[string]$Label,[string]$RawSha,[string[]]$Ex
     }
     $metadata = [regex]::Matches($normalized,'SWV5_RUN_METADATA\s+suite=([^\s]+)\s+fixture_account_mode=([^\s]+)\s+fixture_broker=([^\s]+)\s+fixture_server=([^\s]+)\s+broker_access=([^\s]+)')
     if ($metadata.Count -ne 1 -or $metadata[0].Groups[1].Value -ne $ExpectedSuiteIdentity -or $metadata[0].Groups[2].Value -ne 'HEDGING' -or $metadata[0].Groups[5].Value -ne 'false') { Fail "$Label metadata mismatch" }
-    $builds = [regex]::Matches($normalized,'authorized \(agent build (\d+)\)'); if ($builds.Count -ne 1 -or $builds[0].Groups[1].Value -ne $ExpectedBuild) { Fail "$Label terminal build mismatch" }
-    $servers = [regex]::Matches($normalized,'EURUSD,M1 \(([^)]+)\): testing of'); if ($servers.Count -ne 1 -or $servers[0].Groups[1].Value -ne $ExpectedServer) { Fail "$Label Demo/Trial server mismatch" }
+    $buildEvidence=Resolve-TesterBuildEvidence $normalized $Label
+    $machineBuild=$machine.PSObject.Properties['terminal_build']
+    if($null-ne$machineBuild-and([string]$machineBuild.Value-notmatch'^[1-9]\d*$'-or[string]$machineBuild.Value-ne[string]$buildEvidence.Build)){Fail "$Label machine-result terminal build mismatch"}
+    $serverEvidence=Resolve-TesterServerEvidence $normalized $Label $machine $ExpectedSymbol $ExpectedTimeframe
     if ([regex]::Matches($normalized,'SWV5_ONTESTER_SUCCESS\s+result=1').Count -ne 1 -or [regex]::Matches($normalized,'OnTester result 1').Count -ne 1) { Fail "$Label OnTester result mismatch" }
     $clocks = [regex]::Matches($normalized,'(?m)^[A-Z]{2}\s+0\s+(\d{2}:\d{2}:\d{2}\.\d{3})\s+')
     if ($clocks.Count -eq 0) { Fail "$Label contains no raw tester clock" }
-    return [pscustomobject]@{ Machine=$machine; Build=$ExpectedBuild; Server=$ExpectedServer; AccountMode='HEDGING'; OnTester=1; RawSha256=$RawSha; FirstRawClock=$clocks[0].Groups[1].Value; LastRawClock=$clocks[$clocks.Count-1].Groups[1].Value; Text=$normalized }
+    return [pscustomobject]@{ Machine=$machine; Build=$buildEvidence.Build; BuildEvidence=$buildEvidence; Server=$serverEvidence.Server; ServerEvidence=$serverEvidence; AccountMode='HEDGING'; OnTester=1; RawSha256=$RawSha; FirstRawClock=$clocks[0].Groups[1].Value; LastRawClock=$clocks[$clocks.Count-1].Groups[1].Value; Text=$normalized }
 }
-function Read-Run([string]$Path,[string]$Label,[string]$RawSha,[string[]]$ExpectedIds) {
-    return Read-RunText (Read-RawText $Path) $Label $RawSha $ExpectedIds
+function Read-Run([string]$Path,[string]$Label,[string]$RawSha,[string[]]$ExpectedIds,[string]$ExpectedSymbol,[string]$ExpectedTimeframe) {
+    return Read-RunText (Read-RawText $Path) $Label $RawSha $ExpectedIds $ExpectedSymbol $ExpectedTimeframe
 }
 function Get-Credibility([string]$Repo,[string]$Revision) {
     $inventory = Get-GitBlobText $Repo $Revision 'FusionProV5/Tests/ContractVerification/TEST_INVENTORY.md'
@@ -301,7 +366,9 @@ function Rebuild-VerificationSourceDigest([string]$Root,[string]$Source,[string]
        $inputs.compiled_test_ex5_sha256-ne$Contract.raw_inputs.compiled_test_ex5_sha256-or
        [string]$inputs.run_1_signature-ne[string]$Run1.Machine.signature-or[string]$inputs.run_2_signature-ne[string]$Run2.Machine.signature-or
        $inputs.schema-ne$ExpectedSchema-or$inputs.production_policy-ne$ExpectedPolicy-or$inputs.suite-ne$ExpectedSuiteIdentity-or
-       [string]$inputs.terminal_build-ne$ExpectedBuild-or$inputs.server-ne$ExpectedServer-or$inputs.account_mode-ne'HEDGING'-or[int]$inputs.ontester-ne1){Fail "$Label canonical verification-source semantic input mismatch"}
+       [string]$inputs.terminal_build-ne$ExpectedBuild-or[string]$inputs.terminal_build-ne[string]$Run1.Build-or[string]$inputs.terminal_build-ne[string]$Run2.Build-or
+       $inputs.server-ne$ExpectedServer-or$inputs.server-ne$Run1.Server-or$inputs.server-ne$Run2.Server-or
+       $inputs.account_mode-ne'HEDGING'-or[int]$inputs.ontester-ne1){Fail "$Label canonical verification-source semantic input mismatch"}
     $derivedManifest=Get-GitBlobSha256 $Root $Source $ManifestRelative
     $derivedCredibility=Get-GitBlobSha256 $Root $Source $CredibilityIdInventoryRelative
     $derivedIni=Get-GitBlobSha256 $Root $Source $ConfigIniRelative
@@ -316,6 +383,7 @@ function Validate-EvidenceSemantics([string]$Root,[string]$Revision,[object]$Man
     if($Tree-ne$identity.Tree){Fail "$Label claimed source tree differs from Git-derived tree"}
     $Source=$identity.Commit;$Tree=$identity.Tree
     $expectedIds=Get-ExpectedTestIds $Root $Source
+    $runConfig=Get-RunConfigSemantics $Root $Source
     if(-not[string]::IsNullOrWhiteSpace($ContentRoot)){
         $contractText=Normalize-Lf (Read-RawText (Resolve-RequiredFile (Join-Path $ContentRoot 'contract_test_results.json') "$Label contract result"))
         $compileText=Normalize-Lf (Read-RawText (Resolve-RequiredFile (Join-Path $ContentRoot 'COMPILE_REPORT.md') "$Label compile report"))
@@ -346,9 +414,12 @@ function Validate-EvidenceSemantics([string]$Root,[string]$Revision,[object]$Man
     foreach($required in @("TESTED_SOURCE_COMMIT=$Source","SOURCE_TREE=$Tree","VERIFICATION_SOURCE_DIGEST=$($contract.verification_source_digest)","ARCHITECTURE_COMPILE_RAW_SHA256=$($contract.raw_inputs.architecture_compile_log_sha256)","TEST_COMPILE_RAW_SHA256=$($contract.raw_inputs.test_compile_log_sha256)","RUN_1_RAW_SHA256=$($contract.raw_inputs.run_1_sha256)","RUN_2_RAW_SHA256=$($contract.raw_inputs.run_2_sha256)","COMPILED_TEST_EX5_RAW_SHA256=$($contract.raw_inputs.compiled_test_ex5_sha256)","EXPORTER_TEST_RESULTS_RAW_SHA256=$($contract.raw_inputs.exporter_test_results_sha256)")){if(-not$testerText.Contains($required)){Fail "$Label tester evidence header mismatch"}}
     $streams=[regex]::Match($testerText,'(?s)=== RUN 1 RAW TEXT ===\n(.*?)\n=== RUN 2 RAW TEXT ===\n(.*)\z')
     if(-not$streams.Success){Fail "$Label tester evidence does not contain exactly two labeled raw runs"}
-    $run1=Read-RunText $streams.Groups[1].Value "$Label Run 1" ([string]$contract.raw_inputs.run_1_sha256) $expectedIds
-    $run2=Read-RunText $streams.Groups[2].Value.TrimEnd("`n") "$Label Run 2" ([string]$contract.raw_inputs.run_2_sha256) $expectedIds
+    $run1=Read-RunText $streams.Groups[1].Value "$Label Run 1" ([string]$contract.raw_inputs.run_1_sha256) $expectedIds $runConfig.Symbol $runConfig.Timeframe
+    $run2=Read-RunText $streams.Groups[2].Value.TrimEnd("`n") "$Label Run 2" ([string]$contract.raw_inputs.run_2_sha256) $expectedIds $runConfig.Symbol $runConfig.Timeframe
     foreach($field in @('total','passed','failed','skipped','signature','schema','contract_policy','suite')){if([string]$run1.Machine.$field-ne[string]$run2.Machine.$field){Fail "$Label deterministic stream mismatch: $field"}}
+    $runSummaries=@($contract.runs)
+    if([string]$runSummaries[0].build-ne[string]$run1.Build-or[string]$runSummaries[1].build-ne[string]$run2.Build-or[string]$run1.Build-ne[string]$run2.Build){Fail "$Label raw/semantic run build mismatch"}
+    if([string]$runSummaries[0].server-ne[string]$run1.Server-or[string]$runSummaries[1].server-ne[string]$run2.Server-or[string]$run1.Server-ne[string]$run2.Server){Fail "$Label raw/semantic run server mismatch"}
     try{$offline=$offlineText|ConvertFrom-Json}catch{Fail "$Label offline result JSON is invalid"}
     $offlineValidated=Test-ExporterOfflineResultObject $offline $Root $Source $Label
     if($contract.exporter_sha256-ne$offlineValidated.ExporterSha -or
@@ -378,16 +449,19 @@ try {
         if ($run1Path -eq $run2Path) { Fail 'Run 1 and Run 2 must be distinct explicit inputs' }
         $rawArch=Assert-ExpectedRawHash $archPath $ExpectedArchitectureCompileLogSha256 'architecture compile log'; $rawTest=Assert-ExpectedRawHash $testPath $ExpectedTestCompileLogSha256 'test compile log'; $rawRun1=Assert-ExpectedRawHash $run1Path $ExpectedRun1LogSha256 'Run 1 log'; $rawRun2=Assert-ExpectedRawHash $run2Path $ExpectedRun2LogSha256 'Run 2 log'; $ex5Sha=Assert-ExpectedRawHash $ex5Path $ExpectedCompiledTestEx5Sha256 'compiled test EX5'; $offlineRawSha=Assert-ExpectedRawHash $offlinePath $ExpectedExporterTestResultsSha256 'exporter offline-test result'
         $expectedIds=Get-ExpectedTestIds $repo $source;if($expectedIds.Count-ne$ExpectedTestTotal){Fail 'expected test-ID inventory count mismatch'}
-        $arch=Read-Compile $archPath 'architecture'; $test=Read-Compile $testPath 'test'; $run1=Read-Run $run1Path 'Run 1' $rawRun1 $expectedIds; $run2=Read-Run $run2Path 'Run 2' $rawRun2 $expectedIds
+        $runConfig=Get-RunConfigSemantics $repo $source
+        $arch=Read-Compile $archPath 'architecture'; $test=Read-Compile $testPath 'test'; $run1=Read-Run $run1Path 'Run 1' $rawRun1 $expectedIds $runConfig.Symbol $runConfig.Timeframe; $run2=Read-Run $run2Path 'Run 2' $rawRun2 $expectedIds $runConfig.Symbol $runConfig.Timeframe
         foreach ($field in @('total','passed','failed','skipped','signature','schema','contract_policy','suite')) { if ([string]$run1.Machine.$field -ne [string]$run2.Machine.$field) { Fail "run determinism mismatch: $field" } }
+        if([string]$run1.Build-ne[string]$run2.Build-or[string]$run1.Build-ne$ExpectedBuild){Fail 'run build evidence mismatch'}
+        if([string]$run1.Server-ne[string]$run2.Server-or[string]$run1.Server-ne$ExpectedServer){Fail 'run server evidence mismatch'}
         $credibility=Get-Credibility $repo $source
         $offline=Read-ExporterOfflineResult $offlinePath $repo $source 'Generate'
         $manifestSha=Get-GitBlobSha256 $repo $source $ManifestRelative; $credibilitySha=Get-GitBlobSha256 $repo $source $CredibilityIdInventoryRelative; $iniSha=Get-GitBlobSha256 $repo $source $ConfigIniRelative; $setSha=Get-GitBlobSha256 $repo $source $ConfigSetRelative
-        $verificationInputs=[ordered]@{architecture_compile_raw_sha256=$rawArch;test_compile_raw_sha256=$rawTest;run_1_raw_sha256=$rawRun1;run_2_raw_sha256=$rawRun2;exporter_test_results_raw_sha256=$offlineRawSha;run_1_signature=$ExpectedDeterministicSignature;run_2_signature=$ExpectedDeterministicSignature;schema=$ExpectedSchema;production_policy=$ExpectedPolicy;suite=$ExpectedSuiteIdentity;terminal_build=$ExpectedBuild;server=$ExpectedServer;account_mode='HEDGING';ontester=1;test_manifest_git_blob_sha256=$manifestSha;credibility_inventory_git_blob_sha256=$credibilitySha;run_config_ini_sha256=$iniSha;run_config_set_sha256=$setSha;compiled_test_ex5_sha256=$ex5Sha;exporter_git_blob_sha256=$offline.ExporterSha;exporter_test_script_git_blob_sha256=$offline.TestScriptSha}
+        $verificationInputs=[ordered]@{architecture_compile_raw_sha256=$rawArch;test_compile_raw_sha256=$rawTest;run_1_raw_sha256=$rawRun1;run_2_raw_sha256=$rawRun2;exporter_test_results_raw_sha256=$offlineRawSha;run_1_signature=$ExpectedDeterministicSignature;run_2_signature=$ExpectedDeterministicSignature;schema=$ExpectedSchema;production_policy=$ExpectedPolicy;suite=$ExpectedSuiteIdentity;terminal_build=$run1.Build;server=$run1.Server;account_mode='HEDGING';ontester=1;test_manifest_git_blob_sha256=$manifestSha;credibility_inventory_git_blob_sha256=$credibilitySha;run_config_ini_sha256=$iniSha;run_config_set_sha256=$setSha;compiled_test_ex5_sha256=$ex5Sha;exporter_git_blob_sha256=$offline.ExporterSha;exporter_test_script_git_blob_sha256=$offline.TestScriptSha}
         $verificationDigest=Get-VerificationSourceDigest $source $tree $verificationInputs; if ($verificationDigest -ne $ExpectedVerificationSourceDigest.ToLowerInvariant()) { Fail 'verification-source digest mismatch' }
         $exporterSha=$offline.ExporterSha; if((Get-FileSha256 $PSCommandPath)-ne$exporterSha){Fail 'executing exporter does not match tested source blob'}; $sourceTimestamp=Invoke-GitText @('-C',$repo,'show','-s','--format=%cI',$source)
         $behavioral=$credibility.MERGE_GATING_BEHAVIOR+$credibility.STATE_TRANSITION+$credibility.NEGATIVE_FAIL_CLOSED+$credibility.ROUND_TRIP+$credibility.INVARIANT_BEHAVIOR
-        $result=[ordered]@{ schema='SWV5-SPRINT48-EVIDENCE-V1'; verdict='PASS'; tested_source_commit=$source; source_tree=$tree; source_commit_timestamp=$sourceTimestamp; verification_source_digest=$verificationDigest; verification_source_inputs=$verificationInputs; exporter_sha256=$exporterSha; exporter_test_script_sha256=$offline.TestScriptSha; exporter_offline_test_result_sha256=$offlineRawSha; exporter_offline_test_total=$offline.Ids.Count; hash_authority='GIT_BLOB_BYTES_SHA256'; raw_input_hash_authority='EXACT_EXTERNAL_FILE_BYTES_SHA256'; repository_hash_manifest='evidence_blob_manifest.json'; result_schema=$ExpectedSchema; production_policy=$ExpectedPolicy; suite=$ExpectedSuiteIdentity; architecture_compile=$arch; test_compile=$test; raw_inputs=[ordered]@{architecture_compile_log_sha256=$rawArch;test_compile_log_sha256=$rawTest;run_1_sha256=$rawRun1;run_2_sha256=$rawRun2;compiled_test_ex5_sha256=$ex5Sha;exporter_test_results_sha256=$offlineRawSha}; runs=@([ordered]@{number=1;total=$ExpectedTestTotal;passed=$ExpectedTestTotal;failed=0;skipped=0;signature=$ExpectedDeterministicSignature;build=6090;server=$ExpectedServer;account_mode='HEDGING';ontester=1;first_raw_clock=$run1.FirstRawClock;last_raw_clock=$run1.LastRawClock},[ordered]@{number=2;total=$ExpectedTestTotal;passed=$ExpectedTestTotal;failed=0;skipped=0;signature=$ExpectedDeterministicSignature;build=6090;server=$ExpectedServer;account_mode='HEDGING';ontester=1;first_raw_clock=$run2.FirstRawClock;last_raw_clock=$run2.LastRawClock}); deterministic=$true; exact_test_record_count=$ExpectedTestTotal; exact_test_ids_verified=$true; credibility=$credibility; behavioral=$behavioral; supporting=$credibility.SUPPORTING_PURE_FUNCTION; conformance=$credibility.CONFORMANCE_ONLY; weak=$credibility.WEAK_FALSE_POSITIVE; executable=$ExpectedTestTotal }
+        $result=[ordered]@{ schema='SWV5-SPRINT48-EVIDENCE-V1'; verdict='PASS'; tested_source_commit=$source; source_tree=$tree; source_commit_timestamp=$sourceTimestamp; verification_source_digest=$verificationDigest; verification_source_inputs=$verificationInputs; exporter_sha256=$exporterSha; exporter_test_script_sha256=$offline.TestScriptSha; exporter_offline_test_result_sha256=$offlineRawSha; exporter_offline_test_total=$offline.Ids.Count; hash_authority='GIT_BLOB_BYTES_SHA256'; raw_input_hash_authority='EXACT_EXTERNAL_FILE_BYTES_SHA256'; repository_hash_manifest='evidence_blob_manifest.json'; result_schema=$ExpectedSchema; production_policy=$ExpectedPolicy; suite=$ExpectedSuiteIdentity; architecture_compile=$arch; test_compile=$test; raw_inputs=[ordered]@{architecture_compile_log_sha256=$rawArch;test_compile_log_sha256=$rawTest;run_1_sha256=$rawRun1;run_2_sha256=$rawRun2;compiled_test_ex5_sha256=$ex5Sha;exporter_test_results_sha256=$offlineRawSha}; runs=@([ordered]@{number=1;total=$ExpectedTestTotal;passed=$ExpectedTestTotal;failed=0;skipped=0;signature=$ExpectedDeterministicSignature;build=[int]$run1.Build;server=$run1.Server;account_mode='HEDGING';ontester=1;first_raw_clock=$run1.FirstRawClock;last_raw_clock=$run1.LastRawClock},[ordered]@{number=2;total=$ExpectedTestTotal;passed=$ExpectedTestTotal;failed=0;skipped=0;signature=$ExpectedDeterministicSignature;build=[int]$run2.Build;server=$run2.Server;account_mode='HEDGING';ontester=1;first_raw_clock=$run2.FirstRawClock;last_raw_clock=$run2.LastRawClock}); deterministic=$true; exact_test_record_count=$ExpectedTestTotal; exact_test_ids_verified=$true; credibility=$credibility; behavioral=$behavioral; supporting=$credibility.SUPPORTING_PURE_FUNCTION; conformance=$credibility.CONFORMANCE_ONLY; weak=$credibility.WEAK_FALSE_POSITIVE; executable=$ExpectedTestTotal }
         $output=[IO.Path]::GetFullPath($OutputDirectory)
         Write-DeterministicText (Join-Path $output 'contract_test_results.json') ($result | ConvertTo-Json -Depth 10)
         Write-DeterministicText (Join-Path $output 'COMPILE_REPORT.md') (@('# Sprint 4.8 Compile Report','',"Tested source: ``$source``","Source tree: ``$tree``",'',"Architecture: 0 errors / 0 warnings / X64 Regular / build $ExpectedBuild","Architecture raw SHA-256: ``$rawArch``",'',"Contract tests: 0 errors / 0 warnings / X64 Regular / build $ExpectedBuild","Test compile raw SHA-256: ``$rawTest``","Compiled test EX5 raw SHA-256: ``$ex5Sha``","Exporter offline result raw SHA-256: ``$offlineRawSha``",'',"Verification-source digest: ``$verificationDigest``",'Repository evidence hash authority: GIT_BLOB_BYTES_SHA256','Raw-input hash authority: EXACT_EXTERNAL_FILE_BYTES_SHA256') -join "`n")
