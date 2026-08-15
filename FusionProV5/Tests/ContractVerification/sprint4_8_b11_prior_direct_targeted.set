@@ -1,0 +1,4 @@
+; TEST ONLY
+; NOT FOR PRODUCTION
+; NO BROKER ACCESS
+InpSprint48B11PriorDirectRegressionTargetedOnly=true||false||0||true||N

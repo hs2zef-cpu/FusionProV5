@@ -326,13 +326,13 @@ bool SWV5_TestDecodeMarginEvidence(const string text,SWV5_MarginProjectionEviden
       !r.ReadInteger("authority_source",source) || !r.ReadString("calculation_reference",value.calculation_reference) ||
       !r.ReadInteger("observed_at",value.observed_at) || !r.ReadInteger("calculated_at",value.calculated_at) ||
       !r.ReadUnsigned("evidence_sequence",value.evidence_sequence) ||
-      !r.ReadString("authority_record_id",value.authority_record_id) ||
-      !r.ReadUnsigned("authority_record_sequence",value.authority_record_sequence) ||
-      !r.ReadString("authority_record_digest",value.authority_record_digest) || !r.AtEnd()) return false;
+       !r.ReadString("authority_record_id",value.authority_record_id) ||
+       !r.ReadUnsigned("authority_record_sequence",value.authority_record_sequence) ||
+       !r.ReadString("authority_record_digest",value.authority_record_digest) ||
+       !r.ReadString("evidence_digest",value.evidence_digest) || !r.AtEnd()) return false;
    value.intent_type=(SWV5_ExecutionIntentType)intent; value.direction=(int)direction;
    value.issuing_component=(SWV5_ComponentAuthority)component; value.authority_source=(SWV5_AuthoritySource)source;
-   value.evidence_digest=SWV5_TestMarginEvidenceDigest(value);
-   return true;
+   return value.evidence_digest==SWV5_TestMarginEvidenceDigest(value);
 }
 
 bool SWV5_TestDecodeBasketRiskEvidence(const string text,SWV5_BasketRiskProjectionEvidence &value)
@@ -358,12 +358,12 @@ bool SWV5_TestDecodeBasketRiskEvidence(const string text,SWV5_BasketRiskProjecti
       !r.ReadInteger("issuing_component",component) || !r.ReadInteger("authority_source",source) ||
       !r.ReadInteger("observed_at",value.observed_at) || !r.ReadInteger("calculated_at",value.calculated_at) ||
       !r.ReadUnsigned("evidence_sequence",value.evidence_sequence) ||
-      !r.ReadString("authority_record_id",value.authority_record_id) ||
-      !r.ReadUnsigned("authority_record_sequence",value.authority_record_sequence) ||
-      !r.ReadString("authority_record_digest",value.authority_record_digest) || !r.AtEnd()) return false;
+       !r.ReadString("authority_record_id",value.authority_record_id) ||
+       !r.ReadUnsigned("authority_record_sequence",value.authority_record_sequence) ||
+       !r.ReadString("authority_record_digest",value.authority_record_digest) ||
+       !r.ReadString("evidence_digest",value.evidence_digest) || !r.AtEnd()) return false;
    value.issuing_component=(SWV5_ComponentAuthority)component; value.authority_source=(SWV5_AuthoritySource)source;
-   value.evidence_digest=SWV5_TestBasketRiskEvidenceDigest(value);
-   return true;
+   return value.evidence_digest==SWV5_TestBasketRiskEvidenceDigest(value);
 }
 
 bool SWV5_TestDecodeBrokerSummary(const string text,SWV5_AuthoritativeBrokerSummary &value)
@@ -380,11 +380,12 @@ bool SWV5_TestDecodeBrokerSummary(const string text,SWV5_AuthoritativeBrokerSumm
       !SWV5_TestDecodeCorrelation(r,"latest_confirmed_correlation",value.latest_confirmed_correlation) ||
       !SWV5_TestDecodeBrokerIdentity(r,"latest_broker_event_identity",value.latest_broker_event_identity) ||
       !r.ReadUnsigned("transaction_high_watermark",value.transaction_high_watermark) ||
-      !r.ReadUnsigned("observation_sequence",value.observation_sequence) || !r.ReadInteger("account_mode",mode) ||
-      !SWV5_TestDecodeQueries(r,"queries",value.queries) || !r.ReadInteger("observed_at",value.observed_at) ||
-      !r.ReadInteger("authority",authority) || !r.AtEnd()) return false;
+       !r.ReadUnsigned("observation_sequence",value.observation_sequence) || !r.ReadInteger("account_mode",mode) ||
+       !SWV5_TestDecodeQueries(r,"queries",value.queries) || !r.ReadInteger("observed_at",value.observed_at) ||
+       !r.ReadInteger("authority",authority) ||
+       !r.ReadString("complete_summary_digest",value.complete_summary_digest) || !r.AtEnd()) return false;
    value.account_mode=(SWV5_AccountPositionMode)mode; value.authority=(SWV5_AuthoritySource)authority;
-   value.complete_summary_digest=SWV5_TestBrokerSummaryDigest(value); return true;
+   return value.complete_summary_digest==SWV5_TestBrokerSummaryDigest(value);
 }
 
 bool SWV5_TestDecodeRestartRequestSummary(const string text,SWV5_AuthoritativeRestartRequestSummary &value)
@@ -398,12 +399,13 @@ bool SWV5_TestDecodeRestartRequestSummary(const string text,SWV5_AuthoritativeRe
       !r.ReadString("request_set_revision",value.request_set_revision) ||
       !r.ReadUnsigned("reconciliation_revision",value.reconciliation_revision) ||
       !r.ReadUnsigned("observation_sequence",value.observation_sequence) ||
-      !r.ReadInteger("observed_at",value.observed_at) || !r.ReadInteger("authority",authority) ||
-      !r.ReadInteger("authority_source",authority_source) ||
-      !SWV5_TestDecodeQueries(r,"pending_request_query",value.pending_request_query) || !r.AtEnd()) return false;
+       !r.ReadInteger("observed_at",value.observed_at) || !r.ReadInteger("authority",authority) ||
+       !r.ReadInteger("authority_source",authority_source) ||
+       !SWV5_TestDecodeQueries(r,"pending_request_query",value.pending_request_query) ||
+       !r.ReadString("complete_summary_digest",value.complete_summary_digest) || !r.AtEnd()) return false;
    value.account_mode=(SWV5_AccountPositionMode)mode; value.authority=(SWV5_ComponentAuthority)authority;
    value.authority_source=(SWV5_AuthoritySource)authority_source;
-   value.complete_summary_digest=SWV5_TestRestartRequestSummaryDigest(value); return true;
+   return value.complete_summary_digest==SWV5_TestRestartRequestSummaryDigest(value);
 }
 
 bool SWV5_TestDecodeReconciliationVector(const string text,SWV5_PersistedReconciliationVector &value)
@@ -443,12 +445,13 @@ bool SWV5_TestDecodeHardKillRelease(const string text,SWV5_HardKillReleaseEviden
       !SWV5_TestDecodeOperator(r,"operator_identity",value.operator_identity) || !r.ReadInteger("approving_component",component) ||
       !SWV5_TestDecodeTypedReconciliation(r,"broker_evidence",value.broker_evidence) ||
       !SWV5_TestDecodeTypedReconciliation(r,"persistence_evidence",value.persistence_evidence) ||
-      !SWV5_TestDecodeExposure(r,"exposure_evidence",value.exposure_evidence) ||
-      !r.ReadInteger("approved_at",value.approved_at) || !r.ReadInteger("released_at",value.released_at) ||
-      !r.ReadInteger("expires_at",value.expires_at) || !r.ReadUnsigned("release_record_sequence",value.release_record_sequence) ||
-      !r.ReadString("audit_reference",value.audit_reference) || !r.AtEnd()) return false;
+       !SWV5_TestDecodeExposure(r,"exposure_evidence",value.exposure_evidence) ||
+       !r.ReadInteger("approved_at",value.approved_at) || !r.ReadInteger("released_at",value.released_at) ||
+       !r.ReadInteger("expires_at",value.expires_at) || !r.ReadUnsigned("release_record_sequence",value.release_record_sequence) ||
+       !r.ReadString("audit_reference",value.audit_reference) ||
+       !r.ReadString("release_record_digest",value.release_record_digest) || !r.AtEnd()) return false;
    value.approving_component=(SWV5_ComponentAuthority)component;
-   value.release_record_digest=SWV5_TestHardKillReleaseDigest(value); return true;
+   return value.release_record_digest==SWV5_TestHardKillReleaseDigest(value);
 }
 
 bool SWV5_TestDecodeHardKillAuthorityRecord(const string text,SWV5_HardKillReleaseAuthorityRecord &value)
@@ -465,11 +468,13 @@ bool SWV5_TestDecodeHardKillAuthorityRecord(const string text,SWV5_HardKillRelea
       !SWV5_TestDecodeTypedReconciliation(r,"persistence_evidence_reference",value.persistence_evidence_reference) ||
       !SWV5_TestDecodeExposure(r,"exposure_evidence_reference",value.exposure_evidence_reference) ||
       !r.ReadInteger("approved_at",value.approved_at) || !r.ReadInteger("released_at",value.released_at) ||
-      !r.ReadInteger("expires_at",value.expires_at) || !r.ReadUnsigned("release_record_sequence",value.release_record_sequence) ||
-      !r.ReadString("authority_record_id",value.authority_record_id) || !r.ReadInteger("issuing_component",issuing) ||
-      !r.ReadInteger("authority_source",source) || !r.AtEnd()) return false;
+       !r.ReadInteger("expires_at",value.expires_at) || !r.ReadUnsigned("release_record_sequence",value.release_record_sequence) ||
+       !r.ReadString("authority_record_id",value.authority_record_id) || !r.ReadInteger("issuing_component",issuing) ||
+       !r.ReadInteger("authority_source",source) ||
+       !r.ReadString("authority_record_digest",value.authority_record_digest) || !r.AtEnd()) return false;
    value.approving_component=(SWV5_ComponentAuthority)approving; value.issuing_component=(SWV5_ComponentAuthority)issuing;
-   value.authority_source=(SWV5_AuthoritySource)source; value.authority_record_digest=SWV5_TestHardKillAuthorityRecordDigest(value); return true;
+   value.authority_source=(SWV5_AuthoritySource)source;
+   return value.authority_record_digest==SWV5_TestHardKillAuthorityRecordDigest(value);
 }
 
 bool SWV5_TestDecodeDecisionText(const string text,SWV5_ContractDecision &value)
@@ -683,7 +688,6 @@ bool SWV5_TestDecodeHardKillText(const string text,SWV5_HardKillState &value)
       !r.ReadInteger("activated_at",value.activated_at) || !r.ReadString("activation_authority",value.activation_authority) ||
       !r.ReadUnsigned("release_generation",value.release_generation) || !r.ReadNested("release_evidence",release_text) ||
       !SWV5_TestDecodeHardKillRelease(release_text,value.release_evidence) ||
-      !r.ReadString("release_record_digest",value.release_evidence.release_record_digest) ||
       !SWV5_TestDecodeAuthorityReference(r,"release_authority_reference",value.release_authority_reference) || !r.AtEnd()) return false;
    value.state=(SWV5_HardKillLatchState)state;
    return true;
@@ -695,7 +699,7 @@ bool SWV5_TestDecodeHardKill(SWV5_TestCanonicalReader &r,const string name,SWV5_
 bool SWV5_TestDecodeCheckpoint(const string text,SWV5_PersistedCheckpoint &value)
 {
    ZeroMemory(value); SWV5_TestCanonicalReader r; r.Init(text); string format;
-   if(!r.ReadString("format",format) || format!="SWV5-CHECKPOINT-V5-LP1" ||
+   if(!r.ReadString("format",format) || format!="SWV5-CHECKPOINT-V5-LP2" ||
       !SWV5_TestDecodeVersion(r,"header_contract_version",value.header.contract_version) ||
       !SWV5_TestDecodeNamespace(r,"header_persistence_namespace",value.header.persistence_namespace) ||
       !SWV5_TestDecodeFence(r,"header_ownership_fence",value.header.ownership_fence) ||
@@ -711,10 +715,11 @@ bool SWV5_TestDecodeCheckpoint(const string text,SWV5_PersistedCheckpoint &value
    string reconciliation_text;
    if(!r.ReadNested("reconciliation_vector",reconciliation_text) ||
       !SWV5_TestDecodeReconciliationVector(reconciliation_text,value.reconciliation_vector) ||
-      !r.ReadBool("clean_shutdown",value.clean_shutdown) || !r.AtEnd()) return false;
-   value.header.payload_digest=SWV5_TestCheckpointPayloadDigest(value);
-   value.header.payload_size=SWV5_TestCheckpointPayloadSize(value);
-   return true;
+       !r.ReadBool("clean_shutdown",value.clean_shutdown) ||
+       !r.ReadUnsigned("header_payload_size",value.header.payload_size) ||
+       !r.ReadString("header_payload_digest",value.header.payload_digest) || !r.AtEnd()) return false;
+   return value.header.payload_size==SWV5_TestCheckpointPayloadSize(value) &&
+          value.header.payload_digest==SWV5_TestCheckpointPayloadDigest(value);
 }
 
 #endif

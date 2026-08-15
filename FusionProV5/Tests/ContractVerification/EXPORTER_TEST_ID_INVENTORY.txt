@@ -1,8 +1,9 @@
 # TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
-# Exact offline exporter-regression execution order for Sprint 4.8 B10.
+# Exact offline exporter-regression execution order for Sprint 4.8 B11.
 EXP48-01..41
 EXP48-46..64
 EXP48-67
 EXP48-42..45
 EXP48-65..66
 EXP48-68..73
+EXP48-74..82

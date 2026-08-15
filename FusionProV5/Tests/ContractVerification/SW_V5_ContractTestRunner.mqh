@@ -4089,7 +4089,7 @@ void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
       {
          SWV5_PersistedCheckpoint other;
          SWV5_TestMakeCheckpoint(other);
-         passed=SWV5_TestCanonicalCheckpointPayload(checkpoint)==SWV5_TestCanonicalCheckpointPayload(other) &&
+         passed=SWV5_TestCanonicalCheckpointFullDTO(checkpoint)==SWV5_TestCanonicalCheckpointFullDTO(other) &&
                 checkpoint.header.payload_digest==other.header.payload_digest;
          expected="identical_payload_identical_serialization_digest";
       }
@@ -4104,11 +4104,11 @@ void SWV5_RunSprint46CheckpointIntegrityTests(SWV5_TestCollector &collector)
       }
       else if(number==16)
       {
-         const string canonical=SWV5_TestCanonicalCheckpointPayload(checkpoint);
+         const string canonical=SWV5_TestCanonicalCheckpointFullDTO(checkpoint);
          SWV5_PersistedCheckpoint loaded;
          passed=persistence.SaveCheckpoint(context,checkpoint,decision) &&
                 persistence.LoadLatest(context,checkpoint.header.persistence_namespace,loaded,load_result) &&
-                SWV5_TestCanonicalCheckpointPayload(loaded)==canonical &&
+                SWV5_TestCanonicalCheckpointFullDTO(loaded)==canonical &&
                 loaded.header.payload_digest==SWV5_TestCheckpointPayloadDigest(loaded) &&
                 loaded.header.payload_size==SWV5_TestCheckpointPayloadSize(loaded);
          expected="save_load_retains_integrity";
@@ -4973,7 +4973,7 @@ void SWV5_RunSprint48RestartTests(SWV5_TestCollector &collector)
    for(int number=1;number<=20;number++)
    {
       SWV5_RestartReconciliationInput engineInput; SWV5_TestMakeRestartInput(engineInput);
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       const string persisted_digest_before=engineInput.persisted.header.payload_digest;
       const SWV5_AuthoritativeRestartRequestSummary requests_before=engineInput.restart_requests;
       const bool baseline_safe=SWV5_TestRestartSafeToResume(context,engineInput);
@@ -5013,9 +5013,9 @@ void SWV5_RunSprint48RestartTests(SWV5_TestCollector &collector)
          expected.complete_summary_digest=SWV5_TestRestartRequestSummaryDigest(expected);
          credible=baseline_safe &&
                   SWV5_TestPersistenceRecordValid(context,engineInput.persisted) &&
-                  persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted) &&
+                  persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted) &&
                   persisted_digest_before==engineInput.persisted.header.payload_digest &&
-                  SWV5_TestCanonicalRestartRequestSummary(expected)==SWV5_TestCanonicalRestartRequestSummary(engineInput.restart_requests) &&
+                  SWV5_TestCanonicalRestartRequestSummaryFullDTO(expected)==SWV5_TestCanonicalRestartRequestSummaryFullDTO(engineInput.restart_requests) &&
                   expected.complete_summary_digest==engineInput.restart_requests.complete_summary_digest;
       }
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-RST",number),"SPRINT4_8_RESTART",
@@ -5030,7 +5030,7 @@ void SWV5_RunSprint48QueryTests(SWV5_TestCollector &collector)
    for(int number=1;number<=13;number++)
    {
       SWV5_RestartReconciliationInput engineInput; SWV5_TestMakeRestartInput(engineInput);
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       const bool baseline_safe=SWV5_TestRestartSafeToResume(context,engineInput);
       if(number==1) { engineInput.broker.queries.completed_flags=SWV5_QUERY_POSITIONS; engineInput.broker.queries.authoritative_flags=SWV5_QUERY_POSITIONS; }
       if(number==2) { engineInput.broker.queries.completed_flags=broker_required-SWV5_QUERY_POSITIONS; engineInput.broker.queries.authoritative_flags=broker_required-SWV5_QUERY_POSITIONS; }
@@ -5051,7 +5051,7 @@ void SWV5_RunSprint48QueryTests(SWV5_TestCollector &collector)
       const bool safe=SWV5_TestRestartSafeToResume(context,engineInput);
       const bool expect_safe=number==6;
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-QRY",number),"SPRINT4_8_RESTART_QUERY_SET",
-                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted) && safe==expect_safe,
+                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted) && safe==expect_safe,
                                expect_safe?"canonical_query_set_accepted":"closed_world_query_mask_rejected");
    }
 }
@@ -5110,7 +5110,7 @@ void SWV5_RunSprint48QueryPublicationTests(SWV5_TestCollector &collector)
       SWV5_RestartReconciliationResult result;
       const bool baseline_safe=persistence.ReconcileRestart(context,engineInput,requests,result);
       const bool proposal_ok=baseline_safe && result.has_accepted_query_watermark_proposal;
-      const string before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       bool passed=false;
 
       if(number==1)
@@ -5158,7 +5158,7 @@ void SWV5_RunSprint48QueryPublicationTests(SWV5_TestCollector &collector)
          const bool rejected=!persistence.PublishRestartQueryWatermarks(context,engineInput,requests,invalid,ignored,decision);
          SWV5_PersistedCheckpoint loaded; SWV5_PersistenceLoadResult load_result;
          passed=proposal_ok && rejected && persistence.LoadLatest(context,engineInput.persistence_namespace,loaded,load_result) &&
-                before==SWV5_TestCanonicalCheckpointPayload(loaded);
+                before==SWV5_TestCanonicalCheckpointFullDTO(loaded);
       }
       else if(number==11)
       {
@@ -5209,7 +5209,7 @@ void SWV5_RunSprint48QueryAuthorityTests(SWV5_TestCollector &collector)
          engineInput.persisted.header.written_at=context.clock_time-(datetime)(SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5+10);
          SWV5_TestSealCheckpoint(engineInput.persisted);
       }
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       const bool baseline_safe=SWV5_TestRestartSafeToResume(context,engineInput);
       if(number==1) engineInput.broker.queries.observed_at=context.clock_time-(datetime)(SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5+1);
       if(number==2) engineInput.broker.queries.observed_at=0;
@@ -5231,7 +5231,7 @@ void SWV5_RunSprint48QueryAuthorityTests(SWV5_TestCollector &collector)
       const bool safe=SWV5_TestRestartSafeToResume(context,engineInput);
       const bool expect_safe=number==4 || number==9;
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-QAUTH",number),"SPRINT4_8_QUERY_AUTHORITY",
-                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted) && safe==expect_safe,
+                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted) && safe==expect_safe,
                                expect_safe?"current_or_boundary_query_accepted":"old_or_incoherent_query_rejected");
    }
 }
@@ -5242,8 +5242,8 @@ void SWV5_RunSprint48RequestFixtureIndependenceTests(SWV5_TestCollector &collect
    for(int number=1;number<=2;number++)
    {
       SWV5_RestartReconciliationInput engineInput; SWV5_TestMakeRestartInput(engineInput);
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
-      const string authority_before=SWV5_TestCanonicalRestartRequestSummary(engineInput.restart_requests);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
+      const string authority_before=SWV5_TestCanonicalRestartRequestSummaryFullDTO(engineInput.restart_requests);
       const string authority_digest_before=engineInput.restart_requests.complete_summary_digest;
       const bool baseline_safe=SWV5_TestRestartSafeToResume(context,engineInput);
       if(number==1)
@@ -5265,9 +5265,9 @@ void SWV5_RunSprint48RequestFixtureIndependenceTests(SWV5_TestCollector &collect
       }
       const bool safe=SWV5_TestRestartSafeToResume(context,engineInput);
       const bool independent=(number==1 ?
-         authority_before==SWV5_TestCanonicalRestartRequestSummary(engineInput.restart_requests) &&
+         authority_before==SWV5_TestCanonicalRestartRequestSummaryFullDTO(engineInput.restart_requests) &&
          authority_digest_before==engineInput.restart_requests.complete_summary_digest :
-         persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted));
+         persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted));
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-RFIX",number),"SPRINT4_8_REQUEST_FIXTURE_INDEPENDENCE",
                                baseline_safe && independent && !safe,"independent_authority_mismatch_rejected");
    }
@@ -5301,7 +5301,7 @@ void SWV5_RunSprint48RestartFreshnessTests(SWV5_TestCollector &collector)
          engineInput.persisted.header.written_at=context.clock_time-(datetime)(SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5+10);
          SWV5_TestSealCheckpoint(engineInput.persisted);
       }
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       const bool baseline_safe=SWV5_TestRestartSafeToResume(context,engineInput);
       if(number==1) engineInput.broker.observed_at=context.clock_time-(datetime)(SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5+1);
       if(number==2) engineInput.restart_requests.observed_at=context.clock_time-(datetime)(SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5+1);
@@ -5325,7 +5325,7 @@ void SWV5_RunSprint48RestartFreshnessTests(SWV5_TestCollector &collector)
       const bool safe=SWV5_TestRestartSafeToResume(context,engineInput);
       const bool expect_safe=number==5 || number==7 || number==8 || number==9;
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-FRESH",number),"SPRINT4_8_RESTART_FRESHNESS",
-                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted) && safe==expect_safe,
+                               baseline_safe && persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted) && safe==expect_safe,
                                expect_safe?"freshness_policy_accepts":"stale_or_incoherent_observation_rejected");
    }
 }
@@ -5342,7 +5342,7 @@ void SWV5_RunSprint48FullReconciliationTests(SWV5_TestCollector &collector)
          SWV5_TestSealCheckpoint(engineInput.persisted);
       }
       SWV5_PersistedRequestEvidence empty_requests[]; ArrayResize(empty_requests,0);
-      const string persisted_before=SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const string persisted_before=SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       SWV5_RestartReadinessDisposition baseline_readiness;
       const SWV5_ReconciliationStatus baseline_result=SWV5_TestRestartDisposition(context,engineInput,empty_requests,baseline_readiness);
       const bool baseline_safe=baseline_result==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && baseline_readiness==SWV5_RESTART_SAFE_TO_RESUME;
@@ -5387,7 +5387,7 @@ void SWV5_RunSprint48FullReconciliationTests(SWV5_TestCollector &collector)
       SWV5_RestartReadinessDisposition readiness;
       const SWV5_ReconciliationStatus result=SWV5_TestRestartDisposition(context,engineInput,empty_requests,readiness);
       const bool safe=result==SWV5_RECONCILIATION_MATCHED_CHECKPOINT_REQUIRED && readiness==SWV5_RESTART_SAFE_TO_RESUME;
-      const bool persisted_unchanged=persisted_before==SWV5_TestCanonicalCheckpointPayload(engineInput.persisted);
+      const bool persisted_unchanged=persisted_before==SWV5_TestCanonicalCheckpointFullDTO(engineInput.persisted);
       const bool expect_safe=number==1 || number==20 || number==25 || number==26;
       SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-RFULL",number),"SPRINT4_8_FULL_RECONCILIATION",
                                baseline_safe && persisted_unchanged && safe==expect_safe,
@@ -5572,30 +5572,46 @@ string SWV5_TestMalformedFieldPayload(const string text,const string field_prefi
    return StringSubstr(text,0,colon+1)+replacement_character+StringSubstr(text,colon+2);
 }
 
+bool SWV5_TestRemoveCanonicalStringField(string &text,const string field_name,const string value)
+{
+   const string field=SWV5_TestCanonicalField(field_name,"s",value);
+   const int at=StringFind(text,field);
+   if(at<0) return false;
+   text=StringSubstr(text,0,at)+StringSubstr(text,at+StringLen(field));
+   return true;
+}
+
+bool SWV5_TestTamperCanonicalStringField(string &text,const string field_name,const string value)
+{
+   return SWV5_TestReplaceOnce(text,
+                               SWV5_TestCanonicalField(field_name,"s",value),
+                               SWV5_TestCanonicalField(field_name,"s",value+"-TAMPERED"));
+}
+
 void SWV5_RunSprint48RoundTripTests(SWV5_TestCollector &collector)
 {
    SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
    SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
    SWV5_HardKillState hard_kill=restart.persisted.hard_kill_state;
 
-   const string margin_text=SWV5_TestCanonicalMarginEvidence(risk.projected.margin_evidence);
+   const string margin_text=SWV5_TestCanonicalMarginEvidenceFullDTO(risk.projected.margin_evidence);
    SWV5_MarginProjectionEvidence margin_new;
    const bool margin_ok=SWV5_TestDecodeMarginEvidence(margin_text,margin_new) &&
-                        margin_text==SWV5_TestCanonicalMarginEvidence(margin_new) &&
+                        margin_text==SWV5_TestCanonicalMarginEvidenceFullDTO(margin_new) &&
                         risk.projected.margin_evidence.evidence_digest==margin_new.evidence_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-01","SPRINT4_8_TRUE_ROUND_TRIP",margin_ok,"margin_reconstructed_exactly");
 
-   const string basket_risk_text=SWV5_TestCanonicalBasketRiskEvidence(risk.projected.basket_risk_evidence);
+   const string basket_risk_text=SWV5_TestCanonicalBasketRiskEvidenceFullDTO(risk.projected.basket_risk_evidence);
    SWV5_BasketRiskProjectionEvidence basket_risk_new;
    const bool basket_risk_ok=SWV5_TestDecodeBasketRiskEvidence(basket_risk_text,basket_risk_new) &&
-                             basket_risk_text==SWV5_TestCanonicalBasketRiskEvidence(basket_risk_new) &&
+                             basket_risk_text==SWV5_TestCanonicalBasketRiskEvidenceFullDTO(basket_risk_new) &&
                              risk.projected.basket_risk_evidence.evidence_digest==basket_risk_new.evidence_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-02","SPRINT4_8_TRUE_ROUND_TRIP",basket_risk_ok,"basket_risk_reconstructed_exactly");
 
-   const string broker_text=SWV5_TestCanonicalBrokerSummary(restart.broker);
+   const string broker_text=SWV5_TestCanonicalBrokerSummaryFullDTO(restart.broker);
    SWV5_AuthoritativeBrokerSummary broker_new;
    const bool broker_ok=SWV5_TestDecodeBrokerSummary(broker_text,broker_new) &&
-                        broker_text==SWV5_TestCanonicalBrokerSummary(broker_new) &&
+                        broker_text==SWV5_TestCanonicalBrokerSummaryFullDTO(broker_new) &&
                         restart.broker.complete_summary_digest==broker_new.complete_summary_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-03","SPRINT4_8_TRUE_ROUND_TRIP",broker_ok,"broker_summary_reconstructed_exactly");
 
@@ -5606,31 +5622,31 @@ void SWV5_RunSprint48RoundTripTests(SWV5_TestCollector &collector)
                         SWV5_TestReconciliationVectorDigest(restart.persisted.reconciliation_vector)==SWV5_TestReconciliationVectorDigest(vector_new);
    SWV5_TestRecordCondition(collector,"S48-RT-V5-04","SPRINT4_8_TRUE_ROUND_TRIP",vector_ok,"reconciliation_vector_reconstructed_exactly");
 
-   const string release_text=SWV5_TestCanonicalHardKillRelease(hard_kill.release_evidence);
+   const string release_text=SWV5_TestCanonicalHardKillReleaseFullDTO(hard_kill.release_evidence);
    SWV5_HardKillReleaseEvidence release_new;
    const bool release_ok=SWV5_TestDecodeHardKillRelease(release_text,release_new) &&
-                         release_text==SWV5_TestCanonicalHardKillRelease(release_new) &&
+                         release_text==SWV5_TestCanonicalHardKillReleaseFullDTO(release_new) &&
                          hard_kill.release_evidence.release_record_digest==release_new.release_record_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-05","SPRINT4_8_TRUE_ROUND_TRIP",release_ok,"hard_kill_release_reconstructed_exactly");
 
-   const string authority_text=SWV5_TestCanonicalHardKillAuthorityRecord(restart.release_authority_record);
+   const string authority_text=SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(restart.release_authority_record);
    SWV5_HardKillReleaseAuthorityRecord authority_new;
    const bool authority_ok=SWV5_TestDecodeHardKillAuthorityRecord(authority_text,authority_new) &&
-                           authority_text==SWV5_TestCanonicalHardKillAuthorityRecord(authority_new) &&
+                           authority_text==SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(authority_new) &&
                            restart.release_authority_record.authority_record_digest==authority_new.authority_record_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-06","SPRINT4_8_TRUE_ROUND_TRIP",authority_ok,"hard_kill_authority_reconstructed_exactly");
 
-   const string checkpoint_text=SWV5_TestCanonicalCheckpointPayload(restart.persisted);
+   const string checkpoint_text=SWV5_TestCanonicalCheckpointFullDTO(restart.persisted);
    SWV5_PersistedCheckpoint checkpoint_new;
    const bool checkpoint_ok=SWV5_TestDecodeCheckpoint(checkpoint_text,checkpoint_new) &&
-                            checkpoint_text==SWV5_TestCanonicalCheckpointPayload(checkpoint_new) &&
+                            checkpoint_text==SWV5_TestCanonicalCheckpointFullDTO(checkpoint_new) &&
                             restart.persisted.header.payload_digest==checkpoint_new.header.payload_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-07","SPRINT4_8_TRUE_ROUND_TRIP",checkpoint_ok,"checkpoint_reconstructed_exactly");
 
-   const string restart_request_text=SWV5_TestCanonicalRestartRequestSummary(restart.restart_requests);
+   const string restart_request_text=SWV5_TestCanonicalRestartRequestSummaryFullDTO(restart.restart_requests);
    SWV5_AuthoritativeRestartRequestSummary restart_request_new;
    const bool restart_request_ok=SWV5_TestDecodeRestartRequestSummary(restart_request_text,restart_request_new) &&
-                                 restart_request_text==SWV5_TestCanonicalRestartRequestSummary(restart_request_new) &&
+                                 restart_request_text==SWV5_TestCanonicalRestartRequestSummaryFullDTO(restart_request_new) &&
                                  restart.restart_requests.complete_summary_digest==restart_request_new.complete_summary_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-15","SPRINT4_8_TRUE_ROUND_TRIP",restart_request_ok,"restart_request_summary_reconstructed_exactly");
 
@@ -5650,6 +5666,76 @@ void SWV5_RunSprint48RoundTripTests(SWV5_TestCollector &collector)
                           proposal_text==SWV5_TestCanonicalAcceptedQueryWatermarkProposal(proposal_new) &&
                           proposal.proposal_digest==proposal_new.proposal_digest;
    SWV5_TestRecordCondition(collector,"S48-RT-V5-17","SPRINT4_8_TRUE_ROUND_TRIP",proposal_ok,"accepted_query_watermark_proposal_reconstructed_exactly");
+
+   string digest_case=margin_text;
+   SWV5_MarginProjectionEvidence margin_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-01","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"evidence_digest",risk.projected.margin_evidence.evidence_digest) &&
+                            !SWV5_TestDecodeMarginEvidence(digest_case,margin_digest_rejected),"margin_missing_digest_rejected");
+   digest_case=margin_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-01","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"evidence_digest",risk.projected.margin_evidence.evidence_digest) &&
+                            !SWV5_TestDecodeMarginEvidence(digest_case,margin_digest_rejected),"margin_tampered_digest_rejected");
+
+   digest_case=basket_risk_text;
+   SWV5_BasketRiskProjectionEvidence basket_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-02","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"evidence_digest",risk.projected.basket_risk_evidence.evidence_digest) &&
+                            !SWV5_TestDecodeBasketRiskEvidence(digest_case,basket_digest_rejected),"basket_risk_missing_digest_rejected");
+   digest_case=basket_risk_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-02","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"evidence_digest",risk.projected.basket_risk_evidence.evidence_digest) &&
+                            !SWV5_TestDecodeBasketRiskEvidence(digest_case,basket_digest_rejected),"basket_risk_tampered_digest_rejected");
+
+   digest_case=broker_text;
+   SWV5_AuthoritativeBrokerSummary broker_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-03","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"complete_summary_digest",restart.broker.complete_summary_digest) &&
+                            !SWV5_TestDecodeBrokerSummary(digest_case,broker_digest_rejected),"broker_summary_missing_digest_rejected");
+   digest_case=broker_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-03","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"complete_summary_digest",restart.broker.complete_summary_digest) &&
+                            !SWV5_TestDecodeBrokerSummary(digest_case,broker_digest_rejected),"broker_summary_tampered_digest_rejected");
+
+   digest_case=restart_request_text;
+   SWV5_AuthoritativeRestartRequestSummary restart_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-04","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"complete_summary_digest",restart.restart_requests.complete_summary_digest) &&
+                            !SWV5_TestDecodeRestartRequestSummary(digest_case,restart_digest_rejected),"restart_request_missing_digest_rejected");
+   digest_case=restart_request_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-04","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"complete_summary_digest",restart.restart_requests.complete_summary_digest) &&
+                            !SWV5_TestDecodeRestartRequestSummary(digest_case,restart_digest_rejected),"restart_request_tampered_digest_rejected");
+
+   digest_case=release_text;
+   SWV5_HardKillReleaseEvidence release_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-05","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"release_record_digest",hard_kill.release_evidence.release_record_digest) &&
+                            !SWV5_TestDecodeHardKillRelease(digest_case,release_digest_rejected),"hard_kill_release_missing_digest_rejected");
+   digest_case=release_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-05","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"release_record_digest",hard_kill.release_evidence.release_record_digest) &&
+                            !SWV5_TestDecodeHardKillRelease(digest_case,release_digest_rejected),"hard_kill_release_tampered_digest_rejected");
+
+   digest_case=authority_text;
+   SWV5_HardKillReleaseAuthorityRecord authority_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-06","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"authority_record_digest",restart.release_authority_record.authority_record_digest) &&
+                            !SWV5_TestDecodeHardKillAuthorityRecord(digest_case,authority_digest_rejected),"hard_kill_authority_missing_digest_rejected");
+   digest_case=authority_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-06","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"authority_record_digest",restart.release_authority_record.authority_record_digest) &&
+                            !SWV5_TestDecodeHardKillAuthorityRecord(digest_case,authority_digest_rejected),"hard_kill_authority_tampered_digest_rejected");
+
+   digest_case=checkpoint_text;
+   SWV5_PersistedCheckpoint checkpoint_digest_rejected;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-MISSING-07","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestRemoveCanonicalStringField(digest_case,"header_payload_digest",restart.persisted.header.payload_digest) &&
+                            !SWV5_TestDecodeCheckpoint(digest_case,checkpoint_digest_rejected),"checkpoint_missing_digest_rejected");
+   digest_case=checkpoint_text;
+   SWV5_TestRecordCondition(collector,"S48-RT-DIGEST-TAMPER-07","SPRINT4_8_EMBEDDED_DIGEST",
+                            SWV5_TestTamperCanonicalStringField(digest_case,"header_payload_digest",restart.persisted.header.payload_digest) &&
+                            !SWV5_TestDecodeCheckpoint(digest_case,checkpoint_digest_rejected),"checkpoint_tampered_digest_rejected");
 
    string malformed=StringSubstr(margin_text,1); SWV5_MarginProjectionEvidence rejected;
    SWV5_TestRecordCondition(collector,"S48-RT-NEG-01","SPRINT4_8_TRUE_ROUND_TRIP",!SWV5_TestDecodeMarginEvidence(malformed,rejected),"truncated_prefix_rejected");
@@ -5694,6 +5780,60 @@ void SWV5_RunSprint48MetadataConformanceTests(SWV5_TestCollector &collector)
    const bool passed=SWV5_TestResultSchemaIdentity()==expected_schema &&
                      SWV5_TestResultProductionPolicy()==SWV5_PRODUCTION_CONTRACT_POLICY;
    SWV5_TestRecordCondition(collector,"S48-META-01","SPRINT4_8_METADATA_CONFORMANCE",passed,"machine_identity_matches_compiled_contract_constants");
+}
+
+void SWV5_RunSprint48NonFiniteDealTests(SWV5_TestCollector &collector)
+{
+   for(int number=1;number<=20;number++)
+   {
+      SWV5_AuthoritativeDeal deal; SWV5_TestMakeDeal(deal);
+      SWV5_StatisticsBuildContext build_context; SWV5_TestMakeStatisticsContext(build_context);
+      SWV5_ContractValidationContext validation_context; SWV5_TestMakeContext(validation_context);
+      SWV5_BasketStatistics current,next; SWV5_TestMakeStatistics(current); SWV5_TestMakeStatistics(next);
+      next.deal_count=777;
+      next.deduplication.unique_deal_count=333;
+      SWV5_StatisticsDeduplicationEvidence evidence;
+      SWV5_TestMakeDedupEvidence(evidence,current.deduplication,SWV5_STAT_IDENTITY_NEW);
+      deal.correlation=evidence.correlation;
+
+      if(number<=18)
+      {
+         const int field=(number-1)/3;
+         const int variant=(number-1)%3;
+         double invalid=SWV5_TestNaN();
+         if(variant==1) invalid=SWV5_TestPositiveInfinity();
+         if(variant==2) invalid=SWV5_TestNegativeInfinity();
+         if(field==0) deal.volume=invalid;
+         if(field==1) deal.price=invalid;
+         if(field==2) deal.gross_profit=invalid;
+         if(field==3) deal.commission=invalid;
+         if(field==4) deal.swap=invalid;
+         if(field==5) deal.fee=invalid;
+      }
+      if(number==20) deal.fee=SWV5_TestNaN();
+
+      const string next_before=SWV5_TestCanonicalBasketStatistics(next);
+      SWV5_TestStatisticsContract implementation;
+      SWV5_ContractDecision decision;
+      const bool validated=implementation.ValidateDeal(validation_context,deal,build_context,decision);
+      const bool accumulated=implementation.AccumulateDeal(validation_context,deal,evidence,current,next);
+      const string next_after=SWV5_TestCanonicalBasketStatistics(next);
+      bool passed=false;
+      string expected="non_finite_rejected_before_mutation";
+      if(number==19)
+      {
+         passed=validated && accumulated && next_after!=next_before &&
+                next.deal_count==current.deal_count+1 &&
+                next.deduplication.unique_deal_count==current.deduplication.unique_deal_count+1;
+         expected="finite_authoritative_deal_accepted_and_accumulated";
+      }
+      else
+      {
+         passed=!validated && !accumulated && next_after==next_before;
+         if(number==20) expected="failed_accumulation_preserves_complete_output_state";
+      }
+      SWV5_TestRecordCondition(collector,SWV5_TestCaseId("S48-NFD",number),"SPRINT4_8_NON_FINITE_DEAL",passed,expected);
+   }
 }
 
 void SWV5_RunSprint48B6MarginAuthorityTests(SWV5_TestCollector &collector)
@@ -5831,11 +5971,11 @@ void SWV5_RunSprint48B6PersistenceAtomicityTests(SWV5_TestCollector &collector)
    SWV5_PersistedCheckpoint state_empty; const bool loaded_empty=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,state_empty,load_result);
    SWV5_TestRecordCondition(collector,"S48-PAT-09","SPRINT4_8_PERSISTENCE_ATOMICITY",emptied && loaded_empty && !state_empty.has_latest_pending_request && state_empty.pending_request_set.request_count==0 && state_empty.reconciliation_vector.pending_request_count==0 && state_empty.basket.lifecycle.pending_request_count==0,"empty_replacement_clears_all_request_state");
 
-   const string before_failure=SWV5_TestCanonicalCheckpointPayload(state_empty);
+   const string before_failure=SWV5_TestCanonicalCheckpointFullDTO(state_empty);
    SWV5_PersistedRequestSetHeader invalid_header; SWV5_TestBindRequestSetHeader(invalid_header,set_b,43); invalid_header.request_set_digest="CORRUPT";
    const bool rejected=!persistence.SavePendingRequests(context,checkpoint.header.persistence_namespace,set_b,invalid_header,decision);
    SWV5_PersistedCheckpoint after_failure; const bool loaded_after=persistence.LoadLatest(context,checkpoint.header.persistence_namespace,after_failure,load_result);
-   SWV5_TestRecordCondition(collector,"S48-PAT-10","SPRINT4_8_PERSISTENCE_ATOMICITY",rejected && loaded_after && before_failure==SWV5_TestCanonicalCheckpointPayload(after_failure),"failed_replace_is_atomic");
+   SWV5_TestRecordCondition(collector,"S48-PAT-10","SPRINT4_8_PERSISTENCE_ATOMICITY",rejected && loaded_after && before_failure==SWV5_TestCanonicalCheckpointFullDTO(after_failure),"failed_replace_is_atomic");
    SWV5_TestRecordCondition(collector,"S48-PAT-11","SPRINT4_8_PERSISTENCE_ATOMICITY",loaded_after && SWV5_TestPersistenceRecordValid(context,after_failure),"load_latest_observes_complete_post_save_state");
    SWV5_TestRecordCondition(collector,"S48-PAT-12","SPRINT4_8_PERSISTENCE_ATOMICITY",loaded_after && after_failure.reconciliation_vector.source_summary_digest==SWV5_TestReconciliationSourceDigest(after_failure.reconciliation_vector),"source_summary_is_full_vector_digest");
 }
@@ -5857,9 +5997,9 @@ void SWV5_RunSprint48B6IdentityTests(SWV5_TestCollector &collector)
    SWV5_TestRecordCondition(collector,"S48-ID-09","SPRINT4_8_V5_IDENTITY",units.ContractName()=="ISWV5UnitSystemContract"+suffix,"unit_system_v5");
    SWV5_TestRecordCondition(collector,"S48-ID-10","SPRINT4_8_V5_IDENTITY",SWV5_TestResultSchemaIdentity()=="SWV5-CONTRACT-TEST-RESULT-V5" && SWV5_TestResultProductionPolicy()==SWV5_PRODUCTION_CONTRACT_POLICY,"machine_schema_policy_v5");
    SWV5_RiskEvaluationInput engineInput; SWV5_TestMakeRiskInput(engineInput);
-   const string expected_margin_digest=SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-MARGIN-PROJECTION-V5-LP1")+SWV5_TestCanonicalMarginEvidence(engineInput.projected.margin_evidence));
+   const string expected_margin_digest=SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-MARGIN-PROJECTION-V5-LP1")+SWV5_TestCanonicalMarginEvidenceDigestPreimage(engineInput.projected.margin_evidence));
    SWV5_TestRecordCondition(collector,"S48-ID-11","SPRINT4_8_V5_IDENTITY",expected_margin_digest==SWV5_TestMarginEvidenceDigest(engineInput.projected.margin_evidence),"active_serializer_format_v5");
-   SWV5_MarginProjectionEvidence rejected; string historical=SWV5_TestCanonicalMarginEvidence(engineInput.projected.margin_evidence); SWV5_TestReplaceOnce(historical,"schema_version:i:1:5","schema_version:i:1:4");
+   SWV5_MarginProjectionEvidence rejected; string historical=SWV5_TestCanonicalMarginEvidenceFullDTO(engineInput.projected.margin_evidence); SWV5_TestReplaceOnce(historical,"schema_version:i:1:5","schema_version:i:1:4");
    SWV5_TestRecordCondition(collector,"S48-ID-12","SPRINT4_8_V5_IDENTITY",StringFind(SWV5_TestSuiteIdentity(),"SPRINT4.8-V5-")==0 && !SWV5_TestDecodeMarginEvidence(historical,rejected),"current_suite_v5_and_historical_v4_rejected");
 }
 
@@ -6364,13 +6504,13 @@ bool SWV5_TestCanonicalNestedSerializerReuse()
 {
    SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
    SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
-   return StringFind(SWV5_TestCanonicalBasketRiskEvidence(risk.projected.basket_risk_evidence),
+   return StringFind(SWV5_TestCanonicalBasketRiskEvidenceFullDTO(risk.projected.basket_risk_evidence),
                      SWV5_TestCanonicalRiskMonetaryBasis(risk.projected.basket_risk_evidence.monetary_basis))>=0 &&
-          StringFind(SWV5_TestCanonicalHardKillRelease(restart.persisted.hard_kill_state.release_evidence),
+          StringFind(SWV5_TestCanonicalHardKillReleaseFullDTO(restart.persisted.hard_kill_state.release_evidence),
                      SWV5_TestCanonicalTypedReconciliation(restart.persisted.hard_kill_state.release_evidence.broker_evidence))>=0 &&
-          StringFind(SWV5_TestCanonicalHardKillAuthorityRecord(restart.release_authority_record),
+          StringFind(SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(restart.release_authority_record),
                      SWV5_TestCanonicalExposureEvidence(restart.release_authority_record.exposure_evidence_reference))>=0 &&
-          StringFind(SWV5_TestCanonicalCheckpointPayload(restart.persisted),
+          StringFind(SWV5_TestCanonicalCheckpointFullDTO(restart.persisted),
                      SWV5_TestCanonicalReconciliationVector(restart.persisted.reconciliation_vector))>=0;
 }
 
@@ -6394,18 +6534,20 @@ void SWV5_RunSprint48CanonicalIntegrityTests(SWV5_TestCollector &collector)
 
    SWV5_RiskEvaluationInput risk; SWV5_TestMakeRiskInput(risk);
    SWV5_RestartReconciliationInput restart; SWV5_TestMakeReleasedRestart(restart);
-   SWV5_MarginProjectionEvidence margin=risk.projected.margin_evidence; const string margin_digest=SWV5_TestMarginEvidenceDigest(margin); margin.evidence_digest+="X";
-   SWV5_BasketRiskProjectionEvidence loss=risk.projected.basket_risk_evidence; const string loss_digest=SWV5_TestBasketRiskEvidenceDigest(loss); loss.evidence_digest+="X";
-   SWV5_AuthoritativeBrokerSummary broker=restart.broker; const string broker_digest=SWV5_TestBrokerSummaryDigest(broker); broker.complete_summary_digest+="X";
-   SWV5_HardKillReleaseEvidence release=restart.persisted.hard_kill_state.release_evidence; const string release_digest=SWV5_TestHardKillReleaseDigest(release); release.release_record_digest+="X";
-   SWV5_HardKillReleaseAuthorityRecord authority=restart.release_authority_record; const string authority_digest=SWV5_TestHardKillAuthorityRecordDigest(authority); authority.authority_record_digest+="X";
-   SWV5_PersistedCheckpoint checkpoint=restart.persisted; const string checkpoint_digest=SWV5_TestCheckpointPayloadDigest(checkpoint); checkpoint.header.payload_digest+="X"; checkpoint.header.payload_size++;
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-01","SPRINT4_8_CANONICAL_INTEGRITY",margin_digest==SWV5_TestMarginEvidenceDigest(margin),"margin_self_digest_excluded");
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-02","SPRINT4_8_CANONICAL_INTEGRITY",loss_digest==SWV5_TestBasketRiskEvidenceDigest(loss),"basket_risk_self_digest_excluded");
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-03","SPRINT4_8_CANONICAL_INTEGRITY",broker_digest==SWV5_TestBrokerSummaryDigest(broker),"broker_self_digest_excluded");
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-04","SPRINT4_8_CANONICAL_INTEGRITY",release_digest==SWV5_TestHardKillReleaseDigest(release),"release_self_digest_excluded");
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-05","SPRINT4_8_CANONICAL_INTEGRITY",authority_digest==SWV5_TestHardKillAuthorityRecordDigest(authority),"authority_self_digest_excluded");
-   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-06","SPRINT4_8_CANONICAL_INTEGRITY",checkpoint_digest==SWV5_TestCheckpointPayloadDigest(checkpoint),"checkpoint_integrity_envelope_excluded");
+   SWV5_MarginProjectionEvidence margin=risk.projected.margin_evidence; const string margin_digest=SWV5_TestMarginEvidenceDigest(margin),margin_full=SWV5_TestCanonicalMarginEvidenceFullDTO(margin); margin.evidence_digest+="X";
+   SWV5_BasketRiskProjectionEvidence loss=risk.projected.basket_risk_evidence; const string loss_digest=SWV5_TestBasketRiskEvidenceDigest(loss),loss_full=SWV5_TestCanonicalBasketRiskEvidenceFullDTO(loss); loss.evidence_digest+="X";
+   SWV5_AuthoritativeBrokerSummary broker=restart.broker; const string broker_digest=SWV5_TestBrokerSummaryDigest(broker),broker_full=SWV5_TestCanonicalBrokerSummaryFullDTO(broker); broker.complete_summary_digest+="X";
+   SWV5_HardKillReleaseEvidence release=restart.persisted.hard_kill_state.release_evidence; const string release_digest=SWV5_TestHardKillReleaseDigest(release),release_full=SWV5_TestCanonicalHardKillReleaseFullDTO(release); release.release_record_digest+="X";
+   SWV5_HardKillReleaseAuthorityRecord authority=restart.release_authority_record; const string authority_digest=SWV5_TestHardKillAuthorityRecordDigest(authority),authority_full=SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(authority); authority.authority_record_digest+="X";
+   SWV5_PersistedCheckpoint checkpoint=restart.persisted; const string checkpoint_digest=SWV5_TestCheckpointPayloadDigest(checkpoint),checkpoint_full=SWV5_TestCanonicalCheckpointFullDTO(checkpoint); checkpoint.header.payload_digest+="X";
+   SWV5_AuthoritativeRestartRequestSummary request_summary=restart.restart_requests; const string request_digest=SWV5_TestRestartRequestSummaryDigest(request_summary),request_full=SWV5_TestCanonicalRestartRequestSummaryFullDTO(request_summary); request_summary.complete_summary_digest+="X";
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-01","SPRINT4_8_CANONICAL_INTEGRITY",margin_digest==SWV5_TestMarginEvidenceDigest(margin) && margin_full!=SWV5_TestCanonicalMarginEvidenceFullDTO(margin),"margin_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-02","SPRINT4_8_CANONICAL_INTEGRITY",loss_digest==SWV5_TestBasketRiskEvidenceDigest(loss) && loss_full!=SWV5_TestCanonicalBasketRiskEvidenceFullDTO(loss),"basket_risk_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-03","SPRINT4_8_CANONICAL_INTEGRITY",broker_digest==SWV5_TestBrokerSummaryDigest(broker) && broker_full!=SWV5_TestCanonicalBrokerSummaryFullDTO(broker),"broker_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-04","SPRINT4_8_CANONICAL_INTEGRITY",release_digest==SWV5_TestHardKillReleaseDigest(release) && release_full!=SWV5_TestCanonicalHardKillReleaseFullDTO(release),"release_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-05","SPRINT4_8_CANONICAL_INTEGRITY",authority_digest==SWV5_TestHardKillAuthorityRecordDigest(authority) && authority_full!=SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(authority),"authority_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-06","SPRINT4_8_CANONICAL_INTEGRITY",checkpoint_digest==SWV5_TestCheckpointPayloadDigest(checkpoint) && checkpoint_full!=SWV5_TestCanonicalCheckpointFullDTO(checkpoint),"checkpoint_digest_excluded_from_preimage_included_in_full_dto");
+   SWV5_TestRecordCondition(collector,"S48-CAN-SELF-07","SPRINT4_8_CANONICAL_INTEGRITY",request_digest==SWV5_TestRestartRequestSummaryDigest(request_summary) && request_full!=SWV5_TestCanonicalRestartRequestSummaryFullDTO(request_summary),"restart_summary_digest_excluded_from_preimage_included_in_full_dto");
 
    const string a=SWV5_TestCanonicalField("a","s","1"),b=SWV5_TestCanonicalField("b","i","1");
    SWV5_TestRecordCondition(collector,"S48-CAN-FMT-01","SPRINT4_8_CANONICAL_INTEGRITY",a+b!=b+a,"adjacent_field_order_distinct");
@@ -6458,6 +6600,7 @@ void SWV5_RunContractSuite(SWV5_TestCollector &collector)
    SWV5_RunSprint48HardKillAuthorityTests(collector);
    SWV5_RunSprint48CanonicalIntegrityTests(collector);
    SWV5_RunSprint48RoundTripTests(collector);
+   SWV5_RunSprint48NonFiniteDealTests(collector);
    SWV5_RunSprint48MetadataConformanceTests(collector);
    SWV5_RunSprint48B6MarginAuthorityTests(collector);
    SWV5_RunSprint48B6BasketAuthorityTests(collector);
@@ -6489,7 +6632,7 @@ bool SWV5_RunContractVerification()
                             first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==934 && first.Skipped()==0;
+   const bool complete=first.Total()==969 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -6909,7 +7052,7 @@ bool SWV5_RunSprint48CanonicalIntegrityTargetedVerification()
    const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() &&
                             first.Failed()==replay.Failed() && first.Skipped()==replay.Skipped() &&
                             first.Signature()==replay.Signature();
-   const bool complete=first.Total()==38 && first.Skipped()==0;
+   const bool complete=first.Total()==40 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",
                first.Total(),first.Passed(),first.Failed(),first.Skipped(),
@@ -6970,7 +7113,7 @@ bool SWV5_RunSprint48RoundTripTargetedVerification()
    SWV5_RunSprint48RoundTripTests(first); SWV5_RunSprint48RoundTripTests(replay);
    const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
-   const bool complete=first.Total()==23 && first.Skipped()==0;
+   const bool complete=first.Total()==37 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
    return first.AllPassed() && deterministic && complete;
@@ -6983,6 +7126,54 @@ bool SWV5_RunSprint48MetadataTargetedVerification()
    const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
                             first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
    const bool complete=first.Total()==1 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+bool SWV5_RunSprint48B11NonFiniteDealTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48NonFiniteDealTests(first); SWV5_RunSprint48NonFiniteDealTests(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==20 && first.Skipped()==0;
+   Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
+   PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
+   return first.AllPassed() && deterministic && complete;
+}
+
+void SWV5_RunSprint48B11PriorDirectRegressionSet(SWV5_TestCollector &collector)
+{
+   SWV5_RunSprint45ExecutionAuthorityTests(collector);
+   SWV5_RunSprint45FingerprintTests(collector);
+   SWV5_RunSprint46ExecutionEnvelopeTests(collector);
+   SWV5_RunOwnershipTests(collector);
+   SWV5_RunSprint45OwnershipLifecycleTests(collector);
+   SWV5_RunSprint46RetryFreshnessTests(collector);
+   SWV5_RunSprint47RetryEnumTests(collector);
+   SWV5_RunSprint48MarginTests(collector);
+   SWV5_RunSprint48LossTests(collector);
+   SWV5_RunSprint48NotionalTests(collector);
+   SWV5_RunSprint48RestartTests(collector);
+   SWV5_RunSprint48QueryTests(collector);
+   SWV5_RunSprint48QueryPublicationTests(collector);
+   SWV5_RunSprint48QueryAuthorityTests(collector);
+   SWV5_RunSprint48FullReconciliationTests(collector);
+   SWV5_RunSprint48HardKillTests(collector);
+   SWV5_RunSprint48HardKillAuthorityTests(collector);
+   SWV5_RunSprint48B6MarginAuthorityTests(collector);
+   SWV5_RunSprint48B6BasketAuthorityTests(collector);
+   SWV5_RunSprint48B6PersistenceAtomicityTests(collector);
+}
+
+bool SWV5_RunSprint48B11PriorDirectRegressionTargetedVerification()
+{
+   SWV5_TestCollector first,replay;
+   SWV5_RunSprint48B11PriorDirectRegressionSet(first); SWV5_RunSprint48B11PriorDirectRegressionSet(replay);
+   const bool deterministic=first.Total()==replay.Total() && first.Passed()==replay.Passed() && first.Failed()==replay.Failed() &&
+                            first.Skipped()==replay.Skipped() && first.Signature()==replay.Signature();
+   const bool complete=first.Total()==336 && first.Skipped()==0;
    Print("SWV5_MACHINE_RESULT "+first.SummaryJson(deterministic));
    PrintFormat("SWV5_HUMAN_RESULT total=%d passed=%d failed=%d skipped=%d deterministic=%s complete=%s",first.Total(),first.Passed(),first.Failed(),first.Skipped(),deterministic ? "true" : "false",complete ? "true" : "false");
    return first.AllPassed() && deterministic && complete;

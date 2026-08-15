@@ -1,4 +1,4 @@
-# Sprint 4.8 Phase B10 V5 Candidate Interface Coverage Matrix
+# Sprint 4.8 Phase B11 V5 Candidate Interface Coverage Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -10,7 +10,7 @@
 | `ISWV5ExecutionContract` | `ValidateIntent`, `ValidatePhaseTransition`, `ClassifyResultRetcode`, `AcceptTransactionEvidence`, `EvaluateRetry` | EXE-01–EXE-16, XDM-01–XDM-02, XDM-07, XDM-11, IFC-04–IFC-06, IFC-24–IFC-27, IFC-32, S44-17–S44-18, S45A-01–S45A-10, S45F-01–S45F-02, S46AE-01–S46AE-42, S46DR-01–S46DR-20 |
 | `ISWV5PersistenceContract` | `ValidateRecord`, `Configure`, `LoadLatest`, `LoadPendingRequests`, `SavePendingRequests`, `SaveCheckpoint`, `ReconcileRestart`, `PublishRestartQueryWatermarks` | PER-01–PER-15, XDM-01, XDM-03, XDM-08, XDM-11, IFC-07–IFC-08, IFC-28, IFC-33–IFC-36, PRT-01–PRT-11, S44-01–S44-11, S45BR-10, S45F-02, S45DP-08–S45DP-12, S45DP-15–S45DP-16, S46CP-01–S46CP-20, S46EI-15, S48-QPUB-01–S48-QPUB-12 |
 | `ISWV5RiskContract` | `ValidateLimits`, `Evaluate`, `ValidateAuthorization`, `ValidateHardKillRelease` | RSK-01–RSK-16, XDM-01, XDM-05–XDM-06, XDM-09–XDM-10, IFC-09–IFC-13, IFC-22–IFC-23, IFC-37, S44-12–S44-15, S45CR-01–S45CR-29, S45DO-32–S45DO-33, S46BR-01–S46BR-31, S46BH-01–S46BH-40 |
-| `ISWV5StatisticsContract` | `ValidateDeal`, `AccumulateDeal`, `Finalize` | STA-01–STA-13, IFC-29, IFC-38, S44-19–S44-20 |
+| `ISWV5StatisticsContract` | `ValidateDeal`, `AccumulateDeal`, `Finalize` | STA-01–STA-13, IFC-29, IFC-38, S44-19–S44-20, S48-NFD-01–S48-NFD-20 |
 | `ISWV5InstanceOwnershipContract` | `Acquire`, `Heartbeat`, `DetectConflict`, `Release` | COM-09, OWN-01–OWN-11, IFC-19–IFC-21, IFC-39–IFC-40, S44-21–S44-25, S45BO-01–S45BO-10, S45DO-01–S45DO-33 |
 | `ISWV5UnitSystemContract` | `ValidateSpecification`, `Normalize` | UNT-01–UNT-10, XDM-01, XDM-05, IFC-14–IFC-18, S45CU-01–S45CU-20 |
 
@@ -70,3 +70,9 @@ These cases prove the public test-only implementations against causal projection
 - `ISWV5PersistenceContract.PublishRestartQueryWatermarks`: S48-QPUB-01 through S48-QPUB-12 verify atomic monotonic high-watermark publication, CAS fencing, replay rejection, owner separation, coherent checkpoint metadata, and failure atomicity.
 - `SWV5_TestDecodeAcceptedQueryWatermarkProposal`: S48-RT-V5-17 performs new-object reconstruction; S48-CAN-DTO-12 covers every proposal field.
 - `Export-Sprint48Evidence.ps1`: EXP48-68 through EXP48-73 prove VerifyIndex and VerifyCommit independently derive the source tree and rebuild the canonical verification-source digest against direct and internally recomputed forgeries.
+
+## Sprint 4.8 Phase B11 additions
+
+- `ISWV5StatisticsContract.ValidateDeal` and `AccumulateDeal`: S48-NFD-01 through S48-NFD-18 reject NaN and both infinities for all six authoritative deal doubles before mutation; S48-NFD-19 accepts finite data; S48-NFD-20 proves output-state immutability on failure.
+- Test-only canonical decoders: S48-RT-V5-01 through V5-07 and V5-15 now read and validate embedded integrity fields from full DTO text. S48-RT-DIGEST-MISSING-* and S48-RT-DIGEST-TAMPER-* enforce the negative boundary.
+- `Export-Sprint48Evidence.ps1`: EXP48-74 through EXP48-82 cover source-bound exact-one per-ID credibility classification, derived headline totals, known categories, weak-count enforcement, and mapping-tamper rejection across generation and Git verification semantics.

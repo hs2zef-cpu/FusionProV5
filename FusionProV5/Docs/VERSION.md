@@ -14,7 +14,7 @@ Sprint 4.8 Production Contract V5 Candidate
 
 **CANDIDATE / IN REVIEW**
 
-Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. The prior Sprint 4.8 source and evidence remain immutable superseded failed-audit history. Phase B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` is technically source-frozen, immutable verification passed, and reproducible evidence is complete. Final independent merge audit remains required. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
+Corrective contract and verification work is part of the Sprint 4.1 candidate branch. Sprint 4 remains the authorized baseline. Sprint 4.8 and Production Contract V5 are Candidate / In Review and unlocked. Production Contract V4 is a superseded candidate / historical pre-approval artifact. B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and evidence `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` are immutable superseded failed-final-audit history. Phase B11 is the current uncommitted successor technical candidate and is not source-frozen; final evidence and a new independent merge audit remain future work. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
 
 ## Current Authorized Baseline
 
@@ -76,15 +76,13 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 - Sprint 4.8 immutable verification: 846 passed, 0 failed, 0 skipped in each of two intentional MT5 Demo Strategy Tester runs; identical signature `12393352988365616976`
 - Sprint 4.8 credibility: 773 behavioral, 59 supporting pure-function, 14 conformance-only, 0 weak false-positive; 846 total
 - Sprint 4.8 prior reproducible evidence commit: `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3`; immutable superseded failed-audit history, not current merge evidence
-- Sprint 4.8 Phase B10.1 technically frozen source: `e56e51e72dc5fd9ee47d847781a545134b092059`; source tree `c97ba3cf8b21d12cc601753f4b2c311a06d02206`
-- Sprint 4.8 current immutable verification: 934 passed, 0 failed, 0 skipped in each of two intentional MT5 Trial/Demo Strategy Tester runs; identical signature `11631338912972649069`
-- Sprint 4.8 current credibility: 858 behavioral, 62 supporting pure-function, 14 conformance-only, 0 weak false-positive; 934 total
-- Sprint 4.8 current exporter offline verification: 73 passed, 0 failed, 0 skipped; signature `aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37`
-- Sprint 4.8 verification-source digest: `66a11100c3ba44a6c3b0699b93dedfacd3c2d0d618ddcc4b039efe0beda4cfd7`; reproducible evidence complete pending final independent merge audit
+- Sprint 4.8 B10.1 superseded failed-final-audit source/evidence: `e56e51e72dc5fd9ee47d847781a545134b092059` / `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91`
+- Sprint 4.8 Phase B11 current state: Candidate / In Review / Unlocked, working changes uncommitted, not source-frozen, no final evidence
+- Sprint 4.8 Phase B11 executable inventory target: 969 MQL cases and 82 exporter offline cases; credibility is derived per ID rather than declared by aggregate authority
 - Static isolation and frozen-baseline scans: complete with no violations
 
 ## Next Authorized Action
 
-Perform a final independent merge audit in a fresh review context. Merge and formal approval require later separate authorization. Sprint 4 Architecture remains the authorized baseline until approval.
+Perform a focused B11 source review and, only after separate approval, create a new immutable source freeze. Immutable verification, reproducible evidence, and a final independent merge audit must then be repeated against that successor commit. Sprint 4 Architecture remains the authorized baseline until formal approval.
 
 Do not merge or begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint.

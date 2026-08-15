@@ -2742,13 +2742,22 @@ bool SWV5_TestHardKillReleaseValid(const SWV5_ContractValidationContext &context
    return SWV5_TestHardKillReleaseValid(context,state,evidence,SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION);
 }
 
-bool SWV5_TestDealValid(const SWV5_AuthoritativeDeal &deal,const SWV5_StatisticsBuildContext &context)
+bool SWV5_TestDealIntrinsicValid(const SWV5_AuthoritativeDeal &deal)
 {
    return SWV5_TestVersionValid(deal.contract_version) &&
-          SWV5_TestNamespaceEqual(deal.persistence_namespace,context.persistence_namespace) &&
           SWV5_TestCorrelationComplete(deal.correlation) && deal.authority==SWV5_AUTHORITY_DEAL_HISTORY &&
+          SWV5_IsFiniteNumber(deal.volume) && SWV5_IsFiniteNumber(deal.price) &&
+          SWV5_IsFiniteNumber(deal.gross_profit) && SWV5_IsFiniteNumber(deal.commission) &&
+          SWV5_IsFiniteNumber(deal.swap) && SWV5_IsFiniteNumber(deal.fee) &&
           deal.volume>0.0 && deal.price>0.0 && deal.account_currency!="" &&
-          deal.monetary_components_complete && context.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
+          deal.monetary_components_complete;
+}
+
+bool SWV5_TestDealValid(const SWV5_AuthoritativeDeal &deal,const SWV5_StatisticsBuildContext &context)
+{
+   return SWV5_TestDealIntrinsicValid(deal) &&
+          SWV5_TestNamespaceEqual(deal.persistence_namespace,context.persistence_namespace) &&
+          context.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
           SWV5_TestQueriesComplete(context.history_queries);
 }
 

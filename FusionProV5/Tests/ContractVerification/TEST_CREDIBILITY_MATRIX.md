@@ -1,8 +1,10 @@
-# Sprint 4.8 Phase B10 V5 Candidate Test Credibility Matrix
+# Sprint 4.8 Phase B11 V5 Candidate Test Credibility Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
-This matrix classifies every executable ID in the 934-case V5 candidate suite. Categories `MERGE_GATING_BEHAVIOR`, `STATE_TRANSITION`, `NEGATIVE_FAIL_CLOSED`, `ROUND_TRIP`, and `INVARIANT_BEHAVIOR` count as merge-gating behavioral evidence. Supporting and conformance cases remain executable but are not represented as behavioral proof.
+This matrix classifies every executable ID in the 969-case V5 candidate suite. `TEST_CREDIBILITY_ID_INVENTORY.txt` is the canonical machine-readable exact-one classification authority. The exporter derives all totals from it, checks its exact ID order against `TEST_ID_INVENTORY.txt`, and treats this table as an independent human-readable cross-check.
+
+`ROUND_TRIP` is restricted to a full serialized DTO decoded into a fresh object and reserialized with exact full-representation equality, including its embedded integrity field. Negative decoder tests and digest-preimage-only checks are not round-trip credit.
 
 The audit question for every behavioral row is: if the advertised behavior were removed or intentionally broken, would the material assertion fail? Every behavioral row below answers **yes**. No row is classified by test name or intent alone.
 
@@ -10,15 +12,15 @@ The audit question for every behavioral row is: if the advertised behavior were 
 
 | Category | Count | Merge-gating evidence |
 |---|---:|---|
-| `MERGE_GATING_BEHAVIOR` | 85 | YES |
+| `MERGE_GATING_BEHAVIOR` | 86 | YES |
 | `STATE_TRANSITION` | 109 | YES |
-| `NEGATIVE_FAIL_CLOSED` | 606 | YES |
+| `NEGATIVE_FAIL_CLOSED` | 638 | YES |
 | `ROUND_TRIP` | 10 | YES |
-| `INVARIANT_BEHAVIOR` | 48 | YES |
-| `SUPPORTING_PURE_FUNCTION` | 62 | NO |
+| `INVARIANT_BEHAVIOR` | 49 | YES |
+| `SUPPORTING_PURE_FUNCTION` | 63 | NO |
 | `CONFORMANCE_ONLY` | 14 | NO |
 | `WEAK_FALSE_POSITIVE` | 0 | NO |
-| **Executable total** | **934** | **858 behavioral; 76 supporting/conformance** |
+| **Executable total** | **969** | **892 behavioral; 77 supporting/conformance** |
 
 ## Complete classification
 
@@ -88,7 +90,7 @@ The audit question for every behavioral row is: if the advertised behavior were 
 | S45A-07–S45A-09 | `STATE_TRANSITION` | Execution evidence | Pending or returned first state | Full, partial, and exact-replay operations | Full/partial material state; duplicate idempotency | Authoritative evidence not applied or duplicate reapplied | YES |
 | S45A-10 | `NEGATIVE_FAIL_CLOSED` | Execution evidence | Returned state after event A | Reuse identity with conflicting fingerprint | CONFLICT; returned state unchanged | Same ID/different payload accepted | YES |
 | S45F-01 | `NEGATIVE_FAIL_CLOSED` | Execution durable fingerprint | Returned state after authoritative evidence | Mutate each of eight fingerprint-bound fields and replay | Every mutation conflicts without mutation | Fingerprint omits a material field | YES |
-| S45F-02 | `ROUND_TRIP` | Persistence plus execution | Returned execution state with fingerprint | Save/load, replay exact and conflicting evidence | Loaded identity survives; exact duplicate; conflict rejected | Durable fingerprint lost across restart | YES |
+| S45F-02 | `INVARIANT_BEHAVIOR` | Persistence plus execution | Returned execution state with fingerprint | Save/load, replay exact and conflicting evidence | Loaded identity survives; exact duplicate; conflict rejected | Durable fingerprint lost across restart; this is persistence/replay behavior, not full DTO reconstruction | YES |
 | S45BR-01–S45BR-02 | `STATE_TRANSITION` | Basket recovery transition | ACTIVE then returned RECOVERY state | First recovery, exact replay | Identity added once; replay no-op | Recovery not mutated or duplicate re-applied | YES |
 | S45BR-03–S45BR-09 | `NEGATIVE_FAIL_CLOSED` | Basket recovery transition | Returned state after first recovery | Replay with owner/fence/Basket/fingerprint/context/version/counter mutation | DENY; all returned fields unchanged | Known-identity fast path bypasses canonical validation | YES |
 | S45BR-10 | `INVARIANT_BEHAVIOR` | Persistence plus recovery | Returned RECOVERY lifecycle | Configure/load checkpoint, replay original request | Loaded state recognizes exact duplicate without mutation | Restart loses recovery identity | YES |
@@ -309,3 +311,18 @@ Sprint 4.8 Phase B9 totals: executable 914; `MERGE_GATING_BEHAVIOR` 82; `STATE_T
 | S48-RT-V5-17 | 1 `ROUND_TRIP` | A zeroed accepted-watermark proposal reconstructs from canonical text and reserializes exactly with the same digest. |
 
 Sprint 4.8 Phase B10 totals: executable 934; `MERGE_GATING_BEHAVIOR` 85; `STATE_TRANSITION` 109; `NEGATIVE_FAIL_CLOSED` 606; `ROUND_TRIP` 10; `INVARIANT_BEHAVIOR` 48; `SUPPORTING_PURE_FUNCTION` 62; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 858; category sum 934.
+
+## Sprint 4.8 Phase B11 additions and semantic correction
+
+| IDs | Category | Material credibility |
+|---|---|---|
+| S48-RT-V5-01 through V5-07, S48-RT-V5-15 through V5-17 | 10 `ROUND_TRIP` | Each full DTO representation carries its original embedded integrity field, decodes into a fresh object, validates the embedded digest against a nonrecursive digest preimage, and reserializes exactly. |
+| S48-RT-DIGEST-MISSING-01 through 07, S48-RT-DIGEST-TAMPER-01 through 07 | 14 `NEGATIVE_FAIL_CLOSED` | Every repaired DTO rejects a missing or structurally valid but altered embedded digest; no decoder regenerates or self-heals it. |
+| S48-CAN-SELF-01 through 07 | 7 `SUPPORTING_PURE_FUNCTION` | Own-digest mutation leaves the digest preimage unchanged but changes the full DTO representation. SELF-07 adds restart-request-summary coverage. |
+| S48-NFD-01 through S48-NFD-18 | 18 `NEGATIVE_FAIL_CLOSED` | NaN, positive infinity, and negative infinity independently fail for volume, price, profit, commission, swap, and fee before Statistics state mutation. |
+| S48-NFD-19 | 1 `MERGE_GATING_BEHAVIOR` | A complete finite authoritative deal validates and mutates the returned Statistics state exactly once. |
+| S48-NFD-20 | 1 `INVARIANT_BEHAVIOR` | Failed accumulation preserves the preseeded output Statistics state byte/canonical-identically, including money, counts, volumes, and dedup identity. |
+| S45F-02 | reclassified from `ROUND_TRIP` to `INVARIANT_BEHAVIOR` | It proves durable identity persistence and replay semantics, but not serialized-full-DTO to fresh-object reconstruction. This corrects the prior detailed/headline inconsistency without inflating round-trip credit. |
+| EXP48-74 through EXP48-82 | exporter offline negative evidence | Headline/per-ID disagreement, source-authority drift, duplicate/missing/phantom IDs, unknown category, false round-trip credit, hidden weak classification, and balanced wrong mapping all reject. |
+
+Sprint 4.8 Phase B11 totals: executable 969; `MERGE_GATING_BEHAVIOR` 86; `STATE_TRANSITION` 109; `NEGATIVE_FAIL_CLOSED` 638; `ROUND_TRIP` 10; `INVARIANT_BEHAVIOR` 49; `SUPPORTING_PURE_FUNCTION` 63; `CONFORMANCE_ONLY` 14; `WEAK_FALSE_POSITIVE` 0. Behavioral total 892; category sum 969.

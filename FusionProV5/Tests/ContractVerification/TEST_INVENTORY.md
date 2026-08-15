@@ -1,4 +1,4 @@
-# Sprint 4.8 Phase B10 V5 Candidate Executable Test Inventory
+# Sprint 4.8 Phase B11 V5 Candidate Executable Test Inventory
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -51,16 +51,17 @@
 | Sprint 4.8 full independent reconciliation | S48-RFULL-01 through S48-RFULL-26 | 26 | 4 | 0 | 22 | 0 | 0 | 0 | 0 | 0 |
 | Sprint 4.8 Hard Kill history | S48-HKR-01 through S48-HKR-20 | 20 | 3 | 0 | 17 | 0 | 0 | 0 | 0 | 0 |
 | Sprint 4.8 independent Hard Kill authority | S48-HKA-01, S48-HKA-C-01 through C-12, S48-HKA-A-01 through A-06, S48-HKA-M01, S48-HKA-S01 through S03 | 23 | 1 | 0 | 20 | 0 | 2 | 0 | 0 | 0 |
-| Sprint 4.8 canonical integrity | S48-CAN-* | 37 | 0 | 0 | 0 | 0 | 0 | 37 | 0 | 0 |
-| Sprint 4.8 true reconstruction | S48-RT-V5-01 through V5-07, V5-15 through V5-17; S48-RT-NEG-01 through NEG-13 | 23 | 0 | 0 | 13 | 10 | 0 | 0 | 0 | 0 |
+| Sprint 4.8 canonical integrity | S48-CAN-MB/DTO/SELF/FMT/DRIFT-* | 38 | 0 | 0 | 0 | 0 | 0 | 38 | 0 | 0 |
+| Sprint 4.8 true reconstruction and embedded-digest rejection | S48-RT-V5-01 through V5-07, V5-15 through V5-17; S48-RT-DIGEST-MISSING/TAMPER-01 through 07; S48-RT-NEG-01 through NEG-13 | 37 | 0 | 0 | 27 | 10 | 0 | 0 | 0 | 0 |
+| Sprint 4.8 non-finite authoritative deals | S48-NFD-01 through S48-NFD-20 | 20 | 1 | 0 | 18 | 0 | 1 | 0 | 0 | 0 |
 | Sprint 4.8 metadata conformance | S48-META-01 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
 | Sprint 4.8 independent margin authority | S48-MAUTH-01 through S48-MAUTH-15 | 15 | 2 | 0 | 13 | 0 | 0 | 0 | 0 | 0 |
 | Sprint 4.8 independent Basket-risk authority | S48-BAUTH-01 through S48-BAUTH-15 | 15 | 2 | 0 | 13 | 0 | 0 | 0 | 0 | 0 |
 | Sprint 4.8 persistence atomicity | S48-PAT-01 through S48-PAT-12 | 12 | 2 | 0 | 1 | 0 | 9 | 0 | 0 | 0 |
 | Sprint 4.8 V5 identity | S48-ID-01 through S48-ID-12 | 12 | 0 | 0 | 0 | 0 | 0 | 0 | 12 | 0 |
 | Sprint 4.8 authority canonical coverage | S48-CAN-AUTH-01 through S48-CAN-AUTH-02 | 2 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 |
-| **Total** |  | **934** | **85** | **109** | **606** | **10** | **48** | **62** | **14** | **0** |
+| **Total** |  | **969** | **86** | **109** | **638** | **10** | **49** | **63** | **14** | **0** |
 
-`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 858. The remaining 76 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. The complete per-ID rationale is in `TEST_CREDIBILITY_MATRIX.md`.
+`MG` means `MERGE_GATING_BEHAVIOR`. The five behavioral columns total 892. The remaining 77 cases are explicitly supporting or conformance-only; none is represented as behavioral proof. `TEST_CREDIBILITY_ID_INVENTORY.txt` is the canonical exact-one per-ID authority; `TEST_CREDIBILITY_MATRIX.md` supplies the human rationale and independently checked headline totals.
 
 The suite is deterministic, in-memory, and test-only. It does not query terminal time, accounts, positions, orders, history, symbols, files, network, or randomness.

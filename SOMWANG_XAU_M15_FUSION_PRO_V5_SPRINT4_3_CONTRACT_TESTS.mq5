@@ -5,7 +5,7 @@
 //| Sprint 4.8 V5 deterministic contract verification.              |
 //+------------------------------------------------------------------+
 #property strict
-#property version "5.90"
+#property version "5.91"
 
 #include "FusionProV5\Tests\ContractVerification\SW_V5_ContractTestRunner.mqh"
 
@@ -54,11 +54,15 @@ input bool InpSprint48B9RequestFixtureTargetedOnly=false;
 input bool InpSprint48B10QueryMaskTargetedOnly=false;
 input bool InpSprint48B10SnapshotTargetedOnly=false;
 input bool InpSprint48B10QueryPublicationTargetedOnly=false;
+input bool InpSprint48B11NonFiniteDealTargetedOnly=false;
+input bool InpSprint48B11PriorDirectRegressionTargetedOnly=false;
 
 bool g_swv5_contract_tests_passed=false;
 
 string SWV5_SelectedSuiteName()
 {
+   if(InpSprint48B11PriorDirectRegressionTargetedOnly) return "SPRINT4.8-B11-PRIOR-DIRECT-REGRESSION";
+   if(InpSprint48B11NonFiniteDealTargetedOnly) return "SPRINT4.8-B11-NON-FINITE-DEAL";
    if(InpSprint48B10QueryPublicationTargetedOnly) return "SPRINT4.8-B10-QUERY-PUBLICATION";
    if(InpSprint48B10SnapshotTargetedOnly) return "SPRINT4.8-B10-SNAPSHOT-LABEL";
    if(InpSprint48B10QueryMaskTargetedOnly) return "SPRINT4.8-B10-QUERY-MASK";
@@ -109,6 +113,8 @@ string SWV5_SelectedSuiteName()
 
 bool SWV5_RunSelectedSuite()
 {
+   if(InpSprint48B11PriorDirectRegressionTargetedOnly) return SWV5_RunSprint48B11PriorDirectRegressionTargetedVerification();
+   if(InpSprint48B11NonFiniteDealTargetedOnly) return SWV5_RunSprint48B11NonFiniteDealTargetedVerification();
    if(InpSprint48B10QueryPublicationTargetedOnly) return SWV5_RunSprint48B10QueryPublicationTargetedVerification();
    if(InpSprint48B10SnapshotTargetedOnly) return SWV5_RunSprint48B10SnapshotTargetedVerification();
    if(InpSprint48B10QueryMaskTargetedOnly) return SWV5_RunSprint48B10QueryMaskTargetedVerification();

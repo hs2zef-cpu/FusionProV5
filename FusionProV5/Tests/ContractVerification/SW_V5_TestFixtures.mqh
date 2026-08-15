@@ -20,6 +20,11 @@ double SWV5_TestPositiveInfinity()
    return MathPow(10.0,400.0);
 }
 
+double SWV5_TestNegativeInfinity()
+{
+   return -SWV5_TestPositiveInfinity();
+}
+
 string SWV5_TestCanonicalHash(const string value);
 string SWV5_TestCanonicalField(const string name,const string type,const string value);
 string SWV5_TestCanonicalIntegerField(const string name,const long value);
@@ -29,7 +34,9 @@ string SWV5_TestCanonicalBoolField(const string name,const bool value);
 string SWV5_TestCanonicalDurableEventEntry(const string event_id,const ulong sequence);
 string SWV5_TestCanonicalDurableFingerprintEntry(const string event_id,const ulong sequence,const string fingerprint);
 string SWV5_TestEventSetDigest(const SWV5_DurableEventIdentitySet &set);
-string SWV5_TestCanonicalCheckpointPayload(const SWV5_PersistedCheckpoint &checkpoint);
+string SWV5_TestCanonicalCheckpointPayloadBody(const SWV5_PersistedCheckpoint &checkpoint);
+string SWV5_TestCanonicalCheckpointDigestPreimage(const SWV5_PersistedCheckpoint &checkpoint);
+string SWV5_TestCanonicalCheckpointFullDTO(const SWV5_PersistedCheckpoint &checkpoint);
 string SWV5_TestCheckpointPayloadDigest(const SWV5_PersistedCheckpoint &checkpoint);
 ulong SWV5_TestCheckpointPayloadSize(const SWV5_PersistedCheckpoint &checkpoint);
 void SWV5_TestSealCheckpoint(SWV5_PersistedCheckpoint &checkpoint);
@@ -38,7 +45,8 @@ string SWV5_TestBasketRiskEvidenceDigest(const SWV5_BasketRiskProjectionEvidence
 string SWV5_TestMarginAuthorityDigest(const SWV5_MarginAuthorityRecord &record);
 string SWV5_TestBasketRiskAuthorityDigest(const SWV5_BasketRiskAuthorityRecord &record);
 string SWV5_TestHardKillReleaseDigest(const SWV5_HardKillReleaseEvidence &evidence);
-string SWV5_TestCanonicalHardKillAuthorityRecord(const SWV5_HardKillReleaseAuthorityRecord &record);
+string SWV5_TestCanonicalHardKillAuthorityRecordDigestPreimage(const SWV5_HardKillReleaseAuthorityRecord &record);
+string SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(const SWV5_HardKillReleaseAuthorityRecord &record);
 string SWV5_TestHardKillAuthorityRecordDigest(const SWV5_HardKillReleaseAuthorityRecord &record);
 string SWV5_TestBrokerSummaryDigest(const SWV5_AuthoritativeBrokerSummary &summary);
 string SWV5_TestRestartRequestSummaryDigest(const SWV5_AuthoritativeRestartRequestSummary &summary);
@@ -1367,6 +1375,32 @@ string SWV5_TestCanonicalDurableEventEntry(const string event_id,const ulong seq
    return SWV5_TestCanonicalField("entry","x",identity);
 }
 
+string SWV5_TestCanonicalBasketStatistics(const SWV5_BasketStatistics &value)
+{
+   return SWV5_TestCanonicalVersion(value.contract_version)+
+          SWV5_TestCanonicalNamespace(value.persistence_namespace)+
+          SWV5_TestCanonicalUnsignedField("deal_count",value.deal_count)+
+          SWV5_TestCanonicalUnsignedField("entry_deal_count",value.entry_deal_count)+
+          SWV5_TestCanonicalUnsignedField("exit_deal_count",value.exit_deal_count)+
+          SWV5_TestCanonicalUnsignedField("partial_close_count",value.partial_close_count)+
+          SWV5_TestCanonicalDoubleField("entered_volume",value.entered_volume)+
+          SWV5_TestCanonicalDoubleField("exited_volume",value.exited_volume)+
+          SWV5_TestCanonicalDoubleField("residual_volume",value.residual_volume)+
+          SWV5_TestCanonicalDoubleField("gross_profit",value.gross_profit)+
+          SWV5_TestCanonicalDoubleField("commission",value.commission)+
+          SWV5_TestCanonicalDoubleField("swap",value.swap)+
+          SWV5_TestCanonicalDoubleField("fee",value.fee)+
+          SWV5_TestCanonicalDoubleField("authoritative_net_result",value.authoritative_net_result)+
+          SWV5_TestCanonicalIntegerField("first_deal_time",(long)value.first_deal_time)+
+          SWV5_TestCanonicalIntegerField("last_deal_time",(long)value.last_deal_time)+
+          SWV5_TestCanonicalField("account_currency","s",value.account_currency)+
+          SWV5_TestCanonicalVersion(value.deduplication.contract_version)+
+          SWV5_TestCanonicalField("deduplication_identities","x",SWV5_TestCanonicalEventSet(value.deduplication.identities))+
+          SWV5_TestCanonicalUnsignedField("unique_deal_count",value.deduplication.unique_deal_count)+
+          SWV5_TestCanonicalUnsignedField("duplicate_deal_count",value.deduplication.duplicate_deal_count)+
+          SWV5_TestCanonicalBoolField("history_complete",value.history_complete);
+}
+
 string SWV5_TestEventSetDigest(const SWV5_DurableEventIdentitySet &set)
 {
    const string canonical=SWV5_TestCanonicalField("format","s","SWV5-DURABLE-EVENT-SET-V"+IntegerToString(SWV5_PRODUCTION_CONTRACT_VERSION)+"-LP1")+
@@ -1594,7 +1628,7 @@ string SWV5_TestCanonicalOperator(const SWV5_OperatorIdentity &value)
           SWV5_TestCanonicalIntegerField("authenticated_at",value.authenticated_at);
 }
 
-string SWV5_TestCanonicalHardKillRelease(const SWV5_HardKillReleaseEvidence &value)
+string SWV5_TestCanonicalHardKillReleaseDigestPreimage(const SWV5_HardKillReleaseEvidence &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
@@ -1616,10 +1650,16 @@ string SWV5_TestCanonicalHardKillRelease(const SWV5_HardKillReleaseEvidence &val
            SWV5_TestCanonicalField("audit_reference","s",value.audit_reference);
 }
 
+string SWV5_TestCanonicalHardKillReleaseFullDTO(const SWV5_HardKillReleaseEvidence &value)
+{
+   return SWV5_TestCanonicalHardKillReleaseDigestPreimage(value)+
+          SWV5_TestCanonicalField("release_record_digest","s",value.release_record_digest);
+}
+
 string SWV5_TestHardKillReleaseDigest(const SWV5_HardKillReleaseEvidence &evidence)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-HARD-KILL-RELEASE-V5-LP1")+
-                                 SWV5_TestCanonicalHardKillRelease(evidence));
+                                 SWV5_TestCanonicalHardKillReleaseDigestPreimage(evidence));
 }
 
 string SWV5_TestCanonicalHardKillAuthorityReference(const SWV5_HardKillReleaseAuthorityReference &value)
@@ -1633,7 +1673,7 @@ string SWV5_TestCanonicalHardKillAuthorityReference(const SWV5_HardKillReleaseAu
           SWV5_TestCanonicalUnsignedField("release_generation",value.release_generation);
 }
 
-string SWV5_TestCanonicalHardKillAuthorityRecord(const SWV5_HardKillReleaseAuthorityRecord &record)
+string SWV5_TestCanonicalHardKillAuthorityRecordDigestPreimage(const SWV5_HardKillReleaseAuthorityRecord &record)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(record.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(record.persistence_namespace))+
@@ -1658,13 +1698,19 @@ string SWV5_TestCanonicalHardKillAuthorityRecord(const SWV5_HardKillReleaseAutho
           SWV5_TestCanonicalIntegerField("authority_source",(long)record.authority_source);
 }
 
+string SWV5_TestCanonicalHardKillAuthorityRecordFullDTO(const SWV5_HardKillReleaseAuthorityRecord &record)
+{
+   return SWV5_TestCanonicalHardKillAuthorityRecordDigestPreimage(record)+
+          SWV5_TestCanonicalField("authority_record_digest","s",record.authority_record_digest);
+}
+
 string SWV5_TestHardKillAuthorityRecordDigest(const SWV5_HardKillReleaseAuthorityRecord &record)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-HARD-KILL-AUTHORITY-V5-LP1")+
-                                 SWV5_TestCanonicalHardKillAuthorityRecord(record));
+                                 SWV5_TestCanonicalHardKillAuthorityRecordDigestPreimage(record));
 }
 
-string SWV5_TestCanonicalMarginEvidence(const SWV5_MarginProjectionEvidence &value)
+string SWV5_TestCanonicalMarginEvidenceDigestPreimage(const SWV5_MarginProjectionEvidence &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
@@ -1692,6 +1738,12 @@ string SWV5_TestCanonicalMarginEvidence(const SWV5_MarginProjectionEvidence &val
            SWV5_TestCanonicalField("authority_record_id","s",value.authority_record_id)+
            SWV5_TestCanonicalUnsignedField("authority_record_sequence",value.authority_record_sequence)+
            SWV5_TestCanonicalField("authority_record_digest","s",value.authority_record_digest);
+}
+
+string SWV5_TestCanonicalMarginEvidenceFullDTO(const SWV5_MarginProjectionEvidence &value)
+{
+   return SWV5_TestCanonicalMarginEvidenceDigestPreimage(value)+
+          SWV5_TestCanonicalField("evidence_digest","s",value.evidence_digest);
 }
 
 string SWV5_TestCanonicalMarginAuthority(const SWV5_MarginAuthorityRecord &value)
@@ -1732,10 +1784,10 @@ string SWV5_TestMarginAuthorityDigest(const SWV5_MarginAuthorityRecord &record)
 string SWV5_TestMarginEvidenceDigest(const SWV5_MarginProjectionEvidence &evidence)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-MARGIN-PROJECTION-V5-LP1")+
-                                 SWV5_TestCanonicalMarginEvidence(evidence));
+                                 SWV5_TestCanonicalMarginEvidenceDigestPreimage(evidence));
 }
 
-string SWV5_TestCanonicalBasketRiskEvidence(const SWV5_BasketRiskProjectionEvidence &value)
+string SWV5_TestCanonicalBasketRiskEvidenceDigestPreimage(const SWV5_BasketRiskProjectionEvidence &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
@@ -1764,6 +1816,12 @@ string SWV5_TestCanonicalBasketRiskEvidence(const SWV5_BasketRiskProjectionEvide
            SWV5_TestCanonicalField("authority_record_id","s",value.authority_record_id)+
            SWV5_TestCanonicalUnsignedField("authority_record_sequence",value.authority_record_sequence)+
            SWV5_TestCanonicalField("authority_record_digest","s",value.authority_record_digest);
+}
+
+string SWV5_TestCanonicalBasketRiskEvidenceFullDTO(const SWV5_BasketRiskProjectionEvidence &value)
+{
+   return SWV5_TestCanonicalBasketRiskEvidenceDigestPreimage(value)+
+          SWV5_TestCanonicalField("evidence_digest","s",value.evidence_digest);
 }
 
 string SWV5_TestCanonicalBasketRiskAuthority(const SWV5_BasketRiskAuthorityRecord &value)
@@ -1806,7 +1864,7 @@ string SWV5_TestBasketRiskAuthorityDigest(const SWV5_BasketRiskAuthorityRecord &
 string SWV5_TestBasketRiskEvidenceDigest(const SWV5_BasketRiskProjectionEvidence &evidence)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-BASKET-RISK-PROJECTION-V5-LP1")+
-                                 SWV5_TestCanonicalBasketRiskEvidence(evidence));
+                                 SWV5_TestCanonicalBasketRiskEvidenceDigestPreimage(evidence));
 }
 
 string SWV5_TestCanonicalHardKill(const SWV5_HardKillState &value)
@@ -1821,8 +1879,7 @@ string SWV5_TestCanonicalHardKill(const SWV5_HardKillState &value)
           SWV5_TestCanonicalIntegerField("activated_at",value.activated_at)+
           SWV5_TestCanonicalField("activation_authority","s",value.activation_authority)+
           SWV5_TestCanonicalUnsignedField("release_generation",value.release_generation)+
-           SWV5_TestCanonicalField("release_evidence","x",SWV5_TestCanonicalHardKillRelease(value.release_evidence))+
-           SWV5_TestCanonicalField("release_record_digest","s",value.release_evidence.release_record_digest)+
+           SWV5_TestCanonicalField("release_evidence","x",SWV5_TestCanonicalHardKillReleaseFullDTO(value.release_evidence))+
            SWV5_TestCanonicalField("release_authority_reference","x",SWV5_TestCanonicalHardKillAuthorityReference(value.release_authority_reference));
 }
 
@@ -1870,7 +1927,7 @@ string SWV5_TestReconciliationSourceDigest(const SWV5_PersistedReconciliationVec
                                  SWV5_TestCanonicalReconciliationVector(canonical));
 }
 
-string SWV5_TestCanonicalBrokerSummary(const SWV5_AuthoritativeBrokerSummary &value)
+string SWV5_TestCanonicalBrokerSummaryDigestPreimage(const SWV5_AuthoritativeBrokerSummary &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
@@ -1893,7 +1950,13 @@ string SWV5_TestCanonicalBrokerSummary(const SWV5_AuthoritativeBrokerSummary &va
           SWV5_TestCanonicalIntegerField("authority",(long)value.authority);
 }
 
-string SWV5_TestCanonicalRestartRequestSummary(const SWV5_AuthoritativeRestartRequestSummary &value)
+string SWV5_TestCanonicalBrokerSummaryFullDTO(const SWV5_AuthoritativeBrokerSummary &value)
+{
+   return SWV5_TestCanonicalBrokerSummaryDigestPreimage(value)+
+          SWV5_TestCanonicalField("complete_summary_digest","s",value.complete_summary_digest);
+}
+
+string SWV5_TestCanonicalRestartRequestSummaryDigestPreimage(const SWV5_AuthoritativeRestartRequestSummary &value)
 {
    return SWV5_TestCanonicalField("contract_version","x",SWV5_TestCanonicalVersion(value.contract_version))+
           SWV5_TestCanonicalField("persistence_namespace","x",SWV5_TestCanonicalNamespace(value.persistence_namespace))+
@@ -1910,16 +1973,22 @@ string SWV5_TestCanonicalRestartRequestSummary(const SWV5_AuthoritativeRestartRe
           SWV5_TestCanonicalField("pending_request_query","x",SWV5_TestCanonicalQueries(value.pending_request_query));
 }
 
+string SWV5_TestCanonicalRestartRequestSummaryFullDTO(const SWV5_AuthoritativeRestartRequestSummary &value)
+{
+   return SWV5_TestCanonicalRestartRequestSummaryDigestPreimage(value)+
+          SWV5_TestCanonicalField("complete_summary_digest","s",value.complete_summary_digest);
+}
+
 string SWV5_TestRestartRequestSummaryDigest(const SWV5_AuthoritativeRestartRequestSummary &summary)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-RESTART-REQUEST-SUMMARY-V5-LP1")+
-                                 SWV5_TestCanonicalRestartRequestSummary(summary));
+                                 SWV5_TestCanonicalRestartRequestSummaryDigestPreimage(summary));
 }
 
 string SWV5_TestBrokerSummaryDigest(const SWV5_AuthoritativeBrokerSummary &summary)
 {
    return SWV5_TestCanonicalHash(SWV5_TestCanonicalField("format","s","SWV5-BROKER-SUMMARY-V5-LP1")+
-                                 SWV5_TestCanonicalBrokerSummary(summary));
+                                 SWV5_TestCanonicalBrokerSummaryDigestPreimage(summary));
 }
 
 string SWV5_TestCanonicalLifecycle(const SWV5_BasketLifecycleSnapshot &value)
@@ -1964,11 +2033,10 @@ string SWV5_TestCanonicalRequestSetHeader(const SWV5_PersistedRequestSetHeader &
           SWV5_TestCanonicalUnsignedField("record_sequence",value.record_sequence);
 }
 
-string SWV5_TestCanonicalCheckpointPayload(const SWV5_PersistedCheckpoint &checkpoint)
+string SWV5_TestCanonicalCheckpointPayloadBody(const SWV5_PersistedCheckpoint &checkpoint)
 {
-   // payload_digest and payload_size are the integrity envelope and are deliberately
-   // excluded from the body they describe. Every other persisted field is bound here.
-    return SWV5_TestCanonicalField("format","s","SWV5-CHECKPOINT-V5-LP1")+
+   // The body is measured without either integrity-envelope member.
+    return SWV5_TestCanonicalField("format","s","SWV5-CHECKPOINT-V5-LP2")+
           SWV5_TestCanonicalField("header_contract_version","x",SWV5_TestCanonicalVersion(checkpoint.header.contract_version))+
           SWV5_TestCanonicalField("header_persistence_namespace","x",SWV5_TestCanonicalNamespace(checkpoint.header.persistence_namespace))+
           SWV5_TestCanonicalField("header_ownership_fence","x",SWV5_TestCanonicalFence(checkpoint.header.ownership_fence))+
@@ -1986,22 +2054,35 @@ string SWV5_TestCanonicalCheckpointPayload(const SWV5_PersistedCheckpoint &check
            SWV5_TestCanonicalBoolField("clean_shutdown",checkpoint.clean_shutdown);
 }
 
+string SWV5_TestCanonicalCheckpointDigestPreimage(const SWV5_PersistedCheckpoint &checkpoint)
+{
+   // payload_size is ordinary envelope metadata and is digest-bound. Only the
+   // checkpoint's own payload_digest is excluded from this nonrecursive preimage.
+   return SWV5_TestCanonicalCheckpointPayloadBody(checkpoint)+
+          SWV5_TestCanonicalUnsignedField("header_payload_size",checkpoint.header.payload_size);
+}
+
+string SWV5_TestCanonicalCheckpointFullDTO(const SWV5_PersistedCheckpoint &checkpoint)
+{
+   return SWV5_TestCanonicalCheckpointDigestPreimage(checkpoint)+
+          SWV5_TestCanonicalField("header_payload_digest","s",checkpoint.header.payload_digest);
+}
+
 string SWV5_TestCheckpointPayloadDigest(const SWV5_PersistedCheckpoint &checkpoint)
 {
-   return SWV5_TestCanonicalHash(SWV5_TestCanonicalCheckpointPayload(checkpoint));
+   return SWV5_TestCanonicalHash(SWV5_TestCanonicalCheckpointDigestPreimage(checkpoint));
 }
 
 ulong SWV5_TestCheckpointPayloadSize(const SWV5_PersistedCheckpoint &checkpoint)
 {
-   // Size unit is the deterministic MQL string character count used by LP1 fields.
-   return (ulong)StringLen(SWV5_TestCanonicalCheckpointPayload(checkpoint));
+   // Size unit is the deterministic MQL string character count used by LP2 fields.
+   return (ulong)StringLen(SWV5_TestCanonicalCheckpointPayloadBody(checkpoint));
 }
 
 void SWV5_TestSealCheckpoint(SWV5_PersistedCheckpoint &checkpoint)
 {
-   const string canonical=SWV5_TestCanonicalCheckpointPayload(checkpoint);
-   checkpoint.header.payload_digest=SWV5_TestCanonicalHash(canonical);
-   checkpoint.header.payload_size=(ulong)StringLen(canonical);
+   checkpoint.header.payload_size=SWV5_TestCheckpointPayloadSize(checkpoint);
+   checkpoint.header.payload_digest=SWV5_TestCheckpointPayloadDigest(checkpoint);
 }
 
 string SWV5_TestCanonicalRequestSet(const SWV5_PersistedRequestEvidence &requests[])

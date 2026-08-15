@@ -529,7 +529,7 @@ public:
                              SWV5_TestBuildAcceptedQueryWatermarkProposal(context,reconciliation_input,source_readiness,expected_proposal);
       bool valid=m_checkpoint_configured && source_safe && SWV5_TestContextValid(context) &&
                  SWV5_TestPersistenceRecordValid(context,m_checkpoint) &&
-                 SWV5_TestCanonicalCheckpointPayload(reconciliation_input.persisted)==SWV5_TestCanonicalCheckpointPayload(m_checkpoint) &&
+                 SWV5_TestCanonicalCheckpointFullDTO(reconciliation_input.persisted)==SWV5_TestCanonicalCheckpointFullDTO(m_checkpoint) &&
                  SWV5_TestCanonicalAcceptedQueryWatermarkProposal(proposal)==SWV5_TestCanonicalAcceptedQueryWatermarkProposal(expected_proposal) &&
                  SWV5_TestAcceptedQueryWatermarkProposalValid(context,m_checkpoint,proposal) &&
                  context.clock_time>=m_checkpoint.header.written_at;
@@ -687,12 +687,10 @@ public:
    }
    virtual bool AccumulateDeal(const SWV5_ContractValidationContext &validation_context,const SWV5_AuthoritativeDeal &deal,const SWV5_StatisticsDeduplicationEvidence &deduplication_evidence,const SWV5_BasketStatistics &current,SWV5_BasketStatistics &next)
    {
-      if(!SWV5_TestVersionValid(deal.contract_version) || !SWV5_TestNamespaceEqual(deal.persistence_namespace,current.persistence_namespace) ||
-         !SWV5_TestCorrelationComplete(deal.correlation) || !deal.monetary_components_complete || deal.account_currency=="" ||
+      if(!SWV5_TestDealIntrinsicValid(deal) || !SWV5_TestNamespaceEqual(deal.persistence_namespace,current.persistence_namespace) ||
          !SWV5_TestCorrelationEqual(deal.correlation,deduplication_evidence.correlation) ||
          deduplication_evidence.prior_identity_index_revision!=current.deduplication.identities.index_revision)
          return false;
-      next=current;
       SWV5_DurableEventIdentitySet updated_identities;
       const SWV5_StatisticsIdentityDisposition actual=SWV5_TestAppendEventIdentity(deal.correlation.broker_identity.broker_event_id,
                                                                                     deal.correlation.broker_identity.transaction_sequence,
@@ -700,28 +698,31 @@ public:
                                                                                     updated_identities);
       if(actual==SWV5_STAT_IDENTITY_CONFLICT || actual!=deduplication_evidence.disposition)
          return false;
+      SWV5_BasketStatistics candidate=current;
       if(actual==SWV5_STAT_IDENTITY_DUPLICATE)
       {
          if(deduplication_evidence.membership_proof=="") return false;
-         next.deduplication.duplicate_deal_count++;
+         candidate.deduplication.duplicate_deal_count++;
+         next=candidate;
          return true;
       }
       if(deduplication_evidence.membership_proof!="") return false;
-      next.deduplication.identities=updated_identities;
-      next.deal_count++;
-      if(deal.entry_kind==SWV5_DEAL_ENTRY_IN) { next.entry_deal_count++; next.entered_volume+=deal.volume; }
-      else { next.exit_deal_count++; next.exited_volume+=deal.volume; }
-      next.residual_volume=MathMax(0.0,current.residual_volume-deal.volume);
-      if(next.residual_volume>validation_context.volume_tolerance)
-         next.partial_close_count++;
-      next.gross_profit+=deal.gross_profit;
-      next.commission+=deal.commission;
-      next.swap+=deal.swap;
-      next.fee+=deal.fee;
-      next.authoritative_net_result+=SWV5_TestDealNet(deal);
-      next.deduplication.unique_deal_count++;
-      if(next.first_deal_time==0 || deal.deal_time<next.first_deal_time) next.first_deal_time=deal.deal_time;
-      if(deal.deal_time>next.last_deal_time) next.last_deal_time=deal.deal_time;
+      candidate.deduplication.identities=updated_identities;
+      candidate.deal_count++;
+      if(deal.entry_kind==SWV5_DEAL_ENTRY_IN) { candidate.entry_deal_count++; candidate.entered_volume+=deal.volume; }
+      else { candidate.exit_deal_count++; candidate.exited_volume+=deal.volume; }
+      candidate.residual_volume=MathMax(0.0,current.residual_volume-deal.volume);
+      if(candidate.residual_volume>validation_context.volume_tolerance)
+         candidate.partial_close_count++;
+      candidate.gross_profit+=deal.gross_profit;
+      candidate.commission+=deal.commission;
+      candidate.swap+=deal.swap;
+      candidate.fee+=deal.fee;
+      candidate.authoritative_net_result+=SWV5_TestDealNet(deal);
+      candidate.deduplication.unique_deal_count++;
+      if(candidate.first_deal_time==0 || deal.deal_time<candidate.first_deal_time) candidate.first_deal_time=deal.deal_time;
+      if(deal.deal_time>candidate.last_deal_time) candidate.last_deal_time=deal.deal_time;
+      next=candidate;
       return true;
    }
    virtual bool Finalize(const SWV5_ContractValidationContext &validation_context,const SWV5_StatisticsBuildContext &context,const SWV5_BasketStatistics &statistics,SWV5_StatisticsValidationResult &result)

@@ -43,9 +43,10 @@ $ExpectedPolicy = 'SWV5-PRODUCTION-V5'
 $ExpectedBuild = '6090'
 $ExpectedServer = 'Exness-MT5Trial6'
 $ManifestRelative = 'SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5'
-$ConfigIniRelative = 'FusionProV5/Tests/ContractVerification/sprint4_8_b10_full_once.ini'
-$ConfigSetRelative = 'FusionProV5/Tests/ContractVerification/sprint4_8_b10_full_once.set'
+$ConfigIniRelative = 'FusionProV5/Tests/ContractVerification/sprint4_8_b11_full_once.ini'
+$ConfigSetRelative = 'FusionProV5/Tests/ContractVerification/sprint4_8_b11_full_once.set'
 $TestIdInventoryRelative = 'FusionProV5/Tests/ContractVerification/TEST_ID_INVENTORY.txt'
+$CredibilityIdInventoryRelative = 'FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_ID_INVENTORY.txt'
 $ExporterTestInventoryRelative = 'FusionProV5/Tests/ContractVerification/EXPORTER_TEST_ID_INVENTORY.txt'
 $ExporterRelative = 'FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1'
 $ExporterTestScriptRelative = 'FusionProV5/Tests/ContractVerification/Test-Export-Sprint48Evidence.ps1'
@@ -137,7 +138,7 @@ function Get-SourceIdentity([string]$Root,[string]$Source,[string]$Label) {
 }
 function Get-VerificationSourceDigest([string]$Source,[string]$Tree,[object]$Inputs) {
     $lines=@(
-      'format=SWV5-SPRINT48-B10-VERIFICATION-SOURCE-V4',
+      'format=SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5',
       "tested_source_commit=$Source","source_tree=$Tree",
       "architecture_compile_raw_sha256=$($Inputs.architecture_compile_raw_sha256)",
       "test_compile_raw_sha256=$($Inputs.test_compile_raw_sha256)",
@@ -148,6 +149,7 @@ function Get-VerificationSourceDigest([string]$Source,[string]$Tree,[object]$Inp
       "terminal_build=$($Inputs.terminal_build)","server=$($Inputs.server)",
       "account_mode=$($Inputs.account_mode)","ontester=$($Inputs.ontester)",
       "test_manifest_git_blob_sha256=$($Inputs.test_manifest_git_blob_sha256)",
+      "credibility_inventory_git_blob_sha256=$($Inputs.credibility_inventory_git_blob_sha256)",
       "run_config_ini_sha256=$($Inputs.run_config_ini_sha256)","run_config_set_sha256=$($Inputs.run_config_set_sha256)",
       "compiled_test_ex5_sha256=$($Inputs.compiled_test_ex5_sha256)",
       "exporter_git_blob_sha256=$($Inputs.exporter_git_blob_sha256)",
@@ -176,9 +178,9 @@ function Test-ExporterOfflineResultObject([object]$Result,[string]$Repo,[string]
     $ids=Get-ExpectedExporterTestIds $Repo $Source
     $exporterSha=Get-GitBlobSha256 $Repo $Source $ExporterRelative
     $scriptSha=Get-GitBlobSha256 $Repo $Source $ExporterTestScriptRelative
-    if($Result.schema-ne'SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V3' -or
+    if($Result.schema-ne'SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4' -or
        $Result.exporter_path-ne$ExporterRelative -or
-       $Result.generated_from-ne'Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V3' -or
+       $Result.generated_from-ne'Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4' -or
        $Result.exporter_sha256-ne$exporterSha -or
        $Result.test_script_sha256-ne$scriptSha -or [int]$Result.total-ne$ids.Count -or [int]$Result.passed-ne$ids.Count -or
        [int]$Result.failed-ne0 -or [int]$Result.skipped-ne0){Fail "$Label offline exporter result identity/count mismatch"}
@@ -225,17 +227,31 @@ function Read-Run([string]$Path,[string]$Label,[string]$RawSha,[string[]]$Expect
 function Get-Credibility([string]$Repo,[string]$Revision) {
     $inventory = Get-GitBlobText $Repo $Revision 'FusionProV5/Tests/ContractVerification/TEST_INVENTORY.md'
     $matrix = Get-GitBlobText $Repo $Revision 'FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_MATRIX.md'
+    $authority = Normalize-Lf (Get-GitBlobText $Repo $Revision $CredibilityIdInventoryRelative)
+    $expectedIds = Get-ExpectedTestIds $Repo $Revision
     $totalMatch = [regex]::Match($inventory,'(?m)^\|\s*\*\*Total\*\*\s*\|\s*\|\s*\*\*(\d+)\*\*')
     if (-not $totalMatch.Success -or [int]$totalMatch.Groups[1].Value -ne $ExpectedTestTotal) { Fail 'credibility inventory total mismatch' }
-    $required = [ordered]@{ MERGE_GATING_BEHAVIOR=85; STATE_TRANSITION=109; NEGATIVE_FAIL_CLOSED=606; ROUND_TRIP=10; INVARIANT_BEHAVIOR=48; SUPPORTING_PURE_FUNCTION=62; CONFORMANCE_ONLY=14; WEAK_FALSE_POSITIVE=0 }
-    $actual = [ordered]@{}
-    foreach ($category in $required.Keys) {
+    $known = @('MERGE_GATING_BEHAVIOR','STATE_TRANSITION','NEGATIVE_FAIL_CLOSED','ROUND_TRIP','INVARIANT_BEHAVIOR','SUPPORTING_PURE_FUNCTION','CONFORMANCE_ONLY','WEAK_FALSE_POSITIVE')
+    $actual = [ordered]@{}; foreach($category in $known){$actual[$category]=0}
+    $mappedIds=@();$seen=@{}
+    foreach($raw in $authority -split "`n"){
+        $line=$raw.Trim();if($line-eq''-or$line.StartsWith('#')){continue}
+        if($line-notmatch'^([^|]+)\|([^|]+)$'){Fail "invalid credibility authority line: $line"}
+        $category=$Matches[1];$spec=$Matches[2]
+        if($known-notcontains$category){Fail "unknown credibility category: $category"}
+        $expanded=@()
+        if($spec-match'^(.*-)(\d+)\.\.(\d+)$'){$prefix=$Matches[1];$start=[int]$Matches[2];$end=[int]$Matches[3];$width=$Matches[2].Length;if($end-lt$start){Fail 'invalid credibility test-ID range'};for($n=$start;$n-le$end;$n++){$expanded+=$prefix+$n.ToString('D'+$width)}}
+        elseif($spec-match'^[A-Za-z0-9][A-Za-z0-9._-]*$'){$expanded=@($spec)}else{Fail "invalid credibility test ID: $spec"}
+        foreach($id in $expanded){if($seen.ContainsKey($id)){Fail "duplicate credibility classification ID: $id"};$seen[$id]=$category;$mappedIds+=$id;$actual[$category]++}
+    }
+    if($mappedIds.Count-ne$expectedIds.Count){Fail 'credibility authority count differs from executable inventory'}
+    for($i=0;$i-lt$expectedIds.Count;$i++){if($mappedIds[$i]-ne$expectedIds[$i]){Fail "credibility authority missing, phantom, or reordered ID at $i"}}
+    foreach ($category in $known) {
         $match = [regex]::Match($matrix,"(?m)^\|\s*``$category``\s*\|\s*(\d+)\s*\|")
-        if (-not $match.Success -or [int]$match.Groups[1].Value -ne $required[$category]) { Fail "credibility category $category mismatch" }
-        $actual[$category] = [int]$match.Groups[1].Value
+        if (-not $match.Success -or [int]$match.Groups[1].Value -ne $actual[$category]) { Fail "credibility headline/per-ID category $category mismatch" }
     }
     if (($actual.Values | Measure-Object -Sum).Sum -ne $ExpectedTestTotal -or $actual.WEAK_FALSE_POSITIVE -ne 0) { Fail 'credibility sum or weak count mismatch' }
-    return $actual
+    return [pscustomobject]$actual
 }
 function Get-DefaultEvidencePaths([string]$Output) {
     return @((Join-Path $Output 'COMPILE_REPORT.md'),(Join-Path $Output 'VERIFICATION_REPORT.md'),(Join-Path $Output 'contract_test_results.json'),(Join-Path $Output 'sprint4_8_tester_evidence.txt'),(Join-Path $Output 'exporter_test_results.json'))
@@ -275,7 +291,7 @@ function Get-EvidenceText([string]$Root,[string]$Revision,[object]$Manifest,[str
 }
 function Rebuild-VerificationSourceDigest([string]$Root,[string]$Source,[string]$Tree,[object]$Contract,[object]$Run1,[object]$Run2,[object]$OfflineValidated,[string]$OfflineBlobSha,[string]$Label) {
     $property=$Contract.PSObject.Properties['verification_source_inputs'];if($null-eq$property){Fail "$Label verification-source inputs are missing"};$inputs=$property.Value
-    foreach($name in @('architecture_compile_raw_sha256','test_compile_raw_sha256','run_1_raw_sha256','run_2_raw_sha256','exporter_test_results_raw_sha256','test_manifest_git_blob_sha256','run_config_ini_sha256','run_config_set_sha256','compiled_test_ex5_sha256','exporter_git_blob_sha256','exporter_test_script_git_blob_sha256')){
+    foreach($name in @('architecture_compile_raw_sha256','test_compile_raw_sha256','run_1_raw_sha256','run_2_raw_sha256','exporter_test_results_raw_sha256','test_manifest_git_blob_sha256','credibility_inventory_git_blob_sha256','run_config_ini_sha256','run_config_set_sha256','compiled_test_ex5_sha256','exporter_git_blob_sha256','exporter_test_script_git_blob_sha256')){
         $claim=$inputs.PSObject.Properties[$name];if($null-eq$claim){Fail "$Label verification-source input $name is missing"};Assert-Sha256Claim ([string]$claim.Value) "$Label $name"|Out-Null
     }
     if($inputs.architecture_compile_raw_sha256-ne$Contract.raw_inputs.architecture_compile_log_sha256-or
@@ -287,9 +303,10 @@ function Rebuild-VerificationSourceDigest([string]$Root,[string]$Source,[string]
        $inputs.schema-ne$ExpectedSchema-or$inputs.production_policy-ne$ExpectedPolicy-or$inputs.suite-ne$ExpectedSuiteIdentity-or
        [string]$inputs.terminal_build-ne$ExpectedBuild-or$inputs.server-ne$ExpectedServer-or$inputs.account_mode-ne'HEDGING'-or[int]$inputs.ontester-ne1){Fail "$Label canonical verification-source semantic input mismatch"}
     $derivedManifest=Get-GitBlobSha256 $Root $Source $ManifestRelative
+    $derivedCredibility=Get-GitBlobSha256 $Root $Source $CredibilityIdInventoryRelative
     $derivedIni=Get-GitBlobSha256 $Root $Source $ConfigIniRelative
     $derivedSet=Get-GitBlobSha256 $Root $Source $ConfigSetRelative
-    if($inputs.test_manifest_git_blob_sha256-ne$derivedManifest-or$inputs.run_config_ini_sha256-ne$derivedIni-or
+    if($inputs.test_manifest_git_blob_sha256-ne$derivedManifest-or$inputs.credibility_inventory_git_blob_sha256-ne$derivedCredibility-or$inputs.run_config_ini_sha256-ne$derivedIni-or
        $inputs.run_config_set_sha256-ne$derivedSet-or$inputs.exporter_git_blob_sha256-ne$OfflineValidated.ExporterSha-or
        $inputs.exporter_test_script_git_blob_sha256-ne$OfflineValidated.TestScriptSha){Fail "$Label repository-derived verification-source input mismatch"}
     return Get-VerificationSourceDigest $Source $Tree $inputs
@@ -342,6 +359,9 @@ function Validate-EvidenceSemantics([string]$Root,[string]$Revision,[object]$Man
     $rebuiltVerificationDigest=Rebuild-VerificationSourceDigest $Root $Source $Tree $contract $run1 $run2 $offlineValidated $offlineBlobSha $Label
     if([string]$contract.verification_source_digest-ne$rebuiltVerificationDigest){Fail "$Label verification-source digest reconstruction mismatch"}
     $credibility=Get-Credibility $Root $Source
+    foreach($category in @('MERGE_GATING_BEHAVIOR','STATE_TRANSITION','NEGATIVE_FAIL_CLOSED','ROUND_TRIP','INVARIANT_BEHAVIOR','SUPPORTING_PURE_FUNCTION','CONFORMANCE_ONLY','WEAK_FALSE_POSITIVE')){
+       if([int]$contract.credibility.$category-ne[int]$credibility.$category){Fail "$Label credibility per-ID-derived category mismatch: $category"}
+    }
     if([int]$contract.behavioral-ne($credibility.MERGE_GATING_BEHAVIOR+$credibility.STATE_TRANSITION+$credibility.NEGATIVE_FAIL_CLOSED+$credibility.ROUND_TRIP+$credibility.INVARIANT_BEHAVIOR)-or
        [int]$contract.weak-ne0){Fail "$Label credibility cross-check mismatch"}
     return [pscustomobject]@{Total=$ExpectedTestTotal;Signature=$ExpectedDeterministicSignature;OfflineTotal=$offlineValidated.Ids.Count}
@@ -362,8 +382,8 @@ try {
         foreach ($field in @('total','passed','failed','skipped','signature','schema','contract_policy','suite')) { if ([string]$run1.Machine.$field -ne [string]$run2.Machine.$field) { Fail "run determinism mismatch: $field" } }
         $credibility=Get-Credibility $repo $source
         $offline=Read-ExporterOfflineResult $offlinePath $repo $source 'Generate'
-        $manifestSha=Get-GitBlobSha256 $repo $source $ManifestRelative; $iniSha=Get-GitBlobSha256 $repo $source $ConfigIniRelative; $setSha=Get-GitBlobSha256 $repo $source $ConfigSetRelative
-        $verificationInputs=[ordered]@{architecture_compile_raw_sha256=$rawArch;test_compile_raw_sha256=$rawTest;run_1_raw_sha256=$rawRun1;run_2_raw_sha256=$rawRun2;exporter_test_results_raw_sha256=$offlineRawSha;run_1_signature=$ExpectedDeterministicSignature;run_2_signature=$ExpectedDeterministicSignature;schema=$ExpectedSchema;production_policy=$ExpectedPolicy;suite=$ExpectedSuiteIdentity;terminal_build=$ExpectedBuild;server=$ExpectedServer;account_mode='HEDGING';ontester=1;test_manifest_git_blob_sha256=$manifestSha;run_config_ini_sha256=$iniSha;run_config_set_sha256=$setSha;compiled_test_ex5_sha256=$ex5Sha;exporter_git_blob_sha256=$offline.ExporterSha;exporter_test_script_git_blob_sha256=$offline.TestScriptSha}
+        $manifestSha=Get-GitBlobSha256 $repo $source $ManifestRelative; $credibilitySha=Get-GitBlobSha256 $repo $source $CredibilityIdInventoryRelative; $iniSha=Get-GitBlobSha256 $repo $source $ConfigIniRelative; $setSha=Get-GitBlobSha256 $repo $source $ConfigSetRelative
+        $verificationInputs=[ordered]@{architecture_compile_raw_sha256=$rawArch;test_compile_raw_sha256=$rawTest;run_1_raw_sha256=$rawRun1;run_2_raw_sha256=$rawRun2;exporter_test_results_raw_sha256=$offlineRawSha;run_1_signature=$ExpectedDeterministicSignature;run_2_signature=$ExpectedDeterministicSignature;schema=$ExpectedSchema;production_policy=$ExpectedPolicy;suite=$ExpectedSuiteIdentity;terminal_build=$ExpectedBuild;server=$ExpectedServer;account_mode='HEDGING';ontester=1;test_manifest_git_blob_sha256=$manifestSha;credibility_inventory_git_blob_sha256=$credibilitySha;run_config_ini_sha256=$iniSha;run_config_set_sha256=$setSha;compiled_test_ex5_sha256=$ex5Sha;exporter_git_blob_sha256=$offline.ExporterSha;exporter_test_script_git_blob_sha256=$offline.TestScriptSha}
         $verificationDigest=Get-VerificationSourceDigest $source $tree $verificationInputs; if ($verificationDigest -ne $ExpectedVerificationSourceDigest.ToLowerInvariant()) { Fail 'verification-source digest mismatch' }
         $exporterSha=$offline.ExporterSha; if((Get-FileSha256 $PSCommandPath)-ne$exporterSha){Fail 'executing exporter does not match tested source blob'}; $sourceTimestamp=Invoke-GitText @('-C',$repo,'show','-s','--format=%cI',$source)
         $behavioral=$credibility.MERGE_GATING_BEHAVIOR+$credibility.STATE_TRANSITION+$credibility.NEGATIVE_FAIL_CLOSED+$credibility.ROUND_TRIP+$credibility.INVARIANT_BEHAVIOR

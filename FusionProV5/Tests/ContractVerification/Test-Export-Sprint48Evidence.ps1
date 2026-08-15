@@ -38,13 +38,13 @@ try {
     $testDir=Join-Path $repo 'FusionProV5\Tests\ContractVerification';New-Item -ItemType Directory -Path $testDir -Force|Out-Null
     $fixtureExporter=Join-Path $testDir 'Export-Sprint48Evidence.ps1';Copy-Item -LiteralPath $ExporterPath -Destination $fixtureExporter
     $fixtureTestScript=Join-Path $testDir 'Test-Export-Sprint48Evidence.ps1';Copy-Item -LiteralPath $PSCommandPath -Destination $fixtureTestScript
-    $inventory=Join-Path $testDir 'TEST_INVENTORY.md';$matrix=Join-Path $testDir 'TEST_CREDIBILITY_MATRIX.md'
+    $inventory=Join-Path $testDir 'TEST_INVENTORY.md';$matrix=Join-Path $testDir 'TEST_CREDIBILITY_MATRIX.md';$credibilityInventory=Join-Path $testDir 'TEST_CREDIBILITY_ID_INVENTORY.txt'
     $manifest=Join-Path $repo 'SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5'
-    $ini=Join-Path $testDir 'sprint4_8_b10_full_once.ini';$set=Join-Path $testDir 'sprint4_8_b10_full_once.set'
+    $ini=Join-Path $testDir 'sprint4_8_b11_full_once.ini';$set=Join-Path $testDir 'sprint4_8_b11_full_once.set'
     Write-Lf (Join-Path $repo '.gitattributes') "* text=auto`n*.md text eol=lf`n*.txt text eol=lf`n*.json text eol=lf`nFusionProV5/Evidence/** text eol=lf"
     Write-Lf $inventory "| Domain | IDs | Total |`n|---|---|---:|`n| Fixture | FX-001 through FX-934 | 934 |`n| **Total** |  | **934** |"
     Write-Lf (Join-Path $testDir 'TEST_ID_INVENTORY.txt') "# fixture canonical IDs`nFX-001..934"
-    $exporterIds=@();foreach($n in 1..41){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 46..64){$exporterIds+='EXP48-'+$n.ToString('D2')};$exporterIds+='EXP48-67';foreach($n in 42..45){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 65..66){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 68..73){$exporterIds+='EXP48-'+$n.ToString('D2')}
+    $exporterIds=@();foreach($n in 1..41){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 46..64){$exporterIds+='EXP48-'+$n.ToString('D2')};$exporterIds+='EXP48-67';foreach($n in 42..45){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 65..66){$exporterIds+='EXP48-'+$n.ToString('D2')};foreach($n in 68..82){$exporterIds+='EXP48-'+$n.ToString('D2')}
     Write-Lf (Join-Path $testDir 'EXPORTER_TEST_ID_INVENTORY.txt') ("# exact exporter regression execution order`n"+($exporterIds-join"`n"))
     $matrixValid=@'
 | Category | Count | Merge-gating evidence |
@@ -58,12 +58,23 @@ try {
 | `CONFORMANCE_ONLY` | 14 | NO |
 | `WEAK_FALSE_POSITIVE` | 0 | NO |
 '@
-    Write-Lf $matrix $matrixValid;Write-Lf $manifest '// fixture manifest';Write-Lf $ini '[Tester]';Write-Lf $set 'Fixture=true'
+    $credibilityValid=@'
+# canonical per-ID credibility authority
+MERGE_GATING_BEHAVIOR|FX-001..085
+STATE_TRANSITION|FX-086..194
+NEGATIVE_FAIL_CLOSED|FX-195..800
+ROUND_TRIP|FX-801..810
+INVARIANT_BEHAVIOR|FX-811..858
+SUPPORTING_PURE_FUNCTION|FX-859..920
+CONFORMANCE_ONLY|FX-921..934
+'@
+    Write-Lf $matrix $matrixValid;Write-Lf $credibilityInventory $credibilityValid;Write-Lf $manifest '// fixture manifest';Write-Lf $ini '[Tester]';Write-Lf $set 'Fixture=true'
     Git @('-C',$repo,'add','.')|Out-Null;Git @('-C',$repo,'-c','user.name=SWV5 Test','-c','user.email=swv5-test@example.invalid','commit','--quiet','-m','fixture source')|Out-Null
     $sourceCommit=Git @('-C',$repo,'rev-parse','HEAD');$sourceTree=Git @('-C',$repo,'rev-parse','HEAD^{tree}')
     $manifestBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:SOMWANG_XAU_M15_FUSION_PRO_V5_SPRINT4_3_CONTRACT_TESTS.mq5")
-    $iniBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/sprint4_8_b10_full_once.ini")
-    $setBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/sprint4_8_b10_full_once.set")
+    $iniBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/sprint4_8_b11_full_once.ini")
+    $setBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/sprint4_8_b11_full_once.set")
+    $credibilityBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_ID_INVENTORY.txt")
     $exporterBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1")
     $exporterTestBlob=Git @('-C',$repo,'rev-parse',"${sourceCommit}:FusionProV5/Tests/ContractVerification/Test-Export-Sprint48Evidence.ps1")
     function Get-BlobSha([string]$Blob){$start=[Diagnostics.ProcessStartInfo]::new('git.exe',"-C `"$repo`" cat-file blob $Blob");$start.UseShellExecute=$false;$start.RedirectStandardOutput=$true;$p=[Diagnostics.Process]::new();$p.StartInfo=$start;$p.Start()|Out-Null;$m=[IO.MemoryStream]::new();try{$p.StandardOutput.BaseStream.CopyTo($m);$p.WaitForExit();return Get-ShaBytes $m.ToArray()}finally{$m.Dispose();$p.Dispose()}}
@@ -86,16 +97,18 @@ AB 0 10:00:00.003 OnTester result 1
     function Set-OfflineBaseline {
         $fixtureCases=@();foreach($id in $exporterIds){$fixtureCases += [pscustomobject][ordered]@{id=$id;name='source-bound fixture result';passed=$true}}
         $signature=Get-ShaBytes $Utf8NoBom.GetBytes((@($fixtureCases|ForEach-Object{$_.id+'|'+$_.name+'|'+$_.passed})-join"`n"))
-        $value=[ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V3';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=$fixtureExporterSha;test_script_sha256=$fixtureTestScriptSha;generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V3';total=$fixtureCases.Count;passed=$fixtureCases.Count;failed=0;skipped=0;signature=$signature;cases=$fixtureCases}
+        $value=[ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=$fixtureExporterSha;test_script_sha256=$fixtureTestScriptSha;generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4';total=$fixtureCases.Count;passed=$fixtureCases.Count;failed=0;skipped=0;signature=$signature;cases=$fixtureCases}
         Write-Lf $offlineResult ($value|ConvertTo-Json -Depth 6)
     }
     function Set-Baseline {Write-Lf $archLog $compileOk;Write-Lf $testLog $compileOk;Write-Lf $run1Log $runBase;Write-Lf $run2Log ($runBase.Replace('10:00:00','10:01:00'));[IO.File]::WriteAllBytes($ex5,[byte[]](1,4,8,16,32,64));Set-OfflineBaseline}
-    function Get-Digest([string]$Commit,[string]$Tree){
-        $lines=@('format=SWV5-SPRINT48-B10-VERIFICATION-SOURCE-V4',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$(Get-Sha $archLog)","test_compile_raw_sha256=$(Get-Sha $testLog)","run_1_raw_sha256=$(Get-Sha $run1Log)","run_2_raw_sha256=$(Get-Sha $run2Log)","exporter_test_results_raw_sha256=$(Get-Sha $offlineResult)",'run_1_signature=12393352988365616976','run_2_signature=12393352988365616976','schema=SWV5-CONTRACT-TEST-RESULT-V5','production_policy=SWV5-PRODUCTION-V5','suite=SPRINT4.8-V5-FULL','terminal_build=6090','server=Exness-MT5Trial6','account_mode=HEDGING','ontester=1',"test_manifest_git_blob_sha256=$(Get-BlobSha $manifestBlob)","run_config_ini_sha256=$(Get-BlobSha $iniBlob)","run_config_set_sha256=$(Get-BlobSha $setBlob)","compiled_test_ex5_sha256=$(Get-Sha $ex5)","exporter_git_blob_sha256=$fixtureExporterSha","exporter_test_script_git_blob_sha256=$fixtureTestScriptSha")
+    function Get-Digest([string]$Commit,[string]$Tree,[string]$CredibilitySha=''){
+        $sourceCredibilityBlob=Git @('-C',$repo,'rev-parse',"${Commit}:FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_ID_INVENTORY.txt")
+        if([string]::IsNullOrWhiteSpace($CredibilitySha)){$CredibilitySha=Get-BlobSha $sourceCredibilityBlob}
+        $lines=@('format=SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$(Get-Sha $archLog)","test_compile_raw_sha256=$(Get-Sha $testLog)","run_1_raw_sha256=$(Get-Sha $run1Log)","run_2_raw_sha256=$(Get-Sha $run2Log)","exporter_test_results_raw_sha256=$(Get-Sha $offlineResult)",'run_1_signature=12393352988365616976','run_2_signature=12393352988365616976','schema=SWV5-CONTRACT-TEST-RESULT-V5','production_policy=SWV5-PRODUCTION-V5','suite=SPRINT4.8-V5-FULL','terminal_build=6090','server=Exness-MT5Trial6','account_mode=HEDGING','ontester=1',"test_manifest_git_blob_sha256=$(Get-BlobSha $manifestBlob)","credibility_inventory_git_blob_sha256=$CredibilitySha","run_config_ini_sha256=$(Get-BlobSha $iniBlob)","run_config_set_sha256=$(Get-BlobSha $setBlob)","compiled_test_ex5_sha256=$(Get-Sha $ex5)","exporter_git_blob_sha256=$fixtureExporterSha","exporter_test_script_git_blob_sha256=$fixtureTestScriptSha")
         return Get-ShaBytes $Utf8NoBom.GetBytes(($lines-join"`n"))
     }
     function Get-DigestFromInputs([string]$Commit,[string]$Tree,[object]$Inputs){
-        $lines=@('format=SWV5-SPRINT48-B10-VERIFICATION-SOURCE-V4',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$($Inputs.architecture_compile_raw_sha256)","test_compile_raw_sha256=$($Inputs.test_compile_raw_sha256)","run_1_raw_sha256=$($Inputs.run_1_raw_sha256)","run_2_raw_sha256=$($Inputs.run_2_raw_sha256)","exporter_test_results_raw_sha256=$($Inputs.exporter_test_results_raw_sha256)","run_1_signature=$($Inputs.run_1_signature)","run_2_signature=$($Inputs.run_2_signature)","schema=$($Inputs.schema)","production_policy=$($Inputs.production_policy)","suite=$($Inputs.suite)","terminal_build=$($Inputs.terminal_build)","server=$($Inputs.server)","account_mode=$($Inputs.account_mode)","ontester=$($Inputs.ontester)","test_manifest_git_blob_sha256=$($Inputs.test_manifest_git_blob_sha256)","run_config_ini_sha256=$($Inputs.run_config_ini_sha256)","run_config_set_sha256=$($Inputs.run_config_set_sha256)","compiled_test_ex5_sha256=$($Inputs.compiled_test_ex5_sha256)","exporter_git_blob_sha256=$($Inputs.exporter_git_blob_sha256)","exporter_test_script_git_blob_sha256=$($Inputs.exporter_test_script_git_blob_sha256)")
+        $lines=@('format=SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5',"tested_source_commit=$Commit","source_tree=$Tree","architecture_compile_raw_sha256=$($Inputs.architecture_compile_raw_sha256)","test_compile_raw_sha256=$($Inputs.test_compile_raw_sha256)","run_1_raw_sha256=$($Inputs.run_1_raw_sha256)","run_2_raw_sha256=$($Inputs.run_2_raw_sha256)","exporter_test_results_raw_sha256=$($Inputs.exporter_test_results_raw_sha256)","run_1_signature=$($Inputs.run_1_signature)","run_2_signature=$($Inputs.run_2_signature)","schema=$($Inputs.schema)","production_policy=$($Inputs.production_policy)","suite=$($Inputs.suite)","terminal_build=$($Inputs.terminal_build)","server=$($Inputs.server)","account_mode=$($Inputs.account_mode)","ontester=$($Inputs.ontester)","test_manifest_git_blob_sha256=$($Inputs.test_manifest_git_blob_sha256)","credibility_inventory_git_blob_sha256=$($Inputs.credibility_inventory_git_blob_sha256)","run_config_ini_sha256=$($Inputs.run_config_ini_sha256)","run_config_set_sha256=$($Inputs.run_config_set_sha256)","compiled_test_ex5_sha256=$($Inputs.compiled_test_ex5_sha256)","exporter_git_blob_sha256=$($Inputs.exporter_git_blob_sha256)","exporter_test_script_git_blob_sha256=$($Inputs.exporter_test_script_git_blob_sha256)")
         return Get-ShaBytes $Utf8NoBom.GetBytes(($lines-join"`n"))
     }
     function Get-Args([string]$Commit,[string]$Tree,[string]$Output){return @('-Mode','Generate','-RepositoryRoot',$repo,'-OutputDirectory',$Output,'-ArchitectureCompileLog',$archLog,'-TestCompileLog',$testLog,'-Run1Log',$run1Log,'-Run2Log',$run2Log,'-CompiledTestEx5',$ex5,'-ExporterTestResults',$offlineResult,'-ExpectedTestTotal','934','-ExpectedDeterministicSignature','12393352988365616976','-TestedSourceSha',$Commit,'-ExpectedSourceTreeSha',$Tree,'-ExpectedArchitectureCompileLogSha256',(Get-Sha $archLog),'-ExpectedTestCompileLogSha256',(Get-Sha $testLog),'-ExpectedRun1LogSha256',(Get-Sha $run1Log),'-ExpectedRun2LogSha256',(Get-Sha $run2Log),'-ExpectedCompiledTestEx5Sha256',(Get-Sha $ex5),'-ExpectedExporterTestResultsSha256',(Get-Sha $offlineResult),'-ExpectedVerificationSourceDigest',(Get-Digest $Commit $Tree))}
@@ -220,7 +233,31 @@ AB 0 10:00:00.003 OnTester result 1
     Git @('-C',$repo,'add','FusionProV5/Evidence/Sprint4_8/COMPILE_REPORT.md','FusionProV5/Evidence/Sprint4_8/VERIFICATION_REPORT.md','FusionProV5/Evidence/Sprint4_8/contract_test_results.json','FusionProV5/Evidence/Sprint4_8/sprint4_8_tester_evidence.txt','FusionProV5/Evidence/Sprint4_8/exporter_test_results.json')|Out-Null;$inputManifest=Join-Path $inputAttack 'evidence_blob_manifest.json';$iim=Invoke-Exporter @('-Mode','IndexManifest','-RepositoryRoot',$repo,'-OutputDirectory',$inputAttack,'-TestedSourceSha',$sourceCommit,'-ExpectedSourceTreeSha',$sourceTree) 'input-attack-manifest.out';Git @('-C',$repo,'add','FusionProV5/Evidence/Sprint4_8/evidence_blob_manifest.json')|Out-Null;$iiv=Invoke-Exporter @('-Mode','VerifyIndex','-RepositoryRoot',$repo,'-EvidenceManifestPath',$inputManifest,'-TestedSourceSha',$sourceCommit,'-ExpectedSourceTreeSha',$sourceTree) 'input-attack-index.out';Record 'EXP48-72' 'VerifyIndex rejects recomputed digest over forged source-blob input' ($ig.ExitCode-eq0-and$iim.ExitCode-eq0-and$iiv.ExitCode-ne0)
     Git @('-C',$repo,'-c','user.name=SWV5 Test','-c','user.email=swv5-test@example.invalid','commit','--quiet','-m','forged digest input evidence')|Out-Null;$inputCommit=Git @('-C',$repo,'rev-parse','HEAD');$icv=Invoke-Exporter @('-Mode','VerifyCommit','-RepositoryRoot',$repo,'-EvidenceManifestPath',$inputManifest,'-EvidenceCommitSha',$inputCommit,'-TestedSourceSha',$sourceCommit,'-ExpectedSourceTreeSha',$sourceTree) 'input-attack-commit.out';Record 'EXP48-73' 'VerifyCommit rejects recomputed digest over forged source-blob input' ($icv.ExitCode-ne0)
 
-    $final=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V3';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=(Get-Sha $ExporterPath);test_script_sha256=(Get-Sha $PSCommandPath);generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V3';total=73;passed=$passed;failed=$failed;skipped=0;signature=(Get-ShaBytes $Utf8NoBom.GetBytes((@($records|ForEach-Object{$_.id+'|'+$_.name+'|'+$_.passed})-join"`n")));cases=$records}
+    function Credibility-Source-Negative([string]$Id,[string]$Name,[string]$CredibilityText,[string]$MatrixText,[bool]$BindOldAuthority=$false){
+        Git @('-C',$repo,'checkout','--quiet','--force',$sourceCommit)|Out-Null
+        Write-Lf $credibilityInventory $CredibilityText;Write-Lf $matrix $MatrixText
+        Git @('-C',$repo,'add','FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_ID_INVENTORY.txt','FusionProV5/Tests/ContractVerification/TEST_CREDIBILITY_MATRIX.md')|Out-Null
+        Git @('-C',$repo,'-c','user.name=SWV5 Test','-c','user.email=swv5-test@example.invalid','commit','--quiet','-m',$Id)|Out-Null
+        $candidate=Git @('-C',$repo,'rev-parse','HEAD');$candidateTree=Git @('-C',$repo,'rev-parse','HEAD^{tree}');Set-Baseline
+        $args=Get-Args $candidate $candidateTree (Join-Path $tempRoot $Id)
+        if($BindOldAuthority){$i=[Array]::IndexOf($args,'-ExpectedVerificationSourceDigest');$args[$i+1]=Get-Digest $candidate $candidateTree (Get-BlobSha $credibilityBlob)}
+        $result=Invoke-Exporter $args "$Id.out";Record $Id $Name ($result.ExitCode-ne0)
+    }
+    Credibility-Source-Negative 'EXP48-74' 'headline category total changed with stable per-ID authority is rejected' $credibilityValid ($matrixValid.Replace('| `MERGE_GATING_BEHAVIOR` | 85 | YES |','| `MERGE_GATING_BEHAVIOR` | 84 | YES |'))
+    $swapMergeState=$credibilityValid.Replace('MERGE_GATING_BEHAVIOR|FX-001..085',"STATE_TRANSITION|FX-001`nMERGE_GATING_BEHAVIOR|FX-002..086").Replace('STATE_TRANSITION|FX-086..194','STATE_TRANSITION|FX-087..194')
+    Credibility-Source-Negative 'EXP48-75' 'balanced per-ID change is rejected when source-bound authority differs' $swapMergeState $matrixValid $true
+    Credibility-Source-Negative 'EXP48-76' 'duplicate credibility classification ID is rejected' ($credibilityValid+"`nCONFORMANCE_ONLY|FX-934") $matrixValid
+    Credibility-Source-Negative 'EXP48-77' 'missing executable credibility classification is rejected' ($credibilityValid.Replace('CONFORMANCE_ONLY|FX-921..934','CONFORMANCE_ONLY|FX-921..933')) $matrixValid
+    Credibility-Source-Negative 'EXP48-78' 'phantom credibility classification ID is rejected' ($credibilityValid.Replace('CONFORMANCE_ONLY|FX-921..934',"CONFORMANCE_ONLY|FX-921..933`nCONFORMANCE_ONLY|FX-999")) $matrixValid
+    Credibility-Source-Negative 'EXP48-79' 'unknown credibility category is rejected' ($credibilityValid.Replace('CONFORMANCE_ONLY|FX-921..934','UNKNOWN_CATEGORY|FX-921..934')) $matrixValid
+    $roundTripSwap=$credibilityValid.Replace('ROUND_TRIP|FX-801..810',"SUPPORTING_PURE_FUNCTION|FX-801`nROUND_TRIP|FX-802..810").Replace('SUPPORTING_PURE_FUNCTION|FX-859..920',"ROUND_TRIP|FX-859`nSUPPORTING_PURE_FUNCTION|FX-860..920")
+    Credibility-Source-Negative 'EXP48-80' 'supporting ID cannot gain round-trip credit outside bound authority' $roundTripSwap $matrixValid $true
+    $weakPerId=$credibilityValid.Replace('CONFORMANCE_ONLY|FX-921..934',"WEAK_FALSE_POSITIVE|FX-921`nCONFORMANCE_ONLY|FX-922..934")
+    Credibility-Source-Negative 'EXP48-81' 'weak headline zero with one per-ID weak classification is rejected' $weakPerId $matrixValid
+    $balancedWrong=$credibilityValid.Replace('NEGATIVE_FAIL_CLOSED|FX-195..800',"INVARIANT_BEHAVIOR|FX-195`nNEGATIVE_FAIL_CLOSED|FX-196..800").Replace('INVARIANT_BEHAVIOR|FX-811..858',"NEGATIVE_FAIL_CLOSED|FX-811`nINVARIANT_BEHAVIOR|FX-812..858")
+    Credibility-Source-Negative 'EXP48-82' 'internally balanced totals with wrong per-ID mapping are rejected' $balancedWrong $matrixValid $true
+
+    $final=[pscustomobject][ordered]@{schema='SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4';exporter_path='FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1';exporter_sha256=(Get-Sha $ExporterPath);test_script_sha256=(Get-Sha $PSCommandPath);generated_from='Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4';total=82;passed=$passed;failed=$failed;skipped=0;signature=(Get-ShaBytes $Utf8NoBom.GetBytes((@($records|ForEach-Object{$_.id+'|'+$_.name+'|'+$_.passed})-join"`n")));cases=$records}
     $finalJson=$final|ConvertTo-Json -Depth 6;if(-not[string]::IsNullOrWhiteSpace($ResultPath)){Write-Lf $ResultPath $finalJson};$finalJson
-    if($failed-ne0-or$passed-ne73){exit 1};exit 0
+    if($failed-ne0-or$passed-ne82){exit 1};exit 0
 } finally {if(Test-Path -LiteralPath $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force}}

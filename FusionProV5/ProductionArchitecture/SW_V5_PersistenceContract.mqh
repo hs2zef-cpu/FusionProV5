@@ -75,9 +75,11 @@ struct SWV5_PersistenceRecordHeader
    // Store/CAS revision for this checkpoint publication. It advances with
    // every successful mutation and remains separate from ownership fencing.
    string               store_revision;
-   // SWV5-CHECKPOINT-V5-LP1 binds every persisted field except these two
-   // integrity-envelope members. payload_size is the canonical MQL string
-   // character count; payload_digest is the deterministic canonical hash.
+   // SWV5-CHECKPOINT-V5-LP2 separates the body, digest preimage, and full DTO.
+   // payload_size is the body's canonical MQL string character count and is
+   // ordinary digest-bound envelope metadata. Only payload_digest is excluded
+   // from its own nonrecursive preimage; the full DTO carries both members.
+   // payload_digest is the deterministic canonical hash of that preimage.
    // This is integrity-contract evidence, not cryptographic tamper resistance.
    string               payload_digest;
    ulong                payload_size;

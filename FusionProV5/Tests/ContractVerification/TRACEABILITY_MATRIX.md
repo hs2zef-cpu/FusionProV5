@@ -1,4 +1,4 @@
-# Sprint 4.8 Phase B6 V5 Candidate Verification Traceability Matrix
+# Sprint 4.8 Phase B11 V5 Candidate Verification Traceability Matrix
 
 > TEST ONLY - NOT FOR PRODUCTION - NO BROKER ACCESS
 
@@ -112,3 +112,14 @@ Sprint 4.7 Phase A retains the unlocked V4 candidate shape. It adds canonical va
 | Atomic anti-replay publication | `ISWV5PersistenceContract.PublishRestartQueryWatermarks` | S48-QPUB-03 through S48-QPUB-11 | Both anchors, reconciliation/record sequence, written time, store revision, source/payload digests and size publish atomically; replay, rollback, swapping and CAS failure reject without state mutation. |
 | Proposal canonical reconstruction | proposal serializer/digest/decoder | S48-CAN-DTO-12, S48-RT-V5-17 | Every proposal semantic is digest-bound and reconstructs into a fresh zeroed DTO. |
 | Evidence root of trust | Git-derived tree and canonical B10 verification-source digest core | EXP48-68 through EXP48-73 | Index and commit verification reject a repeated fake tree, direct digest forgery, and recomputed digest over a forged independently derivable source-blob input. |
+
+## Sprint 4.8 Phase B11 traceability
+
+| Requirement | Contract field/interface | Test ID | Verification |
+|---|---|---|---|
+| Distinct digest-preimage and full DTO semantics | Own digest fields on Margin/Basket risk/Broker summary/Restart request/Hard Kill release/Hard Kill authority/checkpoint | S48-CAN-SELF-01 through S48-CAN-SELF-07 | Own digest is excluded from only its preimage and included in the full DTO. |
+| Genuine full DTO reconstruction | Seven repaired DTO serializers and decoders | S48-RT-V5-01 through V5-07, S48-RT-V5-15 | Fresh-object decode reads every serialized field, verifies the embedded digest, and reserializes exactly. Existing V5-04, V5-16, and V5-17 remain genuine. |
+| Embedded digest required and valid | Same seven decoders | S48-RT-DIGEST-MISSING-01 through 07; S48-RT-DIGEST-TAMPER-01 through 07 | Missing and altered integrity fields fail closed; no decoder regeneration is permitted. |
+| Finite authoritative deal boundary | `SWV5_AuthoritativeDeal`; `ISWV5StatisticsContract.ValidateDeal` and `AccumulateDeal` | S48-NFD-01 through S48-NFD-20 | Every relevant double rejects NaN and both infinities before mutation; finite input passes; failure preserves the complete output state. |
+| Exact-one credibility authority | `TEST_ID_INVENTORY.txt`, `TEST_CREDIBILITY_ID_INVENTORY.txt`, exporter `Get-Credibility` | EXP48-74 through EXP48-82 | Source-bound per-ID categories, known category set, exact order/cardinality, derived totals, and headline cross-check all fail closed under adversarial edits. |
+| Verification-source V5 binding | `SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5` | EXP48-75, EXP48-80, EXP48-82 | Credibility-inventory Git blob SHA-256 is an ordered root-of-trust input in Generate, VerifyIndex, and VerifyCommit. |

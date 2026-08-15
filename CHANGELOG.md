@@ -1,5 +1,14 @@
 # Changelog
 
+### Sprint 4.8 Phase B11 full DTO, Statistics finite-boundary, and credibility semantics closure
+
+- Marked B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and evidence `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` as immutable superseded failed-final-audit history; neither commit was amended.
+- Split seven ambiguous canonical helpers into explicit nonrecursive digest-preimage and full-DTO representations. Full DTO decoders now read and validate original embedded integrity fields, including checkpoint LP2 envelope metadata.
+- Added missing/tampered embedded-digest failures and repaired all advertised positive full DTO reconstruction cases.
+- Added finite-number guards for all six authoritative deal doubles and made `AccumulateDeal` publish output only after complete validation and successful candidate mutation.
+- Added source-bound `TEST_CREDIBILITY_ID_INVENTORY.txt`; exporter totals are now derived per ID and cross-checked against executable order and human-readable headlines. Verification-source format advances to `SWV5-SPRINT48-B11-VERIFICATION-SOURCE-V5`.
+- Expanded the candidate MQL inventory from 934 to 969 cases and the exporter offline inventory from 73 to 82 cases. B11 remains Candidate / In Review / Unlocked and not source-frozen; no final evidence, Architecture Lock, runtime authorization, production-readiness claim, merge authorization, commit, or push is implied.
+
 ### Sprint 4.8 Phase E2 reproducible immutable evidence
 
 - Recorded the technically frozen B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and tree `c97ba3cf8b21d12cc601753f4b2c311a06d02206`.
