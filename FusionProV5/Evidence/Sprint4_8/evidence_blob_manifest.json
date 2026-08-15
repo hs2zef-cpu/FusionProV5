@@ -1,7 +1,7 @@
 {
     "schema":  "SWV5-SPRINT48-BLOB-MANIFEST-V1",
-    "tested_source_commit":  "06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89",
-    "source_tree":  "13b9a0dc020dbdd293e648c5a6f4c4d1cba05147",
+    "tested_source_commit":  "e56e51e72dc5fd9ee47d847781a545134b092059",
+    "source_tree":  "c97ba3cf8b21d12cc601753f4b2c311a06d02206",
     "hash_authority":  "GIT_BLOB_BYTES_SHA256",
     "source":  "GIT_INDEX",
     "line_endings":  "LF",
@@ -10,19 +10,23 @@
     "evidence_files":  [
                            {
                                "path":  "FusionProV5/Evidence/Sprint4_8/COMPILE_REPORT.md",
-                               "sha256":  "df3481dd647c7bab5aaaa8158c1562fc86d975ee456cf95989c1a39a931748df"
+                               "sha256":  "8219655667927184668b0cd9c415b35ac81182b0e36db1e83c5183b5cce287f1"
                            },
                            {
                                "path":  "FusionProV5/Evidence/Sprint4_8/contract_test_results.json",
-                               "sha256":  "0f839c9bf66b143baec98f1ecb3349ff7aec7ac3f2603df5dbdf6a5f290506f3"
+                               "sha256":  "012717be30e77f3d7bf81e82de0c0f5e7aa8faeec0448d0efc90b44aa3d2470e"
+                           },
+                           {
+                               "path":  "FusionProV5/Evidence/Sprint4_8/exporter_test_results.json",
+                               "sha256":  "e3430d18fa8d63f7be296b616e28770c1552f3451feac18f650001dbcf53cf09"
                            },
                            {
                                "path":  "FusionProV5/Evidence/Sprint4_8/sprint4_8_tester_evidence.txt",
-                               "sha256":  "b371563597c55809062c5ad294307ad1236ca21cbb529266e2aa921b31601c38"
+                               "sha256":  "0899e92c4182839aa3bcff96f4102082d11e60ddf241c8a5acbffb3b883ffa25"
                            },
                            {
                                "path":  "FusionProV5/Evidence/Sprint4_8/VERIFICATION_REPORT.md",
-                               "sha256":  "bffc5c9b992251d80f95773584464027488c4f4e91f3a1c0ac205719e804622b"
+                               "sha256":  "dcc57f45b0061a9bea4a323f3811959e92b8e1a5b53b994b23e238a12e632b8a"
                            }
                        ]
 }

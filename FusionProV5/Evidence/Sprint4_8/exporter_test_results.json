@@ -1,0 +1,379 @@
+{
+    "schema":  "SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V3",
+    "exporter_path":  "FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1",
+    "exporter_sha256":  "2e99c6fb9065eda8ffb66a10d88fddf0780f4fa0c7f8d77cbc875b36c56fa8b2",
+    "test_script_sha256":  "266bab7805662040a8c9f066aca06c8fc01f671d37e44c262bb8fa71e2596c39",
+    "generated_from":  "Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V3",
+    "total":  73,
+    "passed":  73,
+    "failed":  0,
+    "skipped":  0,
+    "signature":  "aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37",
+    "cases":  [
+                  {
+                      "id":  "EXP48-01",
+                      "name":  "valid explicit generation",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-02",
+                      "name":  "repeated generation byte-identical",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-03",
+                      "name":  "UTF-8 has no BOM",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-04",
+                      "name":  "LF-only output",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-05",
+                      "name":  "exactly one final LF",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-06",
+                      "name":  "source fields expand to values",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-07",
+                      "name":  "machine result preserves source identity",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-08",
+                      "name":  "index manifest verifies staged blobs",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-09",
+                      "name":  "manifest excludes itself",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-10",
+                      "name":  "manifest has exact semantic set",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-11",
+                      "name":  "committed blobs verify",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-12",
+                      "name":  "fresh clone reproduces commit evidence",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-13",
+                      "name":  "working CRLF cannot alter commit blob",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-14",
+                      "name":  "post-export mutation rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-15",
+                      "name":  "stale claim rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-16",
+                      "name":  "wrong source rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-17",
+                      "name":  "wrong tree rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-18",
+                      "name":  "Run 1 raw hash mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-19",
+                      "name":  "duplicate machine result rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-20",
+                      "name":  "signature mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-21",
+                      "name":  "compile warning rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-22",
+                      "name":  "compile error rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-23",
+                      "name":  "skipped count rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-24",
+                      "name":  "failed count rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-25",
+                      "name":  "total mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-26",
+                      "name":  "schema mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-27",
+                      "name":  "policy mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-28",
+                      "name":  "suite mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-29",
+                      "name":  "terminal build mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-30",
+                      "name":  "Demo server mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-31",
+                      "name":  "OnTester mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-32",
+                      "name":  "missing explicit run rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-33",
+                      "name":  "compiled artifact hash mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-34",
+                      "name":  "verification digest mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-35",
+                      "name":  "same run file rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-36",
+                      "name":  "deterministic false rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-37",
+                      "name":  "account mode mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-38",
+                      "name":  "broker access true rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-39",
+                      "name":  "architecture raw hash mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-40",
+                      "name":  "test compile raw hash mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-41",
+                      "name":  "Run 2 raw hash mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-46",
+                      "name":  "summary with zero test records rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-47",
+                      "name":  "only second deterministic stream truncated to 933 records is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-48",
+                      "name":  "duplicate test ID rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-49",
+                      "name":  "missing expected ID rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-50",
+                      "name":  "unexpected test ID rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-51",
+                      "name":  "FAIL record contradicting summary rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-52",
+                      "name":  "SKIP record rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-53",
+                      "name":  "record count and summary disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-54",
+                      "name":  "wrong suite metadata rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-55",
+                      "name":  "reordered records rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-56",
+                      "name":  "old 934-ID stream rejected against newer source inventory",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-57",
+                      "name":  "only first deterministic stream truncated to 933 records is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-58",
+                      "name":  "offline result with wrong exporter SHA is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-59",
+                      "name":  "offline result with wrong test-script SHA is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-60",
+                      "name":  "offline result with duplicate test ID is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-61",
+                      "name":  "offline result with failed case is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-62",
+                      "name":  "offline result with skipped count is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-63",
+                      "name":  "offline result with fabricated totals is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-64",
+                      "name":  "missing offline result artifact is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-67",
+                      "name":  "offline result missing one canonical case is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-42",
+                      "name":  "weak credibility count rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-43",
+                      "name":  "inventory mismatch rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-44",
+                      "name":  "missing staged evidence file rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-45",
+                      "name":  "unexpected evidence file rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-65",
+                      "name":  "VerifyIndex rejects hash-valid semantically fabricated evidence",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-66",
+                      "name":  "VerifyCommit rejects hash-valid semantically fabricated evidence",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-68",
+                      "name":  "VerifyIndex rejects self-consistent fabricated source tree",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-69",
+                      "name":  "VerifyCommit rejects self-consistent fabricated source tree",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-70",
+                      "name":  "VerifyIndex rejects direct verification digest forgery",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-71",
+                      "name":  "VerifyCommit rejects direct verification digest forgery",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-72",
+                      "name":  "VerifyIndex rejects recomputed digest over forged source-blob input",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-73",
+                      "name":  "VerifyCommit rejects recomputed digest over forged source-blob input",
+                      "passed":  true
+                  }
+              ]
+}

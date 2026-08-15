@@ -1,5 +1,14 @@
 # Changelog
 
+### Sprint 4.8 Phase E2 reproducible immutable evidence
+
+- Recorded the technically frozen B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and tree `c97ba3cf8b21d12cc601753f4b2c311a06d02206`.
+- Packaged the exact Phase D2 immutable results: two MT5 Trial/Demo Strategy Tester runs each passed 934/934 with 0 failed, 0 skipped, and identical signature `11631338912972649069`.
+- Recorded the frozen offline exporter result: 73/73 passed with signature `aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37`.
+- Bound source identity, exact external raw hashes, source-derived Git blob hashes, run configuration, compiled EX5, and semantic results into verification-source digest `66a11100c3ba44a6c3b0699b93dedfacd3c2d0d618ddcc4b039efe0beda4cfd7`.
+- The prior `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` source and `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` evidence remain immutable superseded failed-audit history.
+- Governance remains Candidate / In Review / Unlocked. Sprint 4 remains the authorized baseline; final independent merge audit is required. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
+
 ### Sprint 4.8 Phase B10 query-domain, anti-replay publication, and evidence-root closure
 
 - Closed the V5 query-domain mask so unknown bits fail closed in required, completed, and authoritative masks.
