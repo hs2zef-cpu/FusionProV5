@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 3.7 |
-| Date | 2026-08-16 |
+| Version | 3.8 |
+| Date | 2026-08-21 |
 | Status | **CANDIDATE / IN REVIEW** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Review Candidate | **Sprint 4.1 Contract Hardening** |
@@ -36,6 +36,7 @@
 | 3.5 | 2026-08-15 | Recorded B10.1 source/evidence as immutable superseded failed-final-audit history and opened B11 successor work for full DTO reconstruction, finite Statistics mutation boundaries, and source-bound per-ID credibility. B11 is Candidate / In Review, unlocked, uncommitted, and not source-frozen. |
 | 3.6 | 2026-08-16 | Recorded B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` as superseded development history and opened B11.1 terminal-build evidence-parser correction. B11.1 is Candidate / In Review, unlocked, uncommitted, and not source-frozen; exact D3 Generate remains blocked by a separate server-record parser mismatch. |
 | 3.7 | 2026-08-16 | Recorded B11.2 server-evidence parser closure on top of B11.1: structured tester generation and supported legacy execution records are resolved centrally, source-bound symbol/timeframe and Trial/Demo policy remain fail-closed, and the exact unchanged D3 Generate path passes offline. B11.2 remains Candidate / In Review, unlocked, uncommitted, and not source-frozen. |
+| 3.8 | 2026-08-21 | Recorded B11.6 source freeze `ef556a94636e977e35e961be28ae03c9838615d4`, D5 immutable verification PASS with two deterministic 969/969 runs, and E5 reproducible evidence completion. Six Critical, three Final-Audit MAJOR, and parser/harness findings are closed; D4 remains failed historical evidence superseded by D5. The next gate is a new Final Independent Merge Audit, and candidate governance remains unchanged. |
 
 ## Purpose
 
@@ -67,7 +68,7 @@ Latest verified MetaEditor compilation:
 - Production contract version: V5 corrective candidate; minimum compatible version 5
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review and remain unlocked. Source/evidence pairs `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` / `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` and `e56e51e72dc5fd9ee47d847781a545134b092059` / `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` remain immutable superseded failed-final-audit history. Phase B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` is superseded development history after evidence generation exposed overly literal build and server parsers. Phase B11.2 is the current uncommitted successor technical candidate on top of B11.1, is not source-frozen, and has no final repository evidence. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
+The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review / Unlocked / Pending Approval. Source/evidence pairs `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` / `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` and `e56e51e72dc5fd9ee47d847781a545134b092059` / `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` remain immutable superseded failed-final-audit history. Phase B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` and D4 remain superseded development and failed-verification history. B11.6 is technically frozen at `ef556a94636e977e35e961be28ae03c9838615d4`; D5 immutable verification passed two deterministic 969/969 runs and the 140/140 exporter suite, and E5 reproducible evidence is complete. All six Critical findings, three Final-Audit MAJOR findings, and parser/harness closures are closed. The next gate is a new Final Independent Merge Audit. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -110,7 +111,7 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.8 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; Sprint 4.7 is superseded V4 history; and prior Sprint 4.8 source/evidence generations are superseded V5 history. Phase B11.2 is the current uncommitted, unlocked successor on top of B11.1 and is not source-frozen. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize production readiness, authorize merge, or replace Sprint 4 as the authorized baseline. A technical freeze of a specific tested commit makes evidence immutable but never constitutes Architecture Lock or formal approval.
+Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.8 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; Sprint 4.7 is superseded V4 history; and prior Sprint 4.8 source/evidence generations are superseded V5 history. B11.6 is the current technically frozen candidate source, D5 is its immutable verification authority, and E5 is its reproducible evidence package pending a new Final Independent Merge Audit. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize production readiness, authorize merge, or replace Sprint 4 as the authorized baseline. A technical freeze of a specific tested commit makes evidence immutable but never constitutes Architecture Lock or formal approval.
 
 ## Architecture Boundary
 
@@ -504,4 +505,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Review the combined Sprint 4.8 B11.1 terminal-build resolver and B11.2 tester-server resolver before separately authorizing any new source freeze. Until separate approval, Sprint 4 remains the authorized baseline, Sprint 4.1 is not Architecture Locked, and runtime implementation remains unauthorized."
+"Perform a new Final Independent Merge Audit against the Sprint 4.8 B11.6 frozen source and E5 reproducible evidence. Until separate approval, Sprint 4 remains the authorized baseline, Sprint 4.1 is not Architecture Locked, and runtime implementation remains unauthorized."

@@ -1,14 +1,45 @@
 {
-    "schema":  "SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V3",
+    "schema":  "SWV5-SPRINT48-EXPORTER-OFFLINE-TEST-V4",
     "exporter_path":  "FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1",
-    "exporter_sha256":  "2e99c6fb9065eda8ffb66a10d88fddf0780f4fa0c7f8d77cbc875b36c56fa8b2",
-    "test_script_sha256":  "266bab7805662040a8c9f066aca06c8fc01f671d37e44c262bb8fa71e2596c39",
-    "generated_from":  "Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V3",
-    "total":  73,
-    "passed":  73,
+    "exporter_sha256":  "786402fe6eea56f998132956e4f5ce42f85b2aa186216ea2e16feb08742c9401",
+    "test_script_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b",
+    "active_test_script_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b",
+    "identity_provenance":  {
+                                "fixture_commit":  "ff9fd1e83a4ee102bcffecc6438750ccddd19a43",
+                                "fixture_tree":  "96a4e8cff5a8be973208b638ffd770c5ab739349",
+                                "fixture_commit_message":  "SWV5 deterministic fixture source",
+                                "fixture_author":  {
+                                                       "name":  "SWV5 Deterministic Fixture",
+                                                       "email":  "swv5-fixture@example.invalid",
+                                                       "timestamp":  "2000-01-01T00:00:00+00:00"
+                                                   },
+                                "fixture_committer":  {
+                                                          "name":  "SWV5 Deterministic Fixture",
+                                                          "email":  "swv5-fixture@example.invalid",
+                                                          "timestamp":  "2000-01-01T00:00:00+00:00"
+                                                      },
+                                "exporter":  {
+                                                 "repository_path":  "FusionProV5/Tests/ContractVerification/Export-Sprint48Evidence.ps1",
+                                                 "git_blob_object":  "de133cf3f0e4b1b3fb63b18f66906c22e25b368e",
+                                                 "expected_git_blob_sha256":  "786402fe6eea56f998132956e4f5ce42f85b2aa186216ea2e16feb08742c9401",
+                                                 "source_byte_sha256":  "786402fe6eea56f998132956e4f5ce42f85b2aa186216ea2e16feb08742c9401",
+                                                 "executed_file_sha256":  "786402fe6eea56f998132956e4f5ce42f85b2aa186216ea2e16feb08742c9401"
+                                             },
+                                "test_script":  {
+                                                    "repository_path":  "FusionProV5/Tests/ContractVerification/Test-Export-Sprint48Evidence.ps1",
+                                                    "git_blob_object":  "46f3343dad24cf037ef8a1d5c3ad0622668dc4b4",
+                                                    "active_test_script_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b",
+                                                    "fixture_source_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b",
+                                                    "expected_git_blob_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b",
+                                                    "materialized_file_sha256":  "8fe7c8a5422e55cc0a7cdc7029c51a3b9cea93f08961956a06521a5e2b62f28b"
+                                                }
+                            },
+    "generated_from":  "Test-Export-Sprint48Evidence.ps1 - offline controlled fixture V4",
+    "total":  140,
+    "passed":  140,
     "failed":  0,
     "skipped":  0,
-    "signature":  "aef3182e58ba10f267ac0459d1b0df14afa8fc988d15b17e5c1828ff0a25bb37",
+    "signature":  "5ee6614cc75642262a67e29661642787d9974de3e364499e05563baf83552bc5",
     "cases":  [
                   {
                       "id":  "EXP48-01",
@@ -373,6 +404,341 @@
                   {
                       "id":  "EXP48-73",
                       "name":  "VerifyCommit rejects recomputed digest over forged source-blob input",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-74",
+                      "name":  "headline category total changed with stable per-ID authority is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-75",
+                      "name":  "balanced per-ID change is rejected when source-bound authority differs",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-76",
+                      "name":  "duplicate credibility classification ID is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-77",
+                      "name":  "missing executable credibility classification is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-78",
+                      "name":  "phantom credibility classification ID is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-79",
+                      "name":  "unknown credibility category is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-80",
+                      "name":  "supporting ID cannot gain round-trip credit outside bound authority",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-81",
+                      "name":  "weak headline zero with one per-ID weak classification is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-82",
+                      "name":  "internally balanced totals with wrong per-ID mapping are rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-83",
+                      "name":  "D3-style MetaTester authority without agent-authorization record passes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-84",
+                      "name":  "duplicate identical authoritative build records pass",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-85",
+                      "name":  "consistently wrong MetaTester and login build rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-86",
+                      "name":  "conflicting MetaTester and login build identities rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-87",
+                      "name":  "login-only build evidence without MetaTester authority rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-88",
+                      "name":  "malformed MetaTester build record rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-89",
+                      "name":  "unrelated payload containing 6090 without supported build record rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-90",
+                      "name":  "Run 1 and Run 2 resolved build disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-91",
+                      "name":  "raw resolved build and machine semantic build disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-92",
+                      "name":  "raw resolved build and verification-source canonical build disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-93",
+                      "name":  "D3 generating-based-on-real-ticks server authority passes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-94",
+                      "name":  "legacy structured testing-of server authority passes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-95",
+                      "name":  "duplicate identical authoritative server records pass",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-96",
+                      "name":  "conflicting recognized server identities rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-97",
+                      "name":  "consistently wrong Trial server rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-98",
+                      "name":  "missing authoritative server record rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-99",
+                      "name":  "server record missing closing parenthesis rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-100",
+                      "name":  "empty server token rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-101",
+                      "name":  "truncated structured server record rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-102",
+                      "name":  "unrelated text containing expected server is not authority",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-103",
+                      "name":  "Run 1 and Run 2 resolved server disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-104",
+                      "name":  "raw resolved server and machine semantic server disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-105",
+                      "name":  "raw resolved server and verification-source canonical server disagreement rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-106",
+                      "name":  "valid server token from non-Trial environment rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-107",
+                      "name":  "server record instrument differing from source-bound run config rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-108",
+                      "name":  "Generate failure preserves primary error and exit code",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-109",
+                      "name":  "claimed-success Generate missing COMPILE_REPORT fails explicitly",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-110",
+                      "name":  "partial evidence set reports exact missing artifact",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-111",
+                      "name":  "hash step is unreachable after Generate failure",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-112",
+                      "name":  "cleanup failure cannot mask primary Generate error",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-113",
+                      "name":  "failed case preserves authoritative diagnostic bundle outside cleaned workspace",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-114",
+                      "name":  "successful case may clean temporary workspace",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-115",
+                      "name":  "malformed output path fails deterministically",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-116",
+                      "name":  "spaces and special Windows output path preserve argument semantics",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-117",
+                      "name":  "baseline output directory resolution equals exporter target",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-118",
+                      "name":  "executing fixture exporter exact SHA equals source Git blob",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-119",
+                      "name":  "CRLF exporter mismatch fails before Generate starts",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-120",
+                      "name":  "active and fixture test-script exact byte identity passes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-121",
+                      "name":  "CRLF test-script mismatch is rejected",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-122",
+                      "name":  "fixture source test-script bytes equal Git blob bytes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-123",
+                      "name":  "materialized test-script bytes equal Git blob bytes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-124",
+                      "name":  "identity assertion requires independently supplied expected SHA",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-125",
+                      "name":  "diagnostic summary serializes resolved exporter path",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-126",
+                      "name":  "diagnostic root must be outside disposable workspace",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-127",
+                      "name":  "diagnostic bundle survives disposable cleanup end to end",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-128",
+                      "name":  "identical explicit fixture bytes produce identical Git blobs",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-129",
+                      "name":  "independent explicit fixture construction produces identical tree",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-130",
+                      "name":  "independent explicit fixture construction produces identical commit",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-131",
+                      "name":  "independent temporary roots do not affect fixture commit",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-132",
+                      "name":  "fixed synthetic author and committer timestamps exclude wall-clock authority",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-133",
+                      "name":  "canonical result excludes absolute temporary and GUID execution paths",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-134",
+                      "name":  "independent canonical result construction produces identical JSON bytes",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-135",
+                      "name":  "independent canonical result construction produces identical raw SHA-256",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-136",
+                      "name":  "canonical property order and test-case order are exact",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-137",
+                      "name":  "real builder isolates differing complete volatile runtime contexts",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-138",
+                      "name":  "canonical JSON is UTF-8 no BOM LF-only with exactly one final LF",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-139",
+                      "name":  "real source-byte mutation rebuilds distinct blob tree commit and canonical result",
+                      "passed":  true
+                  },
+                  {
+                      "id":  "EXP48-140",
+                      "name":  "canonical source-bound field negative control changes bytes and SHA",
                       "passed":  true
                   }
               ]

@@ -1,5 +1,14 @@
 # Changelog
 
+### Sprint 4.8 Phase E5 B11.6 reproducible immutable evidence
+
+- Recorded the technically frozen B11.6 source `ef556a94636e977e35e961be28ae03c9838615d4` and tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`.
+- Packaged the exact D5 immutable results: two MT5 Trial/Demo Strategy Tester runs each passed 969/969 with 0 failed, 0 skipped, and identical signature `18372369681406354017`.
+- Recorded the frozen offline exporter result: 140/140 passed with signature `5ee6614cc75642262a67e29661642787d9974de3e364499e05563baf83552bc5`.
+- Bound exact source, compile, run, EX5, run-configuration, source-blob, and exporter authorities into verification-source digest `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`.
+- Closed all six Critical findings, all three Final-Audit MAJOR findings, and the terminal-build, tester-server, exporter-identity, deterministic-provenance, and test-credibility parser/harness findings. D4 remains failed historical evidence and is superseded as verification authority by D5.
+- Governance remains Candidate / In Review / Unlocked / Pending Approval. Sprint 4 remains the authorized baseline; the next gate is a new Final Independent Merge Audit. No Architecture Lock, runtime authorization, production-readiness claim, merge authorization, or formal approval is made.
+
 ### Sprint 4.8 Phase B11 full DTO, Statistics finite-boundary, and credibility semantics closure
 
 - Marked B10.1 source `e56e51e72dc5fd9ee47d847781a545134b092059` and evidence `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` as immutable superseded failed-final-audit history; neither commit was amended.
