@@ -1,12 +1,19 @@
 # Changelog
 
+### Sprint 5 Phase A.3 coherent admission snapshot closure candidate
+
+- Recorded the Phase A.2 final independent re-review result `FAIL`: no Critical findings and one remaining Phase-B-blocking Major because the derived host admission counter was not contractably owned/shared.
+- Removed the host admission counter from safety authority and made the immutable Submission Admission Version Vector the authoritative snapshot, using owner-supplied mutation-advancing, ABA-resistant, payload-bound comparison tokens.
+- Added ADR-019 stable double collect, Admission Snapshot linearization, conservative expiry, no-defer same-event V5 Risk validation and Invocation Claim, restart non-reuse, failure dispositions, and threats 39–41.
+- Sprint 5 Phase A.3 remains Architecture Corrective Candidate / In Review. Phase B, Architecture Lock, runtime, broker, production, and live-trading authorization remain not granted; the next gate is the Final Independent Sprint 5 Architecture Re-review.
+
 ### Sprint 5 Phase A.2 invocation and publication authority closure candidate
 
 - Recorded the Phase A.1 independent re-review result `FAIL / NOT SAFE FOR PHASE B`: exactly-once adapter invocation, continuing Producer Trust revocation, stale complete-set/checkpoint publication, final Risk admission TOCTOU, namespace request-sequence ownership, and canonical primitive precision remained open.
 - Redefined the Submission Permit as `COMMITTED_NOT_INVOKED` admission reservation and added one durable `TryClaimInvocation()` transition whose successful event alone receives non-replayable `CLAIM_GRANTED_NOW`; crash-after-claim-before-call is uncertain and never blindly retried.
 - Added continuing Producer Trust revalidation/dispositions, one fenced namespace-wide idempotent Request Sequence Authority, and deterministic ADR-013 binding/recovery flow.
 - Added a Fenced Runtime Publication Authority for expected-current/ownership-safe complete request-set and checkpoint writes without changing V5 `SavePendingRequests()`, `SaveCheckpoint()`, or special `PublishRestartQueryWatermarks()` semantics.
-- Added a complete Submission Admission Version Vector, derived monotonic `admission_revision`, and final real V5 `ISWV5RiskContract::ValidateAuthorization()` at the Invocation Claim CAS boundary.
+- Added a complete Submission Admission Version Vector and final real V5 `ISWV5RiskContract::ValidateAuthorization()` at the Invocation Claim CAS boundary. Its original derived host-counter concept is historical and superseded by Phase A.3 ADR-019.
 - Froze strict UTF-8 octet-length framing and primitive lexical tokens, added ADR-016 through ADR-018, and expanded the threat matrix from 30 to 38 cases. Phase A.2 remains Candidate / In Review; Phase B, Architecture Lock, runtime, broker, production, and live-trading authorization remain not granted.
 
 ### Sprint 5 Phase A.1 architecture safety closure candidate

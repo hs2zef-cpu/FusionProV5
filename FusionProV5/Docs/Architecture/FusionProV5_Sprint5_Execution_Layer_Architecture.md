@@ -1,10 +1,10 @@
-# Fusion Pro V5 Sprint 5 Phase A.2 — Invocation & Publication Authority Closure
+# Fusion Pro V5 Sprint 5 Phase A.3 — Coherent Admission Snapshot Closure
 
 ## Governance Status
 
 | Item | Status |
 |---|---|
-| Sprint 5 Phase A.2 | **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW** |
+| Sprint 5 Phase A.3 | **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW** |
 | Authorized work | Architecture and ADR documentation only |
 | Authorized architecture baseline | Sprint 4 Architecture |
 | Production Contract V5 | Audited and merged; **Architecture Lock not granted** |
@@ -12,11 +12,11 @@
 | Broker implementation | **NOT AUTHORIZED** |
 | Production or live trading | **NOT AUTHORIZED** |
 | Phase B | **NOT AUTHORIZED** |
-| Next gate | New Independent Sprint 5 Architecture Re-review |
+| Next gate | **FINAL INDEPENDENT SPRINT 5 ARCHITECTURE RE-REVIEW** |
 
 This document answers: **How can the audited Production Contract V5 become an Execution Layer architecture without coupling broker runtime into the frozen Signal Engine, duplicating requests after a crash, or allowing competing external broker side effects across lease takeover?** It does not authorize or specify how to call a broker API.
 
-The Phase A.1 independent re-review returned **FAIL / NOT SAFE FOR PHASE B**. It independently closed the earlier permit/takeover serialization, canonical identity recursion, durable ingress replay, and false-general-atomicity findings, but found one new Critical and four Major blockers plus one canonical-precision Minor. Phase A.2 closes only those remaining findings as architecture proposals for a new independent re-review; it does not self-approve them.
+The Phase A.2 final independent re-review returned **FAIL** with no Critical findings and one Phase-B-blocking Major: the derived host admission counter was not contractably owned/shared and could not prove a coherent cross-domain authority snapshot. All other Phase A.2 findings were independently closed. Phase A.3 closes only that remaining ambiguity by making the versioned Admission Snapshot authoritative and defining a stable double-collect protocol; it does not self-approve the correction.
 
 ## Authorities And Preserved Baselines
 
@@ -27,11 +27,12 @@ This candidate is subordinate to, and reconciled with:
 - `FusionProV5_Contract_Versioning_Policy.md`
 - all Production Contract V5 headers under `FusionProV5/ProductionArchitecture/`
 - ADR-001 through ADR-008
-- ADR-009 through ADR-012 introduced by Phase A and revised through Phase A.2
-- ADR-013 through ADR-015 introduced by Phase A.1 and revised by Phase A.2
-- ADR-016 through ADR-018 introduced by Phase A.2
+- ADR-009 through ADR-012 introduced by Phase A and revised through Phase A.3
+- ADR-013 through ADR-015 introduced by Phase A.1 and revised through Phase A.3 where safety semantics required it
+- ADR-016 through ADR-018 introduced by Phase A.2 and revised through Phase A.3 where required
+- ADR-019 Coherent Admission Snapshot Protocol introduced by Phase A.3
 
-Sprint 3.2.1 remains the frozen Signal Engine. `DecisionEngine` remains the sole authority for `BUY`, `SELL`, `WAIT`, and `BLOCKED`. Production Contract V5 remains the merged, audited, unlocked contract authority. Sprint 5 Phase A.2 neither changes those sources nor grants Architecture Lock or Phase B authorization.
+Sprint 3.2.1 remains the frozen Signal Engine. `DecisionEngine` remains the sole authority for `BUY`, `SELL`, `WAIT`, and `BLOCKED`. Production Contract V5 remains the merged, audited, unlocked contract authority. Sprint 5 Phase A.3 neither changes those sources nor grants Architecture Lock or Phase B authorization.
 
 The Producer Trust Authority, Host Ingress Ledger, Request Sequence Authority, deterministic request-binding policy, Fenced Runtime Publication Authority, Submission Permit, Invocation Claim, Admission Version Vector/Gate, and their persistence interfaces are explicitly **Sprint 5 Candidate Contracts — NOT V5 existing authority**. V5 names are used only for capabilities its audited interfaces actually expose.
 
@@ -76,7 +77,7 @@ Market / Indicator Data
 | Hard Kill | Risk Governance with independent release authority | Enforce latch and validate release provenance | Automatic restart release or execution-issued release |
 | Diagnostics | Logs/dashboard/audit sinks | Observe immutable records | Become authority or mutate operational state |
 
-The EA Host is the single production orchestration and mutation coordinator, not a shared-state super-module. Each domain accepts immutable inputs and publishes state only through its owning contract result. The host cannot edit a result locally to simulate a successful domain transition. The derived host `admission_revision` snapshots admission-invalidating changes but does not replace any sole domain authority. Sprint 5 candidate authorities do not retroactively become V5 fields or methods.
+The EA Host is the single production orchestration and mutation coordinator, not a shared-state super-module. Each domain accepts immutable inputs and publishes state only through its owning contract result. The host cannot edit a result locally to simulate a successful domain transition. No host counter is authoritative cross-domain admission evidence: ADR-019 uses owner-supplied stable comparison tokens to build one coherent immutable Admission Snapshot. Sprint 5 candidate authorities do not retroactively become V5 fields or methods.
 
 ## Signal DTO Ingress Architecture
 
@@ -230,8 +231,8 @@ The contract-derived order is:
 13. Materialize the exact `SWV5_REQUEST_CREATED` / `SWV5_REQUEST_RISK_AUTHORIZED` blueprint and publish the complete set only through `CompareAndPublishPendingRequestSet()`; reload it and converge the ledger to `BOUND_TO_REQUEST`.
 14. Create one single-use Sprint 5 Submission Permit reservation in `COMMITTED_NOT_INVOKED` for the exact request, unique attempt, payload, trust, Risk, Hard Kill, and admission bindings. Permit commitment is not broker-invocation authority.
 15. Advance the V5 request through `SWV5_REQUEST_SUBMISSION_PENDING` using fenced complete-set publication and reload/validate the result.
-16. Immediately before claim, reacquire the complete current authority envelope; call the real `ISWV5RiskContract::ValidateAuthorization(context, authorization, current_binding, decision)`; validate current Producer Trust, ownership, Hard Kill, account, Basket, Unit/specification, request/set revision, margin/Basket-risk evidence, payload, and exclusive expiries; and build the exact Admission Version Vector/revision.
-17. Call linearizable `TryClaimInvocation()`. Only the serialized event receiving `CLAIM_GRANTED_NOW` may invoke the Broker Adapter. Persisted `INVOCATION_CLAIMED_UNRESOLVED` state, duplicate events, restart, and takeover grant no invocation authority.
+16. In the same serialized event that will claim, collect complete authority vectors `V1` and `V2`; require equal safety projections and identical scope/request/payload bindings; construct the coherent immutable Admission Snapshot; call the real `ISWV5RiskContract::ValidateAuthorization(context, authorization, current_binding, decision)` against exactly that snapshot; and revalidate every exclusive expiry/freshness bound at authoritative current claim time.
+17. Immediately call linearizable `TryClaimInvocation()` with the exact permit ID/revision/state, snapshot digest, current ownership/takeover authority, and authoritative claim time. Only the CAS winner receiving `CLAIM_GRANTED_NOW` may invoke the Broker Adapter in that same event. Persisted `INVOCATION_CLAIMED_UNRESOLVED` state, duplicate events, restart, takeover, or a persisted snapshot grants no invocation authority.
 18. Record raw result-retcode evidence and classify it through the versioned Execution policy. Acknowledgement remains pending confirmation.
 19. Capture platform transaction/deal evidence, validate correlation, ownership, sequence, symbol-specification and expected Basket version, then call `AcceptTransactionEvidence`.
 20. Publish the complete returned pending-request state through fenced request-set publication. Never reconstruct it locally or call V5 `SavePendingRequests()` as an unfenced direct replacement.
@@ -255,13 +256,13 @@ There is no independent quick Risk path. The host must use `ISWV5RiskContract` a
 
 Every consumed numeric value must be finite. Risk evidence and authorization bind the full account namespace/epoch, HEDGING mode, request identity, persistence namespace, ownership fence, Basket ID/state version, normalized direction/price/stop/limit/volume, symbol-specification sequence, limits contract, monetary basis, margin authority, Basket-risk authority, Hard Kill latch/generation, evaluation time, and exclusive expiry. Any mismatch or uncertainty denies authorization. Signal score, confidence, or health can never override Risk.
 
-Earlier Risk evaluation and permit reservation are necessary but insufficient for broker admission. Immediately before `TryClaimInvocation()`, the host must invoke the existing `ISWV5RiskContract::ValidateAuthorization()` against the complete **current** `SWV5_RiskEvaluationInput`. Current margin/Basket-risk authority records and freshness, ownership fence/takeover, Producer Trust, account namespace/epoch/mode, Basket version, request/set revision, symbol-specification sequence, Hard Kill state/generation, exact request/attempt, normalized payload, and exclusive authorization expiry must match the Admission Version Vector. The claim CAS compares that vector/revision and authoritative time. A changed binding yields no claim and no broker call.
+Earlier Risk evaluation and permit reservation are necessary but insufficient for broker admission. Immediately before `TryClaimInvocation()`, the host must establish the ADR-019 coherent Admission Snapshot and invoke the existing `ISWV5RiskContract::ValidateAuthorization()` against the complete **current** `SWV5_RiskEvaluationInput` represented by exactly that snapshot. Current margin/Basket-risk authority records and freshness, ownership fence/takeover, Producer Trust, account namespace/epoch/mode, Basket version, request/set revision, symbol-specification sequence, Hard Kill state/generation, exact request/attempt, normalized payload, and exclusive authorization expiry must match its vector. The claim CAS compares the exact snapshot digest, permit, ownership, and authoritative claim time. A changed binding yields no claim and no broker call.
 
 ## Submission Permit, Invocation Claim, And External-Side-Effect Authority
 
 Submission Permit and Invocation Claim are **Sprint 5 Candidate Contracts — NOT V5 existing authority**. The permit is a durable, fenced, digest-bound, single-use admission reservation for one exact logical request, unique attempt, normalized payload, and authority binding. Linearizable permit creation under current ownership yields `COMMITTED_NOT_INVOKED`; it proves no permit exists for the attempt and no unresolved competing Submission Authority exists for the request. It does **not** authorize adapter invocation.
 
-The permit binds policy/format, ID/revision/digest/time; namespace and ownership fence; account namespace/epoch and HEDGING mode; request/attempt; normalized payload/identity; Basket/version and symbol specification; Producer Trust record/generation/component/instance/epoch/status/validity policy; V5 Risk authorization and authority references; Hard Kill latch/state/generation; and the Admission Version Vector/revision.
+The permit binds policy/format, ID/revision/digest/time; namespace and ownership fence; account namespace/epoch and HEDGING mode; request/attempt; normalized payload/identity; Basket/version and symbol specification; Producer Trust record/generation/component/instance/epoch/status/validity policy; V5 Risk authorization and authority references; and Hard Kill latch/state/generation. It records reservation-time bindings but is not the later authoritative Admission Snapshot. The claim-time snapshot includes this exact permit and requires every permit-constrained binding still to match.
 
 Submission Authority states are `COMMITTED_NOT_INVOKED`, `INVOCATION_CLAIMED_UNRESOLVED`, `AUTHORITATIVE_SIDE_EFFECT_CONFIRMED`, `AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED`, `AUTHORITATIVE_REJECTED`, `INVALIDATED_BEFORE_CLAIM`, and `CONFLICT_MANUAL_REQUIRED`. They correlate to but never replace V5 Execution lifecycle. A claimed unresolved request is submission-pending and, when restarted/taken over or otherwise unresolved, uses existing `SWV5_REQUEST_RECONCILIATION_REQUIRED` / `SWV5_EXECUTION_PHASE_UNCERTAIN` semantics.
 
@@ -274,11 +275,54 @@ COMMITTED_NOT_INVOKED
   -> INVOCATION_CLAIMED_UNRESOLVED
 ```
 
-It compares expected permit ID/revision/state; exact request/attempt/payload; current ownership fence/takeover authority; authoritative time; and the complete expected Admission Version Vector/revision. Claim and ownership takeover share one serializable authority boundary: takeover-first makes a stale claim fail, while claim-first makes takeover observe and quiesce `INVOCATION_CLAIMED_UNRESOLVED`. It succeeds once and durably persists claimant identity/fence, claim sequence/revision, authoritative claim time, and claim digest/integrity. Only the caller that performs the transition receives the non-durable event-local result `CLAIM_GRANTED_NOW`. Every later caller gets already-claimed, conflict, invalid, expired, or equivalent fail-closed outcome. Persisted claimed state can never recreate the grant.
+It compares expected permit ID/revision/state; exact immutable Admission Snapshot/Vector digest; current ownership fence/takeover authority; and authoritative claim time. Claim and ownership takeover share one serializable authority boundary: takeover-first makes a stale claim fail, while claim-first makes takeover observe and quiesce `INVOCATION_CLAIMED_UNRESOLVED`. It succeeds once and durably persists claimant identity/fence, claim sequence/revision, authoritative claim time, and claim digest/integrity. Only the caller that performs the transition receives the non-durable event-local result `CLAIM_GRANTED_NOW`. Every later caller gets already-claimed, conflict, invalid, expired, or equivalent fail-closed outcome. Persisted claimed state can never recreate the grant.
 
-The immutable Admission Version Vector binds ownership fence/lease/takeover; Producer Trust identity/generation/status/scope/validity; Hard Kill state/generation; account namespace/epoch/mode observation; Basket ID/version; current request identity/state/set revision; symbol specification; margin authority identity/generation/digest/freshness; resulting Basket-risk authority identity/generation/digest; V5 Risk authorization ID, candidate canonical authorization digest, and exclusive expiry; request/attempt/payload digest; validation clock ID/sequence/time; and policy identity. Every host-accepted admission-invalidating authority change advances monotonic `admission_revision` in the serialized host stream without replacing the underlying domain authority.
+The immutable Submission Admission Version Vector binds ownership fence and separate lease-liveness/takeover evidence; Producer Trust identity/generation/status/scope/validity; Hard Kill state/generation/release evidence; account namespace/epoch/mode observation; Basket ID/version; current request identity/state/set revision; symbol specification; margin authority identity/generation/digest/freshness; resulting Basket-risk authority identity/generation/digest; V5 Risk authorization ID, candidate canonical authorization digest, and exclusive expiry; request/attempt/payload digest; permit; validation clock ID/sequence/time; and policy identity. The vector, not a host counter, is authoritative safety evidence.
 
-Immediately before claim, the host obtains current authority, invokes the real V5 `ISWV5RiskContract::ValidateAuthorization(context, authorization, current_binding, decision)`, and validates current Producer Trust, Hard Kill, ownership, account, Basket, request/set, Unit/specification, payload, margin/Basket-risk evidence, and expiries. The claim CAS rechecks that vector/revision and authoritative time. Expiry equality or any change denies claim and broker call.
+Immediately before claim, the host executes ADR-019 in the same serialized event, invokes the real V5 `ISWV5RiskContract::ValidateAuthorization(context, authorization, current_binding, decision)` against exactly the resulting snapshot, and validates every bound at authoritative claim time. The claim CAS rechecks the snapshot digest, exact permit, ownership/takeover, and claim time. Expiry equality, any collect mismatch, or any validation failure denies claim and broker call.
+
+### Coherent Admission Snapshot Protocol
+
+ADR-019 defines the **Submission Admission Version Vector** as the authoritative immutable admissibility snapshot. Each sole owner must return its complete immutable safety record and stable token in one coherent read. Every token is mutation-advancing, non-reusable/ABA-resistant, scope-bound, and payload-bound; the builder cannot manufacture one.
+
+| Authority | Sole owner | Stable comparison token | Time-bound? |
+|---|---|---|---|
+| Ownership authority | Instance Ownership | complete `SWV5_OwnershipFence`: namespace, owner, lease version, takeover generation, fencing digest | Lease liveness is time-bound |
+| Lease liveness | Instance Ownership | `SWV5_InstanceLease` fence/status/store revision/heartbeat sequence/clock sequences and times | Yes |
+| Producer Trust | Producer Trust Authority | record ID, generation, digest, status, supersession, producer scope | Exact validity interval |
+| Hard Kill | Risk Governance / release authority | latch ID/generation/state, release generation/reference/sequence/digest, state digest | Release evidence where applicable |
+| Account/mode observation | V5 Risk/account authority source | complete `SWV5_AccountRiskNamespace`, snapshot epoch/sequence, candidate canonical full-record observation identity/digest | Freshness-bound |
+| Basket | Basket State Machine | Basket ID, state version, candidate canonical complete-lifecycle digest | Must remain current |
+| Request/request set | Execution / Fenced Publication | correlation/attempt/state, request-set digest, request-index revision, record sequence, candidate complete-request digest | Must remain current |
+| Symbol specification | Unit System / specification source | symbol, specification sequence, candidate canonical complete-specification digest | `valid_until`/freshness |
+| Margin authority | Broker Adapter margin authority | authority-record ID/sequence/digest, observation sequence, issuing source and exact scope | Freshness-bound |
+| Basket-risk authority | Risk Gate / Basket-risk source | authority-record ID/sequence/digest, observation sequence, source-snapshot ID/digest and exact scope | Freshness-bound |
+| Risk authorization | Risk Gate / Risk Governance | authorization ID, risk snapshot epoch/sequence, complete-authorization digest, exclusive expiry | Yes |
+| Normalized payload | Execution using Unit result | normalization/intent identity, spec sequence, correlation/attempt, payload digest | Inherits referenced bounds |
+| Submission Permit | Permit authority | permit ID/revision/state/digest and exact binding | Policy-bound |
+| Validation clock | `SWV5_ContractValidationContext` authority | clock ID/authority and nonregressing clock/evaluation sequences and times for both collects and claim | Yes |
+| Policy/format | Version Policy | contract/schema/minimum-compatible versions, policy and canonical-format IDs/versions | Compatibility-bound |
+
+Broker/account evidence uses authoritative record identity, generation/sequence, digest, observation sequence, and freshness rather than naked numeric values. Same-owner heartbeat may keep the ownership-authority fence stable while advancing the separate liveness/store token. Takeover advances ownership authority and invalidates the stale owner. If any authority cannot provide the stated coherent immutable read and token properties, Phase B/runtime admission stops rather than weakening the protocol.
+
+One non-reentrant host event performs the stable double collect:
+
+1. collect complete `V1` and validate every record/token/binding;
+2. collect complete `V2` and validate identically;
+3. require equality of every safety identity/version/generation/sequence/revision/fence/digest/status plus namespace, scope, request, attempt, permit, and payload binding;
+4. require one authoritative clock identity/authority with nonregressing per-collect sequence/time;
+5. obtain authoritative current claim time and recheck every validity, exclusive expiry, and freshness bound; and
+6. on equality construct immutable snapshot `S`; otherwise discard and bounded-retry or fail closed.
+
+`V1 == V2` means equal complete safety projections and bindings. Observation timestamps themselves may advance and are retained in `S`; the reads are not claimed atomically simultaneous. Equal consecutive complete projections establish the **Admission Snapshot Linearization Point** in their stable interval. A token change committed before that point is observed or invalidates the pair. A change ordered after a valid snapshot and successful claim follows existing post-claim rules. This is not a distributed transaction.
+
+For example, if `V1` sees Trust `T1`, Basket `B1`, and Hard Kill `H1`, then Trust commits `T2=REVOKED` before Collect 2, the Trust generation/status/digest differs, `S` is not created, and no claim occurs. The same proof applies to Hard Kill, Basket, symbol specification, account epoch/mode, request set, margin, Basket-risk, Risk authorization, ownership, and every vector member. If those authorities begin or commit only after the stable point—even if physically before the adapter call—and the remaining validation and claim requirements pass, admission is logically ordered first. The claimed attempt remains potentially external and must reconcile; no second invocation or new increasing authority is created.
+
+Snapshot `S` is not reusable. The same event constructs it, validates the real V5 Risk authorization against its exact binding, checks time bounds, claims, and—only for `CLAIM_GRANTED_NOW`—calls the adapter once. There is no queue/defer/scheduling/restart boundary. Interruption before claim destroys invocation authority; a later event starts a new double collect. Equality at exclusive expiry fails closed.
+
+The snapshot digest uses frozen canonical framing, typed domain `SWV5-SPRINT5-ADMISSION-SNAPSHOT-V1`, and every vector field plus both collect-clock observations, final claim-time observation, permit binding, policy, and format in fixed order, excluding only its own digest. The complete record appends the digest. Digest equality proves content identity only, never freshness, trust, liveness, or authorization.
+
+The Builder/Validator reads, validates, compares, and constructs immutable evidence. It owns no Trust, Hard Kill, Basket, Risk, request sequence, ownership, direction, or domain policy.
 
 ### Exactly-Once Adapter Admission Proof
 
@@ -344,7 +388,7 @@ Only transaction/deal evidence correlated to the logical request, broker identit
 
 ## Broker Adapter Boundary
 
-The future Broker Adapter is the only component allowed to translate between V5 DTOs and platform-specific broker facilities. Phase A.2 contains no adapter implementation.
+The future Broker Adapter is the only component allowed to translate between V5 DTOs and platform-specific broker facilities. Phase A.3 contains no adapter implementation.
 
 Conceptual side-effect inputs are an already-normalized V5 request, its exact unique current attempt, matching permit/claim/vector, and the event-local `CLAIM_GRANTED_NOW` returned to that same serialized host event. The adapter rejects invocation without exact permit/request/attempt/payload/vector match and that non-replayable result. Reading `INVOCATION_CLAIMED_UNRESOLVED` is insufficient. The adapter consumes the event-local grant and never creates, renews, reconstructs, or broadens it. Conceptual outputs are raw submission evidence, raw retcode evidence, immutable transaction evidence, independently authoritative margin records, symbol specifications, and complete Broker-owned positions/orders/deals/transactions query snapshots.
 
@@ -381,7 +425,7 @@ Before runtime eligibility, the host uses fenced checkpoint publication for `cle
 
 A failed CAS preserves the prior authoritative record. A crash/failure between related writes creates dirty/unresolved state, revokes runtime eligibility, and requires complete restart reconciliation. No later publication may infer an earlier success, manufacture missing state, or reinterpret a partial publication. Only orderly shutdown after all domains converge may publish `clean_shutdown=true`.
 
-Ingress Ledger, Request Sequence Authority, pending-request set, checkpoint, and Submission Permit/Invocation Claim remain separate durable domains. Partial combinations fail readiness and reconcile deterministically; there is no global transaction. The complete pending-request array, accepted identity sets, Hard Kill provenance, ownership authority, ingress/request bindings/reservations, permits/claims, publication revisions, admission revision/vector, and reconciliation state cannot be reconstructed from the last request, current positions, logs, or counters after restart.
+Ingress Ledger, Request Sequence Authority, pending-request set, checkpoint, and Submission Permit/Invocation Claim remain separate durable domains. Partial combinations fail readiness and reconcile deterministically; there is no global transaction. The complete pending-request array, accepted identity sets, Hard Kill provenance, ownership authority, ingress/request bindings/reservations, permits/claims, publication revisions, audit-only prior Admission Snapshots, and reconciliation state cannot be reconstructed from the last request, current positions, logs, or counters after restart.
 
 ## Fail-Closed Startup And Restart Gate
 
@@ -398,13 +442,13 @@ The host begins runtime-disabled. A clean shutdown is evidence, never a bypass. 
 9. Load and validate current Producer Trust for every nonterminal ingress/request origin. Revoked/superseded pre-materialization work becomes `TERMINALLY_BLOCKED_TRUST_REVOKED`; later states follow the defined before/after-claim policy.
 10. Converge ingress/request bindings and Request Sequence reservations; replay returns the same reservation and never creates a second request.
 11. Inspect every permit and Invocation Claim. Invalidate/audit prior-owner unclaimed permits; preserve claimed-unresolved attempts and block invocation, competing permit, increasing execution, and retry.
-12. Validate current fenced request-set/checkpoint publication state/revisions, current `admission_revision`, and Admission Version Vector. Restart never regenerates `CLAIM_GRANTED_NOW`.
+12. Validate current fenced request-set/checkpoint publication state/revisions. Treat persisted prior Admission Snapshots/Vectors as audit/correlation evidence only; restart never restores them as executable authority or regenerates `CLAIM_GRANTED_NOW`.
 13. Resolve uncertain or pending requests from authoritative transaction/deal/request evidence; never retry solely because the process restarted.
 14. Validate every accepted-event/ingress identity set, fingerprint/membership policy, producer high-watermark, and compaction generation so replay remains idempotent.
 15. Require `SWV5_RESTART_SAFE_TO_RESUME` and the required reconciled Basket state. Every other disposition remains disabled, close-only, halted, or reconciliation-required.
 16. Use the specifically scoped V5 `PublishRestartQueryWatermarks()` for its exact reconciled proposal; do not treat it as general publication atomicity.
 17. Publish/verify open-session `clean_shutdown=false` through fenced checkpoint authority and revalidate lease liveness, Producer Trust, Hard Kill, account mode, symbol specification, request-set publication, and Risk authority.
-18. Only then may the host mark the namespace runtime-eligible. Later Producer Trust revocation/supersession, request/checkpoint publication CAS failure, sequence conflict/corruption, claim conflict, Submission Authority corruption, admission-revision mismatch, or any existing V5 revocation condition disables it.
+18. Only then may the host mark the namespace generally runtime-eligible. Every new Invocation Claim still requires a fresh ADR-019 coherent snapshot. Later Producer Trust revocation/supersession, request/checkpoint publication CAS failure, sequence conflict/corruption, claim conflict, Submission Authority corruption, or any existing V5 revocation condition disables it.
 
 A new namespace with no record must use an explicitly provisioned genesis policy and fresh zero-state reconciliation; absence is not evidence that Hard Kill, exposure, or prior requests are clean. The physical store, platform query implementation, and provisioning credentials remain later-phase decisions.
 
@@ -415,7 +459,7 @@ Reconciliation is never positions-only. The mandatory query union is exactly:
 - Broker Adapter: positions, orders, deals, transactions
 - Execution Coordinator: pending requests
 
-Required identity also includes namespace, account mode, Basket state/version, long/short/net/aggregate/Basket/residual volume, order/position/request counts, latest confirmed correlation and broker identity, transaction watermark, request-set digest/revision, Hard Kill generation, ownership fence, Producer Trust generation/status for nonterminal origins, sequence reservations, publication revisions, permits/claims, admission revision/vector, and reconciliation revision. Incomplete, stale, replayed, mixed-owner, unknown-bit, future-dated, or ambiguous evidence fails closed.
+Required identity also includes namespace, account mode, Basket state/version, long/short/net/aggregate/Basket/residual volume, order/position/request counts, latest confirmed correlation and broker identity, transaction watermark, request-set digest/revision, Hard Kill generation, ownership fence, Producer Trust generation/status for nonterminal origins, sequence reservations, publication revisions, permits/claims, audit-only prior Admission Snapshot/vector identity, and reconciliation revision. Incomplete, stale, replayed, mixed-owner, unknown-bit, future-dated, or ambiguous evidence fails closed.
 
 ## Basket, Recovery, Hard Kill, And Statistics
 
@@ -480,12 +524,19 @@ All execution numeric terms cross `ISWV5UnitSystemContract`. Point, tick, pip, p
 | Lease lost before claim | Old host cannot claim; new owner cannot use old permit | Instance Ownership / Submission Authority |
 | Takeover sees claimed attempt | Preserve `INVOCATION_CLAIMED_UNRESOLVED`; V5 reconciliation-required/uncertain; block increasing execution/retry | New owner / Execution |
 | Hard Kill after claim | Preserve uncertain attempt; block new increase; reconcile; reduce/close only if separately authorized | Risk Governance / Execution |
-| Risk/trust/admission binding changed at claim | Invocation Claim CAS fails; no broker call | Risk / Host Admission Gate |
+| Risk/trust/admission binding changed before coherent snapshot | Stable collect differs or validation fails; no claim or broker call | Relevant sole authority / Admission Gate |
 | Risk expiry exactly at claim boundary | Exclusive expiry fails current V5 validation and claim; no broker call | Risk / Invocation Claim |
 | Sequence reservation orphan | Replay correlation returns same reservation; gap allowed; no second request | Request Sequence Authority |
 | Stale complete request-set publication | Expected set/store/fence mismatch fails with no overwrite; runtime disabled | Fenced Runtime Publication Authority |
 | Stale checkpoint publication | Expected checkpoint/store/fence mismatch fails even with larger sequence | Fenced Runtime Publication Authority |
-| Admission revision mismatch | Claim fails; no broker call; rebuild only from current authorities | Host Admission Gate |
+| `V1 != V2` or Trust/Hard Kill/Basket/other token changes between collects | Discard snapshot; bounded retry or fail closed; no claim | Relevant sole authority / Admission Gate |
+| Invalid or missing stable authority token | Fail closed; no snapshot, claim, or broker call | Relevant sole authority |
+| Authority expires during collect | Discard snapshot; no claim | Relevant time-bound authority |
+| Authority expires before claim | Final time-bound validation fails; no claim | Relevant time-bound authority / Invocation Claim |
+| No stable pair after bounded attempts | Stop admission; availability loss accepted | Admission Gate |
+| Event interrupted after snapshot but before claim | Snapshot authority is lost; later event must recollect | EA Host / Invocation Claim |
+| Admission Snapshot digest mismatch | Reject as corrupt/conflicting; no claim | Admission Gate / Submission Authority |
+| Persisted Admission Snapshot replay | Audit/correlation only; recollect current authorities; no claim from record | Host / Invocation Claim |
 | State publication partially completed | Runtime disabled; preserve each prior authority; full restart reconciliation | Persistence / Host gate |
 | Queue overload or captured-event loss | Stop admission; mark stream unreliable; halt/reconcile from authoritative queries | EA Host / Broker Adapter |
 
@@ -493,50 +544,53 @@ All execution numeric terms cross `ISWV5UnitSystemContract`. Point, tick, pip, p
 
 `Settled for Phase B` means pure DTO/validator/interface semantics are fixed; it does not authorize Phase B or claim later runtime evidence.
 
-| # | Threat | Authoritative owner | Safe disposition | Settled for Phase B | Later dependency |
-|---:|---|---|---|---|---|
-| 1 | Duplicate signal | Ingress Ledger | Resolve prior identity/disposition; no second request | Yes | Phase D storage/compaction |
-| 2 | Replay after restart | Ingress Ledger / Execution | Recover prior binding by deterministic request ID | Yes | Phase D durable store |
-| 3 | Producer restart / sequence reset | Producer Trust | Reject same-epoch reset; require newly authorized epoch | Yes | Deployment provisioning |
-| 4 | Stale signal | Signal Ingress | Reject at exclusive max-age/future-skew boundary | Yes | Policy thresholds |
-| 5 | Two EA hosts | Instance Ownership | Conflict/halt; one current fence only | Yes | Phase D CAS technology |
-| 6 | Lease takeover | Ownership / Host gate | Reconcile ledger, sequence, publication, permits/claims, admission vector, and V5 state | Yes | Phase D store/lease implementation |
-| 7 | Lease loss during submission | Submission Authority | Before claim: no call and invalidate old permit; after claim: uncertain, no duplicate | Yes | Phase D journal; Phase F evidence |
-| 8 | Duplicate callback | Execution | Durable idempotent no-op | Yes | Phase C fixtures |
-| 9 | Out-of-order callback | Execution | Apply V5 sequence policy once or reconcile | Yes | Phase F broker ordering profile |
-| 10 | Partial fill | Execution / Basket | Persist cumulative/residual state; no completion | Yes | Phase E integration fixtures |
-| 11 | Acknowledgement without confirmation | Execution | Remain confirmation-pending; no Basket/Statistics mutation | Yes | Phase C fixtures |
-| 12 | Unknown broker disposition | Execution / Invocation Claim | `UNCERTAIN`/reconciliation; no retry | Yes | Phase F negative-evidence policy |
-| 13 | Crash before broker call | Invocation Claim | Before claim: no external authority; after claim: uncertain/no re-invocation | Yes | Phase D journal; Phase F evidence |
-| 14 | Crash after broker call | Execution / Invocation Claim | Claimed unresolved until authoritative broker/history reconciliation | Yes | Phase F broker evidence |
-| 15 | Restart with pending request | Host / Persistence / Execution | Runtime disabled; reconcile V5 plus trust/sequence/publication/claims; no regenerated grant | Yes | Phase D reference implementation |
-| 16 | Dirty shutdown | Host / Persistence | `clean_shutdown=false`; full restart gate | Yes | Phase D crash tests |
-| 17 | Corrupt persistence | Persistence | Preserve; contract disposition; no self-heal | Yes | Phase D corruption tests |
-| 18 | Hard Kill during pending request | Risk / Execution / Claim | Pre-claim blocks claim; post-claim preserves uncertainty; authorized reduction only | Yes | Phase E fixtures |
-| 19 | Historical RELEASED Hard Kill without provenance | Risk Governance | Reject release; remain disabled/latched | Yes | Deployment authority storage |
-| 20 | Broker reconnect | Broker Adapter / Execution | Preserve uncertainty; refresh complete authority and reconcile | Yes | Phase F profile |
-| 21 | Incomplete broker query set | Broker Adapter / Persistence | Runtime disabled; fail reconciliation | Yes | Phase F query implementation |
-| 22 | Missing Execution pending-request query | Execution / Persistence | Runtime disabled; fail reconciliation | Yes | Phase D/E implementation |
-| 23 | Replayed query snapshot | Persistence | Reject against owner-specific high-watermark | Yes | Existing V5 / Phase D |
-| 24 | Non-finite broker data | Receiving V5 domain | Reject before Risk/state/Statistics/persistence mutation | Yes | Phase E/F fixtures |
-| 25 | Unit mismatch | Unit System | Invalidate normalization, Risk, permit, and request | Yes | Phase E/F fixtures |
-| 26 | Account-mode change | Host / bound V5 domains | Advance admission revision; claim fails; halt HEDGING-only runtime | Yes | Existing V5 / Phase C |
-| 27 | Persistence CAS failure | Publication / Host gate | Preserve prior record; disable runtime; reconcile; never stale-overwrite | Yes | Phase D technology |
-| 28 | Statistics replay | Statistics | Durable idempotent no-op; never double-count | Yes | Phase E fixtures |
-| 29 | Genesis/no-record startup | Operations / Risk / Host gate | No assume-clean; provision genesis and reconcile zero state | Yes | Phase D provisioning implementation |
-| 30 | Queue overload/event loss | EA Host / Broker Adapter | Stop admission; mark stream unreliable; authoritative reconciliation | Yes | Phase C queue implementation |
-| 31 | Duplicate orchestration event after claim | Invocation Claim | Later claim returns already-claimed; no adapter invocation | Yes | Phase C deterministic fixtures |
-| 32 | Restart after claim before broker call | Host / Invocation Claim | Load uncertain state only; never regenerate `CLAIM_GRANTED_NOW` | Yes | Phase D crash fixtures |
-| 33 | Producer Trust revoked after acceptance | Producer Trust / Ledger / Execution | Apply before-request, before-claim, or after-claim fail-closed lifecycle | Yes | Phase B/C trust fixtures |
-| 34 | Two producer epochs allocate concurrently | Request Sequence Authority | One namespace-wide linearizable allocator; unique monotonic reservations | Yes | Phase D allocator store |
-| 35 | Stale host complete-set overwrite | Fenced Runtime Publication | Expected set/store/fence mismatch; no write | Yes | Phase D physical CAS proof |
-| 36 | Stale host checkpoint overwrite | Fenced Runtime Publication | Expected checkpoint/store/fence mismatch; no write | Yes | Phase D physical CAS proof |
-| 37 | Risk/Hard Kill changes between permit and claim | Admission Gate / Risk | Advance revision; final V5 validation/vector CAS denies claim | Yes | Phase C/E fixtures |
-| 38 | Invocation Claim race between events/hosts | Invocation Claim / Ownership | One CAS winner receives event-local grant; all others fail closed | Yes | Phase C/D concurrency fixtures |
+| # | Threat | Authoritative owner | Comparison token | Safe disposition / Phase B semantics | Settled for Phase B | Later dependency |
+|---:|---|---|---|---|---|---|
+| 1 | Duplicate signal | Ingress Ledger | ingress ID/digest + ledger revision | Resolve prior disposition; no second request | Yes | Phase D storage/compaction |
+| 2 | Replay after restart | Ingress Ledger / Execution | ingress binding + deterministic request ID/set revision | Recover prior binding; no second request | Yes | Phase D durable store |
+| 3 | Producer restart / sequence reset | Producer Trust | trust generation + producer epoch/publication sequence | Reject same-epoch reset; require newly authorized epoch | Yes | Deployment provisioning |
+| 4 | Stale signal | Signal Ingress | snapshot/publication sequence + authoritative times | Reject at exact exclusive boundary | Yes | Policy thresholds |
+| 5 | Two EA hosts | Instance Ownership | ownership fence/takeover generation/digest | Conflict/halt; one current fence only | Yes | Phase D CAS technology |
+| 6 | Lease takeover | Ownership / Host gate | fence/takeover + separate lease store/heartbeat tokens | Reconcile all domains; invalidate stale owner | Yes | Phase D store/lease implementation |
+| 7 | Lease loss during submission | Submission Authority | fence/takeover + permit/claim revision | Pre-claim no call; post-claim uncertain/no duplicate | Yes | Phase D journal; Phase F evidence |
+| 8 | Duplicate callback | Execution | broker event/transaction identity + accepted-set revision | Durable idempotent no-op | Yes | Phase C fixtures |
+| 9 | Out-of-order callback | Execution | transaction sequence/watermark | Apply V5 policy once or reconcile | Yes | Phase F broker ordering profile |
+| 10 | Partial fill | Execution / Basket | request-set digest/index revision/record sequence + Basket state version | Persist cumulative/residual; no completion | Yes | Phase E integration fixtures |
+| 11 | Acknowledgement without confirmation | Execution | request-set digest/index revision/record sequence + evidence identity | Remain confirmation-pending; no Basket/Statistics mutation | Yes | Phase C fixtures |
+| 12 | Unknown broker disposition | Execution / Invocation Claim | claim revision + broker evidence/query snapshot tokens | `UNCERTAIN`; no retry | Yes | Phase F negative-evidence policy |
+| 13 | Crash before broker call | Invocation Claim | permit/claim revision + event-local grant | Before claim no authority; after claim uncertain/no re-invocation | Yes | Phase D journal; Phase F evidence |
+| 14 | Crash after broker call | Execution / Invocation Claim | claim revision + broker evidence identity | Claimed unresolved until reconciliation | Yes | Phase F broker evidence |
+| 15 | Restart with pending request | Host / Persistence / Execution | checkpoint/set/store/query revisions | Reconcile; no restored snapshot or regenerated grant | Yes | Phase D reference implementation |
+| 16 | Dirty shutdown | Host / Persistence | checkpoint record/store revision + clean flag | Full restart gate | Yes | Phase D crash tests |
+| 17 | Corrupt persistence | Persistence | header/digest/store revision | Preserve; contract disposition; no self-heal | Yes | Phase D corruption tests |
+| 18 | Hard Kill during pending request | Risk / Execution / Claim | latch ID/generation/state/release digest | Pre-claim blocks; post-claim uncertainty; reduction only | Yes | Phase E fixtures |
+| 19 | Historical RELEASED Hard Kill without provenance | Risk Governance | latch/release generation + release-authority reference/digest | Reject release; remain disabled/latched | Yes | Deployment authority storage |
+| 20 | Broker reconnect | Broker Adapter / Execution | authoritative query observation sequence/digest | Preserve uncertainty; refresh/reconcile | Yes | Phase F profile |
+| 21 | Incomplete broker query set | Broker Adapter / Persistence | query-set mask/identity/sequence/digest | Runtime disabled; fail reconciliation | Yes | Phase F query implementation |
+| 22 | Missing Execution pending-request query | Execution / Persistence | pending-query identity/sequence/digest | Runtime disabled; fail reconciliation | Yes | Phase D/E implementation |
+| 23 | Replayed query snapshot | Persistence | owner-specific observation sequence/high-watermark | Reject replay | Yes | Existing V5 / Phase D |
+| 24 | Non-finite broker data | Receiving V5 domain | evidence identity/digest | Reject before mutation | Yes | Phase E/F fixtures |
+| 25 | Unit mismatch | Unit System | specification sequence/digest + normalization identity | Invalidate normalization, Risk, permit, request | Yes | Phase E/F fixtures |
+| 26 | Account-mode change | V5 Risk/account authority source | complete account namespace including mode/source/epoch/sequence + candidate canonical observation identity/digest | Different collect token invalidates snapshot; claim fails; halt non-HEDGING runtime | Yes | Existing V5 / Phase C account observation |
+| 27 | Persistence CAS failure | Publication / Host gate | expected store/publication revision + fence | Preserve prior record; disable/reconcile | Yes | Phase D technology |
+| 28 | Statistics replay | Statistics | durable deal identity membership/revision | Idempotent no-op; never double-count | Yes | Phase E fixtures |
+| 29 | Genesis/no-record startup | Operations / Risk / Host gate | provisioned genesis identity/version/digest | No assume-clean; reconcile zero state | Yes | Phase D provisioning implementation |
+| 30 | Queue overload/event loss | EA Host / Broker Adapter | host event sequence + reliability generation | Stop admission; authoritative reconciliation | Yes | Phase C queue implementation |
+| 31 | Duplicate orchestration event after claim | Invocation Claim | permit/claim revision/state/digest | Already-claimed; no adapter invocation | Yes | Phase C deterministic fixtures |
+| 32 | Restart after claim before broker call | Host / Invocation Claim | claim revision/state/digest | Load uncertain only; never regenerate grant | Yes | Phase D crash fixtures |
+| 33 | Producer Trust revoked after acceptance | Producer Trust / Ledger / Execution | trust record ID/generation/status/supersession/digest/validity | Before stable point: pair/validation fails and no claim; after successful claim: post-claim rules | Yes | Phase B/C trust fixtures and authority store |
+| 34 | Two producer epochs allocate concurrently | Request Sequence Authority | namespace allocator revision + reservation digest | Unique monotonic idempotent reservation | Yes | Phase D allocator store |
+| 35 | Stale host complete-set overwrite | Fenced Runtime Publication | set/store revision + fence + set digest | Mismatch; no write | Yes | Phase D physical CAS proof |
+| 36 | Stale host checkpoint overwrite | Fenced Runtime Publication | checkpoint/store revision + fence + digest | Mismatch; no write | Yes | Phase D physical CAS proof |
+| 37 | Risk/Hard Kill/trust change between permit and claim | Relevant sole authorities / Admission Gate | Risk auth digest/expiry + Hard Kill generation/digest + Trust generation/status/digest | Stable collect or final V5/time validation denies claim; post-snapshot successful-claim changes use post-claim rules | Yes | Phase C/E stable-collect and revocation fixtures |
+| 38 | Invocation Claim race between events/hosts | Invocation Claim / Ownership | permit/claim revision + fence/takeover generation | One CAS winner gets event-local grant | Yes | Phase C/D concurrency fixtures |
+| 39 | Authority changes between Admission Collect 1 and Collect 2 | Relevant sole authority / Admission Gate | the changed row's payload-bound stable token | `V1 != V2`; discard/bounded retry or fail closed; no claim | Yes | Phase B validator; Phase C concurrency fixtures |
+| 40 | Stale Admission Snapshot replay after restart | Host / Invocation Claim | snapshot digest plus permit/claim state and current owner tokens | Audit only; new same-event collect required; no claim from persisted snapshot | Yes | Phase D restart fixtures |
+| 41 | Snapshot becomes time-expired before Invocation Claim | Time-bound authority / Invocation Claim | authoritative claim clock + included exclusive expiry/freshness bounds | Final bound check fails; equality at expiry fails; no claim | Yes | Phase B boundary tables; Phase C clock fixtures |
 
 ## Observability And Traceability
 
-Every audit event must carry, where applicable: ingress identity and Producer Trust record/generation/status; snapshot sequence/history generation/symbol/timeframe; host event sequence; persistence namespace and Basket ID; ownership fence lease/takeover generation; request-sequence reservation/allocator revision; logical correlation/attempt/idempotency identity; lifecycle phase/request state/set revision; permit/claim ID/state/revision and `admission_revision`/vector digest; broker order/deal/position/event/transaction identity; Risk authorization and Hard Kill latch/generation; symbol-specification sequence; Basket state/version; accepted-event index revision; checkpoint record/store/reconciliation revisions; authoritative timestamp/source; and reason/disposition.
+Every audit event must carry, where applicable: ingress identity and Producer Trust record/generation/status; source snapshot sequence/history generation/symbol/timeframe; host event sequence; persistence namespace and Basket ID; ownership fence lease/takeover generation; request-sequence reservation/allocator revision; logical correlation/attempt/idempotency identity; lifecycle phase/request state/set revision; permit/claim ID/state/revision; Admission Snapshot/vector digest and collect/claim clock observations; broker order/deal/position/event/transaction identity; Risk authorization and Hard Kill latch/generation; symbol-specification sequence; Basket state/version; accepted-event index revision; checkpoint record/store/reconciliation revisions; authoritative timestamp/source; and reason/disposition.
 
 Logs and dashboard DTOs are read-only projections. Log presence, ordering, or text is never accepted as confirmation, idempotency membership, release authority, checkpoint publication, or broker truth.
 
@@ -558,7 +612,7 @@ Logs and dashboard DTOs are read-only projections. Log presence, ordering, or te
 14. Persistence cannot self-heal corrupted authority or manufacture broker/release truth.
 15. Unit normalization is centralized through the approved V5 Unit contract.
 16. `ProductionArchitecture` cannot include Signal Engine headers directly.
-17. Sprint 5 Phase A.2 authorizes no runtime code, broker API, or Phase B implementation.
+17. Sprint 5 Phase A.3 authorizes no runtime code, broker API, or Phase B implementation.
 18. Every authoritative state change is returned by its owning contract and published through that contract's actual operation boundary before a dependent action; no general V5 multi-domain atomicity is assumed.
 19. A stale ownership fence cannot mutate/publish authoritative state or claim invocation; an unclaimed permit cannot migrate, and claimed state can never regenerate invocation authority.
 20. Signal, logical request, broker execution, Basket, and persistence identities remain distinct and explicitly correlated.
@@ -571,15 +625,18 @@ Logs and dashboard DTOs are read-only projections. Log presence, ordering, or te
 27. Only the serialized event receiving `CLAIM_GRANTED_NOW` from the one successful `TryClaimInvocation()` transition may invoke the adapter.
 28. Persisted `INVOCATION_CLAIMED_UNRESOLVED`, duplicate event, restart, takeover, or second host can never regenerate invocation authority.
 29. Successful Invocation Claim is the conservative irreversible boundary; crash-after-claim-before-call is uncertain and not retryable.
-30. Final claim admission requires current real V5 `ISWV5RiskContract::ValidateAuthorization()` and exact current Producer Trust, Hard Kill, ownership, request, Basket, account, Unit/spec, Risk evidence, payload, clock, and Admission Version Vector/revision.
+30. Final claim admission requires an ADR-019 coherent immutable Admission Snapshot, current real V5 `ISWV5RiskContract::ValidateAuthorization()` against exactly that binding, and exact current Producer Trust, Hard Kill, ownership, request, Basket, account, Unit/spec, Risk evidence, payload, clock, and permit.
 31. Current Producer Trust is revalidated before materialization/progression, permit, claim, and restart; revocation cannot create or resurrect increasing authority.
 32. All logical request origins use one fenced, durable, idempotent namespace-wide sequence reservation authority; the Ingress Ledger is not an allocator.
 33. Future normal complete request-set and checkpoint writes use the Fenced Runtime Publication Authority; V5 save methods are never treated as sufficient cross-owner guards by themselves.
 34. Ingress, sequence, request set, checkpoint, and Submission Authority are separate durable domains; no fictitious global transaction exists.
-35. Every admission-invalidating change advances a derived `admission_revision` without replacing the underlying sole authority.
+35. Every admission-invalidating authority supplies a coherent immutable record and mutation-advancing, non-reusable/ABA-resistant, payload-bound stable token; no host/global counter proves cross-domain safety.
 36. Takeover cannot invoke a prior claim or mint a competing permit/retry while a claimed unresolved attempt exists.
 37. Risk/trust/Hard Kill expiry or change at the exact claim boundary fails closed; equality at exclusive expiry denies claim.
 38. Queue overload or event loss revokes admission and requires authoritative reconciliation.
+39. Two consecutive complete equal safety projections establish one Admission Snapshot Linearization Point without claiming a distributed transaction.
+40. An Admission Snapshot is usable only for immediate validation and claim in the same serialized event; interruption, defer, restart, or replay requires a new collect.
+41. Any missing/invalid token, collect mismatch, digest mismatch, or time-bound failure yields no claim; equality at exclusive expiry fails closed.
 
 ## OPEN ARCHITECTURE QUESTIONS
 
@@ -594,14 +651,14 @@ Logs and dashboard DTOs are read-only projections. Log presence, ordering, or te
 | Where are Producer Trust, Hard Kill release, and operator credentials stored and rotated? | Trust semantics are fixed, but secret mechanics are deployment concerns. | Nonblocking for pure contracts | Security/Operations owner | Production deployment |
 | What broker-specific Hedging fixtures and evidence threshold permit a Demo adapter to pass independent audit? | Architecture alone cannot prove broker behavior. | Blocking | Verification authority | Phase F/G |
 
-Phase B requires no new safety decision: ADR-009 and ADR-013 through ADR-018 fix canonical construction, continuing trust, durable replay/binding, namespace-wide sequence reservation, fenced publication, permit reservation, exactly-once claim, and final admission-vector semantics. Remaining questions concern Phase C queue implementation, Phase D physical store/genesis feasibility, Phase F broker profiles/negative evidence/evidence thresholds, or deployment values/credentials. No unresolved question permits an implementation phase to weaken or bypass V5.
+Phase B requires no new safety decision: ADR-009 and ADR-013 through ADR-019 fix canonical construction, continuing trust, durable replay/binding, namespace-wide sequence reservation, fenced publication, permit reservation, exactly-once claim, stable authority tokens, coherent double collect, linearization, expiry, and final snapshot semantics. Remaining questions concern Phase C queue implementation, Phase D physical store/genesis feasibility, Phase F broker profiles/negative evidence/evidence thresholds, or deployment values/credentials. No unresolved question permits an implementation phase to weaken or bypass V5.
 
 ## Proposed Sprint 5 Implementation Phases
 
 | Phase | Scope | Entry gate | Exit gate |
 |---|---|---|---|
-| A.2 | Invocation/publication authority closure and ADRs only | Independent Phase A.1 re-review findings | New independent re-review closes all Critical/Major architecture gaps |
-| B | Pure ingress, Producer Trust, Ledger, Request Sequence, Fenced Publication, Permit, Invocation Claim, Admission Vector/Gate DTOs/interfaces/validators; no broker API | Phase A.2 independently approved and Phase B separately authorized | Compile/static isolation; deterministic table specifications; no runtime dependency or new safety decision |
+| A.3 | Coherent Admission Snapshot correction and ADRs only | Phase A.2 independent re-review's one remaining Major | Final independent re-review closes all Critical/Major architecture gaps |
+| B | Pure ingress, Producer Trust, Ledger, Request Sequence, Fenced Publication, Permit, Invocation Claim, stable-authority token, Admission Vector/Snapshot DTOs/interfaces/validators; no broker API | Phase A.3 independently approved and Phase B separately authorized | Compile/static isolation; deterministic table specifications; no runtime dependency or new safety decision |
 | C | Deterministic single-writer reference coordinator with fake broker only | Phase B contracts approved; queue policy resolved | Event-order, duplicate, replay, uncertainty, partial-fill, and lease-loss fixtures pass |
 | D | Persistence/restart reference implementation against a fake platform/store | Store/genesis ADRs approved | Crash/CAS/corruption/full-query/restart tests pass; no MT5 broker calls |
 | E | Integrated V5 Risk, Basket, transaction, Hard Kill, Statistics, and recovery-boundary fixtures | Phases C/D pass; deployment Risk policy approved | Full positive/negative/cross-domain deterministic suite passes fail-closed |
@@ -612,18 +669,18 @@ No phase authorizes live trading. Any production or live authorization requires 
 
 ### Phase B Contractability Test
 
-**YES:** after independent approval and separate authorization, a Phase B developer can implement only canonical ingress DTOs; Producer Trust, Ingress Ledger, Request Sequence Authority, deterministic request-binding, Fenced Runtime Publication, Submission Permit, Invocation Claim, Admission Version Vector/Gate contracts; and pure orchestration/state interfaces without inventing a new safety-relevant architecture decision. Physical queue/store/lock technology, broker-specific evidence, deployment values, and credentials remain correctly deferred to later phases.
+**YES:** after independent approval and separate authorization, a Phase B developer can implement only canonical ingress DTOs; Producer Trust, Ingress Ledger, Request Sequence Authority, deterministic request-binding, Fenced Runtime Publication, Submission Permit, stable-authority token and Admission Version Vector/Snapshot DTOs, stable double-collect validator, snapshot canonicalization/digest, admission outcome, Invocation Claim consuming the exact snapshot, and pure orchestration/state interfaces without inventing a global counter, cross-domain transaction, new authority policy, coherence rule, or expiry rule. Physical queue/store/lock technology, broker-specific evidence, deployment values, and credentials remain correctly deferred to later phases.
 
 ## Acceptance Criteria And Traceability
 
-### Phase A.2 Independent Re-review Closure Matrix
+### Phase A.3 Independent Re-review Closure Matrix
 
 | Finding | Closure mechanism | Candidate status |
 |---|---|---|
 | NEW CRITICAL-1 no durable exactly-once adapter invocation admission | One durable claim CAS plus non-replayable event-local `CLAIM_GRANTED_NOW`; persisted state/restart/takeover cannot invoke | Closed for re-review |
 | MAJOR Producer Trust revocation after durable acceptance | Continuing revalidation and exact before-request, before-claim, after-claim dispositions | Closed for re-review |
 | MAJOR stale complete pending-request replacement | ADR-018 expected-current/fence/store linearizable request-set publication | Closed for re-review |
-| MAJOR final Risk race before external authority | Real V5 validation plus complete Admission Version Vector/revision compared by claim CAS | Closed for re-review |
+| MAJOR final Risk/admission race from unowned cross-domain counter | ADR-019 owner-supplied stable tokens, complete double collect, coherent snapshot linearization, real V5 validation, same-event claim, and claim-time expiry checks | Closed for re-review |
 | NEW MAJOR no sole request-sequence owner | ADR-017 one namespace-wide fenced idempotent reservation authority for every origin | Closed for re-review |
 | MINOR canonical primitive precision | Strict UTF-8 octet length, Unicode validity/no-normalization, and exact primitive lexical tokens | Closed for re-review |
 
@@ -647,7 +704,7 @@ No phase authorizes live trading. Any production or live authorization requires 
 
 ## Out Of Scope
 
-Phase A.2 explicitly excludes:
+Phase A.3 explicitly excludes:
 
 - `OrderSend`, `OrderSendAsync`, `CTrade`, or any trade call
 - a real Broker Adapter or live `OnTradeTransaction` implementation
@@ -661,8 +718,8 @@ Phase A.2 explicitly excludes:
 
 ## V3S Boundary
 
-V3S remains an independent Research Lab. Its M5 logic, experiments, and discoveries are not Sprint 5 inputs and cannot authorize M15 execution. Any future hypothesis must complete the separate V3S validation and formal Fusion adoption process before it can become a reviewed Signal Engine change. Phase A.2 creates no V3S dependency.
+V3S remains an independent Research Lab. Its M5 logic, experiments, and discoveries are not Sprint 5 inputs and cannot authorize M15 execution. Any future hypothesis must complete the separate V3S validation and formal Fusion adoption process before it can become a reviewed Signal Engine change. Phase A.3 creates no V3S dependency.
 
 ## Review Recommendation
 
-This document is ready to be evaluated as a **Sprint 5 Phase A.2 Invocation & Publication Authority Closure Candidate / In Review** only after its documentation diff passes scope and consistency checks. The required next action is a **New Independent Sprint 5 Architecture Re-review**. Phase B, runtime implementation, broker implementation, Architecture Lock, and production trading remain not granted.
+This document is ready to be evaluated as a **Sprint 5 Phase A.3 Coherent Admission Snapshot Closure — Architecture Corrective Candidate / In Review** only after its documentation diff passes scope and consistency checks. The required next action is the **Final Independent Sprint 5 Architecture Re-review**. Phase B, runtime implementation, broker implementation, Architecture Lock, and production trading remain not granted.

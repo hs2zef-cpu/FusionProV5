@@ -2,7 +2,7 @@
 
 ## Status
 
-Revised proposal for Sprint 5 Phase A.2 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.3 independent architecture re-review.
 
 Governance note: this ADR defines a **Sprint 5 Candidate Contract — NOT V5 existing authority**. It contains no broker implementation.
 
@@ -14,7 +14,7 @@ The Phase A.1 Submission Permit incorrectly made permit commitment the irreversi
 
 A Submission Permit is a durable, fenced, single-use **admission reservation** for one logical request, unique attempt, exact normalized payload, and exact authority binding. Permit creation yields state `COMMITTED_NOT_INVOKED`; it does not consume broker-side-effect authority and never authorizes the Broker Adapter by itself.
 
-The permit binds contract/policy/format, permit ID/revision/digest and commit time; namespace and ownership fence; account namespace/epoch and HEDGING mode; request/attempt; exact normalized payload and symbol-specification sequence; Basket ID/version; Producer Trust record/generation/component/instance/epoch/status/validity policy; V5 Risk authorization and evidence references; Hard Kill identity/generation; and the Admission Version Vector/revision defined by ADR-016. `permit_id` remains the ADR-009 `H` of typed domain `SWV5-SPRINT5-PERMIT-ID-V1`, namespace, permit policy/version, logical request, and unique attempt. The permit digest preimage remains typed domain `SWV5-SPRINT5-SUBMISSION-PERMIT-V1` followed by every permit field except its own digest; the full permit appends it. Same ID with different content is a conflict.
+The permit binds contract/policy/format, permit ID/revision/digest and commit time; namespace and ownership fence; account namespace/epoch and HEDGING mode; request/attempt; exact normalized payload and symbol-specification sequence; Basket ID/version; Producer Trust record/generation/component/instance/epoch/status/validity policy; V5 Risk authorization and evidence references; and Hard Kill identity/generation. It records reservation-time bindings but is not the later authoritative Admission Snapshot. At claim, ADR-019 constructs a new coherent Submission Admission Version Vector that includes this exact permit and requires every permit-constrained binding still to match. `permit_id` remains the ADR-009 `H` of typed domain `SWV5-SPRINT5-PERMIT-ID-V1`, namespace, permit policy/version, logical request, and unique attempt. The permit digest preimage remains typed domain `SWV5-SPRINT5-SUBMISSION-PERMIT-V1` followed by every permit field except its own digest; the full permit appends it. Same ID with different content is a conflict.
 
 Creation is linearizable with current ownership/takeover authority and proves no permit exists for the attempt and no unresolved competing Submission Authority exists for the logical request. It may prepare admission, but the irreversible boundary is the later Invocation Claim in ADR-016.
 

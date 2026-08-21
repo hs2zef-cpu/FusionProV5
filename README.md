@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.2 now defines an Invocation & Publication Authority Closure candidate in documentation only; it contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.3 now defines a Coherent Admission Snapshot Closure candidate in documentation only; it contains no production broker execution.
 
 ## Repository Location
 
@@ -31,13 +31,13 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-Sprint 5 Phase A.2 — Invocation & Publication Authority Closure is **CANDIDATE / IN REVIEW** after the Phase A.1 re-review returned `FAIL / NOT SAFE FOR PHASE B`. Phase A.2 separates permit reservation from exactly-once Invocation Claim, defines continuing Producer Trust revocation behavior, one namespace-wide Request Sequence Authority, fenced request-set/checkpoint publication, an Admission Version Vector/revision with final V5 Risk validation, strict canonical UTF-8 primitive framing, and a 38-case threat model. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
+Sprint 5 Phase A.3 — Coherent Admission Snapshot Closure is **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW** after the Phase A.2 final independent re-review returned `FAIL` with no Critical findings and one Phase-B-blocking Major. Phase A.3 removes the unowned host admission counter from safety authority and defines owner-supplied stable tokens, a coherent double collect, a canonical immutable Admission Snapshot, exact V5 Risk validation, immediate same-event Invocation Claim, and a 41-case threat model. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4 contains contract architecture and test-only verification only: it contains no broker execution, production EA implementation, or Signal-to-Execution runtime wiring. The next gate is a **New Independent Sprint 5 Architecture Re-review**. Phase B, Architecture Lock, runtime authorization, broker execution authorization, production authorization, and live-trading approval are not granted.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4 contains contract architecture and test-only verification only: it contains no broker execution, production EA implementation, or Signal-to-Execution runtime wiring. The next gate is the **Final Independent Sprint 5 Architecture Re-review**. Phase B, Architecture Lock, runtime authorization, broker execution authorization, production authorization, and live-trading approval are not granted.
 
 ## Repository Workflow
 

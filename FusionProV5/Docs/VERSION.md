@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase A.2 — Invocation & Publication Authority Closure Candidate
+Sprint 5 Phase A.3 — Coherent Admission Snapshot Closure Candidate
 
 ### Date
 
@@ -14,21 +14,21 @@ Sprint 5 Phase A.2 — Invocation & Publication Authority Closure Candidate
 
 **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW — PHASE B NOT AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Phase A.1 re-review failed with one new Critical, four Major, and one Minor remaining finding. Sprint 5 Phase A.2 is the documentation-only correction candidate; its continuing Producer Trust, Ingress Ledger, Request Sequence Authority, deterministic request binding, Fenced Runtime Publication Authority, Submission Permit, Invocation Claim, and Admission Version Vector/Gate are future Sprint 5 Candidate Contracts, not existing V5 authority. It does not modify or runtime-wire the frozen Sprint 3.2.1 Signal Engine.
+Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Phase A.2 final independent re-review failed with no Critical findings and one Phase-B-blocking Major: an unowned host counter could not prove cross-domain admission coherence. Sprint 5 Phase A.3 is the documentation-only correction candidate; its owner-supplied stable tokens, coherent Admission Version Vector/Snapshot, stable double collect, and same-event V5 Risk validation/Invocation Claim are future Sprint 5 Candidate Contracts, not existing V5 authority. It does not modify or runtime-wire the frozen Sprint 3.2.1 Signal Engine.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
-- Phase B: **NOT AUTHORIZED BY PHASE A.2**
+- Phase B: **NOT AUTHORIZED BY PHASE A.3**
 
 ## Current Architecture Candidate
 
-Sprint 5 Phase A.2 — Invocation & Publication Authority Closure
+Sprint 5 Phase A.3 — Coherent Admission Snapshot Closure
 
 - Status: **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW**
 - Scope: architecture and ADR documentation only
-- Next gate: **New Independent Sprint 5 Architecture Re-review**
+- Next gate: **Final Independent Sprint 5 Architecture Re-review**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -105,6 +105,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Perform a new Independent Sprint 5 Architecture Re-review. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and Sprint 5 Phase A.2 remains a correction candidate until separately approved.
+Perform the Final Independent Sprint 5 Architecture Re-review. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and Sprint 5 Phase A.3 remains a correction candidate until separately approved.
 
 Do not begin Phase B or runtime implementation without separate approval. Any DTO, adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
