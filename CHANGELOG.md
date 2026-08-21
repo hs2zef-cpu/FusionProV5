@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase A.4 final policy admission linearization closure candidate
+
+- Recorded the Phase A.3 final independent re-review result `FAIL`: no Critical findings and one Phase-B-blocking Major from inconsistent policy-admission linearization between the coherent snapshot point and successful Invocation Claim.
+- Added ADR-020 defining one Increasing Execution Admission operation, a conditional Policy Admission Linearization Point, Claim completion/external-side-effect uncertainty, and an exact operation interval.
+- Reconciled Hard Kill, Producer Trust, Basket/request/account/specification/Risk mutations relative to `P`; preserved current ownership and explicit Claim-time expiry/freshness/liveness as mandatory completion conditions.
+- Corrected the five affected threat cases and invariant 37. Sprint 5 Phase A.4 remains Candidate / In Review; Phase B, Architecture Lock, runtime, broker, production, and live-trading authorization remain not granted.
+
 ### Sprint 5 Phase A.3 coherent admission snapshot closure candidate
 
 - Recorded the Phase A.2 final independent re-review result `FAIL`: no Critical findings and one remaining Phase-B-blocking Major because the derived host admission counter was not contractably owned/shared.

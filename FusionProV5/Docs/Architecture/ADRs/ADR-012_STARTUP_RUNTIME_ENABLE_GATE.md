@@ -2,7 +2,7 @@
 
 ## Status
 
-Revised proposal for Sprint 5 Phase A.3 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.4 final independent architecture re-review.
 
 Governance note: this decision is an architecture candidate. It does not declare Production Contract V5 Architecture Locked or authorize runtime implementation.
 
@@ -28,9 +28,9 @@ The EA Host starts runtime-disabled. Clean shutdown evidence never bypasses rest
 12. the specifically scoped atomic V5 `PublishRestartQueryWatermarks()` publication of the reconciled checkpoint and both accepted query high-watermarks under its exact proposal semantics; and
 13. fenced open-session checkpoint publication plus final revalidation of lease liveness, Producer Trust, Hard Kill, account mode, symbol specification, request-set authority, and Risk authority.
 
-Any missing, stale, corrupt, replayed, conflicting, claim-unresolved, publication-conflicted, or unknown authority keeps the host disabled in the returned close-only, halt, reconciliation, or operator-required disposition. Runtime eligibility is revoked on Producer Trust revocation/supersession, request-set or checkpoint publication CAS failure, sequence-authority conflict/corruption, Invocation Claim conflict, Submission Authority corruption, or any existing V5 revocation condition. A new namespace requires an explicitly provisioned genesis policy plus fresh zero-state reconciliation; missing persistence is not proof of a clean state.
+Any missing, stale, corrupt, replayed, conflicting, claim-unresolved, publication-conflicted, or unknown authority keeps the host disabled in the returned close-only, halt, reconciliation, or operator-required disposition. Producer Trust revocation/supersession revokes subsequent runtime/increasing authority and is ordered against an already-running admission under ADR-020; it does not retroactively cancel an operation whose `P` is earlier if Claim completes under every mandatory completion condition. Request-set or checkpoint publication CAS failure, sequence-authority conflict/corruption, Invocation Claim conflict, Submission Authority corruption, or any existing V5 revocation condition keeps or returns the host to the applicable fail-closed disposition. A new namespace requires an explicitly provisioned genesis policy plus fresh zero-state reconciliation; missing persistence is not proof of a clean state.
 
-Restart and takeover load and reconcile durable underlying authorities, never a global admission revision. A persisted prior Admission Snapshot/Vector is audit and correlation evidence only. Once the restart gate is satisfied, runtime may be generally eligible, but every new Invocation Claim must build a new ADR-019 coherent snapshot from two complete authoritative collects in one serialized event. Missed asynchronous notifications cannot grant a stale claim because claim admission depends on current owner-supplied tokens; notifications are acceleration and diagnostics only.
+Restart and takeover load and reconcile durable underlying authorities, never a global admission revision. A persisted prior Admission Snapshot/Vector is audit and correlation evidence only. Once the restart gate is satisfied, runtime may be generally eligible, but every new Invocation Claim must belong to a new ADR-020 operation that builds a new ADR-019 coherent snapshot from two complete authoritative collects in one serialized event. Missed asynchronous notifications cannot grant a stale Claim: invalidating mutations before conditional `P` are reflected or destabilize the collect, while ownership and explicit Claim-time validity/liveness remain mandatory. Notifications are acceleration and diagnostics only.
 
 ## Consequences
 

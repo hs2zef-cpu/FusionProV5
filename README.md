@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.3 now defines a Coherent Admission Snapshot Closure candidate in documentation only; it contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.4 now defines a Final Policy Admission Linearization Closure candidate in documentation only; it contains no production broker execution.
 
 ## Repository Location
 
@@ -31,7 +31,7 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-Sprint 5 Phase A.3 — Coherent Admission Snapshot Closure is **ARCHITECTURE CORRECTIVE CANDIDATE / IN REVIEW** after the Phase A.2 final independent re-review returned `FAIL` with no Critical findings and one Phase-B-blocking Major. Phase A.3 removes the unowned host admission counter from safety authority and defines owner-supplied stable tokens, a coherent double collect, a canonical immutable Admission Snapshot, exact V5 Risk validation, immediate same-event Invocation Claim, and a 41-case threat model. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
+Sprint 5 Phase A.4 — Final Policy Admission Linearization Closure is **FINAL POLICY ADMISSION LINEARIZATION CANDIDATE / IN REVIEW** after the Phase A.3 final independent re-review returned `FAIL` with no Critical findings and one Phase-B-blocking Major. Phase A.4 defines one Increasing Execution Admission operation, makes the coherent snapshot point conditionally effective only after successful Invocation Claim, separates explicit concurrent mutations from mandatory Claim-time expiry/liveness, and preserves Hard Kill, Trust, ownership, exactly-once, and no-reuse rules. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 

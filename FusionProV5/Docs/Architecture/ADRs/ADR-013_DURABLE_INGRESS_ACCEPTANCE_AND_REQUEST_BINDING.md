@@ -2,7 +2,7 @@
 
 ## Status
 
-Revised proposal for Sprint 5 Phase A.2 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.4 final independent architecture re-review.
 
 Governance note: this ADR defines **Sprint 5 Candidate Contracts — NOT V5 existing authority**. It authorizes no DTO, store, or runtime implementation.
 
@@ -36,7 +36,7 @@ Logical `correlation_id` derives from ADR-009 `H`, domain `SWV5-SPRINT5-REQUEST-
 
 There is no fictitious cross-domain transaction. Crash after acceptance replays the same correlation. Crash after sequence reservation reuses the reservation; an orphan reservation is a harmless gap, not authority for a second request. Crash after request publication finds the same exact request and converges the ledger. Retries remain under the same logical correlation and sequence, allocate a durable ordinal greater than zero and unique attempt ID, and do not allocate another logical sequence.
 
-Current Producer Trust is revalidated before any materialization/progression that creates increasing authority. Revocation after request creation uses the applicable V5 request disposition and blocks permit/claim; revocation after Invocation Claim preserves the uncertain attempt and admissible broker evidence.
+Current Producer Trust is revalidated before any materialization/progression that creates increasing authority. After request creation, explicit revocation is ordered under ADR-020: revocation before the Increasing Execution Admission operation's conditional Policy Admission Linearization Point blocks admission and selects the applicable V5 request disposition; revocation after that point does not retroactively revoke the same operation if Claim completes, but blocks every later increase and retry. Claim-time Trust validity remains mandatory. Successful Claim preserves the uncertain attempt and admissible broker evidence.
 
 ## Consequences
 

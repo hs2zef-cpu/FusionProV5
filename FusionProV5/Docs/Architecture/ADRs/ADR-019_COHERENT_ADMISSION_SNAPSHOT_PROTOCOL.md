@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for Sprint 5 Phase A.3 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.4 final independent architecture re-review.
 
 Governance note: this ADR defines **Sprint 5 Candidate Contract semantics only**. It grants no Phase B, runtime, broker, production, or live-trading authorization and does not Architecture Lock Production Contract V5.
 
@@ -58,13 +58,15 @@ In this ADR, `V1 == V2` means equality of the complete safety projection plus id
 
 If continuous change prevents a stable pair within the bounded attempt policy, the outcome is **NO CLAIM**. Availability loss is acceptable; comparison is never weakened to manufacture stability.
 
-### Linearization and concurrent changes
+### Conditional linearization and concurrent changes
 
-Because each owner returns token and payload coherently and every safety mutation advances a non-reusable payload-bound token, two complete consecutive equal safety projections establish an **Admission Snapshot Linearization Point** in the stable interval after completion of `V1` and before the first safety-relevant mutation ordered after `V2`. The architecture orders a concurrent authority change either before admission when the pair observes it, or after admission when it commits after that stable point. This is a versioned stable-collect proof, not a distributed transaction.
+Because each owner returns token and payload coherently and every safety mutation advances a non-reusable payload-bound token, two complete consecutive equal safety projections establish a provisional stable snapshot point inside the Increasing Execution Admission operation. Under ADR-020, if and only if the same uninterrupted operation later completes successful Invocation Claim, this provisional point becomes its **Policy Admission Linearization Point** `P`. If Claim fails or the operation aborts, the point grants no authority and no admission completed.
+
+A concurrent explicit authority mutation before `P` is observed by the pair or makes it unstable. A mutation after `P` is ordered after that successful admission—even if physically before Claim or the adapter call—and cannot retroactively revoke it. It governs later increasing authority and post-admission reconciliation. This is a versioned stable-collect and ordinary linearizability proof, not a distributed transaction.
 
 Example: `V1` sees Trust `T1`, Basket `B1`, and Hard Kill `H1`. Trust commits `T2=REVOKED` before its second authoritative read. The Trust generation/status/digest in `V2` differs, the snapshot is discarded, and no Invocation Claim occurs. The same proof applies to Hard Kill generation, Basket version, specification sequence, account epoch/mode observation, request-set revision, margin authority, Basket-risk authority, Risk authorization, ownership, and every other vector member.
 
-If `V1 == V2` establishes `S`, the real V5 Risk validation passes against exactly `S`, all bounds remain valid, and Invocation Claim succeeds, then a Trust, Hard Kill, or other authority change that begins or commits after the established snapshot point—even if observed physically before the adapter call—is logically ordered after admission. Existing post-claim rules then apply: no second invocation, no new increasing authority, claimed uncertainty is preserved where applicable, and authoritative broker evidence remains admissible for reconciliation. Later revocation cannot erase a potentially external attempt. It never clears Hard Kill or creates new authority.
+If `V1 == V2` establishes `S`, the real V5 Risk validation passes against exactly `S`, every mandatory Claim-time bound remains valid, and Invocation Claim succeeds, then a Trust, Hard Kill, or other explicit mutation after `P` is logically ordered after admission. Existing post-admission rules apply: no second invocation, no new increasing authority, claimed uncertainty is preserved where applicable, and authoritative broker evidence remains admissible for reconciliation. Later revocation cannot erase a potentially external attempt, clear Hard Kill, or create new authority.
 
 ### Same-event claim and expiry
 
@@ -75,7 +77,7 @@ If `V1 == V2` establishes `S`, the real V5 Risk validation passes against exactl
 3. obtain authoritative current claim time and revalidate Producer Trust, Risk exclusive expiry, permit validity, lease liveness, and all freshness/specification bounds; and
 4. immediately call `TryClaimInvocation()` with the exact permit ID/revision/state, immutable snapshot digest, current ownership/takeover authority, and authoritative claim time.
 
-There is no queue, defer, scheduling, process, persistence, or restart boundary between validation and claim. Interruption before successful claim destroys invocation authority. A later event must build and validate a new snapshot. Equality at an exclusive expiry fails closed.
+There is no queue, defer, scheduling, process, persistence, or restart boundary between validation and Claim. This proves snapshot and Claim belong to one ADR-020 operation and prevents replay/reuse; it does not freeze independent authority owners. Interruption before successful Claim destroys invocation authority and leaves the provisional point ineffective. A later event must build and validate a new snapshot. Equality at an exclusive expiry fails closed.
 
 Ownership/takeover is additionally rechecked inside the linearizable Invocation Claim operation because Submission Authority and takeover share their serialization boundary. Takeover-first rejects the stale claim; claim-first exposes claimed-unresolved state to takeover. This does not weaken the vector proof.
 
@@ -103,9 +105,9 @@ All of the following yield **NO CLAIM** and no broker invocation:
 - interruption after snapshot construction but before claim;
 - snapshot/vector digest mismatch;
 - replay of a persisted snapshot after restart/takeover; and
-- Trust, Hard Kill, Basket, specification, account, request-set, margin, Basket-risk, Risk, ownership, or other token change between collects.
+- Trust, Hard Kill, Basket, specification, account, request-set, margin, Basket-risk, Risk, ownership, or other token mismatch reflected by the two collects.
 
-Only a change logically ordered after the established snapshot point and a successful claim follows existing post-claim uncertainty/revocation/reconciliation rules.
+Only an explicit mutation ordered after conditional `P`, where the same operation later completes Claim, follows existing post-admission uncertainty/revocation/reconciliation rules. Claim-time expiry/liveness failure always prevents completion.
 
 ## Consequences
 

@@ -2,13 +2,13 @@
 
 ## Status
 
-Revised proposal for Sprint 5 Phase A.3 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.4 final independent architecture re-review.
 
 Governance note: this ADR defines a **Sprint 5 Candidate Contract — NOT V5 existing authority**. It contains no broker implementation.
 
 ## Context
 
-The Phase A.1 Submission Permit incorrectly made permit commitment the irreversible external-side-effect boundary. A durable reservation alone cannot grant exactly-once adapter invocation after duplicate events, restart, or takeover. Final Risk validation also requires a transition that atomically compares the complete current admission snapshot.
+The Phase A.1 Submission Permit incorrectly made permit commitment the irreversible external-side-effect boundary. A durable reservation alone cannot grant exactly-once adapter invocation after duplicate events, restart, or takeover. ADR-020 makes successful Invocation Claim the completion and uncertainty boundary of the one conditional Increasing Execution Admission operation; it does not make Claim a second non-time policy snapshot.
 
 ## Decision
 
@@ -18,7 +18,7 @@ The permit binds contract/policy/format, permit ID/revision/digest and commit ti
 
 Creation is linearizable with current ownership/takeover authority and proves no permit exists for the attempt and no unresolved competing Submission Authority exists for the logical request. It may prepare admission, but the irreversible boundary is the later Invocation Claim in ADR-016.
 
-If Producer Trust becomes revoked/superseded after permit creation but before claim, current authority invalidates the unclaimed permit to `INVALIDATED_BEFORE_CLAIM`, preserves it for audit, blocks claim, and applies the applicable V5 request cancellation/rejection/reconciliation disposition. Signal replay cannot recreate that authority.
+An unclaimed permit is invalidated when the ADR-020 operation cannot establish a valid coherent snapshot; an invalidating authority is already authoritative before conditional Policy Admission Linearization Point `P`; ownership/takeover prevents Claim; a mandatory Claim-time validity/liveness condition fails; the permit is invalid/conflicting; or the operation aborts under policy. A non-time Trust, Hard Kill, Basket, request, account, specification, or Risk-evidence mutation ordered after `P` must not by itself retroactively invalidate this permit for the same uninterrupted operation if Claim otherwise completes. It blocks later increasing authority. Signal replay cannot recreate permit or Claim authority.
 
 Permit/Submission Authority states are:
 
@@ -46,7 +46,7 @@ Only authoritative evidence may move claimed Submission Authority to a terminal 
 
 ## Consequences
 
-- Permit creation is preparation; successful Invocation Claim is final broker admission.
+- Permit creation is preparation; successful Invocation Claim completes the conditional admission operation and is the external-side-effect uncertainty boundary.
 - Unclaimed prior-owner permits are auditable but non-transferable.
 - Claimed attempts sacrifice availability after ambiguous crashes to prevent duplicate external side effects.
 - ADR-016 owns exactly-once Invocation Claim and the Admission Version Vector.
