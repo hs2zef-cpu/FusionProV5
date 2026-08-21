@@ -2,9 +2,9 @@
 
 ## Status
 
-Revised proposal for Sprint 5 Phase A.1 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.2 independent architecture re-review.
 
-Governance note: this decision defines a future boundary only. Phase A contains no broker adapter, platform call, or transaction callback implementation.
+Governance note: this decision defines a future boundary only. Phase A.2 contains no broker adapter, platform call, or transaction callback implementation.
 
 ## Context
 
@@ -12,9 +12,9 @@ ADR-001 places broker execution in a separate host and assigns the EA Host the p
 
 ## Decision
 
-The future Broker Adapter is the sole translator between V5 Execution DTOs and platform-specific broker facilities. For a side-effecting invocation it must receive an already-normalized V5 request, its exact current unique attempt identity, and the matching durably committed single-use Submission Permit defined by ADR-014. The adapter validates the permit's identity, payload digest, committed/unresolved status, and request/attempt binding and rejects invocation without an exact valid permit. It consumes submission authority; it never creates or renews it.
+The future Broker Adapter is the sole translator between V5 Execution DTOs and platform-specific broker facilities. A side-effecting invocation is admissible only from the same serialized host event that durably transitions the exact permit from `COMMITTED_NOT_INVOKED` to `INVOCATION_CLAIMED_UNRESOLVED` and receives the non-durable result `CLAIM_GRANTED_NOW` under ADR-016. It must also receive the already-normalized V5 request, exact current unique attempt, permit, and claim binding. Reading a persisted claimed state is never invocation authority. The adapter rejects a missing/mismatched claim result, permit, request, attempt, payload, or Admission Version Vector. It consumes the one event-local admission result; it never creates, renews, or reconstructs authority.
 
-The adapter returns raw submission/result evidence, immutable normalized transaction evidence, independently authoritative margin records, symbol specifications, and complete Broker-owned positions/orders/deals/transactions query snapshots. A call may outlive ordinary lease duration; safety derives from one committed attempt, takeover quiescence, and reconciliation—not optimistic call timing.
+The adapter returns raw submission/result evidence, immutable normalized transaction evidence, independently authoritative margin records, symbol specifications, and complete Broker-owned positions/orders/deals/transactions query snapshots. A call may outlive ordinary lease duration; safety derives from one claimed attempt, non-replayable admission, takeover quiescence, and reconciliation—not optimistic call timing.
 
 The EA Host remains the sole platform callback owner; it captures the callback and passes the immutable raw capture through the adapter before serialized Execution validation. Execution remains owner of pending-request query authority.
 
@@ -25,5 +25,5 @@ The adapter cannot make or reinterpret a directional decision, classify a retcod
 - Platform dependencies remain outside the Signal Engine and domain policy.
 - Broker and Execution restart-query authority remain independently sourced.
 - Broker/build-specific retcode mappings, transaction ordering, query behavior, and Demo evidence are mandatory before any Phase F adapter is reviewable.
-- A committed permit is not confirmation and cannot be reused for another attempt.
+- A committed permit is a reservation, not adapter-invocation authority or confirmation; `CLAIM_GRANTED_NOW` is never reproducible from persisted state.
 - This ADR authorizes no trade API.

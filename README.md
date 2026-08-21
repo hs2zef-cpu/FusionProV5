@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.1 now defines a corrected Execution Layer / EA Host Architecture Safety Closure candidate in documentation only; it contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.2 now defines an Invocation & Publication Authority Closure candidate in documentation only; it contains no production broker execution.
 
 ## Repository Location
 
@@ -31,7 +31,7 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-Sprint 5 Phase A.1 — Architecture Safety Closure is **CANDIDATE / IN REVIEW** after the initial Phase A independent review returned `FAIL / NOT READY FOR PHASE B` with one Critical and six Major findings. Phase A.1 defines nonrecursive ingress identity, freshness and Producer Trust authority, a future durable Host Ingress Ledger with deterministic request binding, exact V5 persistence boundaries, a future single-use Submission Permit, takeover quiescence, final V5 Risk revalidation, and the complete 30-case threat model. These are architecture decisions only; the new Sprint 5 authorities are Candidate Contracts, not existing V5 operations.
+Sprint 5 Phase A.2 — Invocation & Publication Authority Closure is **CANDIDATE / IN REVIEW** after the Phase A.1 re-review returned `FAIL / NOT SAFE FOR PHASE B`. Phase A.2 separates permit reservation from exactly-once Invocation Claim, defines continuing Producer Trust revocation behavior, one namespace-wide Request Sequence Authority, fenced request-set/checkpoint publication, an Admission Version Vector/revision with final V5 Risk validation, strict canonical UTF-8 primitive framing, and a 38-case threat model. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 

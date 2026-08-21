@@ -1,50 +1,52 @@
-# ADR-014: Submission Authority, In-Flight Attempt, And Takeover Quiescence
+# ADR-014: Submission Permit Reservation And Takeover Quiescence
 
 ## Status
 
-Proposed for Sprint 5 Phase A.1 independent architecture re-review.
+Revised proposal for Sprint 5 Phase A.2 independent architecture re-review.
 
 Governance note: this ADR defines a **Sprint 5 Candidate Contract — NOT V5 existing authority**. It contains no broker implementation.
 
 ## Context
 
-An ownership fence protects internal publication but cannot retract an external broker side effect after a process passes its final lease check. Safety therefore cannot depend on a broker call completing before lease expiry.
+The Phase A.1 Submission Permit incorrectly made permit commitment the irreversible external-side-effect boundary. A durable reservation alone cannot grant exactly-once adapter invocation after duplicate events, restart, or takeover. Final Risk validation also requires a transition that atomically compares the complete current admission snapshot.
 
 ## Decision
 
-Before any future side-effecting adapter invocation, the host must durably commit exactly one single-use Submission Permit for one logical request and one unique attempt. Permit commitment is a narrowly scoped, linearizable Sprint 5 Submission Authority operation: in the same authority decision it compares the current ownership fence/lease authority, verifies no permit already exists for the attempt and no unresolved competing permit exists for the logical request, and inserts the committed permit. The permit/ownership coordination must share one serializable authority boundary. If takeover wins first, the stale commit fails; if permit commit wins first, takeover observes the unresolved permit and must quiesce. This is not a general V5 transaction.
+A Submission Permit is a durable, fenced, single-use **admission reservation** for one logical request, unique attempt, exact normalized payload, and exact authority binding. Permit creation yields state `COMMITTED_NOT_INVOKED`; it does not consume broker-side-effect authority and never authorizes the Broker Adapter by itself.
 
-The permit binds:
+The permit binds contract/policy/format, permit ID/revision/digest and commit time; namespace and ownership fence; account namespace/epoch and HEDGING mode; request/attempt; exact normalized payload and symbol-specification sequence; Basket ID/version; Producer Trust record/generation/component/instance/epoch/status/validity policy; V5 Risk authorization and evidence references; Hard Kill identity/generation; and the Admission Version Vector/revision defined by ADR-016. `permit_id` remains the ADR-009 `H` of typed domain `SWV5-SPRINT5-PERMIT-ID-V1`, namespace, permit policy/version, logical request, and unique attempt. The permit digest preimage remains typed domain `SWV5-SPRINT5-SUBMISSION-PERMIT-V1` followed by every permit field except its own digest; the full permit appends it. Same ID with different content is a conflict.
 
-- Sprint 5 contract/policy/format identity, permit ID, record sequence/revision/digest, and committed timestamp;
-- persistence namespace, current ownership fence at issuance, account namespace/epoch and HEDGING mode;
-- complete logical request and unique attempt identity;
-- exact normalized intent/payload, normalization identity, symbol-specification sequence, and Basket ID/version;
-- complete current V5 Risk authorization identity, binding, exclusive expiry, and current authority-evidence references;
-- current Hard Kill state, latch ID, and generation; and
-- permit disposition and single-use/invocation evidence.
+Creation is linearizable with current ownership/takeover authority and proves no permit exists for the attempt and no unresolved competing Submission Authority exists for the logical request. It may prepare admission, but the irreversible boundary is the later Invocation Claim in ADR-016.
 
-`permit_id` is deterministic under ADR-009 `H` from typed domain `SWV5-SPRINT5-PERMIT-ID-V1`, persistence namespace, permit policy/version, complete logical request, and unique attempt identity. The permit digest preimage is typed domain `SWV5-SPRINT5-SUBMISSION-PERMIT-V1` followed by every permit field in fixed order except the digest itself; the full permit appends the digest. Same permit ID with different content is a conflict.
+If Producer Trust becomes revoked/superseded after permit creation but before claim, current authority invalidates the unclaimed permit to `INVALIDATED_BEFORE_CLAIM`, preserves it for audit, blocks claim, and applies the applicable V5 request cancellation/rejection/reconciliation disposition. Signal replay cannot recreate that authority.
 
-Immediately before commit, under one serialized host event, the host re-obtains current authoritative inputs and invokes the existing `ISWV5RiskContract::ValidateAuthorization(context, authorization, current_binding, decision)`. It also revalidates ownership/lease, Hard Kill, account namespace/epoch/mode, Basket version, symbol specification, V5 margin/Basket-risk evidence freshness, request/attempt identity, and exact normalized payload. The commit operation itself then atomically rechecks the expected current fence/lease generation. Any mismatch or race means no permit and no broker call.
+Permit/Submission Authority states are:
 
-The durable permit commit is the irreversible logical boundary:
+- `COMMITTED_NOT_INVOKED`;
+- `INVOCATION_CLAIMED_UNRESOLVED`;
+- `AUTHORITATIVE_SIDE_EFFECT_CONFIRMED`;
+- `AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED`;
+- `AUTHORITATIVE_REJECTED`;
+- `INVALIDATED_BEFORE_CLAIM`; and
+- `CONFLICT_MANUAL_REQUIRED`.
 
-- before commit, no broker side effect is allowed;
-- after commit, the exact attempt is `COMMITTED_UNRESOLVED` and must be treated as possibly externally submitted, even if a crash occurs before the call;
-- the permit cannot authorize another attempt or be replayed as a second invocation;
-- absence of an immediate callback or elapsed time is not negative proof.
+These states correlate to, but never replace, the V5 Execution request state/lifecycle. `COMMITTED_NOT_INVOKED` corresponds to a prepared unique V5 attempt before irreversible submission. `INVOCATION_CLAIMED_UNRESOLVED` requires V5 `SWV5_REQUEST_SUBMISSION_PENDING` and, on restart/takeover or missing disposition, `SWV5_REQUEST_RECONCILIATION_REQUIRED` / `SWV5_EXECUTION_PHASE_UNCERTAIN`. Authoritative terminal evidence drives the applicable existing V5 confirmed/rejected/reconciliation outcome.
 
-Permit dispositions are `COMMITTED_UNRESOLVED`, `AUTHORITATIVE_SIDE_EFFECT_CONFIRMED`, `AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED`, `AUTHORITATIVE_REJECTED`, and `CONFLICT_MANUAL_REQUIRED`. Only authoritative evidence may move a committed permit from unresolved to a terminal disposition; terminal mutation is idempotent and conflicting terminal evidence selects `CONFLICT_MANUAL_REQUIRED`.
+### Takeover before claim
 
-Ordinary lease loss after commit does not revoke the historical one-attempt authority and cannot allow a new owner to mint a competing permit. The old host loses all general mutation/publication rights. If the broker invocation had not started when lease loss was observed, it must not be started, but the committed attempt still remains unresolved; if the invocation was already externally in flight, it may complete beyond local control. Any result must be reconciled and published by a current owner. A takeover must inspect unresolved permits and put their requests in `SWV5_REQUEST_RECONCILIATION_REQUIRED` with lifecycle phase `SWV5_EXECUTION_PHASE_UNCERTAIN`; increasing execution and retry remain blocked.
+An old host cannot claim after ownership loss, and a new owner cannot use the old permit as an invocation capability. Under current authority the unclaimed permit is durably invalidated to `INVALIDATED_BEFORE_CLAIM` and retained for audit. Current Producer Trust, Hard Kill, Risk, request, Unit, Basket, account, and ownership authority are re-evaluated. A new attempt and permit may be created only when the existing V5 retry/request policy separately permits progression. The old permit never migrates.
 
-Resolution requires complete authoritative broker position/order/deal/transaction/history and Execution-request evidence under a versioned broker-specific positive or negative-evidence policy. No retry is permitted until that policy establishes definitive disposition. The broker-specific negative-evidence horizon is Phase F, but the no-proof/no-retry semantic is fixed now.
+### Takeover after claim
 
-If Hard Kill latches after commit, no new increasing permit may be admitted. The committed attempt remains uncertain until authoritative disposition; confirmation is still reconciled, and only separately authorized V5 reducing/close-only action may follow.
+An `INVOCATION_CLAIMED_UNRESOLVED` record is preserved. No host can invoke from it, mint a competing permit, or retry the logical request. V5 reconciliation-required/uncertain disposition applies until complete authoritative position, order, deal, transaction, history, and Execution-request evidence under a versioned broker-specific policy establishes positive or negative result. Timeout, reconnect, missing callback, or a locally empty query is never proof. The exact broker/build negative-evidence horizon remains Phase F.
+
+Producer Trust or Hard Kill change after claim cannot erase the potentially external attempt. It blocks all new increasing authority while broker evidence remains admissible and must be reconciled.
+
+Only authoritative evidence may move claimed Submission Authority to a terminal disposition. Terminal replay is idempotent; conflicting terminal evidence selects `CONFLICT_MANUAL_REQUIRED`.
 
 ## Consequences
 
-- External safety depends on one durable attempt and takeover quiescence, not lease duration.
-- A crash before the actual call may sacrifice availability, but never permits blind resubmission.
-- The permit journal and validator are future Sprint 5 candidate contracts, not V5 Persistence capabilities.
+- Permit creation is preparation; successful Invocation Claim is final broker admission.
+- Unclaimed prior-owner permits are auditable but non-transferable.
+- Claimed attempts sacrifice availability after ambiguous crashes to prevent duplicate external side effects.
+- ADR-016 owns exactly-once Invocation Claim and the Admission Version Vector.

@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 4.1 |
+| Version | 4.2 |
 | Date | 2026-08-21 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -40,6 +40,7 @@
 | 3.9 | 2026-08-21 | Recorded Final Independent Merge Audit PASS with no Critical or Major findings, infrastructure closure matrix all pass, and Merge Safety SAFE. Audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded into main from `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` with no merge commit; the candidate branch was retained. Production Contract V5 remains unlocked pending formal Architecture Lock approval, and runtime remains unauthorized. |
 | 4.0 | 2026-08-21 | Opened Sprint 5 Phase A as a documentation-only Execution Layer / EA Host Architecture Candidate / In Review. Defined Signal ingress, sole runtime authorities, deterministic single-writer serialization, Broker Adapter boundary, fail-closed startup/reconciliation, and later phase gates. Sprint 4 remains the authorized baseline; Production Contract V5 remains merged/audited/unlocked; runtime and broker implementation remain unauthorized. |
 | 4.1 | 2026-08-21 | Recorded the independent Phase A review failure (one Critical, six Major) and opened Phase A.1 Architecture Safety Closure Candidate / In Review. Corrected ingress canonicalization/trust/replay, deterministic request binding, exact V5 publication boundaries, durable one-attempt submission authority, takeover quiescence, final current Risk revalidation, and all 30 review threats. Phase B and runtime remain unauthorized. |
+| 4.2 | 2026-08-21 | Recorded the Phase A.1 re-review failure and opened Phase A.2 Invocation & Publication Authority Closure Candidate / In Review. Separated permit reservation from exactly-once Invocation Claim, defined continuing Producer Trust lifecycle, one namespace-wide Request Sequence Authority, fenced request-set/checkpoint publication, an Admission Version Vector/revision with final V5 Risk validation, strict canonical UTF-8 primitive framing, and 38 reviewed threats. Phase B and runtime remain unauthorized. |
 
 ## Purpose
 
@@ -55,7 +56,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-Sprint 5 Phase A.1 is an **Architecture Safety Closure Candidate / In Review** for a separate Execution Layer / EA Host. It responds to the failed initial architecture review and is documentation-only. It does not change either technical baseline or authorize Phase B, runtime, or broker implementation. Its next gate is a new Independent Sprint 5 Architecture Re-review.
+Sprint 5 Phase A.2 is an **Invocation & Publication Authority Closure Candidate / In Review** for a separate Execution Layer / EA Host. It responds to the failed Phase A.1 re-review and is documentation-only. It does not change either technical baseline or authorize Phase B, runtime, or broker implementation. Its next gate is a new Independent Sprint 5 Architecture Re-review.
 
 Project:
 
@@ -272,7 +273,7 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
 | Merged / Audited / Unlocked — Formal Architecture Approval Pending | Sprint 4 Production Contract V5 package |
-| Architecture Safety Closure Candidate / In Review — Phase B And Runtime Not Authorized | Sprint 5 Phase A.1 Execution Layer / EA Host Architecture |
+| Architecture Corrective Candidate / In Review — Phase B And Runtime Not Authorized | Sprint 5 Phase A.2 Invocation & Publication Authority Closure |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -452,7 +453,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- Which Sprint 5 Phase A.1 corrections will be accepted, rejected, or revised by the new independent architecture re-review?
+- Which Sprint 5 Phase A.2 corrections will be accepted, rejected, or revised by the new independent architecture re-review?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -470,9 +471,9 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 These are recommendations only and are not authorized implementation:
 
 1. Complete a new Independent Sprint 5 Architecture Re-review and separately decide Architecture Lock for the audited Production Contract V5 package.
-2. Approve, revise, or reject the Sprint 5 Phase A.1 candidate before authorizing Phase B or selecting runtime implementation work.
+2. Approve, revise, or reject the Sprint 5 Phase A.2 candidate before authorizing Phase B or selecting runtime implementation work.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
-4. Keep any future Execution Layer physically and logically separate until the Sprint 5 Phase A.1 ADR set is independently reviewed and accepted.
+4. Keep any future Execution Layer physically and logically separate until the Sprint 5 Phase A.2 ADR set is independently reviewed and accepted.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
 6. Build external golden fixtures before claiming full V4.2 migration parity.
 7. Introduce Basket, Recovery, Risk, Persistence, and transaction work only after the Execution boundary is formally approved.
@@ -481,7 +482,7 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 
 1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Independently re-review and approve, revise, or reject the Sprint 5 Phase A.1 safety closure and repository structure.
+3. Independently re-review and approve, revise, or reject the Sprint 5 Phase A.2 invocation/publication authority closure and repository structure.
 4. Select technologies that satisfy the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
 5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
 6. Add basket lifecycle before Recovery.
@@ -511,4 +512,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Perform a new Independent Sprint 5 Architecture Re-review. Sprint 4 remains the authorized baseline, Production Contract V5 remains merged/audited/unlocked, and Sprint 5 Phase A.1 remains Architecture Safety Closure Candidate / In Review. Phase B, runtime implementation, and Signal-to-Execution wiring remain unauthorized without separate approval."
+"Perform a new Independent Sprint 5 Architecture Re-review. Sprint 4 remains the authorized baseline, Production Contract V5 remains merged/audited/unlocked, and Sprint 5 Phase A.2 remains Architecture Corrective Candidate / In Review. Phase B, runtime implementation, and Signal-to-Execution wiring remain unauthorized without separate approval."
