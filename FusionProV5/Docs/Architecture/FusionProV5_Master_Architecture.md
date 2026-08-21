@@ -5,11 +5,11 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 3.8 |
+| Version | 3.9 |
 | Date | 2026-08-21 |
-| Status | **CANDIDATE / IN REVIEW** |
+| Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
-| Review Candidate | **Sprint 4.1 Contract Hardening** |
+| Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
 | Architecture Lock | **NOT LOCKED — PENDING FORMAL APPROVAL** |
 
 ## Revision History
@@ -37,6 +37,7 @@
 | 3.6 | 2026-08-16 | Recorded B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` as superseded development history and opened B11.1 terminal-build evidence-parser correction. B11.1 is Candidate / In Review, unlocked, uncommitted, and not source-frozen; exact D3 Generate remains blocked by a separate server-record parser mismatch. |
 | 3.7 | 2026-08-16 | Recorded B11.2 server-evidence parser closure on top of B11.1: structured tester generation and supported legacy execution records are resolved centrally, source-bound symbol/timeframe and Trial/Demo policy remain fail-closed, and the exact unchanged D3 Generate path passes offline. B11.2 remains Candidate / In Review, unlocked, uncommitted, and not source-frozen. |
 | 3.8 | 2026-08-21 | Recorded B11.6 source freeze `ef556a94636e977e35e961be28ae03c9838615d4`, D5 immutable verification PASS with two deterministic 969/969 runs, and E5 reproducible evidence completion. Six Critical, three Final-Audit MAJOR, and parser/harness findings are closed; D4 remains failed historical evidence superseded by D5. The next gate is a new Final Independent Merge Audit, and candidate governance remains unchanged. |
+| 3.9 | 2026-08-21 | Recorded Final Independent Merge Audit PASS with no Critical or Major findings, infrastructure closure matrix all pass, and Merge Safety SAFE. Audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded into main from `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` with no merge commit; the candidate branch was retained. Production Contract V5 remains unlocked pending formal Architecture Lock approval, and runtime remains unauthorized. |
 
 ## Purpose
 
@@ -48,7 +49,7 @@ It exists to prevent unauthorized implementation, baseline confusion, Signal Eng
 
 The current authorized architecture baseline is **Fusion Pro V5 Sprint 4 Architecture**.
 
-**Fusion Pro V5 Sprint 4.1 Contract Hardening** is the **Candidate / In Review**. It is pending formal approval, is not Architecture Locked, and grants no runtime authorization.
+The audited **Fusion Pro V5 Production Contract V5** package has been merged to main. It remains **unlocked pending formal Architecture Lock approval** and grants no runtime authorization.
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
@@ -65,10 +66,10 @@ Latest verified MetaEditor compilation:
 - Errors: `0`
 - Warnings: `0`
 - Target: X64 Regular
-- Production contract version: V5 corrective candidate; minimum compatible version 5
+- Production contract version: audited V5 package merged to main, unlocked; minimum compatible version 5
 - Frozen Signal snapshot schema: V5
 
-The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, and Sprint 4.7 immutable verification is superseded V4 candidate history. Production Contract V4 is a historical pre-approval artifact. Sprint 4.8 and Production Contract V5 are the current Candidate / In Review / Unlocked / Pending Approval. Source/evidence pairs `06e0d6e2c9c9138a73ebe69bbdd1766c813d5f89` / `eebbd169aeff6afaeeaba75c1c120d823e2ec2b3` and `e56e51e72dc5fd9ee47d847781a545134b092059` / `b6b36f204d4ebeb3aab4fdacf31b0b8b5b8e1b91` remain immutable superseded failed-final-audit history. Phase B11 source `b9b175a5226dd85c3eaacc86c2daca2a42f24b01` and D4 remain superseded development and failed-verification history. B11.6 is technically frozen at `ef556a94636e977e35e961be28ae03c9838615d4`; D5 immutable verification passed two deterministic 969/969 runs and the 140/140 exporter suite, and E5 reproducible evidence is complete. All six Critical findings, three Final-Audit MAJOR findings, and parser/harness closures are closed. The next gate is a new Final Independent Merge Audit. Static scans continue to require no broker/runtime APIs, ProductionArchitecture Signal dependency, frozen production `.mq5` change, or Signal Engine change. This work supports candidate review only; it does not change the authorized baseline or grant Architecture Lock, production readiness, runtime authorization, merge authorization, or formal approval.
+The Sprint 4 Architecture manifest remains unchanged. Historical Sprint 4.6 evidence is superseded failed-candidate history, Sprint 4.7 immutable verification is superseded V4 history, and earlier Sprint 4.8 source/evidence generations remain superseded V5 history. The B11.6 audited technical source is frozen at `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; D5 immutable verification and E5 evidence bind to digest `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. The Final Independent Merge Audit passed with no Critical or Major findings, all six Critical and three prior Final-Audit MAJOR findings closed, infrastructure closure matrix all pass, and Merge Safety SAFE. Evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` with tree `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3` was fast-forwarded into main from `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4`; no merge commit was created, remote main was updated, and the candidate branch was retained. Production Contract V5 is merged and audited but remains unlocked. No Architecture Lock, production readiness, runtime authorization, broker execution authorization, or live-trading approval is granted.
 
 The previous Sprint 3.2 Patch 1 project remains unchanged and available as the rollback baseline.
 
@@ -87,7 +88,8 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 
 - **Implemented:** Present in the authorized baseline and compile-verified.
 - **Candidate / In Review:** Proposed architecture changes under formal review; not part of the authorized baseline and not Architecture Locked.
-- **Architecture Locked:** Formally approved architecture baseline. Sprint 4.1 does not currently have this status.
+- **Merged / Audited / Unlocked:** Present on main after a successful audit and merge, but still awaiting an explicit formal Architecture Lock decision. Production Contract V5 currently has this status.
+- **Architecture Locked:** Formally approved architecture baseline. Production Contract V5 does not currently have this status.
 - **Evidence pending:** Implemented, but required MT5 runtime artifacts have not been inspected.
 - **Deferred by design:** Intentionally outside the current Sprint or Signal Engine boundary.
 - **Unauthorized:** Created without an approved Sprint scope and must not be treated as project work.
@@ -109,9 +111,9 @@ The original V4.2 source and `SW_FIBO_BASIC_V3.mq5` remain unchanged.
 | Sprint 3.2.1 | Nonpositive history-token hardening, explicit fail-closed diagnostics, preserved last-valid baseline, and expanded CSV decision evidence. |
 | Sprint 4 Architecture | Isolated production Basket, Persistence, Execution, Risk, Statistics, Instance Ownership, and Unit System contracts. No runtime implementation. |
 
-Sprint 4.1 Contract Hardening is the **Candidate / In Review**. It is not listed as completed and cannot replace the Sprint 4 authorized baseline until formal approval.
+Sprint 4.1 Contract Hardening and its Sprint 4.2–4.8 corrective verification sequence produced the audited Production Contract V5 package now merged to main. Merge completion does not replace the explicit formal Architecture Lock decision, so V5 remains unlocked.
 
-Sprint 4.2 is an authorized verification sub-sprint within the candidate branch. Sprint 4.3 through Sprint 4.8 are corrective verification responding to independent-review findings. Sprint 4.5 advanced the still-unlocked contract candidate to V4; Sprint 4.6 evidence is superseded failed-candidate history; Sprint 4.7 is superseded V4 history; and prior Sprint 4.8 source/evidence generations are superseded V5 history. B11.6 is the current technically frozen candidate source, D5 is its immutable verification authority, and E5 is its reproducible evidence package pending a new Final Independent Merge Audit. These sub-sprints provide review evidence only; they do not declare Architecture Lock, authorize runtime, authorize production readiness, authorize merge, or replace Sprint 4 as the authorized baseline. A technical freeze of a specific tested commit makes evidence immutable but never constitutes Architecture Lock or formal approval.
+Sprint 4.2 through Sprint 4.8 are the verification and corrective history behind the merged V5 package. Sprint 4.6 remains failed-candidate history, Sprint 4.7 remains superseded V4 history, and earlier Sprint 4.8 generations remain superseded V5 history. B11.6 is the frozen audited technical source, D5 is its immutable verification authority, E5 is its reproducible evidence package, and the Final Independent Merge Audit is complete. These milestones do not declare Architecture Lock, authorize runtime, authorize production readiness, or replace explicit approval governance. A technical freeze or merge makes source and evidence immutable and available on main; neither constitutes Architecture Lock or formal runtime approval.
 
 ## Architecture Boundary
 
@@ -227,7 +229,7 @@ The current `ExecutionPolicy` name refers to an advisory signal-policy gate insi
 | AR-011 | Any v17 concept must be independently validated and tested before adoption. | A useful idea may still be incorrectly implemented or architecturally incompatible. | Reusing adaptive regime scoring without lockout tests. | New specification, independent implementation, and regression fixtures. |
 | AR-012 | No implementation may begin without an approved Sprint scope and Definition of Done. | Prevents speculative or unauthorized project changes. | Creating execution interfaces from a context-only request. | Explicit user approval recorded before file modification. |
 | AR-013 | Unauthorized experimental folders are not baselines and must never be merged automatically. | Prevents accidental adoption of unreviewed work. | Continuing from `SPRINT4_SAFETY_FOUNDATION`. | Baseline confirmation before every task. |
-| AR-014 | Sprint 4 Architecture is the authorized architecture baseline; Sprint 4.1 Contract Hardening is Candidate / In Review; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains explicit, non-conflicting governance and ownership boundaries. | Treating the Sprint 4.1 candidate as Architecture Locked, treating contracts as implemented execution, or modifying the frozen signal baseline. | State the authorized baseline, review candidate, and frozen Signal Engine before future work. |
+| AR-014 | Sprint 4 Architecture is the authorized architecture baseline; audited Production Contract V5 is merged to main but remains unlocked; Sprint 3.2.1 is the frozen Signal Engine baseline. | Maintains explicit, non-conflicting governance and ownership boundaries. | Treating the merged V5 contracts as Architecture Locked or implemented execution, or modifying the frozen signal baseline. | State the authorized baseline, merged-unlocked contract status, and frozen Signal Engine before future work. |
 
 ## Intentional Current Limitations
 
@@ -265,7 +267,7 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2 Patch 1 |
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
-| Candidate / In Review — Pending Approval — Not Architecture Locked | Sprint 4.1 Contract Hardening |
+| Merged / Audited / Unlocked — Formal Architecture Approval Pending | Sprint 4 Production Contract V5 package |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -338,13 +340,13 @@ CSV generation is enabled by default in Patch 1. Experts-log regression output r
 - Per-snapshot regression PASS does not prove full historical equivalence.
 - Candidate-direction scoring, macro penalties, confirmation additions, and final V4.2 arbitration remain unmigrated.
 
-## Sprint 4 Authorization And Sprint 4.1 Review State
+## Sprint 4 Authorization And Post-Merge V5 State
 
 Sprint 4 Architecture is explicitly authorized as an isolated production-contract project.
 
-Sprint 4.1 is the Candidate / In Review package for hardening those contracts, adding deterministic validation requirements, recording Architecture Decision Records, and defining table-driven test specifications. It is pending formal approval, is not Architecture Locked, and does not replace the Sprint 4 authorized baseline. It does not authorize broker execution or concrete production services.
+Sprint 4.1 hardening and Sprint 4.2–4.8 verification produced the audited Production Contract V5 package now merged to main. The package remains unlocked pending an explicit formal Architecture Lock decision and does not replace the Sprint 4 authorized baseline through merge alone. It does not authorize broker execution, runtime wiring, or concrete production services.
 
-Review-candidate scope:
+Merged audited contract scope:
 
 - Basket lifecycle states, transitions, and invariants
 - Versioned persistence and restart reconciliation contracts
@@ -401,7 +403,7 @@ No v17 source code may be reproduced or copied. The audit is used only to identi
 | Persisted state was not reliably reconciled with broker state. | Restart can duplicate, abandon, or misclassify exposure. | Not currently because Fusion owns no trades. | Use versioned persistence and reconcile positions, orders, and history before resuming. |
 | Runtime state depended heavily on globals. | State can disappear or become contradictory after reload. | Signal snapshots are rebuilt safely; future execution remains exposed. | Execution state must be versioned, validated, and reconstructable. |
 
-For the unlocked Production Contract V5 candidate, restart query evidence is an independently authoritative nested snapshot. Broker Adapter owns positions, orders, deals, and transactions query completion; Execution owns pending-request query completion. Each snapshot has its own observation time, sequence, component/source provenance, stable identity, and canonical digest. Persistence owns separate prior-accepted Broker-query and Execution-query sequence high-watermarks. A restart query must be no older than 60 seconds under the explicit validation clock, must not postdate its enclosing authority summary, and must advance beyond its matching persisted high-watermark. Wrapper freshness, transaction sequence, request-set revision, and reconciliation revision are not substitutes for query freshness or query anti-replay authority.
+For the unlocked Production Contract V5 architecture now merged to main, restart query evidence is an independently authoritative nested snapshot. Broker Adapter owns positions, orders, deals, and transactions query completion; Execution owns pending-request query completion. Each snapshot has its own observation time, sequence, component/source provenance, stable identity, and canonical digest. Persistence owns separate prior-accepted Broker-query and Execution-query sequence high-watermarks. A restart query must be no older than 60 seconds under the explicit validation clock, must not postdate its enclosing authority summary, and must advance beyond its matching persisted high-watermark. Wrapper freshness, transaction sequence, request-set revision, and reconciliation revision are not substitutes for query freshness or query anti-replay authority.
 
 ### Statistics Lessons
 
@@ -445,7 +447,7 @@ For the unlocked Production Contract V5 candidate, restart query evidence is an 
 
 ## Open Design Questions
 
-- Should the next authorized Sprint remain purely inside the Signal Engine?
+- What exact future Execution Layer / EA Host scope, if any, should be separately authorized for Sprint 5?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -462,8 +464,8 @@ For the unlocked Production Contract V5 candidate, restart query evidence is an 
 
 These are recommendations only and are not authorized implementation:
 
-1. Review and lock the Sprint 4 production contracts before selecting any implementation work.
-2. Decide whether the next Sprint builds test fixtures, platform adapters, or remains documentation-only.
+1. Complete the explicit post-merge Architecture Lock decision for the audited Production Contract V5 package.
+2. Define and separately approve Sprint 5 scope before selecting any runtime implementation work.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
 4. Keep any future Execution Layer physically and logically separate until an ADR authorizes integration.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
@@ -472,23 +474,22 @@ These are recommendations only and are not authorized implementation:
 
 A provisional risk-oriented order, requiring separate approval at every step, would be:
 
-1. Lock Sprint 3.2 evidence.
+1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Approve the Indicator-to-Execution boundary and repository structure.
-4. Design lifecycle, persistence, reconciliation, and ownership contracts.
-5. Design account, strategy, basket, and command risk.
-6. Implement and test broker execution in Strategy Tester and demo only.
-7. Add basket lifecycle before Recovery.
-8. Add bounded Recovery only after fault testing.
-9. Build authoritative statistics from deal history.
-10. Consider production release only after broker-specific evidence.
+3. Separately authorize Sprint 5 and the Indicator-to-Execution ingress boundary and repository structure.
+4. Select technologies that satisfy the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
+5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
+6. Add basket lifecycle before Recovery.
+7. Add bounded Recovery only after fault testing.
+8. Build authoritative statistics from deal history.
+9. Consider production release only after broker-specific evidence and separate authorization.
 
 ## Master Context Usage Instructions
 
 Before performing any future work, every AI agent must:
 
 1. Read this Master Context completely.
-2. Confirm that Sprint 4 Architecture is the authorized architecture baseline, Sprint 4.1 Contract Hardening is Candidate / In Review, and Sprint 3.2.1 is the frozen Signal Engine baseline.
+2. Confirm that Sprint 4 Architecture is the authorized architecture baseline, audited Production Contract V5 is merged to main but remains unlocked, and Sprint 3.2.1 is the frozen Signal Engine baseline.
 3. Ignore `SPRINT4_SAFETY_FOUNDATION` unless the user explicitly requests inspection of discarded experimental material.
 4. Classify the request as documentation, design, audit, runtime verification, or implementation.
 5. Confirm the approved Sprint scope and Definition of Done before implementation.
@@ -505,4 +506,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Perform a new Final Independent Merge Audit against the Sprint 4.8 B11.6 frozen source and E5 reproducible evidence. Until separate approval, Sprint 4 remains the authorized baseline, Sprint 4.1 is not Architecture Locked, and runtime implementation remains unauthorized."
+"Perform Post-Merge Architecture Approval / Sprint 5 Scope Authorization. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and no runtime implementation or Signal-to-Execution wiring may begin without a separately approved Sprint 5 scope."

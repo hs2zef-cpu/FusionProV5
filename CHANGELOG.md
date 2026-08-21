@@ -1,5 +1,13 @@
 # Changelog
 
+### Sprint 4 post-merge governance closure
+
+- Recorded Final Independent Merge Audit `PASS`: no Critical findings, no Major findings, all six Critical and three prior Final-Audit MAJOR findings closed, infrastructure closure matrix all pass, Merge Safety `SAFE`, and final merge decision `READY TO MERGE INTO MAIN`.
+- Recorded the fast-forward-only update of old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` to audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`; no merge commit was created, remote main was updated successfully, and the candidate branch was retained.
+- Preserved frozen technical source `ef556a94636e977e35e961be28ae03c9838615d4`, source tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`, evidence tree `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and D5 verification digest `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`.
+- Production Contract V5 is audited and merged to main but remains unlocked pending explicit formal Architecture Lock approval. No runtime, broker execution, production, live-trading, or Signal-to-Execution wiring authorization is granted.
+- The next gate is Post-Merge Architecture Approval / Sprint 5 Scope Authorization. Any future Execution Layer or EA Host work requires a separately approved Sprint 5 scope.
+
 ### Sprint 4.8 Phase E5 B11.6 reproducible immutable evidence
 
 - Recorded the technically frozen B11.6 source `ef556a94636e977e35e961be28ae03c9838615d4` and tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`.
