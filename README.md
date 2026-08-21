@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A now defines a candidate Execution Layer / EA Host architecture in documentation only; it contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.1 now defines a corrected Execution Layer / EA Host Architecture Safety Closure candidate in documentation only; it contains no production broker execution.
 
 ## Repository Location
 
@@ -31,13 +31,13 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-Sprint 5 Phase A — Execution Layer / EA Host Architecture is **ARCHITECTURE CANDIDATE / IN REVIEW**. It defines the Signal DTO ingress boundary, EA Host ownership and single-writer serialization, future Broker Adapter boundary, fail-closed startup/restart gate, and a gated implementation plan. It authorizes architecture documentation only. Runtime implementation, broker implementation, Architecture Lock, production readiness, production trading, and live trading are not authorized.
+Sprint 5 Phase A.1 — Architecture Safety Closure is **CANDIDATE / IN REVIEW** after the initial Phase A independent review returned `FAIL / NOT READY FOR PHASE B` with one Critical and six Major findings. Phase A.1 defines nonrecursive ingress identity, freshness and Producer Trust authority, a future durable Host Ingress Ledger with deterministic request binding, exact V5 persistence boundaries, a future single-use Submission Permit, takeover quiescence, final V5 Risk revalidation, and the complete 30-case threat model. These are architecture decisions only; the new Sprint 5 authorities are Candidate Contracts, not existing V5 operations.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4 contains contract architecture and test-only verification only: it contains no broker execution, production EA implementation, or Signal-to-Execution runtime wiring. The next gate is **Independent Sprint 5 Architecture Review**. The Phase A candidate does not grant Architecture Lock, runtime authorization, broker execution authorization, production authorization, or live-trading approval.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4 contains contract architecture and test-only verification only: it contains no broker execution, production EA implementation, or Signal-to-Execution runtime wiring. The next gate is a **New Independent Sprint 5 Architecture Re-review**. Phase B, Architecture Lock, runtime authorization, broker execution authorization, production authorization, and live-trading approval are not granted.
 
 ## Repository Workflow
 

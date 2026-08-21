@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for Sprint 5 Phase A independent architecture review.
+Revised proposal for Sprint 5 Phase A.1 independent architecture re-review.
 
 Governance note: this decision is an architecture candidate. It does not declare Production Contract V5 Architecture Locked or authorize runtime implementation.
 
@@ -16,13 +16,14 @@ The EA Host starts runtime-disabled. Clean shutdown evidence never bypasses rest
 
 1. exact supported contract/policy compatibility and HEDGING account mode;
 2. valid current ownership acquired/recovered through compare-and-set and authoritative lease time;
-3. validated checkpoint and complete ordered pending-request state;
+3. validated checkpoint, complete ordered pending-request state, Sprint 5 Ingress Ledger, and Submission Permit journal;
 4. persisted Hard Kill state and, for historical `RELEASED`, an independently obtained matching release-authority record;
 5. fresh, complete, owner-correct, anti-replay-advancing Broker snapshots for positions/orders/deals/transactions and an independent Execution pending-request snapshot;
 6. full V5 reconciliation of namespace, ownership, Basket, exposure, residuals, requests, correlations, transaction/event identities, Hard Kill, and revisions;
-7. contract result `SWV5_RESTART_SAFE_TO_RESUME` with no unresolved or uncertain prior attempt;
-8. atomic publication of the reconciled checkpoint and both accepted query high-watermarks under the current fence/store revision; and
-9. final revalidation of lease liveness, Hard Kill, account mode, symbol specification, and Risk authority.
+7. convergence of every accepted-ingress/request binding and inspection of every unresolved Submission Permit; any unresolved permit or uncertain attempt blocks increasing execution and blind retry;
+8. contract result `SWV5_RESTART_SAFE_TO_RESUME` with no unresolved or uncertain prior attempt eligible for retry;
+9. the specifically scoped atomic `PublishRestartQueryWatermarks()` publication of the reconciled checkpoint and both accepted query high-watermarks under the current fence/store revision; and
+10. final revalidation of lease liveness, Hard Kill, account mode, symbol specification, and Risk authority.
 
 Any missing, stale, corrupt, replayed, conflicting, or unknown authority keeps the host disabled in the returned close-only, halt, reconciliation, or operator-required disposition. A new namespace requires an explicitly provisioned genesis policy plus fresh zero-state reconciliation; missing persistence is not proof of a clean state.
 

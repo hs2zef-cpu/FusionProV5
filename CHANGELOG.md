@@ -1,5 +1,14 @@
 # Changelog
 
+### Sprint 5 Phase A.1 architecture safety closure candidate
+
+- Recorded the independent Phase A review result `FAIL / NOT READY FOR PHASE B` with one Critical and six Major architecture findings; technical-source isolation remained clean.
+- Defined nonrecursive, domain-separated ingress identity/digest construction; exclusive freshness boundaries; independent Producer Trust authority; per-instance/epoch sequence and supersession semantics; and a future durable Host Ingress Ledger.
+- Defined deterministic ingress-to-logical-request binding and both crash-convergence directions without claiming a fictitious cross-domain transaction.
+- Corrected Persistence claims to the exact separate V5 `SavePendingRequests()` and `SaveCheckpoint()` boundaries and the narrowly atomic `PublishRestartQueryWatermarks()` boundary.
+- Added a future single-use Submission Permit, final current `ISWV5RiskContract::ValidateAuthorization()` gate, irreversible commit semantics, unresolved-attempt authority, takeover quiescence, and no-proof/no-retry negative-evidence policy.
+- Added ADR-013 through ADR-015 and expanded the failure taxonomy and threat matrix to all 30 review cases. Sprint 5 Phase A.1 remains Candidate / In Review; Phase B, Architecture Lock, runtime, broker, production, and live-trading authorization remain not granted. The next gate is a new independent architecture re-review.
+
 ### Sprint 5 Phase A Execution Layer / EA Host Architecture Candidate
 
 - Defined the documentation-only candidate boundary from the frozen `DecisionEngine` output to a separate Execution Layer / EA Host without adding runtime wiring or broker APIs.
