@@ -1,5 +1,13 @@
 # Changelog
 
+### Sprint 5 Phase A Execution Layer / EA Host Architecture Candidate
+
+- Defined the documentation-only candidate boundary from the frozen `DecisionEngine` output to a separate Execution Layer / EA Host without adding runtime wiring or broker APIs.
+- Assigned sole runtime authorities, deterministic single-writer event serialization, the contract-derived Signal-to-Execution order, and the fail-closed startup/reconciliation gate.
+- Preserved V5 Risk, Execution, Basket, Persistence, Statistics, Instance Ownership, Hard Kill, account-mode, and Unit semantics without changing any production contract or Signal Engine source.
+- Added ADR-009 through ADR-012 for Signal ingress, host serialization, Broker Adapter translation, and startup runtime eligibility; accepted Sprint 4 decisions were not duplicated.
+- Sprint 5 Phase A is `ARCHITECTURE CANDIDATE / IN REVIEW`. Sprint 4 remains the authorized baseline; Production Contract V5 remains merged/audited/unlocked. No Architecture Lock, runtime, broker, production, or live-trading authorization is granted. The next gate is Independent Sprint 5 Architecture Review.
+
 ### Sprint 4 post-merge governance closure
 
 - Recorded Final Independent Merge Audit `PASS`: no Critical findings, no Major findings, all six Critical and three prior Final-Audit MAJOR findings closed, infrastructure closure matrix all pass, Merge Safety `SAFE`, and final merge decision `READY TO MERGE INTO MAIN`.

@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 3.9 |
+| Version | 4.0 |
 | Date | 2026-08-21 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -38,6 +38,7 @@
 | 3.7 | 2026-08-16 | Recorded B11.2 server-evidence parser closure on top of B11.1: structured tester generation and supported legacy execution records are resolved centrally, source-bound symbol/timeframe and Trial/Demo policy remain fail-closed, and the exact unchanged D3 Generate path passes offline. B11.2 remains Candidate / In Review, unlocked, uncommitted, and not source-frozen. |
 | 3.8 | 2026-08-21 | Recorded B11.6 source freeze `ef556a94636e977e35e961be28ae03c9838615d4`, D5 immutable verification PASS with two deterministic 969/969 runs, and E5 reproducible evidence completion. Six Critical, three Final-Audit MAJOR, and parser/harness findings are closed; D4 remains failed historical evidence superseded by D5. The next gate is a new Final Independent Merge Audit, and candidate governance remains unchanged. |
 | 3.9 | 2026-08-21 | Recorded Final Independent Merge Audit PASS with no Critical or Major findings, infrastructure closure matrix all pass, and Merge Safety SAFE. Audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded into main from `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` with no merge commit; the candidate branch was retained. Production Contract V5 remains unlocked pending formal Architecture Lock approval, and runtime remains unauthorized. |
+| 4.0 | 2026-08-21 | Opened Sprint 5 Phase A as a documentation-only Execution Layer / EA Host Architecture Candidate / In Review. Defined Signal ingress, sole runtime authorities, deterministic single-writer serialization, Broker Adapter boundary, fail-closed startup/reconciliation, and later phase gates. Sprint 4 remains the authorized baseline; Production Contract V5 remains merged/audited/unlocked; runtime and broker implementation remain unauthorized. |
 
 ## Purpose
 
@@ -52,6 +53,8 @@ The current authorized architecture baseline is **Fusion Pro V5 Sprint 4 Archite
 The audited **Fusion Pro V5 Production Contract V5** package has been merged to main. It remains **unlocked pending formal Architecture Lock approval** and grants no runtime authorization.
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
+
+Sprint 5 Phase A is an **Architecture Candidate / In Review** for a separate Execution Layer / EA Host. It is documentation-only, does not change either technical baseline, and authorizes no runtime or broker implementation. Its next gate is an Independent Sprint 5 Architecture Review.
 
 Project:
 
@@ -268,6 +271,7 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
 | Merged / Audited / Unlocked — Formal Architecture Approval Pending | Sprint 4 Production Contract V5 package |
+| Architecture Candidate / In Review — Runtime Not Authorized | Sprint 5 Phase A Execution Layer / EA Host Architecture |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -447,7 +451,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- What exact future Execution Layer / EA Host scope, if any, should be separately authorized for Sprint 5?
+- Which Sprint 5 Phase A architecture decisions will be accepted, rejected, or revised by the independent review?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -464,10 +468,10 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 These are recommendations only and are not authorized implementation:
 
-1. Complete the explicit post-merge Architecture Lock decision for the audited Production Contract V5 package.
-2. Define and separately approve Sprint 5 scope before selecting any runtime implementation work.
+1. Complete an Independent Sprint 5 Architecture Review and separately decide Architecture Lock for the audited Production Contract V5 package.
+2. Approve, revise, or reject the Sprint 5 Phase A candidate before selecting any runtime implementation work.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
-4. Keep any future Execution Layer physically and logically separate until an ADR authorizes integration.
+4. Keep any future Execution Layer physically and logically separate until the Sprint 5 ingress ADR is independently reviewed and accepted.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
 6. Build external golden fixtures before claiming full V4.2 migration parity.
 7. Introduce Basket, Recovery, Risk, Persistence, and transaction work only after the Execution boundary is formally approved.
@@ -476,7 +480,7 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 
 1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Separately authorize Sprint 5 and the Indicator-to-Execution ingress boundary and repository structure.
+3. Independently review and approve, revise, or reject the Sprint 5 Phase A ingress boundary and repository structure.
 4. Select technologies that satisfy the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
 5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
 6. Add basket lifecycle before Recovery.
@@ -506,4 +510,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Perform Post-Merge Architecture Approval / Sprint 5 Scope Authorization. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and no runtime implementation or Signal-to-Execution wiring may begin without a separately approved Sprint 5 scope."
+"Perform an Independent Sprint 5 Architecture Review. Sprint 4 remains the authorized baseline, Production Contract V5 remains merged/audited/unlocked, and Sprint 5 Phase A remains Architecture Candidate / In Review. No runtime implementation or Signal-to-Execution wiring may begin without a separately approved implementation phase."

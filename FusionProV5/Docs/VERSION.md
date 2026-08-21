@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 4 Production Contract V5 — Audited And Merged, Unlocked
+Sprint 5 Phase A — Execution Layer / EA Host Architecture Candidate
 
 ### Date
 
@@ -12,14 +12,23 @@ Sprint 4 Production Contract V5 — Audited And Merged, Unlocked
 
 ### Status
 
-**MERGED TO MAIN / AUDITED / UNLOCKED — FORMAL ARCHITECTURE APPROVAL PENDING**
+**ARCHITECTURE CANDIDATE / IN REVIEW — RUNTIME NOT AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is now present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Merge Audit passed with no Critical or Major findings; all six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix passed. Merge Safety was `SAFE`. The package was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` with no merge commit, remote main was updated, and the candidate branch was retained. Production Contract V4 and earlier Sprint 4.8 generations remain superseded historical pre-approval records. No runtime, broker execution, production, live-trading, or Signal-to-Execution wiring authorization is granted.
+Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. Sprint 5 Phase A defines a documentation-only candidate Execution Layer / EA Host boundary over that contract authority. It does not modify or runtime-wire the frozen Sprint 3.2.1 Signal Engine and grants no runtime, broker execution, production, live-trading, or Signal-to-Execution wiring authorization.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
+
+## Current Architecture Candidate
+
+Sprint 5 Phase A — Execution Layer / EA Host Architecture
+
+- Status: **ARCHITECTURE CANDIDATE / IN REVIEW**
+- Scope: architecture and ADR documentation only
+- Next gate: **Independent Sprint 5 Architecture Review**
+- Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
 
@@ -95,6 +104,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Perform Post-Merge Architecture Approval / Sprint 5 Scope Authorization. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision. Any future Execution Layer or EA Host technical work requires a separately approved Sprint 5 scope.
+Perform an Independent Sprint 5 Architecture Review. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and Sprint 5 Phase A remains a candidate until separately approved.
 
-Do not begin runtime implementation without separate approval. Any adapter, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved Sprint 5 scope.
+Do not begin runtime implementation without separate approval. Any DTO, adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
