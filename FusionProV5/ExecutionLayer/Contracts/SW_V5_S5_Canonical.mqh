@@ -172,13 +172,19 @@ bool SWV5S5_SHA256Bytes(const uchar &source_bytes[],string &hex)
       0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
       0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2};
    int original=ArraySize(source_bytes);
-   int padded=((original+9+63)/64)*64;
+   if(original<0) return false;
+   ulong original_size=(ulong)original;
+   if(original_size>((ulong)2147483647-72)) return false;
+   ulong padded_size=((original_size+72)/64)*64;
+   if(padded_size==0 || padded_size>2147483647) return false;
+   int padded=(int)padded_size;
    uchar data[];
    if(ArrayResize(data,padded)!=padded) return false;
    ArrayInitialize(data,0);
    for(int i=0;i<original;i++) data[i]=source_bytes[i];
    data[original]=0x80;
-   ulong bit_length=(ulong)original*8;
+   if(original_size>18446744073709551615/8) return false;
+   ulong bit_length=original_size*8;
    for(int j=0;j<8;j++) data[padded-1-j]=(uchar)(bit_length>>(8*j));
 
    uint h[8]={0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
@@ -276,6 +282,25 @@ bool SWV5S5_CanonicalFence(const string name,const SWV5_OwnershipFence &fence,st
       !SWV5S5_CanonicalUInt("takeover_generation",fence.takeover_generation,h) ||
       !SWV5S5_CanonicalString("fencing_token_digest",fence.fencing_token_digest,i)) return false;
    body=a+b+c+d+e+f+g+h+i;
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalInstanceLease(const string name,const SWV5_InstanceLease &lease,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",lease.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalFence("fence",lease.fence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("status",lease.status,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("store_revision",lease.store_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("heartbeat_sequence",lease.heartbeat_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("clock_id",lease.clock_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("clock_authority",lease.clock_authority,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("acquired_clock_sequence",lease.acquired_clock_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("heartbeat_clock_sequence",lease.heartbeat_clock_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expiry_clock_sequence",lease.expiry_clock_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("acquired_at",lease.acquired_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("heartbeat_at",lease.heartbeat_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("expires_at",lease.expires_at,f)) return false; body+=f;
    return SWV5S5_CanonicalNested(name,body,field);
 }
 

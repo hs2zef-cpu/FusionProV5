@@ -44,11 +44,14 @@ public:
                                            const SWV5S5_DoubleCollectResult &snapshot_result,
                                            SWV5S5_OrchestrationResult &result)=0;
    virtual bool ProposeInvocationClaim(const SWV5S5_OrchestrationEvent &event,
-                                       const SWV5S5_InvocationClaimProposal &claim,
+                                       const SWV5S5_InvocationClaimCommand &claim,
                                        SWV5S5_OrchestrationResult &result)=0;
-   virtual bool ProposeFencedPublication(const SWV5S5_OrchestrationEvent &event,
-                                         const SWV5S5_FencedPublicationProposal &proposal,
-                                         SWV5S5_OrchestrationResult &result)=0;
+   virtual bool ProposeRequestSetPublication(const SWV5S5_OrchestrationEvent &event,
+                                             const SWV5S5_RequestSetPublicationProposal &proposal,
+                                             SWV5S5_OrchestrationResult &result)=0;
+   virtual bool ProposeCheckpointPublication(const SWV5S5_OrchestrationEvent &event,
+                                             const SWV5S5_CheckpointPublicationProposal &proposal,
+                                             SWV5S5_OrchestrationResult &result)=0;
 };
 
 #endif

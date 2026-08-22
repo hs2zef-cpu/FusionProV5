@@ -3,7 +3,6 @@
 #property strict
 
 #include "../../ExecutionLayer/Contracts/SW_V5_S5_Contracts.mqh"
-#include "SW_V5_S5_PhaseB_TestVectors.mqh"
 
 void OnStart()
 {

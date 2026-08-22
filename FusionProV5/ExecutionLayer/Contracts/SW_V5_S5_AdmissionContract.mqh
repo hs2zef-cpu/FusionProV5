@@ -4,7 +4,7 @@
 // SPRINT 5 PHASE B CANDIDATE CONTRACT
 // PURE CONDITIONAL ADMISSION MODEL / P IS INEFFECTIVE UNTIL CLAIM_GRANTED_NOW
 
-#include "SW_V5_S5_AdmissionSnapshotContract.mqh"
+#include "SW_V5_S5_InvocationClaimContract.mqh"
 
 struct SWV5S5_ClaimTimeAuthorityInput
 {
@@ -13,7 +13,6 @@ struct SWV5S5_ClaimTimeAuthorityInput
    SWV5_RiskAuthorization risk_authorization;
    SWV5S5_ProducerTrustRecord producer_trust;
    bool lease_live;
-   bool hard_kill_blocks_increase;
    bool account_observation_fresh;
    bool symbol_specification_fresh;
    bool margin_fresh;
@@ -43,9 +42,9 @@ bool SWV5S5_ValidateClaimTimeAuthorities(const SWV5_ContractValidationContext &c
                               authority_input.permit.persistence_namespace) ||
       !SWV5S5_EqualFence(authority_input.risk_authorization.ownership_fence,
                           authority_input.permit.ownership_fence) ||
-      authority_input.risk_authorization.authorization_id!=authority_input.permit.risk_authorization_id ||
+      authority_input.risk_authorization.authorization_id!=authority_input.permit.risk_authorization.authorization_id ||
       authority_input.risk_authorization.disposition!=SWV5_RISK_ALLOW ||
-      authority_input.risk_authorization.expires_at!=authority_input.permit.risk_expires_at ||
+      authority_input.risk_authorization.expires_at!=authority_input.permit.risk_authorization.expires_at ||
       authority_input.risk_authorization.account_mode!=authority_input.permit.account_mode ||
       authority_input.risk_authorization.basket_state_version!=authority_input.permit.basket_state_version ||
       authority_input.risk_authorization.symbol_specification_sequence!=authority_input.permit.symbol_specification_sequence ||
@@ -57,7 +56,7 @@ bool SWV5S5_ValidateClaimTimeAuthorities(const SWV5_ContractValidationContext &c
    if(context.clock_time<authority_input.producer_trust.valid_from || context.clock_time>=authority_input.producer_trust.valid_until)
    { result.operation_state=SWV5S5_ADMISSION_CLAIM_TIME_FAILED; result.reason_code="TRUST_EXPIRED_AT_CLAIM"; return false; }
    if(context.clock_time<authority_input.permit.valid_from || context.clock_time>=authority_input.permit.valid_until ||
-      !authority_input.lease_live || authority_input.hard_kill_blocks_increase || !authority_input.account_observation_fresh ||
+      !authority_input.lease_live || !authority_input.account_observation_fresh ||
       !authority_input.symbol_specification_fresh || !authority_input.margin_fresh || !authority_input.basket_risk_fresh ||
       !authority_input.clock_nonregressing)
    { result.operation_state=SWV5S5_ADMISSION_CLAIM_TIME_FAILED; result.reason_code="CLAIM_TIME_AUTHORITY_DENIED"; return false; }

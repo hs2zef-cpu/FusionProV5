@@ -1,17 +1,14 @@
-# Sprint 5 Phase B contract coverage matrix
+# Sprint 5 Phase B.1 contract coverage matrix
 
-| Authority | ADR | Phase B implementation | Verification | Deferred implementation |
+| Authority | ADR | Corrected Phase B.1 contract | Verification | Deferred physical work |
 |---|---|---|---|---|
-| Signal Decision ingress boundary | ADR-009 | Immutable numeric source projection, strict binding, nonrecursive identity/digest, freshness, Producer Trust | ING/TRU/CAN | Runtime adapter: Phase C |
-| EA host single writer | ADR-010 | Immutable orchestration events/results; no dispatcher | ORC | Coordinator/queue: Phase C |
-| Startup runtime enable gate | ADR-012 | Authority tokens and fail-closed admission inputs | ADM/MUT | Startup runtime gate: Phase C/D |
-| Durable ingress acceptance/request binding | ADR-013 | Ledger lifecycle/proposals and deterministic initial V5 blueprint | LED/BND | Physical durability: Phase D |
-| Permit reservation/takeover quiescence | ADR-014 | Permit and durable submission-authority state | PER/CLM | Atomic store/quiescence: Phase D |
-| Runtime publication/crash recovery | ADR-015 | Fenced request-set/checkpoint proposal/result contracts | PUB | Store/recovery execution: Phase D/E |
-| Invocation claim/admission vector | ADR-016 | Exactly-once claim shape; ephemeral grant; stable vector | CLM/ADM | Broker invocation: Phase F |
-| Namespace request sequence authority | ADR-017 | Namespace-wide reservation authority/proposal/result | SEQ | Linearizable allocator store: Phase D |
-| Fenced runtime publication | ADR-018 | Expected store/logical revision plus ownership fence | PUB | CAS publication: Phase D |
-| Coherent admission snapshot | ADR-019 | Typed tokens and double-collect validator | ADM | Integrated authority collectors: Phase E |
-| Conditional policy admission | ADR-020 | P/Claim model, exclusive Risk expiry, mutation ordering | CLM/ADM/MUT | Runtime linearization: Phase C/E |
+| Signal/Decision ingress and Trust | ADR-009 | Exact ingress-bound current Trust anchor/generation/scope | Trust MQL group; oracle binding/static cases | Adapter/Trust store |
+| Durable ingress acceptance | ADR-013 | Explicit ordered Ledger membership/binding index; unseen-below-HWM denial; compaction continuity | Ledger/Sequence MQL group; oracle LED cases | Physical CAS ledger |
+| Request binding | ADR-013 | Policy/version-bound correlation; ordinal attempt; correlation-only idempotency; complete initial V5 blueprint | Canonical/Blueprint MQL groups; fixed oracle hashes | Runtime materialization |
+| Permit reservation | ADR-014/016 | Complete typed Permit; stable ID; content conflict; pure preparation vs abstract commit | Permit/Blueprint MQL groups; oracle PER cases | Physical permit commit |
+| Namespace request sequence | ADR-017 | Explicit authority-owned reservation index and recomputed authority digest | Ledger/Sequence MQL group; oracle SEQ cases | Linearizable allocator |
+| Fenced publication | ADR-018 | Separate request-set/checkpoint proposals with exact-current digest/revision/fence/takeover/full payload | Publication MQL group; oracle PUB cases | Physical publication |
+| Coherent admission snapshot | ADR-019 | Complete typed owner views, owner mutation evidence distinct from projection digest, V1/V2/final clocks | Snapshot/Claim MQL groups | Authority collectors |
+| Conditional policy admission | ADR-020 | Pure Claim transition proposal; authoritative atomic Claim interface; no second Hard Kill/Trust-status veto | Claim/ADR-020 MQL groups; oracle CLM cases | Shared serialization backend |
 
-Phase F retains broker adapter/retcode/event-ordering and Demo-only integration work under separate authorization. Phase G retains immutable integration evidence and independent final execution-layer audit. No Phase C–G work is implemented here.
+Production Contract V5 persistence interfaces remain unchanged. No Phase C–G implementation is present.
