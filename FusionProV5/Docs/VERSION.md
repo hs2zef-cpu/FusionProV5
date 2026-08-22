@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase B — Pure Execution Layer Contract Implementation
+Sprint 5 Phase B.1 — Contract Conformance Correction
 
 ### Date
 
@@ -12,24 +12,27 @@ Sprint 5 Phase B — Pure Execution Layer Contract Implementation
 
 ### Status
 
-**PHASE B EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY**
+**PHASE B.1 CORRECTIVE IMPLEMENTATION AUTHORIZED — PHASE B CONTRACTS ONLY**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate passed with no Critical or Major findings and is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. Phase B is separately authorized to implement pure Sprint 5 candidate contracts and deterministic verification only.
+Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate passed with no Critical or Major findings and is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. The first independent Sprint 5 Phase B Contract Implementation Audit returned **FAIL** with **2 Critical, 10 Major, and 3 Minor findings**. This is an implementation-conformance failure, not an architecture failure; the Architecture Review Gate remains **CLOSED**. Phase B.1 is authorized only to correct the Phase B candidate contracts and deterministic verification against the approved ADRs.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
-- Phase B: **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY**
+- Phase B.1: **CORRECTIVE IMPLEMENTATION AUTHORIZED — PHASE B CONTRACTS ONLY**
+- Phase C: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase B — Pure Execution Layer Contract Implementation
+Sprint 5 Phase B.1 — Contract Conformance Correction
 
-- Status: **AUTHORIZED IMPLEMENTATION / IN PROGRESS — PURE CONTRACTS ONLY**
+- Status: **AUTHORIZED CORRECTION / IN PROGRESS — PHASE B CONTRACTS ONLY**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: immutable DTOs, pure interfaces/validators, deterministic canonical identities, and contract verification
-- Next gate: **New Independent Sprint 5 Phase B Contract Implementation Audit**
+- First independent Phase B audit: **FAIL — 2 Critical / 10 Major / 3 Minor**
+- Next gate: **New Independent Sprint 5 Phase B Contract Re-audit**
+- Phase C: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -106,6 +109,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Complete and self-verify the isolated Sprint 5 Phase B pure contract package, then submit it to a new independent Sprint 5 Phase B Contract Implementation Audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Complete and self-verify the isolated Sprint 5 Phase B.1 contract-conformance correction, then submit it to a new independent Sprint 5 Phase B Contract Re-audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
-Do not begin Phase B or runtime implementation without separate approval. Any DTO, adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
+Do not begin Phase C or runtime implementation without separate approval. Any adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.

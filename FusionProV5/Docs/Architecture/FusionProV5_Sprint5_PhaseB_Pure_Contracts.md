@@ -8,6 +8,9 @@
 | Architecture Review Gate | **CLOSED** |
 | Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
 | Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
+| First independent Phase B implementation audit | **FAIL — 2 CRITICAL / 10 MAJOR / 3 MINOR** |
+| Phase B.1 correction | **AUTHORIZED — PHASE B CONTRACT CONFORMANCE ONLY** |
+| Phase C | **NOT AUTHORIZED** |
 | Architecture Lock | **NOT GRANTED** |
 | Runtime | **NOT AUTHORIZED** |
 | Broker | **NOT AUTHORIZED** |
@@ -53,9 +56,11 @@ Frozen Signal/Decision
 
 ## Verification And Exit Gate
 
-Phase B verification must cover canonical/reference vectors, ingress and Trust boundaries, ledger replay, request reservation/binding, fenced publication, permit/Claim exactly-once semantics, stable collection, Claim-time exclusive expiry, conditional linearization, forbidden APIs, dependency direction, include cycles, and contract coverage. MetaEditor may compile a minimal compile-only probe; MT5 Terminal and Strategy Tester must not run.
+The first independent Phase B Contract Implementation Audit returned **FAIL**, with **2 Critical, 10 Major, and 3 Minor findings**. This is an implementation-conformance failure against the approved ADRs; it does not reopen architecture, and the Architecture Review Gate remains **CLOSED**. Phase B.1 is authorized only to correct those Phase B contract and verification findings.
 
-The Phase B package remains a candidate until a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT** is performed in a fresh review task. Completion does not authorize Phase C, merge, runtime, broker work, Architecture Lock, or production use.
+Phase B.1 verification must cover canonical/reference vectors, ingress and Trust boundaries, ledger replay, request reservation/binding, fenced publication, permit/Claim exactly-once semantics, stable collection, Claim-time exclusive expiry, conditional linearization, forbidden APIs, dependency direction, include cycles, and contract coverage. MetaEditor may compile compile-only probes and an assertion harness; MT5 Terminal and Strategy Tester must not run.
+
+The corrected Phase B package remains a candidate until a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT RE-AUDIT** is performed in a fresh review task. Completion does not authorize Phase C, merge, runtime, broker work, Architecture Lock, or production use.
 
 ## Deferred Work
 

@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase B.1 contract-conformance correction authorization
+
+- Recorded the first independent Sprint 5 Phase B Contract Implementation Audit result: `FAIL`, with 2 Critical, 10 Major, and 3 Minor findings.
+- Classified the result as a Phase B implementation-conformance failure against approved ADR-009 through ADR-020; the Architecture Review Gate remains `CLOSED` and the approved Phase A architecture is unchanged.
+- Authorized only the smallest Phase B.1 candidate-contract and deterministic-verification correction on the isolated Phase B branch.
+- Phase C, runtime, broker access, physical persistence, MT5 Terminal/Strategy Tester execution, Architecture Lock, merge to main, production, and live trading remain unauthorized.
+
 ### Sprint 5 Phase B pure contract implementation authorization
 
 - Recorded the Final Independent Sprint 5 Phase A.4 Architecture Gate `PASS`, with no Critical or Major findings; the Architecture Review Gate is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`.

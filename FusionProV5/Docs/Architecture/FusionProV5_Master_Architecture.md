@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 4.5 |
+| Version | 4.6 |
 | Date | 2026-08-22 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -44,6 +44,7 @@
 | 4.3 | 2026-08-21 | Recorded the Phase A.2 final independent re-review failure with no Critical findings and one remaining Major. Phase A.3 removes the unowned host counter from safety authority and defines ADR-019 owner-supplied stable tokens, coherent double collect, immutable Admission Snapshot linearization, same-event V5 Risk validation/Invocation Claim, and 41 reviewed threats. Phase B and runtime remain unauthorized; final independent re-review is next. |
 | 4.4 | 2026-08-21 | Recorded the Phase A.3 final independent re-review failure with no Critical findings and one remaining Major. Phase A.4 defines ADR-020 one Increasing Execution Admission operation, conditional Policy Admission Linearization Point, successful Claim completion/uncertainty, concurrent mutation ordering, and mandatory Claim-time expiry/liveness. Phase B and runtime remain unauthorized; final independent re-review is next. |
 | 4.5 | 2026-08-22 | Recorded Final Independent Sprint 5 Phase A.4 Architecture Gate PASS with no Critical or Major findings and closed the Architecture Review Gate at `31e76411829e2f2e6acb24740ddca32b886969e0`. Explicitly authorized Phase B for isolated pure candidate contracts and deterministic verification only. Architecture Lock, runtime, broker, MT5 integration, physical persistence, merge to main, production, and live trading remain unauthorized. |
+| 4.6 | 2026-08-22 | Recorded the first independent Sprint 5 Phase B Contract Implementation Audit FAIL with 2 Critical, 10 Major, and 3 Minor findings, and authorized the Phase B.1 implementation-conformance correction only. The approved Phase A architecture is unchanged, the Architecture Review Gate remains closed, and Phase C/runtime remain unauthorized. |
 
 ## Purpose
 
@@ -59,7 +60,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at commit `31e76411829e2f2e6acb24740ddca32b886969e0`. Sprint 5 Phase B is **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** for an isolated Execution Layer candidate package. It does not change either technical baseline or authorize runtime, broker, MT5 integration, physical persistence, merge to main, production, or live trading.
+The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at commit `31e76411829e2f2e6acb24740ddca32b886969e0`. The first independent Sprint 5 Phase B Contract Implementation Audit returned **FAIL** with **2 Critical, 10 Major, and 3 Minor findings**. This is an implementation-conformance failure; the approved architecture and closed Architecture Review Gate are unchanged. Sprint 5 Phase B.1 is authorized only to correct the isolated pure candidate contracts and deterministic verification. Phase C, runtime, broker, MT5 integration, physical persistence, merge to main, production, and live trading remain unauthorized.
 
 Project:
 
