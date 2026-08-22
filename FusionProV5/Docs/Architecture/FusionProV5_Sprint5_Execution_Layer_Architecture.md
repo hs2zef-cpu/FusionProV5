@@ -4,19 +4,20 @@
 
 | Item | Status |
 |---|---|
-| Sprint 5 Phase A.4 | **FINAL POLICY ADMISSION LINEARIZATION CANDIDATE / IN REVIEW** |
-| Authorized work | Architecture and ADR documentation only |
+| Sprint 5 Phase A.4 | **ARCHITECTURE REVIEW GATE CLOSED / PASS** |
+| Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
+| Authorized work | Sprint 5 Phase B pure, platform-independent candidate contracts and deterministic verification only |
 | Authorized architecture baseline | Sprint 4 Architecture |
 | Production Contract V5 | Audited and merged; **Architecture Lock not granted** |
 | Runtime implementation | **NOT AUTHORIZED** |
 | Broker implementation | **NOT AUTHORIZED** |
 | Production or live trading | **NOT AUTHORIZED** |
-| Phase B | **NOT AUTHORIZED** |
-| Next gate | **FINAL INDEPENDENT SPRINT 5 ARCHITECTURE RE-REVIEW** |
+| Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
+| Next gate | **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT** |
 
 This document answers: **How can the audited Production Contract V5 become an Execution Layer architecture without coupling broker runtime into the frozen Signal Engine, duplicating requests after a crash, or allowing competing external broker side effects across lease takeover?** It does not authorize or specify how to call a broker API.
 
-The Phase A.3 final independent re-review returned **FAIL** with no Critical findings and one Phase-B-blocking Major: the candidate inconsistently placed policy admission at both the coherent snapshot point and successful Invocation Claim. Every other Phase A.3 finding independently passed. Phase A.4 closes only that semantic contradiction by defining one Increasing Execution Admission operation, a conditional Policy Admission Linearization Point, and Claim as its completion/uncertainty boundary; it does not self-approve the correction.
+The Phase A.3 final independent re-review returned **FAIL** with one Phase-B-blocking Major. Phase A.4 closed that contradiction through one Increasing Execution Admission operation, a conditional Policy Admission Linearization Point, and Claim as its completion/uncertainty boundary. The subsequent Final Independent Phase A.4 Architecture Gate returned **PASS**, with no Critical or Major findings; the Architecture Review Gate is closed. The separate Phase B authorization permits only the pure candidate contracts specified by this architecture.
 
 ## Authorities And Preserved Baselines
 
@@ -755,4 +756,4 @@ V3S remains an independent Research Lab. Its M5 logic, experiments, and discover
 
 ## Review Recommendation
 
-This document is ready to be evaluated as a **Sprint 5 Phase A.4 Final Policy Admission Linearization Candidate / In Review** only after its documentation diff passes scope and consistency checks. The required next action is the **Final Independent Sprint 5 Architecture Re-review**. Phase B, runtime implementation, broker implementation, Architecture Lock, and production trading remain not granted.
+The Final Independent Sprint 5 Phase A.4 Architecture Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`. Phase B pure contract implementation is separately authorized; its required next gate is a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT**. Phase C, runtime implementation, broker implementation, MT5 integration, Architecture Lock, merge to main, production, and live trading remain not granted.

@@ -4,31 +4,32 @@
 
 ### Current Version
 
-Sprint 5 Phase A.4 — Final Policy Admission Linearization Closure Candidate
+Sprint 5 Phase B — Pure Execution Layer Contract Implementation
 
 ### Date
 
-2026-08-21
+2026-08-22
 
 ### Status
 
-**FINAL POLICY ADMISSION LINEARIZATION CANDIDATE / IN REVIEW — PHASE B NOT AUTHORIZED**
+**PHASE B EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Phase A.3 final independent re-review failed with no Critical findings and one Phase-B-blocking Major: policy admission was inconsistently placed at both the coherent snapshot and successful Claim. Sprint 5 Phase A.4 is the documentation-only correction candidate; its Increasing Execution Admission operation, conditional Policy Admission Linearization Point, concurrent-mutation ordering, and Claim completion/expiry/liveness rules are future Sprint 5 Candidate Contract semantics, not existing V5 authority. It does not modify or runtime-wire the frozen Sprint 3.2.1 Signal Engine.
+Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate passed with no Critical or Major findings and is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. Phase B is separately authorized to implement pure Sprint 5 candidate contracts and deterministic verification only.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
-- Phase B: **NOT AUTHORIZED BY PHASE A.4**
+- Phase B: **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY**
 
-## Current Architecture Candidate
+## Current Sprint 5 Work
 
-Sprint 5 Phase A.4 — Final Policy Admission Linearization Closure
+Sprint 5 Phase B — Pure Execution Layer Contract Implementation
 
-- Status: **FINAL POLICY ADMISSION LINEARIZATION CANDIDATE / IN REVIEW**
-- Scope: architecture and ADR documentation only
-- Next gate: **Final Independent Sprint 5 Architecture Re-review**
+- Status: **AUTHORIZED IMPLEMENTATION / IN PROGRESS — PURE CONTRACTS ONLY**
+- Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
+- Scope: immutable DTOs, pure interfaces/validators, deterministic canonical identities, and contract verification
+- Next gate: **New Independent Sprint 5 Phase B Contract Implementation Audit**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -105,6 +106,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Perform the Final Independent Sprint 5 Architecture Re-review. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision, and Sprint 5 Phase A.4 remains a correction candidate until separately approved.
+Complete and self-verify the isolated Sprint 5 Phase B pure contract package, then submit it to a new independent Sprint 5 Phase B Contract Implementation Audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
 Do not begin Phase B or runtime implementation without separate approval. Any DTO, adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.

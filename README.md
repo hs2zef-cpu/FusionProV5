@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. Sprint 5 Phase A.4 now defines a Final Policy Admission Linearization Closure candidate in documentation only; it contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Sprint 5 Phase A.4 Architecture Gate passed, and Sprint 5 Phase B is explicitly authorized for pure, platform-independent Execution Layer contracts only; it contains no production broker execution.
 
 ## Repository Location
 
@@ -21,6 +21,7 @@ GitHub remote:
 - `FusionProV5/Docs/Architecture/`: Authoritative architecture documents.
 - `FusionProV5/Evidence/`: Runtime and regression evidence guidance.
 - `FusionProV5/ProductionArchitecture/`: Sprint 4 production architecture contracts.
+- `FusionProV5/ExecutionLayer/Contracts/`: Isolated Sprint 5 pure candidate contracts.
 - `FusionProV5/Tools/`: Repository and development tools.
 - `FusionProV5/Scripts/`: Repeatable project scripts.
 - `FusionProV5/Tests/`: Deterministic, test-only contract verification assets.
@@ -31,13 +32,13 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-Sprint 5 Phase A.4 — Final Policy Admission Linearization Closure is **FINAL POLICY ADMISSION LINEARIZATION CANDIDATE / IN REVIEW** after the Phase A.3 final independent re-review returned `FAIL` with no Critical findings and one Phase-B-blocking Major. Phase A.4 defines one Increasing Execution Admission operation, makes the coherent snapshot point conditionally effective only after successful Invocation Claim, separates explicit concurrent mutations from mandatory Claim-time expiry/liveness, and preserves Hard Kill, Trust, ownership, exactly-once, and no-reuse rules. These remain architecture decisions only; every new authority is a Sprint 5 Candidate Contract, not an existing V5 operation.
+The Final Independent Sprint 5 Phase A.4 Architecture Gate returned `PASS`, with no Critical or Major findings, and is **CLOSED**. Approved architecture authority is commit `31e76411829e2f2e6acb24740ddca32b886969e0`. Sprint 5 Phase B is **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** on the isolated `sprint5-phase-b-pure-contracts` branch. Phase B may implement immutable DTOs, pure validators, deterministic canonical identities, candidate interfaces, and deterministic contract fixtures only. These remain Sprint 5 Candidate Contracts, not existing V5 authority.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Sprint 4 contains contract architecture and test-only verification only: it contains no broker execution, production EA implementation, or Signal-to-Execution runtime wiring. The next gate is the **Final Independent Sprint 5 Architecture Re-review**. Phase B, Architecture Lock, runtime authorization, broker execution authorization, production authorization, and live-trading approval are not granted.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Architecture Lock, runtime, broker, MT5 integration, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized. After Phase B self-verification, the next gate is a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT** in a fresh review task.
 
 ## Repository Workflow
 

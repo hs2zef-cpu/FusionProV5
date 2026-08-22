@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase B pure contract implementation authorization
+
+- Recorded the Final Independent Sprint 5 Phase A.4 Architecture Gate `PASS`, with no Critical or Major findings; the Architecture Review Gate is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`.
+- Explicitly authorized Sprint 5 Phase B for isolated, pure, platform-independent candidate DTOs, interfaces, canonical identities, validators, and deterministic contract fixtures only.
+- Preserved Production Contract V5 and the frozen Signal/Decision baseline unchanged. Architecture Lock, runtime, broker, MT5 integration, physical persistence, merge to main, production, and live trading remain unauthorized.
+- Set the next gate after implementation to a new independent Sprint 5 Phase B Contract Implementation Audit.
+
 ### Sprint 5 Phase A.4 final policy admission linearization closure candidate
 
 - Recorded the Phase A.3 final independent re-review result `FAIL`: no Critical findings and one Phase-B-blocking Major from inconsistent policy-admission linearization between the coherent snapshot point and successful Invocation Claim.

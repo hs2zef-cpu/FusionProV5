@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 4.4 |
-| Date | 2026-08-21 |
+| Version | 4.5 |
+| Date | 2026-08-22 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -43,6 +43,7 @@
 | 4.2 | 2026-08-21 | Recorded the Phase A.1 re-review failure and opened Phase A.2 Invocation & Publication Authority Closure Candidate / In Review. Separated permit reservation from exactly-once Invocation Claim, defined continuing Producer Trust lifecycle, one namespace-wide Request Sequence Authority, fenced request-set/checkpoint publication, an Admission Version Vector and a derived host-counter concept later superseded by Phase A.3, strict canonical UTF-8 primitive framing, and 38 reviewed threats. Phase B and runtime remain unauthorized. |
 | 4.3 | 2026-08-21 | Recorded the Phase A.2 final independent re-review failure with no Critical findings and one remaining Major. Phase A.3 removes the unowned host counter from safety authority and defines ADR-019 owner-supplied stable tokens, coherent double collect, immutable Admission Snapshot linearization, same-event V5 Risk validation/Invocation Claim, and 41 reviewed threats. Phase B and runtime remain unauthorized; final independent re-review is next. |
 | 4.4 | 2026-08-21 | Recorded the Phase A.3 final independent re-review failure with no Critical findings and one remaining Major. Phase A.4 defines ADR-020 one Increasing Execution Admission operation, conditional Policy Admission Linearization Point, successful Claim completion/uncertainty, concurrent mutation ordering, and mandatory Claim-time expiry/liveness. Phase B and runtime remain unauthorized; final independent re-review is next. |
+| 4.5 | 2026-08-22 | Recorded Final Independent Sprint 5 Phase A.4 Architecture Gate PASS with no Critical or Major findings and closed the Architecture Review Gate at `31e76411829e2f2e6acb24740ddca32b886969e0`. Explicitly authorized Phase B for isolated pure candidate contracts and deterministic verification only. Architecture Lock, runtime, broker, MT5 integration, physical persistence, merge to main, production, and live trading remain unauthorized. |
 
 ## Purpose
 
@@ -58,7 +59,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-Sprint 5 Phase A.4 is a **Final Policy Admission Linearization Candidate / In Review** for a separate Execution Layer / EA Host. It responds to the failed Phase A.3 final independent re-review and is documentation-only. It does not change either technical baseline or authorize Phase B, runtime, or broker implementation. Its next gate is the Final Independent Sprint 5 Architecture Re-review.
+The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at commit `31e76411829e2f2e6acb24740ddca32b886969e0`. Sprint 5 Phase B is **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** for an isolated Execution Layer candidate package. It does not change either technical baseline or authorize runtime, broker, MT5 integration, physical persistence, merge to main, production, or live trading.
 
 Project:
 
@@ -275,7 +276,8 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized | Sprint 3.2.1 |
 | Authorized | Sprint 4 Architecture |
 | Merged / Audited / Unlocked — Formal Architecture Approval Pending | Sprint 4 Production Contract V5 package |
-| Final Policy Admission Linearization Candidate / In Review — Phase B And Runtime Not Authorized | Sprint 5 Phase A.4 Final Policy Admission Linearization Closure |
+| Architecture Review Gate Closed / PASS | Sprint 5 Phase A.4 Final Policy Admission Linearization Closure at `31e76411829e2f2e6acb24740ddca32b886969e0` |
+| Explicitly Authorized — Pure Contracts Only | Sprint 5 Phase B Pure Execution Layer Contract Implementation |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -455,7 +457,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- Will the Final Independent Sprint 5 Architecture Re-review accept the Phase A.4 conditional policy-admission linearization correction?
+- Will the New Independent Sprint 5 Phase B Contract Implementation Audit accept the pure candidate implementation without Critical or Major findings?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -472,10 +474,10 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 These are recommendations only and are not authorized implementation:
 
-1. Complete the Final Independent Sprint 5 Architecture Re-review and separately decide Architecture Lock for the audited Production Contract V5 package.
-2. Approve, revise, or reject the Sprint 5 Phase A.4 candidate before authorizing Phase B or selecting runtime implementation work.
+1. Complete and independently audit Sprint 5 Phase B pure contracts, and separately decide Architecture Lock for the audited Production Contract V5 package.
+2. Approve, revise, or reject the Sprint 5 Phase B implementation before authorizing Phase C or selecting runtime implementation work.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
-4. Keep any future Execution Layer physically and logically separate until the Sprint 5 Phase A.4 ADR set is independently reviewed and accepted.
+4. Keep any future Execution Layer runtime physically and logically separate until the Sprint 5 Phase B pure contracts are independently audited and accepted.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
 6. Build external golden fixtures before claiming full V4.2 migration parity.
 7. Introduce Basket, Recovery, Risk, Persistence, and transaction work only after the Execution boundary is formally approved.
@@ -484,7 +486,7 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 
 1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Independently re-review and approve, revise, or reject the Sprint 5 Phase A.4 final policy admission linearization closure and repository structure.
+3. Independently audit and approve, revise, or reject the Sprint 5 Phase B pure contract implementation and repository structure.
 4. Select technologies that satisfy the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
 5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
 6. Add basket lifecycle before Recovery.
@@ -514,4 +516,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Perform the Final Independent Sprint 5 Architecture Re-review. Sprint 4 remains the authorized baseline, Production Contract V5 remains merged/audited/unlocked, and Sprint 5 Phase A.4 remains Final Policy Admission Linearization Candidate / In Review. Phase B, runtime implementation, and Signal-to-Execution wiring remain unauthorized without separate approval."
+"Complete and self-verify Sprint 5 Phase B pure candidate contracts on `sprint5-phase-b-pure-contracts`, then request a new independent Phase B Contract Implementation Audit. Sprint 4 remains the authorized baseline; Production Contract V5 remains merged/audited/unlocked. Runtime, broker, MT5 integration, physical persistence, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized."
