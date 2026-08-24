@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_REQUEST_BINDING_CONTRACT_MQH
 #define SW_V5_S5_REQUEST_BINDING_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.1 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
 // PURE DETERMINISTIC INITIAL REQUEST BLUEPRINT / NO LIFECYCLE EXECUTION
 
 #include "SW_V5_S5_RequestSequenceContract.mqh"
@@ -255,9 +255,14 @@ bool SWV5S5_InitialEvidenceEmpty(const SWV5_PendingRequest &request)
 
 bool SWV5S5_ValidateInitialBlueprint(const SWV5_ContractValidationContext &context,
                                      const SWV5S5_InitialRequestBlueprint &blueprint,
+                                     const SWV5S5_IngressEnvelope &accepted_ingress,
+                                     const SWV5S5_IngressLedgerRecord &accepted_record,
+                                     const SWV5_NormalizedUnits &normalized_payload,
+                                     const string normalization_identity,
+                                     const SWV5_RiskAuthorization &risk_authorization,
                                      SWV5S5_ValidationResult &result)
 {
-   string correlation,attempt,idempotency,binding_digest,blueprint_digest;
+   string correlation,attempt,idempotency,binding_digest,blueprint_digest,ingress_identity,ingress_payload,ledger_digest;
    const SWV5_PendingRequest request=blueprint.pending_request;
    const SWV5_ExecutionIntent intent=request.intent;
    if(!SWV5S5_IsCandidateVersion(blueprint.contract_version) ||
@@ -291,7 +296,61 @@ bool SWV5S5_ValidateInitialBlueprint(const SWV5_ContractValidationContext &conte
       request.cumulative_confirmed_volume!=0.0 || request.residual_requested_volume!=intent.normalized_volume ||
       request.retry_disposition!=SWV5_RETRY_FORBIDDEN ||
       request.authorization_identity!=intent.risk_authorization_id ||
-      request.normalization_identity=="" || request.last_changed_at!=blueprint.binding.accepted_at)
+      request.normalization_identity=="" || request.last_changed_at!=blueprint.binding.accepted_at ||
+      !SWV5S5_DeriveIngressIdentityAndDigest(accepted_ingress,ingress_identity,ingress_payload) ||
+      ingress_identity!=accepted_ingress.ingress_identity || ingress_payload!=accepted_ingress.payload_digest ||
+      ingress_identity!=blueprint.binding.accepted_ingress_identity ||
+      !SWV5S5_IsCandidateVersion(accepted_record.contract_version) ||
+      !SWV5S5_ValidLedgerLifecycle(accepted_record) ||
+      !SWV5S5_DeriveLedgerRecordDigest(accepted_record,ledger_digest) || accepted_record.record_digest!=ledger_digest ||
+      accepted_record.ingress_identity!=ingress_identity || accepted_record.payload_digest!=ingress_payload ||
+      accepted_record.publication_sequence!=accepted_ingress.publication.publication_sequence ||
+      accepted_record.accepted_at!=blueprint.binding.accepted_at ||
+      accepted_record.logical_correlation_id!=blueprint.binding.logical_correlation_id ||
+      accepted_record.reserved_request_sequence!=blueprint.binding.logical_request_sequence ||
+      (accepted_record.lifecycle_state!=SWV5S5_ACCEPTED_REQUEST_PENDING &&
+       accepted_record.lifecycle_state!=SWV5S5_BOUND_TO_REQUEST) ||
+      (accepted_record.lifecycle_state==SWV5S5_ACCEPTED_REQUEST_PENDING && accepted_record.bound_request_id!="") ||
+      (accepted_ingress.decision.action!=1 && accepted_ingress.decision.action!=-1) ||
+      accepted_ingress.decision.direction!=accepted_ingress.decision.action ||
+      intent.intent_type!=SWV5_INTENT_OPEN || intent.direction!=accepted_ingress.decision.direction ||
+      normalization_identity=="" || request.normalization_identity!=normalization_identity ||
+      !SWV5S5_IsV5Version(normalized_payload.contract_version) ||
+      !SWV5S5_EqualNamespace(normalized_payload.persistence_namespace,intent.persistence_namespace) ||
+      !SWV5S5_EqualFence(normalized_payload.ownership_fence,intent.ownership_fence) ||
+      normalized_payload.derived_operation_semantic!=SWV5_UNIT_OPERATION_OPEN ||
+      normalized_payload.specification_sequence!=intent.symbol_specification_sequence ||
+      normalized_payload.volume!=intent.normalized_volume || normalized_payload.price!=intent.normalized_price ||
+      normalized_payload.stop_price!=intent.normalized_stop_price ||
+      normalized_payload.limit_price!=intent.normalized_limit_price ||
+      normalized_payload.resulting_exposure_volume!=normalized_payload.volume ||
+      normalized_payload.current_exposure_volume!=0.0 ||
+      !normalized_payload.price_aligned_to_tick || !normalized_payload.volume_aligned_to_step ||
+      !normalized_payload.stops_level_satisfied || !normalized_payload.freeze_level_satisfied ||
+      !normalized_payload.caller_flags_consistent ||
+      risk_authorization.authorization_id=="" || risk_authorization.disposition!=SWV5_RISK_ALLOW ||
+      risk_authorization.authorization_id!=intent.risk_authorization_id ||
+      !SWV5S5_EqualRequestIdentity(risk_authorization.request_identity,intent.request_identity) ||
+      !SWV5S5_EqualNamespace(risk_authorization.persistence_namespace,intent.persistence_namespace) ||
+      !SWV5S5_EqualFence(risk_authorization.ownership_fence,intent.ownership_fence) ||
+      risk_authorization.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      risk_authorization.authorized_intent_type!=intent.intent_type ||
+      risk_authorization.authorized_direction!=intent.direction ||
+      risk_authorization.authorized_volume!=intent.normalized_volume ||
+      risk_authorization.authorized_price!=intent.normalized_price ||
+      risk_authorization.authorized_stop_price!=intent.normalized_stop_price ||
+      risk_authorization.authorized_limit_price!=intent.normalized_limit_price ||
+      risk_authorization.basket_state_version!=intent.expected_basket_version ||
+      risk_authorization.symbol_specification_sequence!=intent.symbol_specification_sequence ||
+      risk_authorization.hard_kill_latch_id=="" || risk_authorization.hard_kill_latch_generation==0 ||
+      risk_authorization.expires_at!=intent.authorization_expires_at || context.clock_time>=risk_authorization.expires_at ||
+      risk_authorization.account_namespace.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      risk_authorization.account_namespace.snapshot_epoch==0 ||
+      risk_authorization.account_namespace.account_login!=intent.persistence_namespace.ownership_namespace.account_login ||
+      risk_authorization.account_namespace.broker_identity!=intent.persistence_namespace.ownership_namespace.broker_identity ||
+      risk_authorization.account_namespace.server!=intent.persistence_namespace.ownership_namespace.server ||
+      risk_authorization.account_namespace.strategy_id!=intent.persistence_namespace.ownership_namespace.strategy_id ||
+      risk_authorization.account_namespace.magic!=intent.persistence_namespace.ownership_namespace.magic)
    { SWV5S5_Deny(context,"INITIAL_BLUEPRINT_INVALID","",result); return false; }
    SWV5S5_Allow(context,"INITIAL_BLUEPRINT_VALID",result); return true;
 }

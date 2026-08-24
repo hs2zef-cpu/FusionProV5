@@ -1,5 +1,5 @@
 // TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS
-// COMPILE ONLY: Phase B.1 does not execute this script in MT5 or Strategy Tester.
+// COMPILE ONLY: Phase B.2 does not execute this script in MT5 or Strategy Tester.
 #property strict
 
 #include "SW_V5_S5_PhaseB_Assertions.mqh"

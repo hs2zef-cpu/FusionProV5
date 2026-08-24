@@ -1,29 +1,19 @@
-# Sprint 5 Phase B.1 executable verification inventory
+# Sprint 5 Phase B.2 verification inventory
 
 Status: **TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS**
 
-The original “126 deterministic cases” was a documentation inventory and was not executed. It is not reported as an executed result. Phase B.1 replaces that claim with the following exact evidence classes.
+## MQL compile-only assertions
 
-## MQL assertion harness
+`SW_V5_S5_PHASE_B_ASSERTIONS.mq5` registers nine test groups containing 148 `SWV5S5_Assert(...)` call sites. The source directly calls the corrected pure contract functions for canonical identity, Ledger/Sequence integrity, ADR-020 ordering, complete Admission Proof, Producer Trust, Claim transition/durable retention, Permit identity/current Trust, initial Blueprint transitivity, and fenced request-set/checkpoint publication.
 
-`SW_V5_S5_PHASE_B_ASSERTIONS.mq5` invokes `SWV5S5_RunAllPhaseBAssertions()`, which calls every registered test group and retains the exact assertion/failure counters. The source contains **125 actual assertion calls** across nine registered groups:
+The adversarial calls include stable-invalid Hard Kill, changed Hard Kill, wrong Trust namespace, normalized-payload mutation, wrong request-set binding, missing/corrupt Admission Proof, stale owner, wrong request and Permit, BUY/SELL reversal, no-entry materialization, empty/unrelated Risk authority, Ledger accepted-at mutation, orphan record/index state, duplicate Sequence allocation, corrupt HWM/authority, corrupt prior/current Trust, and checkpoint safety-field mutation.
 
-| Registered group | Assertion calls | Material behavior |
-|---|---:|---|
-| `TestCanonicalAndIdentity` | 13 | SHA/canonical vectors and fixed independently generated request identities |
-| `TestLedgerAndSequence` | 10 | below-HWM denial, explicit membership, compaction, allocator index, overflow/corruption |
-| `TestADR020Ordering` | 6 | Hard Kill and Trust before-P/after-P/post-Claim/time ordering |
-| `TestSnapshotSemantics` | 22 | typed completeness, mutation instability, ABA, distinct clocks, no manufactured Claim clock, scope/payload/permit failures |
-| `TestProducerTrust` | 18 | current anchor, exact ingress scope, statuses, supersession continuity |
-| `TestClaimBoundary` | 27 | pure preparation, full durable result, replay, ownership/takeover, snapshot/request/payload/permit, Risk/Trust expiry |
-| `TestPermitIdentity` | 4 | stable Permit ID and same-ID/different-content conflict |
-| `TestBlueprintAndPermitPreparation` | 12 | complete initial V5 state, fabricated broker/confirmation evidence rejection, and non-authoritative permit preparation |
-| `TestFencedPublication` | 13 | request-set/checkpoint expected-current evidence and full-payload integrity |
+MetaEditor X64 Regular compiles this harness. The assertions are **not executed** because Phase B.2 forbids MT5 Terminal and Strategy Tester. Assertion-call count is source inventory, not a runtime pass count.
 
-MetaEditor X64 Regular compiles this harness. It is **not executed** in Phase B.1 because MT5 Terminal and Strategy Tester are outside the authorized boundary.
+## Independent executable reference oracle
 
-## Independent executable oracle
+`verify_phase_b.ps1` executes 122 deterministic PowerShell/.NET assertions. It independently models canonical framing, identity, admission semantics, Blueprint transitivity, Ledger/Sequence integrity, Trust succession, Claim/publication/checkpoint behavior, repository safety, and verifier adversarial self-tests.
 
-`verify_phase_b.ps1` executes **89 independent PowerShell/.NET assertions** covering canonical framing, standard SHA vectors, fixed preimages/hashes, Permit/Binding/Attempt/Idempotency identity, anti-replay/overflow/publication/Claim reference models, forbidden APIs, dependency direction, cycles, and five adversarial verifier self-tests.
+Latest permitted execution: **122 total / 122 passed / 0 failed**.
 
-This is a test oracle. It does not execute the MQL production/candidate implementation.
+The independent reference oracle is not MQL runtime execution and does not prove that the compile-only MQL assertion bodies ran.

@@ -42,6 +42,7 @@ public:
                               SWV5S5_OrchestrationResult &result)=0;
    virtual bool EvaluateAdmissionSnapshot(const SWV5S5_OrchestrationEvent &event,
                                            const SWV5S5_DoubleCollectResult &snapshot_result,
+                                           const SWV5S5_AdmissionProof &admission_proof,
                                            SWV5S5_OrchestrationResult &result)=0;
    virtual bool ProposeInvocationClaim(const SWV5S5_OrchestrationEvent &event,
                                        const SWV5S5_InvocationClaimCommand &claim,

@@ -2,7 +2,7 @@
 #define SW_V5_S5_PHASE_B_ASSERTIONS_MQH
 
 // TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS
-// Actual MQL assertions over Phase B pure functions. COMPILE ONLY in Phase B.1.
+// Actual MQL assertions over Phase B pure functions. COMPILE ONLY in Phase B.2.
 
 #include "../../ExecutionLayer/Contracts/SW_V5_S5_Contracts.mqh"
 #include "SW_V5_S5_PhaseB_TestVectors.mqh"
@@ -15,6 +15,66 @@ void SWV5S5_Assert(const bool condition)
    SWV5S5_ASSERTIONS_RUN++;
    if(!condition) SWV5S5_ASSERTIONS_FAILED++;
 }
+
+class SWV5S5_TestRiskContract : public ISWV5RiskContract
+{
+public:
+   virtual string ContractName() { return "TEST-V5-RISK"; }
+   virtual bool ValidateLimits(const SWV5_ContractValidationContext &context,
+                               const SWV5_RiskLimits &limits,SWV5_ContractDecision &decision)
+   { ZeroMemory(decision); return false; }
+   virtual bool Evaluate(const SWV5_ContractValidationContext &context,
+                         const SWV5_RiskEvaluationInput &engineInput,SWV5_RiskAuthorization &authorization)
+   { ZeroMemory(authorization); return false; }
+   virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,
+                                      const SWV5_RiskAuthorization &authorization,
+                                      const SWV5_RiskEvaluationInput &binding,
+                                      SWV5_ContractDecision &decision)
+   {
+      ZeroMemory(decision); decision.contract_version=context.expected_version;
+      bool valid=authorization.authorization_id!="" && authorization.disposition==SWV5_RISK_ALLOW &&
+         context.clock_time<authorization.expires_at &&
+         SWV5S5_EqualRequestIdentity(authorization.request_identity,binding.intent.request_identity) &&
+         SWV5S5_EqualNamespace(authorization.persistence_namespace,binding.intent.persistence_namespace) &&
+         SWV5S5_EqualFence(authorization.ownership_fence,binding.ownership_fence) &&
+         authorization.account_mode==binding.account_mode && binding.account_mode==SWV5_ACCOUNT_MODE_HEDGING &&
+         authorization.account_namespace.snapshot_epoch==binding.account_namespace.snapshot_epoch &&
+         authorization.basket_state_version==binding.basket.lifecycle.state_version &&
+         authorization.symbol_specification_sequence==binding.symbol_specification.specification_sequence &&
+         authorization.authorized_intent_type==binding.intent.intent_type &&
+         authorization.authorized_direction==binding.intent.direction &&
+         authorization.authorized_volume==binding.intent.normalized_volume &&
+         authorization.authorized_price==binding.intent.normalized_price &&
+         authorization.authorized_stop_price==binding.intent.normalized_stop_price &&
+         authorization.authorized_limit_price==binding.intent.normalized_limit_price &&
+         authorization.hard_kill_latch_id==binding.hard_kill_state.latch_id &&
+         authorization.hard_kill_latch_generation==binding.hard_kill_state.latch_generation &&
+         binding.hard_kill_state.state!=SWV5_HARD_KILL_ACTIVE &&
+         binding.hard_kill_state.state!=SWV5_HARD_KILL_RELEASE_PENDING &&
+         binding.has_margin_authority_record && binding.has_basket_risk_authority_record;
+      decision.disposition=(valid ? SWV5_DISPOSITION_ALLOW : SWV5_DISPOSITION_DENY);
+      return valid;
+   }
+   virtual bool ValidateHardKillRelease(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &state,
+                                        const SWV5_HardKillReleaseEvidence &evidence,
+                                        SWV5_ContractDecision &decision)
+   { ZeroMemory(decision); return false; }
+   virtual bool ValidateHardKillReleaseMode(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &state,
+                                        const SWV5_HardKillReleaseEvidence &evidence,
+                                        const SWV5_HardKillReleaseValidationMode mode,
+                                        SWV5_ContractDecision &decision)
+   { ZeroMemory(decision); return false; }
+   virtual bool ValidateHistoricalHardKillRelease(const SWV5_ContractValidationContext &context,
+                                        const SWV5_HardKillState &state,
+                                        const SWV5_HardKillReleaseEvidence &evidence,
+                                        const SWV5_HardKillReleaseAuthorityRecord &authority,
+                                        SWV5_ContractDecision &decision)
+   { ZeroMemory(decision); return false; }
+};
+
+SWV5S5_TestRiskContract SWV5S5_TEST_RISK;
 
 void SWV5S5_TestInitV5(SWV5_ContractVersion &v)
 {
@@ -46,15 +106,69 @@ void SWV5S5_TestScope(SWV5_PersistenceNamespace &scope,SWV5_OwnershipFence &fenc
    fence.lease_version=3; fence.takeover_generation=2; fence.fencing_token_digest=SWV5S5_SHA256_ABC;
 }
 
-void SWV5S5_TestRequest(const SWV5_PersistenceNamespace &scope,SWV5_ExecutionRequestIdentity &request)
+void SWV5S5_TestRequest(const SWV5_PersistenceNamespace &scope,const string ingress_identity,
+                        SWV5_ExecutionRequestIdentity &request)
 {
    ZeroMemory(request); SWV5S5_TestInitV5(request.contract_version);
    string correlation,attempt,idempotency;
    SWV5S5_DeriveRequestBinding(scope,SWV5S5_REQUEST_BINDING_POLICY_ID,
-      SWV5S5_REQUEST_BINDING_POLICY_VERSION,"INGRESS-A",0,correlation,attempt,idempotency);
+      SWV5S5_REQUEST_BINDING_POLICY_VERSION,ingress_identity,0,correlation,attempt,idempotency);
    request.request_id.correlation_id=correlation; request.request_id.attempt_id=attempt;
    request.request_id.parent_attempt_id=""; request.request_id.monotonic_sequence=1;
    request.request_id.created_at=900; request.idempotency_key=idempotency;
+}
+
+bool SWV5S5_TestIngress(const SWV5_PersistenceNamespace &scope,SWV5S5_IngressEnvelope &ingress)
+{
+   ZeroMemory(ingress); SWV5S5_TestInitV5(ingress.contract_version);
+   ingress.canonical_policy_id=SWV5S5_CANONICAL_POLICY_ID;
+   ingress.producer.authority_record_id="TRUST-A"; ingress.producer.authority_generation=5;
+   ingress.producer.producer_component="DECISION"; ingress.producer.producer_instance="PRODUCER-A";
+   ingress.producer.producer_epoch=6;
+   ingress.snapshot.snapshot_schema=5; ingress.snapshot.sequence=11; ingress.snapshot.history_generation=4;
+   ingress.snapshot.execution_mode=1; ingress.snapshot.symbol=scope.ownership_namespace.symbol;
+   ingress.snapshot.timeframe=15; ingress.snapshot.closed_bar_time=880;
+   ingress.decision.engine_kind=9; ingress.decision.health=1; ingress.decision.valid=true;
+   ingress.decision.score=0.8; ingress.decision.confidence=0.9;
+   ingress.decision.snapshot_sequence=11; ingress.decision.history_generation=4;
+   ingress.decision.state="BUY"; ingress.decision.action=1; ingress.decision.direction=1;
+   ingress.publication.clock_id="TEST-CLOCK";
+   ingress.publication.clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
+   ingress.publication.publication_time=900; ingress.publication.publication_sequence=12;
+   return SWV5S5_DeriveIngressIdentityAndDigest(ingress,ingress.ingress_identity,ingress.payload_digest);
+}
+
+void SWV5S5_TestHardKill(const SWV5_PersistenceNamespace &scope,
+                         const SWV5_AccountRiskNamespace &account,SWV5_HardKillState &state)
+{
+   ZeroMemory(state); SWV5S5_TestInitV5(state.contract_version);
+   state.persistence_namespace=scope; state.account_namespace=account;
+   state.latch_id="HK-A"; state.latch_generation=3; state.state=SWV5_HARD_KILL_INACTIVE;
+   SWV5S5_TestInitV5(state.release_evidence.contract_version);
+   state.release_evidence.persistence_namespace=scope;
+   SWV5S5_TestInitV5(state.release_evidence.broker_evidence.contract_version);
+   state.release_evidence.broker_evidence.persistence_namespace=scope;
+   SWV5S5_TestInitV5(state.release_evidence.persistence_evidence.contract_version);
+   state.release_evidence.persistence_evidence.persistence_namespace=scope;
+   SWV5S5_TestInitV5(state.release_evidence.exposure_evidence.contract_version);
+   SWV5S5_TestInitV5(state.release_authority_reference.contract_version);
+}
+
+void SWV5S5_TestPendingNestedVersions(SWV5_PendingRequest &request)
+{
+   SWV5S5_TestInitV5(request.latest_submission.contract_version);
+   SWV5S5_TestInitV5(request.latest_submission.request_identity.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode.correlation.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode.correlation.request_identity.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode.correlation.broker_identity.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode_classification.contract_version);
+   SWV5S5_TestInitV5(request.latest_retcode_classification.decision.contract_version);
+   SWV5S5_TestInitV5(request.latest_authoritative_confirmation.contract_version);
+   SWV5S5_TestInitV5(request.latest_authoritative_confirmation.correlation.contract_version);
+   SWV5S5_TestInitV5(request.latest_authoritative_confirmation.correlation.request_identity.contract_version);
+   SWV5S5_TestInitV5(request.latest_authoritative_confirmation.correlation.broker_identity.contract_version);
+   SWV5S5_TestInitV5(request.accepted_event_identities.contract_version);
 }
 
 void SWV5S5_TestNormalized(const SWV5_PersistenceNamespace &scope,const SWV5_OwnershipFence &fence,
@@ -81,7 +195,8 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    SWV5S5_TestContext(context,1000,3);
    SWV5_PersistenceNamespace scope; SWV5_OwnershipFence fence;
    SWV5S5_TestScope(scope,fence);
-   SWV5_ExecutionRequestIdentity request; SWV5S5_TestRequest(scope,request);
+   SWV5S5_IngressEnvelope ingress; if(!SWV5S5_TestIngress(scope,ingress)) return false;
+   SWV5_ExecutionRequestIdentity request; SWV5S5_TestRequest(scope,ingress.ingress_identity,request);
    SWV5_NormalizedUnits units; SWV5S5_TestNormalized(scope,fence,units);
 
    SWV5S5_SubmissionPermit permit; ZeroMemory(permit); SWV5S5_InitContractVersion(permit.contract_version);
@@ -98,6 +213,8 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    permit.account_epoch=4; permit.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
    permit.request_identity=request; permit.unique_attempt_id=request.request_id.attempt_id;
    permit.normalized_payload=units; permit.normalization_identity="NORMALIZATION-A";
+   permit.unit_authority_id="UNIT-A"; permit.unit_authority_revision=4;
+   permit.unit_authority_digest=SWV5S5_SHA256_ABC;
    permit.symbol_specification_sequence=7; permit.basket_id=scope.basket_id; permit.basket_state_version=2;
    SWV5S5_InitContractVersion(permit.producer_trust.contract_version);
    permit.producer_trust.authority_record_id="TRUST-A"; permit.producer_trust.authority_generation=5;
@@ -110,6 +227,8 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    permit.producer_trust.valid_until=1100;
    if(!SWV5S5_DeriveProducerTrustDigest(permit.producer_trust,permit.producer_trust.record_digest)) return false;
    SWV5S5_TestInitV5(permit.risk_authorization.contract_version);
+   SWV5S5_TestInitV5(permit.risk_authorization.authorized_limits.contract_version);
+   SWV5S5_TestInitV5(permit.risk_authorization.monetary_basis.contract_version);
    permit.risk_authorization.authorization_id="RISK-A"; permit.risk_authorization.request_identity=request;
    permit.risk_authorization.persistence_namespace=scope; permit.risk_authorization.ownership_fence=fence;
    permit.risk_authorization.account_namespace=permit.account_namespace;
@@ -129,8 +248,13 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    permit.margin_authority.symbol_specification_sequence=7;
    permit.margin_authority.authority_record_sequence=4; permit.margin_authority.authority_record_digest=SWV5S5_SHA256_EMPTY;
    permit.margin_authority.observation_sequence=4; permit.margin_authority.additional_margin=10.0;
+   permit.margin_authority.intent_type=SWV5_INTENT_OPEN; permit.margin_authority.direction=1;
+   permit.margin_authority.requested_volume=0.10; permit.margin_authority.requested_price=2000.0;
+   permit.margin_authority.account_currency="USD";
+   permit.margin_authority.observed_at=995; permit.margin_authority.calculated_at=995;
    permit.margin_authority.projected_account_margin=20.0;
    SWV5S5_TestInitV5(permit.basket_risk_authority.contract_version);
+   SWV5S5_TestInitV5(permit.basket_risk_authority.monetary_basis.contract_version);
    permit.basket_risk_authority.persistence_namespace=scope; permit.basket_risk_authority.ownership_fence=fence;
    permit.basket_risk_authority.account_namespace=permit.account_namespace;
    permit.basket_risk_authority.request_identity=request; permit.basket_risk_authority.authority_record_id="BASKET-RISK-A";
@@ -138,8 +262,10 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    permit.basket_risk_authority.symbol="XAUUSD"; permit.basket_risk_authority.symbol_specification_sequence=7;
    permit.basket_risk_authority.authority_record_sequence=5;
    permit.basket_risk_authority.authority_record_digest=SWV5S5_SHA256_ABC;
+   permit.basket_risk_authority.source_snapshot_id="RISK-SNAPSHOT-A";
    permit.basket_risk_authority.source_snapshot_digest=SWV5S5_SHA256_EMPTY;
    permit.basket_risk_authority.resulting_basket_maximum_loss=50.0;
+   permit.basket_risk_authority.observed_at=995; permit.basket_risk_authority.calculated_at=995;
    permit.hard_kill_latch_id="HK-A"; permit.hard_kill_latch_generation=3;
    permit.valid_from=900; permit.valid_until=1100;
    if(!SWV5S5_DerivePermitId(permit,permit.permit_id) || !SWV5S5_DerivePermitDigest(permit,permit.permit_digest)) return false;
@@ -155,20 +281,47 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    collect.lease_liveness.lease.fence=fence; collect.lease_liveness.lease.status=SWV5_LOCK_RENEWED;
    collect.lease_liveness.lease.store_revision="LEASE-STORE-4"; collect.lease_liveness.lease.heartbeat_sequence=9;
    collect.lease_liveness.lease.clock_id="TEST-CLOCK"; collect.lease_liveness.lease.clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
-   collect.lease_liveness.lease.heartbeat_clock_sequence=2; collect.lease_liveness.lease.expiry_clock_sequence=9;
+   collect.lease_liveness.lease.heartbeat_clock_sequence=1; collect.lease_liveness.lease.expiry_clock_sequence=9;
    collect.lease_liveness.lease.heartbeat_at=990; collect.lease_liveness.lease.expires_at=1200;
    collect.producer_trust.record=permit.producer_trust;
-   SWV5S5_TestInitV5(collect.hard_kill.state.contract_version); collect.hard_kill.state.persistence_namespace=scope;
-   collect.hard_kill.state.latch_id="HK-A"; collect.hard_kill.state.latch_generation=3;
-   collect.hard_kill.state.state=SWV5_HARD_KILL_INACTIVE;
+   SWV5S5_TestHardKill(scope,permit.account_namespace,collect.hard_kill.state);
    collect.account.account_namespace=permit.account_namespace;
    SWV5S5_TestInitV5(collect.basket.basket.contract_version); collect.basket.basket.basket_id=scope.basket_id;
-   collect.basket.basket.ownership_fence=fence; collect.basket.basket.state=SWV5_BASKET_IDLE;
+   collect.basket.basket.ownership_fence=fence; collect.basket.basket.state=SWV5_BASKET_OPENING;
    collect.basket.basket.state_version=2; collect.basket.basket.state_entered_at=900;
+   SWV5S5_TestInitV5(collect.basket.basket.accepted_recovery_evidence.contract_version);
+   SWV5S5_TestInitV5(collect.basket.basket.broker_queries.contract_version);
    collect.request_set.persistence_namespace=scope; collect.request_set.ownership_fence=fence;
-   SWV5S5_TestInitV5(collect.request_set.header.contract_version); collect.request_set.header.request_count=0;
+   SWV5S5_TestInitV5(collect.request_set.header.contract_version); collect.request_set.header.request_count=1;
    collect.request_set.header.request_index_revision="REQUEST-SET-1"; collect.request_set.header.record_sequence=1;
-   if(!SWV5S5_SHA256("",collect.request_set.header.request_set_digest)) return false;
+   ArrayResize(collect.request_set.requests,1); ZeroMemory(collect.request_set.requests[0]);
+   SWV5S5_TestInitV5(collect.request_set.requests[0].contract_version);
+   SWV5S5_TestInitV5(collect.request_set.requests[0].intent.contract_version);
+   collect.request_set.requests[0].intent.persistence_namespace=scope;
+   collect.request_set.requests[0].intent.ownership_fence=fence;
+   collect.request_set.requests[0].intent.request_identity=request;
+   collect.request_set.requests[0].intent.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   collect.request_set.requests[0].intent.intent_type=SWV5_INTENT_OPEN;
+   collect.request_set.requests[0].intent.direction=1;
+   collect.request_set.requests[0].intent.normalized_volume=0.10;
+   collect.request_set.requests[0].intent.normalized_price=2000.0;
+   collect.request_set.requests[0].intent.normalized_stop_price=1990.0;
+   collect.request_set.requests[0].intent.normalized_limit_price=2010.0;
+   collect.request_set.requests[0].intent.symbol_specification_sequence=7;
+   collect.request_set.requests[0].intent.expected_basket_version=2;
+   collect.request_set.requests[0].intent.risk_authorization_id="RISK-A";
+   collect.request_set.requests[0].intent.authorization_expires_at=1100;
+   collect.request_set.requests[0].account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   collect.request_set.requests[0].lifecycle_phase=SWV5_EXECUTION_PHASE_INTENT;
+   collect.request_set.requests[0].state=SWV5_REQUEST_RISK_AUTHORIZED;
+   collect.request_set.requests[0].residual_requested_volume=0.10;
+   collect.request_set.requests[0].retry_disposition=SWV5_RETRY_FORBIDDEN;
+   collect.request_set.requests[0].authorization_identity="RISK-A";
+   collect.request_set.requests[0].normalization_identity="NORMALIZATION-A";
+   collect.request_set.requests[0].last_changed_at=900;
+   SWV5S5_TestPendingNestedVersions(collect.request_set.requests[0]);
+   if(!SWV5S5_DeriveCompleteRequestSetDigest(collect.request_set.requests,
+                                              collect.request_set.header.request_set_digest)) return false;
    SWV5S5_TestInitV5(collect.symbol_specification.specification.contract_version);
    collect.symbol_specification.specification.symbol="XAUUSD"; collect.symbol_specification.specification.specification_sequence=7;
    collect.symbol_specification.specification.point_size=0.01; collect.symbol_specification.specification.tick_size=0.01;
@@ -183,7 +336,38 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    collect.symbol_specification.specification.complete=true;
    collect.margin.record=permit.margin_authority; collect.basket_risk.record=permit.basket_risk_authority;
    collect.risk_authorization.authorization=permit.risk_authorization;
+   SWV5_RiskEvaluationInput binding; ZeroMemory(binding); SWV5S5_TestInitV5(binding.contract_version);
+   binding.intent=collect.request_set.requests[0].intent; binding.account_namespace=permit.account_namespace;
+   binding.account_mode=SWV5_ACCOUNT_MODE_HEDGING; SWV5S5_TestInitV5(binding.limits.contract_version);
+   binding.limits.contract_id="LIMITS-A"; binding.limits.maximum_snapshot_age_seconds=60;
+   SWV5S5_TestInitV5(binding.account.contract_version); binding.account.account_namespace=permit.account_namespace;
+   binding.account.observed_at=995; binding.account.authoritative=true;
+   SWV5S5_TestInitV5(binding.exposure.contract_version); binding.exposure.account_namespace=permit.account_namespace;
+   binding.exposure.symbol="XAUUSD"; binding.exposure.observed_at=995; binding.exposure.complete=true;
+   SWV5S5_TestInitV5(binding.basket.contract_version); binding.basket.account_namespace=permit.account_namespace;
+   binding.basket.lifecycle=collect.basket.basket; binding.basket.observed_at=995;
+   SWV5S5_TestInitV5(binding.projected.contract_version); binding.projected.account_namespace=permit.account_namespace;
+   binding.projected.symbol="XAUUSD"; binding.projected.complete=true; binding.projected.calculated_at=995;
+   SWV5S5_TestInitV5(binding.projected.margin_evidence.contract_version);
+   binding.projected.margin_evidence.persistence_namespace=scope;
+   binding.projected.margin_evidence.account_namespace=permit.account_namespace;
+   binding.projected.margin_evidence.ownership_fence=fence;
+   binding.projected.margin_evidence.request_identity=request;
+   SWV5S5_TestInitV5(binding.projected.basket_risk_evidence.contract_version);
+   binding.projected.basket_risk_evidence.persistence_namespace=scope;
+   binding.projected.basket_risk_evidence.account_namespace=permit.account_namespace;
+   binding.projected.basket_risk_evidence.ownership_fence=fence;
+   binding.projected.basket_risk_evidence.request_identity=request;
+   SWV5S5_TestInitV5(binding.projected.basket_risk_evidence.monetary_basis.contract_version);
+   SWV5S5_TestInitV5(binding.projected.monetary_basis.contract_version);
+   binding.has_margin_authority_record=true; binding.margin_authority_record=permit.margin_authority;
+   binding.has_basket_risk_authority_record=true; binding.basket_risk_authority_record=permit.basket_risk_authority;
+   binding.symbol_specification=collect.symbol_specification.specification;
+   binding.ownership_fence=fence; binding.hard_kill_state=collect.hard_kill.state;
+   collect.risk_authorization.current_binding=binding;
    collect.normalized_payload.payload=units; collect.normalized_payload.normalization_identity="NORMALIZATION-A";
+   collect.normalized_payload.unit_authority_id="UNIT-A"; collect.normalized_payload.unit_authority_revision=4;
+   collect.normalized_payload.unit_authority_digest=SWV5S5_SHA256_ABC;
    collect.submission_permit.permit=permit;
    collect.policy_format.admission_policy_id=SWV5S5_POLICY_ID;
    collect.policy_format.admission_policy_version=SWV5S5_SCHEMA_VERSION;
@@ -194,16 +378,30 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    SWV5S5_AdmissionSnapshot snapshot; ZeroMemory(snapshot); SWV5S5_InitContractVersion(snapshot.contract_version);
    snapshot.canonical_policy_id=SWV5S5_CANONICAL_POLICY_ID; snapshot.collect_v1=collect; snapshot.collect_v2=collect;
    snapshot.collect_v2.collect_clock.clock_sequence=2; snapshot.collect_v2.collect_clock.observed_at=999;
-   SWV5S5_DoubleCollectResult collect_result;
-   if(!SWV5S5_DoubleCollect(snapshot,collect_result)) return false;
    snapshot.claim_clock.clock_id="TEST-CLOCK"; snapshot.claim_clock.clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
    snapshot.claim_clock.clock_sequence=3; snapshot.claim_clock.observed_at=1000;
-   if(!SWV5S5_DeriveAdmissionSnapshotDigest(snapshot,snapshot.snapshot_digest)) return false;
+   SWV5S5_AdmissionProofInput proof_input; ZeroMemory(proof_input);
+   proof_input.trust_anchor.issuer_identity="TRUST-ISSUER";
+   proof_input.trust_anchor.issuer_policy_id="TRUST-POLICY";
+   proof_input.trust_anchor.trust_anchor_id="TRUST-ANCHOR-A";
+   proof_input.trust_anchor.current_authority_record_id="TRUST-A";
+   proof_input.trust_anchor.current_authority_generation=5;
+   proof_input.trust_scope.persistence_namespace=scope;
+   proof_input.trust_scope.producer_component="DECISION";
+   proof_input.trust_scope.producer_instance="PRODUCER-A";
+   proof_input.trust_scope.producer_epoch=6;
+   proof_input.trust_scope.symbol="XAUUSD"; proof_input.trust_scope.timeframe=15;
+   proof_input.trust_scope.execution_mode=1; proof_input.trust_scope.publication_clock_id="TEST-CLOCK";
+   proof_input.trust_scope.publication_clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
+   proof_input.trust_scope.ingress_identity=ingress.ingress_identity;
+   proof_input.accepted_ingress=ingress; proof_input.current_ownership_lease=collect.lease_liveness.lease;
+   SWV5S5_DoubleCollectResult collect_result; SWV5S5_AdmissionProof proof;
+   if(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,snapshot,collect_result,proof)) return false;
 
    ZeroMemory(command); SWV5S5_InitContractVersion(command.contract_version);
    command.claim_policy_id=SWV5S5_POLICY_ID; command.claim_policy_version=SWV5S5_SCHEMA_VERSION;
    command.expected_authority_record=observed; command.expected_authority_revision=observed.authority_revision;
-   command.expected_authority_digest=observed.durable_record_digest; command.admission_snapshot=snapshot;
+   command.expected_authority_digest=observed.durable_record_digest; command.admission_proof=proof;
    command.current_ownership_lease=collect.lease_liveness.lease; command.claim_clock=snapshot.claim_clock;
    if(!SWV5S5_DeriveClaimId(command,command.claim_id) ||
       !SWV5S5_DeriveClaimCommandDigest(command,command.command_digest)) return false;
@@ -219,15 +417,25 @@ bool SWV5S5_RefreshClaimFixture(SWV5S5_InvocationClaimCommand &command)
    if(!SWV5S5_DeriveDurableSubmissionAuthorityDigest(command.expected_authority_record,
                                                       command.expected_authority_record.durable_record_digest)) return false;
    command.expected_authority_digest=command.expected_authority_record.durable_record_digest;
-   command.admission_snapshot.collect_v1.producer_trust.record=permit.producer_trust;
-   command.admission_snapshot.collect_v2.producer_trust.record=permit.producer_trust;
-   command.admission_snapshot.collect_v1.risk_authorization.authorization=permit.risk_authorization;
-   command.admission_snapshot.collect_v2.risk_authorization.authorization=permit.risk_authorization;
-   command.admission_snapshot.collect_v1.submission_permit.permit=permit;
-   command.admission_snapshot.collect_v2.submission_permit.permit=permit;
-   command.admission_snapshot.claim_clock=command.claim_clock;
-   if(!SWV5S5_DeriveAdmissionSnapshotDigest(command.admission_snapshot,command.admission_snapshot.snapshot_digest) ||
-      !SWV5S5_DeriveClaimId(command,command.claim_id) ||
+   command.admission_proof.snapshot.collect_v1.producer_trust.record=permit.producer_trust;
+   command.admission_proof.snapshot.collect_v2.producer_trust.record=permit.producer_trust;
+   command.admission_proof.snapshot.collect_v1.risk_authorization.authorization=permit.risk_authorization;
+   command.admission_proof.snapshot.collect_v2.risk_authorization.authorization=permit.risk_authorization;
+   command.admission_proof.snapshot.collect_v1.submission_permit.permit=permit;
+   command.admission_proof.snapshot.collect_v2.submission_permit.permit=permit;
+   command.admission_proof.snapshot.claim_clock=command.claim_clock;
+   SWV5S5_AdmissionProofInput proof_input; ZeroMemory(proof_input);
+   proof_input.trust_anchor=command.admission_proof.trust_anchor;
+   proof_input.trust_scope=command.admission_proof.trust_scope;
+   proof_input.accepted_ingress=command.admission_proof.accepted_ingress;
+   proof_input.current_ownership_lease=command.current_ownership_lease;
+   SWV5_ContractValidationContext context; SWV5S5_TestContext(context,command.claim_clock.observed_at,
+                                                              command.claim_clock.clock_sequence);
+   SWV5S5_DoubleCollectResult result; SWV5S5_AdmissionProof proof;
+   if(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,
+                            command.admission_proof.snapshot,result,proof)) return false;
+   command.admission_proof=proof;
+   if(!SWV5S5_DeriveClaimId(command,command.claim_id) ||
       !SWV5S5_DeriveClaimCommandDigest(command,command.command_digest)) return false;
    return true;
 }
@@ -254,11 +462,17 @@ void SWV5S5_TestCanonicalAndIdentity()
 void SWV5S5_TestLedgerAndSequence()
 {
    SWV5_PersistenceNamespace scope; SWV5_OwnershipFence fence; SWV5S5_TestScope(scope,fence);
-   SWV5S5_IngressLedgerIndexEntry entries[]; ArrayResize(entries,0);
+   SWV5S5_IngressLedgerIndexEntry entries[]; ArrayResize(entries,1); ZeroMemory(entries[0]);
+   entries[0].ingress_identity="KNOWN"; entries[0].publication_sequence=10;
+   entries[0].payload_digest=SWV5S5_SHA256_EMPTY; entries[0].lifecycle_state=SWV5S5_BOUND_TO_REQUEST;
+   entries[0].logical_correlation_id="KNOWN-CORR"; entries[0].reserved_request_sequence=1;
+   entries[0].accepted_at=900; entries[0].bound_request_id="KNOWN-REQUEST";
+   entries[0].record_sequence=1; entries[0].record_revision=1; entries[0].record_digest=SWV5S5_SHA256_ABC;
    SWV5S5_IngressLedgerHeader header; ZeroMemory(header); SWV5S5_InitContractVersion(header.contract_version);
    header.policy_id=SWV5S5_POLICY_ID; header.persistence_namespace=scope; header.ownership_fence=fence;
-   header.producer_authority_record_id="TRUST-A"; header.producer_instance="P"; header.producer_epoch=1;
-   header.highest_accepted_publication_sequence=10; header.revision=2;
+   header.producer_authority_record_id="TRUST-A"; header.producer_authority_generation=1;
+   header.producer_instance="P"; header.producer_epoch=1;
+   header.highest_accepted_publication_sequence=10; header.revision=2; header.membership_count=1;
    SWV5S5_DeriveLedgerIndexDigest(entries,header.membership_binding_index_digest);
    SWV5S5_DeriveLedgerHeaderDigest(header,entries,header.ledger_digest);
    SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,"UNSEEN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_DENIED);
@@ -286,8 +500,23 @@ void SWV5S5_TestLedgerAndSequence()
    before[0].ingress_identity="INGRESS-A"; before[0].publication_sequence=10;
    before[0].payload_digest=SWV5S5_SHA256_EMPTY; before[0].lifecycle_state=SWV5S5_BOUND_TO_REQUEST;
    before[0].logical_correlation_id="CORR-A"; before[0].reserved_request_sequence=1;
-   before[0].bound_request_id="REQUEST-A"; before[0].record_sequence=1; before[0].record_revision=2;
-   before[0].record_digest=SWV5S5_SHA256_ABC; after[0]=before[0];
+   before[0].accepted_at=900; before[0].bound_request_id="REQUEST-A";
+   before[0].record_sequence=1; before[0].record_revision=2;
+   SWV5S5_IngressLedgerRecord before_records[]; SWV5S5_IngressLedgerRecord after_records[];
+   ArrayResize(before_records,1); ArrayResize(after_records,1); ZeroMemory(before_records[0]);
+   SWV5S5_TestInitV5(before_records[0].contract_version);
+   before_records[0].ingress_identity=before[0].ingress_identity;
+   before_records[0].publication_sequence=before[0].publication_sequence;
+   before_records[0].payload_digest=before[0].payload_digest;
+   before_records[0].lifecycle_state=before[0].lifecycle_state;
+   before_records[0].logical_correlation_id=before[0].logical_correlation_id;
+   before_records[0].reserved_request_sequence=before[0].reserved_request_sequence;
+   before_records[0].accepted_at=before[0].accepted_at;
+   before_records[0].bound_request_id=before[0].bound_request_id;
+   before_records[0].record_sequence=before[0].record_sequence;
+   before_records[0].record_revision=before[0].record_revision;
+   SWV5S5_DeriveLedgerRecordDigest(before_records[0],before_records[0].record_digest);
+   before[0].record_digest=before_records[0].record_digest; after[0]=before[0]; after_records[0]=before_records[0];
    header.membership_count=1; header.compaction_generation=2;
    SWV5S5_DeriveLedgerIndexDigest(before,header.membership_binding_index_digest);
    SWV5S5_DeriveLedgerHeaderDigest(header,before,header.ledger_digest);
@@ -297,9 +526,13 @@ void SWV5S5_TestLedgerAndSequence()
    compaction.proposed_membership_count=1;
    SWV5S5_DeriveLedgerIndexDigest(after,compaction.proposed_membership_digest);
    SWV5S5_DeriveLedgerCompactionProposalDigest(compaction,compaction.proposal_digest);
-   SWV5S5_Assert(SWV5S5_ValidateLedgerCompaction(header,before,compaction,after));
+   SWV5S5_Assert(SWV5S5_ValidateLedgerCompaction(header,before,before_records,compaction,after,after_records));
+   after[0].accepted_at=901;
+   SWV5S5_Assert(!SWV5S5_ValidateLedgerCompaction(header,before,before_records,compaction,after,after_records));
+   after[0]=before[0];
    ArrayResize(after,0);
-   SWV5S5_Assert(!SWV5S5_ValidateLedgerCompaction(header,before,compaction,after));
+   ArrayResize(after_records,0);
+   SWV5S5_Assert(!SWV5S5_ValidateLedgerCompaction(header,before,before_records,compaction,after,after_records));
 
    SWV5S5_RequestSequenceIndexEntry indexed[]; ArrayResize(indexed,1); ZeroMemory(indexed[0]);
    indexed[0].logical_correlation_id="C"; indexed[0].reserved_sequence=2;
@@ -316,6 +549,11 @@ void SWV5S5_TestLedgerAndSequence()
    SWV5S5_Assert(!SWV5S5_PrepareSequenceReservation(authority,indexed,proposal,sequence_result));
    SWV5S5_RequestSequenceAuthority corrupt=authority; corrupt.authority_digest=SWV5S5_SHA256_EMPTY;
    SWV5S5_Assert(!SWV5S5_PrepareSequenceReservation(corrupt,indexed,proposal,sequence_result));
+   SWV5S5_RequestSequenceIndexEntry duplicate[]; ArrayResize(duplicate,2);
+   duplicate[0]=indexed[0]; duplicate[1]=indexed[0]; duplicate[1].logical_correlation_id="OTHER";
+   duplicate[1].reservation_revision=5;
+   SWV5S5_Assert(!SWV5S5_ValidateSequenceIndex(duplicate,2,5));
+   SWV5S5_Assert(!SWV5S5_ValidateSequenceIndex(indexed,1,4));
 }
 
 void SWV5S5_TestADR020Ordering()
@@ -332,54 +570,70 @@ void SWV5S5_TestSnapshotSemantics()
 {
    SWV5_ContractValidationContext context; SWV5S5_InvocationClaimCommand command;
    SWV5S5_Assert(SWV5S5_BuildClaimFixture(context,command));
-   SWV5S5_Assert(command.admission_snapshot.collect_v1.collect_clock.observed_at!=command.admission_snapshot.collect_v2.collect_clock.observed_at);
-   SWV5S5_Assert(command.admission_snapshot.collect_v2.collect_clock.clock_sequence>=command.admission_snapshot.collect_v1.collect_clock.clock_sequence);
-   SWV5S5_Assert(command.admission_snapshot.claim_clock.observed_at>command.admission_snapshot.collect_v2.collect_clock.observed_at);
-   SWV5S5_AdmissionSnapshot stable_pair=command.admission_snapshot;
-   datetime supplied_claim_time=stable_pair.claim_clock.observed_at;
-   SWV5S5_DoubleCollectResult stable_pair_result;
-   SWV5S5_Assert(SWV5S5_DoubleCollect(stable_pair,stable_pair_result));
-   SWV5S5_Assert(stable_pair.claim_clock.observed_at==supplied_claim_time);
+   SWV5S5_AdmissionProofInput proof_input; ZeroMemory(proof_input);
+   proof_input.trust_anchor=command.admission_proof.trust_anchor;
+   proof_input.trust_scope=command.admission_proof.trust_scope;
+   proof_input.accepted_ingress=command.admission_proof.accepted_ingress;
+   proof_input.current_ownership_lease=command.current_ownership_lease;
+   SWV5S5_DoubleCollectResult result; SWV5S5_AdmissionProof proof;
+   SWV5S5_AdmissionSnapshot stable_pair=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,stable_pair,result,proof));
+   SWV5S5_Assert(proof.v1_semantically_valid && proof.v2_semantically_valid && proof.pre_p_admissible);
 
-   SWV5S5_AdmissionSnapshot regressed=command.admission_snapshot;
+   SWV5S5_AdmissionSnapshot regressed=command.admission_proof.snapshot;
    regressed.collect_v2.collect_clock.clock_sequence=0;
-   SWV5S5_DoubleCollectResult result;
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(regressed,result));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,regressed,result,proof));
    SWV5S5_Assert(result.disposition==SWV5S5_COLLECT_CLOCK_REGRESSION);
 
-   SWV5S5_AdmissionSnapshot hard_kill_changed=command.admission_snapshot;
-   hard_kill_changed.collect_v2.hard_kill.state.latch_generation++;
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(hard_kill_changed,result));
-   SWV5S5_Assert(result.disposition==SWV5S5_COLLECT_RETRYABLE_UNSTABLE && result.changed_authority=="HARD_KILL");
+   SWV5S5_AdmissionSnapshot hard_kill_changed=command.admission_proof.snapshot;
+   hard_kill_changed.collect_v2.hard_kill.state.state=SWV5_HARD_KILL_ACTIVE;
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,hard_kill_changed,result,proof));
 
-   SWV5S5_AdmissionSnapshot aba=command.admission_snapshot;
+   SWV5S5_AdmissionSnapshot stable_latched=command.admission_proof.snapshot;
+   stable_latched.collect_v1.hard_kill.state.state=SWV5_HARD_KILL_ACTIVE;
+   stable_latched.collect_v2.hard_kill.state.state=SWV5_HARD_KILL_ACTIVE;
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,stable_latched,result,proof));
+   SWV5S5_Assert(result.reason_code=="V1_PRE_P_HARD_KILL_DENIED");
+
+   SWV5S5_AdmissionSnapshot aba=command.admission_proof.snapshot;
    aba.collect_v2.ownership.fence.takeover_generation+=2;
    aba.collect_v2.ownership.fence.fencing_token_digest=SWV5S5_SHA256_EMPTY;
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(aba,result));
-   SWV5S5_Assert(result.changed_authority=="OWNERSHIP");
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,aba,result,proof));
 
-   SWV5S5_AdmissionSnapshot missing=command.admission_snapshot;
+   SWV5S5_AdmissionSnapshot missing=command.admission_proof.snapshot;
    missing.collect_v2.margin.record.authority_record_id="";
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(missing,result));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,missing,result,proof));
    SWV5S5_Assert(result.disposition==SWV5S5_COLLECT_FAIL_CLOSED);
 
-   SWV5S5_AdmissionSnapshot wrong_scope=command.admission_snapshot;
-   wrong_scope.collect_v2.persistence_namespace.basket_id.value="WRONG";
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(wrong_scope,result));
-   SWV5S5_Assert(result.changed_authority=="ENVELOPE");
+   SWV5S5_AdmissionSnapshot wrong_scope=command.admission_proof.snapshot;
+   wrong_scope.collect_v1.producer_trust.record.persistence_namespace.basket_id.value="WRONG";
+   wrong_scope.collect_v2.producer_trust.record.persistence_namespace.basket_id.value="WRONG";
+   SWV5S5_DeriveProducerTrustDigest(wrong_scope.collect_v1.producer_trust.record,wrong_scope.collect_v1.producer_trust.record.record_digest);
+   SWV5S5_DeriveProducerTrustDigest(wrong_scope.collect_v2.producer_trust.record,wrong_scope.collect_v2.producer_trust.record.record_digest);
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,wrong_scope,result,proof));
 
-   SWV5S5_AdmissionSnapshot wrong_payload=command.admission_snapshot;
+   SWV5S5_AdmissionSnapshot wrong_payload=command.admission_proof.snapshot;
+   wrong_payload.collect_v1.normalized_payload.payload.volume=0.20;
    wrong_payload.collect_v2.normalized_payload.payload.volume=0.20;
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(wrong_payload,result));
-   SWV5S5_Assert(result.changed_authority=="NORMALIZED_PAYLOAD");
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,wrong_payload,result,proof));
 
-   SWV5S5_AdmissionSnapshot wrong_permit=command.admission_snapshot;
-   wrong_permit.collect_v2.submission_permit.permit.permit_revision++;
-   SWV5S5_Assert(!SWV5S5_DoubleCollect(wrong_permit,result));
-   SWV5S5_Assert(result.disposition==SWV5S5_COLLECT_FAIL_CLOSED);
+   SWV5S5_AdmissionSnapshot wrong_request=command.admission_proof.snapshot;
+   wrong_request.collect_v1.request_set.requests[0].intent.request_identity.request_id.attempt_id="WRONG";
+   wrong_request.collect_v2.request_set.requests[0].intent.request_identity.request_id.attempt_id="WRONG";
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,wrong_request,result,proof));
 
-   string first_digest=command.admission_snapshot.snapshot_digest;
-   SWV5S5_AdmissionSnapshot clock_changed=command.admission_snapshot;
+   SWV5S5_AdmissionSnapshot wrong_risk=command.admission_proof.snapshot;
+   wrong_risk.collect_v1.risk_authorization.authorization.account_namespace.account_login=9999;
+   wrong_risk.collect_v2.risk_authorization.authorization.account_namespace.account_login=9999;
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,wrong_risk,result,proof));
+
+   SWV5S5_AdmissionSnapshot wrong_basket_risk=command.admission_proof.snapshot;
+   wrong_basket_risk.collect_v1.basket_risk.record.source_snapshot_id="";
+   wrong_basket_risk.collect_v2.basket_risk.record.source_snapshot_id="";
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,wrong_basket_risk,result,proof));
+
+   string first_digest=command.admission_proof.snapshot.snapshot_digest;
+   SWV5S5_AdmissionSnapshot clock_changed=command.admission_proof.snapshot;
    clock_changed.claim_clock.clock_sequence++;
    string changed_digest;
    SWV5S5_Assert(SWV5S5_DeriveAdmissionSnapshotDigest(clock_changed,changed_digest));
@@ -398,18 +652,7 @@ bool SWV5S5_BuildTrustFixture(SWV5_ContractValidationContext &context,
    ZeroMemory(anchor); anchor.issuer_identity=record.issuer_identity; anchor.issuer_policy_id=record.issuer_policy_id;
    anchor.trust_anchor_id="ANCHOR-A"; anchor.current_authority_record_id=record.authority_record_id;
    anchor.current_authority_generation=record.authority_generation;
-   ZeroMemory(ingress); SWV5S5_InitContractVersion(ingress.contract_version);
-   ingress.canonical_policy_id=SWV5S5_CANONICAL_POLICY_ID;
-   ingress.producer.authority_record_id=record.authority_record_id;
-   ingress.producer.producer_component=record.producer_component;
-   ingress.producer.producer_instance=record.producer_instance;
-   ingress.producer.producer_epoch=record.producer_epoch;
-   ingress.producer.authority_generation=record.authority_generation;
-   ingress.snapshot.symbol=record.symbol; ingress.snapshot.timeframe=record.timeframe;
-   ingress.snapshot.execution_mode=record.execution_mode;
-   ingress.publication.clock_id=record.clock_id; ingress.publication.clock_authority=record.clock_authority;
-   ingress.publication.publication_time=990; ingress.publication.publication_sequence=1;
-   if(!SWV5S5_DeriveIngressIdentityAndDigest(ingress,ingress.ingress_identity,ingress.payload_digest)) return false;
+   ingress=command.admission_proof.accepted_ingress;
    ZeroMemory(scope); scope.persistence_namespace=record.persistence_namespace;
    scope.producer_component=record.producer_component; scope.producer_instance=record.producer_instance;
    scope.producer_epoch=record.producer_epoch; scope.symbol=record.symbol; scope.timeframe=record.timeframe;
@@ -460,8 +703,23 @@ void SWV5S5_TestProducerTrust()
    SWV5S5_ProducerTrustAnchor successor_anchor=anchor; successor_anchor.current_authority_record_id="NEXT";
    successor_anchor.current_authority_generation=successor.authority_generation;
    SWV5S5_Assert(SWV5S5_ValidateTrustSuccessor(status,successor,successor_anchor));
+   SWV5S5_ProducerTrustRecord corrupt_prior=status; corrupt_prior.record_digest=SWV5S5_SHA256_EMPTY;
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(corrupt_prior,successor,successor_anchor));
+   SWV5S5_ProducerTrustRecord corrupt_current=successor; corrupt_current.record_digest=SWV5S5_SHA256_EMPTY;
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,corrupt_current,successor_anchor));
    successor_anchor.current_authority_generation++;
    SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,successor,successor_anchor));
+   SWV5S5_IngressFreshnessPolicy freshness; ZeroMemory(freshness);
+   freshness.policy_id=SWV5S5_POLICY_ID; freshness.clock_id="TEST-CLOCK";
+   freshness.clock_authority=SWV5_TIME_AUTHORITY_TEST_FIXTURE;
+   freshness.max_age_seconds=200; freshness.max_future_skew_seconds=0;
+   SWV5S5_IngressValidationResult ingress_result;
+   SWV5S5_Assert(SWV5S5_ValidateTrustedIngressForAcceptance(context,ingress,freshness,
+      record,anchor,scope,ingress_result));
+   SWV5S5_ProducerTrustRecord revoked=record; revoked.status=SWV5S5_TRUST_REVOKED;
+   SWV5S5_DeriveProducerTrustDigest(revoked,revoked.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustedIngressForAcceptance(context,ingress,freshness,
+      revoked,anchor,scope,ingress_result));
 }
 
 void SWV5S5_TestClaimBoundary()
@@ -469,11 +727,20 @@ void SWV5S5_TestClaimBoundary()
    SWV5_ContractValidationContext context; SWV5S5_InvocationClaimCommand command;
    SWV5S5_Assert(SWV5S5_BuildClaimFixture(context,command));
    SWV5S5_InvocationClaimTransition transition;
-   SWV5S5_Assert(SWV5S5_PrepareInvocationClaimTransition(context,command,transition));
+   SWV5S5_Assert(SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,command,transition));
    SWV5S5_Assert(transition.transition_eligible);
    SWV5S5_Assert(transition.disposition==SWV5S5_CLAIM_TRANSITION_ELIGIBLE);
    SWV5S5_Assert(transition.proposed_next_record.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED);
    SWV5S5_Assert(transition.proposed_next_record.authority_revision==2);
+   SWV5S5_Assert(transition.proposed_next_record.admission_snapshot.snapshot_digest==command.admission_proof.snapshot.snapshot_digest);
+   string retained_digest; SWV5S5_AdmissionSnapshot retained=transition.proposed_next_record.admission_snapshot;
+   SWV5S5_Assert(SWV5S5_DeriveAdmissionSnapshotDigest(retained,retained_digest));
+   SWV5S5_Assert(retained_digest==transition.proposed_next_record.admission_snapshot.snapshot_digest);
+   SWV5S5_SubmissionAuthorityRecord altered=transition.proposed_next_record;
+   altered.admission_snapshot.collect_v2.hard_kill.state.latch_generation++;
+   string altered_digest;
+   SWV5S5_Assert(SWV5S5_DeriveDurableSubmissionAuthorityDigest(altered,altered_digest));
+   SWV5S5_Assert(altered_digest!=transition.proposed_next_record.durable_record_digest);
    SWV5S5_InvocationClaimResult authoritative; ZeroMemory(authoritative); SWV5S5_InitContractVersion(authoritative.contract_version);
    authoritative.disposition=SWV5S5_CLAIM_GRANTED_NOW; authoritative.claim_granted_now=true;
    authoritative.resulting_authority_record=transition.proposed_next_record;
@@ -485,69 +752,63 @@ void SWV5S5_TestClaimBoundary()
    replay.expected_authority_digest=transition.proposed_next_record.durable_record_digest;
    SWV5S5_DeriveClaimId(replay,replay.claim_id); SWV5S5_DeriveClaimCommandDigest(replay,replay.command_digest);
    SWV5S5_InvocationClaimTransition replay_transition;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,replay,replay_transition));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,replay,replay_transition));
    SWV5S5_Assert(replay_transition.disposition==SWV5S5_CLAIM_ALREADY_CLAIMED);
 
    SWV5S5_InvocationClaimCommand random_snapshot=command;
-   random_snapshot.admission_snapshot.snapshot_digest=SWV5S5_SHA256_EMPTY;
+   random_snapshot.admission_proof.proof_digest=SWV5S5_SHA256_EMPTY;
    SWV5S5_InvocationClaimTransition random_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,random_snapshot,random_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,random_snapshot,random_result));
    SWV5S5_Assert(random_result.disposition==SWV5S5_CLAIM_SNAPSHOT_MISMATCH);
 
    SWV5S5_InvocationClaimCommand stale=command;
    stale.current_ownership_lease.fence.takeover_generation++;
    SWV5S5_DeriveClaimCommandDigest(stale,stale.command_digest);
    SWV5S5_InvocationClaimTransition stale_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,stale,stale_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,stale,stale_result));
    SWV5S5_Assert(stale_result.disposition==SWV5S5_CLAIM_STALE_OWNER);
 
    SWV5S5_InvocationClaimCommand wrong_request=command;
-   wrong_request.admission_snapshot.collect_v2.request_identity.request_id.attempt_id="WRONG";
-   SWV5S5_DeriveAdmissionSnapshotDigest(wrong_request.admission_snapshot,wrong_request.admission_snapshot.snapshot_digest);
+   wrong_request.admission_proof.snapshot.collect_v2.request_identity.request_id.attempt_id="WRONG";
    SWV5S5_DeriveClaimId(wrong_request,wrong_request.claim_id); SWV5S5_DeriveClaimCommandDigest(wrong_request,wrong_request.command_digest);
    SWV5S5_InvocationClaimTransition wrong_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,wrong_request,wrong_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,wrong_request,wrong_result));
    SWV5S5_Assert(wrong_result.disposition==SWV5S5_CLAIM_SNAPSHOT_MISMATCH);
 
    SWV5S5_InvocationClaimCommand wrong_payload=command;
-   wrong_payload.admission_snapshot.collect_v2.normalized_payload.payload.volume=0.20;
-   SWV5S5_DeriveAdmissionSnapshotDigest(wrong_payload.admission_snapshot,wrong_payload.admission_snapshot.snapshot_digest);
+   wrong_payload.admission_proof.snapshot.collect_v2.normalized_payload.payload.volume=0.20;
    SWV5S5_DeriveClaimId(wrong_payload,wrong_payload.claim_id); SWV5S5_DeriveClaimCommandDigest(wrong_payload,wrong_payload.command_digest);
    SWV5S5_InvocationClaimTransition wrong_payload_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,wrong_payload,wrong_payload_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,wrong_payload,wrong_payload_result));
    SWV5S5_Assert(wrong_payload_result.disposition==SWV5S5_CLAIM_SNAPSHOT_MISMATCH);
 
    SWV5S5_InvocationClaimCommand wrong_permit=command;
-   wrong_permit.admission_snapshot.collect_v2.submission_permit.permit.permit_revision++;
-   SWV5S5_DerivePermitDigest(wrong_permit.admission_snapshot.collect_v2.submission_permit.permit,
-                             wrong_permit.admission_snapshot.collect_v2.submission_permit.permit.permit_digest);
-   SWV5S5_DeriveAdmissionSnapshotDigest(wrong_permit.admission_snapshot,wrong_permit.admission_snapshot.snapshot_digest);
+   wrong_permit.admission_proof.snapshot.collect_v2.submission_permit.permit.permit_revision++;
    SWV5S5_DeriveClaimId(wrong_permit,wrong_permit.claim_id); SWV5S5_DeriveClaimCommandDigest(wrong_permit,wrong_permit.command_digest);
    SWV5S5_InvocationClaimTransition wrong_permit_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,wrong_permit,wrong_permit_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,wrong_permit,wrong_permit_result));
    SWV5S5_Assert(wrong_permit_result.disposition==SWV5S5_CLAIM_SNAPSHOT_MISMATCH);
 
    SWV5_ContractValidationContext expired_context=context; expired_context.clock_time=1100; expired_context.clock_sequence=4;
    SWV5S5_InvocationClaimCommand expired=command; expired.claim_clock.clock_sequence=4; expired.claim_clock.observed_at=1100;
-   expired.admission_snapshot.claim_clock=expired.claim_clock;
-   SWV5S5_DeriveAdmissionSnapshotDigest(expired.admission_snapshot,expired.admission_snapshot.snapshot_digest);
+   expired.admission_proof.snapshot.claim_clock=expired.claim_clock;
    SWV5S5_DeriveClaimId(expired,expired.claim_id); SWV5S5_DeriveClaimCommandDigest(expired,expired.command_digest);
    SWV5S5_InvocationClaimTransition expired_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(expired_context,expired,expired_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(expired_context,SWV5S5_TEST_RISK,expired,expired_result));
    SWV5S5_Assert(expired_result.disposition==SWV5S5_CLAIM_EXPIRED);
 
    SWV5S5_InvocationClaimCommand risk_expired=command;
    risk_expired.expected_authority_record.permit.risk_authorization.expires_at=1000;
    SWV5S5_Assert(SWV5S5_RefreshClaimFixture(risk_expired));
    SWV5S5_InvocationClaimTransition risk_expired_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,risk_expired,risk_expired_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,risk_expired,risk_expired_result));
    SWV5S5_Assert(risk_expired_result.disposition==SWV5S5_CLAIM_EXPIRED);
 
    SWV5S5_InvocationClaimCommand trust_expired=command;
    trust_expired.expected_authority_record.permit.producer_trust.valid_until=1000;
    SWV5S5_Assert(SWV5S5_RefreshClaimFixture(trust_expired));
    SWV5S5_InvocationClaimTransition trust_expired_result;
-   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,trust_expired,trust_expired_result));
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,trust_expired,trust_expired_result));
    SWV5S5_Assert(trust_expired_result.disposition==SWV5S5_CLAIM_EXPIRED);
 }
 
@@ -562,6 +823,10 @@ void SWV5S5_TestPermitIdentity()
    SWV5S5_Assert(first_id==revised_id);
    SWV5S5_DerivePermitDigest(revised,revised.permit_digest);
    SWV5S5_Assert(SWV5S5_EvaluatePermitIdentityConflict(first,revised)==SWV5S5_PERMIT_CONFLICT);
+   string permit_domain,claim_domain;
+   SWV5S5_DomainDigest(SWV5S5_DOMAIN_SUBMISSION_PERMIT,"same-body",permit_domain);
+   SWV5S5_DomainDigest(SWV5S5_DOMAIN_INVOCATION_CLAIM,"same-body",claim_domain);
+   SWV5S5_Assert(permit_domain!=claim_domain);
 }
 
 void SWV5S5_TestBlueprintAndPermitPreparation()
@@ -569,12 +834,24 @@ void SWV5S5_TestBlueprintAndPermitPreparation()
    SWV5_ContractValidationContext context; SWV5S5_InvocationClaimCommand command;
    SWV5S5_Assert(SWV5S5_BuildClaimFixture(context,command));
    SWV5S5_SubmissionPermit permit=command.expected_authority_record.permit;
+   SWV5S5_IngressEnvelope accepted_ingress=command.admission_proof.accepted_ingress;
+   SWV5S5_IngressLedgerRecord accepted_record; ZeroMemory(accepted_record);
+   SWV5S5_TestInitV5(accepted_record.contract_version);
+   accepted_record.ingress_identity=accepted_ingress.ingress_identity;
+   accepted_record.payload_digest=accepted_ingress.payload_digest;
+   accepted_record.publication_sequence=accepted_ingress.publication.publication_sequence;
+   accepted_record.lifecycle_state=SWV5S5_ACCEPTED_REQUEST_PENDING;
+   accepted_record.logical_correlation_id=permit.request_identity.request_id.correlation_id;
+   accepted_record.reserved_request_sequence=permit.request_identity.request_id.monotonic_sequence;
+   accepted_record.accepted_at=permit.request_identity.request_id.created_at;
+   accepted_record.record_sequence=1; accepted_record.record_revision=1;
+   SWV5S5_DeriveLedgerRecordDigest(accepted_record,accepted_record.record_digest);
    SWV5S5_InitialRequestBlueprint blueprint; ZeroMemory(blueprint); SWV5S5_InitContractVersion(blueprint.contract_version);
    SWV5S5_InitContractVersion(blueprint.binding.contract_version);
    blueprint.binding.binding_policy_id=SWV5S5_REQUEST_BINDING_POLICY_ID;
    blueprint.binding.binding_policy_version=SWV5S5_REQUEST_BINDING_POLICY_VERSION;
    blueprint.binding.persistence_namespace=permit.persistence_namespace;
-   blueprint.binding.accepted_ingress_identity="INGRESS-A"; blueprint.binding.accepted_at=900;
+   blueprint.binding.accepted_ingress_identity=accepted_ingress.ingress_identity; blueprint.binding.accepted_at=900;
    blueprint.binding.logical_correlation_id=permit.request_identity.request_id.correlation_id;
    blueprint.binding.logical_request_sequence=permit.request_identity.request_id.monotonic_sequence;
    blueprint.binding.attempt_ordinal=0; blueprint.binding.attempt_id=permit.request_identity.request_id.attempt_id;
@@ -605,17 +882,39 @@ void SWV5S5_TestBlueprintAndPermitPreparation()
    blueprint.pending_request.last_changed_at=900;
    SWV5S5_DeriveInitialBlueprintDigest(blueprint,blueprint.blueprint_digest);
    SWV5S5_ValidationResult validation;
-   SWV5S5_Assert(SWV5S5_ValidateInitialBlueprint(context,blueprint,validation));
+   SWV5S5_Assert(SWV5S5_ValidateInitialBlueprint(context,blueprint,accepted_ingress,accepted_record,
+      permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
    SWV5S5_InitialRequestBlueprint invalid=blueprint; invalid.pending_request.state=SWV5_REQUEST_ACKNOWLEDGED;
-   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,validation));
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
    invalid=blueprint; invalid.pending_request.intent.request_identity.request_id.created_at=901;
-   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,validation));
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
    invalid=blueprint; SWV5S5_TestInitV5(invalid.pending_request.latest_submission.contract_version);
-   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,validation));
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
    invalid=blueprint; invalid.pending_request.latest_retcode.broker_comment="FABRICATED";
-   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,validation));
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
    invalid=blueprint; invalid.pending_request.latest_authoritative_confirmation.residual_volume=0.01;
-   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,validation));
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
+   invalid=blueprint; invalid.pending_request.intent.direction=-1;
+   SWV5S5_DeriveInitialBlueprintDigest(invalid,invalid.blueprint_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,invalid,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
+   SWV5S5_IngressEnvelope no_entry=accepted_ingress; no_entry.decision.action=0; no_entry.decision.direction=0;
+   SWV5S5_DeriveIngressIdentityAndDigest(no_entry,no_entry.ingress_identity,no_entry.payload_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,no_entry,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
+   SWV5S5_IngressEnvelope blocked=accepted_ingress; blocked.decision.action=9; blocked.decision.direction=0;
+   SWV5S5_DeriveIngressIdentityAndDigest(blocked,blocked.ingress_identity,blocked.payload_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,blocked,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
+   SWV5S5_IngressEnvelope sell=accepted_ingress; sell.decision.action=-1; sell.decision.direction=-1;
+   SWV5S5_DeriveIngressIdentityAndDigest(sell,sell.ingress_identity,sell.payload_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,sell,accepted_record,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
+   SWV5_RiskAuthorization wrong_risk=permit.risk_authorization; wrong_risk.authorization_id="";
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,wrong_risk,validation));
+   wrong_risk=permit.risk_authorization; wrong_risk.request_identity.request_id.attempt_id="OTHER";
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,accepted_ingress,accepted_record,permit.normalized_payload,permit.normalization_identity,wrong_risk,validation));
+   SWV5_NormalizedUnits wrong_units=permit.normalized_payload; wrong_units.volume=0.20;
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,accepted_ingress,accepted_record,wrong_units,permit.normalization_identity,permit.risk_authorization,validation));
+   SWV5S5_IngressLedgerRecord wrong_time=accepted_record; wrong_time.accepted_at++;
+   SWV5S5_DeriveLedgerRecordDigest(wrong_time,wrong_time.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateInitialBlueprint(context,blueprint,accepted_ingress,wrong_time,permit.normalized_payload,permit.normalization_identity,permit.risk_authorization,validation));
 
    SWV5S5_SubmissionAuthorityIndexEntry index[]; ArrayResize(index,0);
    SWV5S5_PermitPreparationCommand preparation; ZeroMemory(preparation); SWV5S5_InitContractVersion(preparation.contract_version);
@@ -623,16 +922,23 @@ void SWV5S5_TestBlueprintAndPermitPreparation()
    preparation.expected_index_revision=0; preparation.proposed_permit=permit;
    SWV5S5_DerivePermitPreparationCommandDigest(preparation,preparation.command_digest);
    SWV5S5_PermitPreparationResult prepared;
-   SWV5S5_Assert(SWV5S5_PreparePermitCommit(context,index,preparation,prepared));
+   SWV5S5_Assert(SWV5S5_PreparePermitCommit(context,index,preparation,permit.producer_trust,
+      command.admission_proof.trust_anchor,command.admission_proof.trust_scope,accepted_ingress,prepared));
    SWV5S5_Assert(prepared.disposition==SWV5S5_PERMIT_PROPOSAL_VALID);
    SWV5S5_Assert(prepared.proposed_record.state==SWV5S5_COMMITTED_NOT_INVOKED);
+   SWV5S5_ProducerTrustRecord historical=permit.producer_trust;
+   historical.authority_record_id="TRUST-HISTORICAL"; historical.authority_generation=4;
+   SWV5S5_DeriveProducerTrustDigest(historical,historical.record_digest);
+   SWV5S5_Assert(!SWV5S5_PreparePermitCommit(context,index,preparation,historical,
+      command.admission_proof.trust_anchor,command.admission_proof.trust_scope,accepted_ingress,prepared));
    ArrayResize(index,1); ZeroMemory(index[0]);
    index[0].logical_correlation_id=permit.request_identity.request_id.correlation_id;
    index[0].attempt_id="OTHER-ATTEMPT"; index[0].permit_id="OTHER-PERMIT";
    index[0].permit_digest=SWV5S5_SHA256_EMPTY; index[0].state=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED;
    SWV5S5_DeriveSubmissionIndexDigest(index,preparation.expected_index_digest);
    SWV5S5_DerivePermitPreparationCommandDigest(preparation,preparation.command_digest);
-   SWV5S5_Assert(!SWV5S5_PreparePermitCommit(context,index,preparation,prepared));
+   SWV5S5_Assert(!SWV5S5_PreparePermitCommit(context,index,preparation,permit.producer_trust,
+      command.admission_proof.trust_anchor,command.admission_proof.trust_scope,accepted_ingress,prepared));
    SWV5S5_Assert(prepared.disposition==SWV5S5_PERMIT_LOGICAL_REQUEST_UNRESOLVED);
 }
 
@@ -649,6 +955,7 @@ void SWV5S5_TestFencedPublication()
    current_requests[0].intent.request_identity=permit.request_identity;
    current_requests[0].lifecycle_phase=SWV5_EXECUTION_PHASE_INTENT;
    current_requests[0].state=SWV5_REQUEST_CREATED; current_requests[0].last_changed_at=900;
+   SWV5S5_TestPendingNestedVersions(current_requests[0]);
    proposed_requests[0]=current_requests[0]; proposed_requests[0].state=SWV5_REQUEST_RISK_AUTHORIZED;
    string current_digest,proposed_digest;
    SWV5S5_DeriveCompleteRequestSetDigest(current_requests,current_digest);
@@ -708,6 +1015,48 @@ void SWV5S5_TestFencedPublication()
    checkpoint.proposed_checkpoint.header.previous_record_sequence=7;
    checkpoint.proposed_checkpoint.header.record_sequence=8; checkpoint.proposed_checkpoint.header.store_revision="CP-2";
    checkpoint.proposed_checkpoint.header.payload_digest=SWV5S5_SHA256_ABC;
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.basket.contract_version);
+   checkpoint.proposed_checkpoint.basket.persistence_namespace=permit.persistence_namespace;
+   checkpoint.proposed_checkpoint.basket.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.basket.lifecycle.contract_version);
+   checkpoint.proposed_checkpoint.basket.lifecycle.basket_id=permit.basket_id;
+   checkpoint.proposed_checkpoint.basket.lifecycle.ownership_fence=permit.ownership_fence;
+   checkpoint.proposed_checkpoint.basket.lifecycle.state=SWV5_BASKET_OPENING;
+   checkpoint.proposed_checkpoint.basket.lifecycle.state_version=permit.basket_state_version;
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.basket.lifecycle.accepted_recovery_evidence.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.basket.lifecycle.broker_queries.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.last_confirmed_correlation.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.last_confirmed_correlation.request_identity.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.last_confirmed_correlation.broker_identity.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.pending_request_set.contract_version);
+   checkpoint.proposed_checkpoint.pending_request_set.request_count=1;
+   checkpoint.proposed_checkpoint.pending_request_set.request_set_digest=proposed_digest;
+   checkpoint.proposed_checkpoint.pending_request_set.request_index_revision="SET-2";
+   checkpoint.proposed_checkpoint.pending_request_set.record_sequence=5;
+   checkpoint.proposed_checkpoint.has_latest_pending_request=true;
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.latest_pending_request.contract_version);
+   checkpoint.proposed_checkpoint.latest_pending_request.persistence_namespace=permit.persistence_namespace;
+   checkpoint.proposed_checkpoint.latest_pending_request.ownership_fence=permit.ownership_fence;
+   checkpoint.proposed_checkpoint.latest_pending_request.pending_request=proposed_requests[0];
+   checkpoint.proposed_checkpoint.latest_pending_request.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   checkpoint.proposed_checkpoint.latest_pending_request.record_sequence=5;
+   checkpoint.proposed_checkpoint.latest_pending_request.recorded_at=999;
+   SWV5S5_TestHardKill(permit.persistence_namespace,permit.account_namespace,
+                        checkpoint.proposed_checkpoint.hard_kill_state);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.reconciliation_vector.contract_version);
+   checkpoint.proposed_checkpoint.reconciliation_vector.persistence_namespace=permit.persistence_namespace;
+   checkpoint.proposed_checkpoint.reconciliation_vector.basket_id=permit.basket_id;
+   checkpoint.proposed_checkpoint.reconciliation_vector.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.reconciliation_vector.latest_confirmed_correlation.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.reconciliation_vector.latest_confirmed_correlation.request_identity.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.reconciliation_vector.latest_confirmed_correlation.broker_identity.contract_version);
+   SWV5S5_TestInitV5(checkpoint.proposed_checkpoint.reconciliation_vector.latest_broker_event_identity.contract_version);
+   checkpoint.proposed_checkpoint.reconciliation_vector.request_set_digest=proposed_digest;
+   checkpoint.proposed_checkpoint.reconciliation_vector.request_set_revision="SET-2";
+   checkpoint.proposed_checkpoint.reconciliation_vector.basket_state=SWV5_BASKET_OPENING;
+   checkpoint.proposed_checkpoint.reconciliation_vector.basket_state_version=permit.basket_state_version;
+   checkpoint.proposed_checkpoint.reconciliation_vector.hard_kill_generation=3;
+   checkpoint.proposed_checkpoint.reconciliation_vector.ownership_fence=permit.ownership_fence;
    SWV5S5_DeriveCheckpointProjection(checkpoint.proposed_checkpoint,checkpoint.proposed_checkpoint_projection_digest);
    SWV5S5_DeriveCheckpointProposalDigest(checkpoint,checkpoint.proposal_digest);
    SWV5S5_Assert(SWV5S5_EvaluateCheckpointPublication(checkpoint_authority,checkpoint,result));
@@ -717,6 +1066,19 @@ void SWV5S5_TestFencedPublication()
    SWV5S5_Assert(!SWV5S5_EvaluateCheckpointPublication(checkpoint_authority,wrong_checkpoint,result));
    wrong_checkpoint=checkpoint; wrong_checkpoint.proposed_checkpoint.header.payload_digest=SWV5S5_SHA256_EMPTY;
    SWV5S5_Assert(!SWV5S5_EvaluateCheckpointPublication(checkpoint_authority,wrong_checkpoint,result));
+   SWV5S5_CheckpointPublicationProposal checkpoint_mutation=checkpoint; string mutation_digest;
+   checkpoint_mutation.proposed_checkpoint.basket.lifecycle.state_version++;
+   SWV5S5_Assert(SWV5S5_DeriveCheckpointProjection(checkpoint_mutation.proposed_checkpoint,mutation_digest));
+   SWV5S5_Assert(mutation_digest!=checkpoint.proposed_checkpoint_projection_digest);
+   SWV5S5_Assert(!SWV5S5_EvaluateCheckpointPublication(checkpoint_authority,checkpoint_mutation,result));
+   checkpoint_mutation=checkpoint; checkpoint_mutation.proposed_checkpoint.last_confirmed_correlation.broker_identity.deal_ticket=7;
+   SWV5S5_Assert(SWV5S5_DeriveCheckpointProjection(checkpoint_mutation.proposed_checkpoint,mutation_digest) && mutation_digest!=checkpoint.proposed_checkpoint_projection_digest);
+   checkpoint_mutation=checkpoint; checkpoint_mutation.proposed_checkpoint.hard_kill_state.release_evidence.approval_policy_id="CHANGED";
+   SWV5S5_Assert(SWV5S5_DeriveCheckpointProjection(checkpoint_mutation.proposed_checkpoint,mutation_digest) && mutation_digest!=checkpoint.proposed_checkpoint_projection_digest);
+   checkpoint_mutation=checkpoint; checkpoint_mutation.proposed_checkpoint.reconciliation_vector.transaction_high_watermark++;
+   SWV5S5_Assert(SWV5S5_DeriveCheckpointProjection(checkpoint_mutation.proposed_checkpoint,mutation_digest) && mutation_digest!=checkpoint.proposed_checkpoint_projection_digest);
+   checkpoint_mutation=checkpoint; checkpoint_mutation.proposed_checkpoint.clean_shutdown=!checkpoint_mutation.proposed_checkpoint.clean_shutdown;
+   SWV5S5_Assert(SWV5S5_DeriveCheckpointProjection(checkpoint_mutation.proposed_checkpoint,mutation_digest) && mutation_digest!=checkpoint.proposed_checkpoint_projection_digest);
 }
 
 int SWV5S5_RunAllPhaseBAssertions()

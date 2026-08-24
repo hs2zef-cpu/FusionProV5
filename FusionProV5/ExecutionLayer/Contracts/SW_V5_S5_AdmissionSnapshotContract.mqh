@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_ADMISSION_SNAPSHOT_CONTRACT_MQH
 #define SW_V5_S5_ADMISSION_SNAPSHOT_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.1 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
 // COMPLETE TYPED OWNER VIEWS / NO MANUFACTURED GENERIC AUTHORITY TOKEN
 
 #include "SW_V5_S5_SubmissionAuthorityContract.mqh"
@@ -80,6 +80,7 @@ struct SWV5S5_BasketRiskAuthorityView
 struct SWV5S5_RiskAuthorizationAuthorityView
 {
    SWV5_RiskAuthorization authorization;
+   SWV5_RiskEvaluationInput current_binding;
    string projection_digest;
 };
 
@@ -87,6 +88,10 @@ struct SWV5S5_NormalizedPayloadAuthorityView
 {
    SWV5_NormalizedUnits payload;
    string normalization_identity;
+   string unit_authority_id;
+   ulong unit_authority_revision;
+   string unit_authority_digest;
+   string payload_content_digest;
    string projection_digest;
 };
 
@@ -143,6 +148,32 @@ struct SWV5S5_DoubleCollectResult
    SWV5S5_StableCollectDisposition disposition;
    string provisional_snapshot_digest;
    string changed_authority;
+   string reason_code;
+};
+
+struct SWV5S5_AdmissionProofInput
+{
+   SWV5S5_ProducerTrustAnchor trust_anchor;
+   SWV5S5_ProducerTrustScope trust_scope;
+   SWV5S5_IngressEnvelope accepted_ingress;
+   SWV5_InstanceLease current_ownership_lease;
+};
+
+struct SWV5S5_AdmissionProof
+{
+   SWV5_ContractVersion contract_version;
+   bool v1_semantically_valid;
+   bool v2_semantically_valid;
+   bool stable_owner_evidence;
+   bool safety_projections_equal;
+   bool relationally_bound;
+   bool pre_p_admissible;
+   bool claim_time_valid;
+   SWV5S5_ProducerTrustAnchor trust_anchor;
+   SWV5S5_ProducerTrustScope trust_scope;
+   SWV5S5_IngressEnvelope accepted_ingress;
+   SWV5S5_AdmissionSnapshot snapshot;
+   string proof_digest;
    string reason_code;
 };
 
@@ -287,6 +318,124 @@ bool SWV5S5_CanonicalHardKillState(const string name,const SWV5_HardKillState &s
    return SWV5S5_CanonicalNested(name,body,field);
 }
 
+bool SWV5S5_CanonicalExecutionIntent(const string name,const SWV5_ExecutionIntent &intent,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",intent.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalNamespace("scope",intent.persistence_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalFence("fence",intent.ownership_fence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalRequestIdentity("request",intent.request_identity,f)) return false; body+=f;
+#define SWV5S5_CEI_I(n,v) if(!SWV5S5_CanonicalInt(n,v,f)) return false; else body+=f
+#define SWV5S5_CEI_U(n,v) if(!SWV5S5_CanonicalUInt(n,v,f)) return false; else body+=f
+#define SWV5S5_CEI_D(n,v) if(!SWV5S5_CanonicalDouble(n,v,f)) return false; else body+=f
+   SWV5S5_CEI_I("account_mode",intent.account_mode); SWV5S5_CEI_I("intent_type",intent.intent_type);
+   SWV5S5_CEI_I("direction",intent.direction); SWV5S5_CEI_D("volume",intent.normalized_volume);
+   SWV5S5_CEI_D("price",intent.normalized_price); SWV5S5_CEI_D("stop",intent.normalized_stop_price);
+   SWV5S5_CEI_D("limit",intent.normalized_limit_price); SWV5S5_CEI_U("specification_sequence",intent.symbol_specification_sequence);
+   SWV5S5_CEI_U("basket_version",intent.expected_basket_version);
+   if(!SWV5S5_CanonicalString("risk_authorization_id",intent.risk_authorization_id,f)) return false; body+=f;
+   SWV5S5_CEI_I("authorization_expires_at",intent.authorization_expires_at);
+#undef SWV5S5_CEI_I
+#undef SWV5S5_CEI_U
+#undef SWV5S5_CEI_D
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalAccountRiskSnapshot(const string name,const SWV5_AccountRiskSnapshot &v,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+#define SWV5S5_CAS_D(n,x) if(!SWV5S5_CanonicalDouble(n,x,f)) return false; else body+=f
+   SWV5S5_CAS_D("balance",v.balance); SWV5S5_CAS_D("equity",v.equity); SWV5S5_CAS_D("margin",v.margin);
+   SWV5S5_CAS_D("free_margin",v.free_margin); SWV5S5_CAS_D("daily_realized_net",v.daily_realized_net);
+   SWV5S5_CAS_D("daily_unrealized_net",v.daily_unrealized_net);
+#undef SWV5S5_CAS_D
+   if(!SWV5S5_CanonicalDatetime("trading_day_start",v.trading_day_start,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("observed_at",v.observed_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("authoritative",v.authoritative,f)) return false; body+=f;
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalExposureRiskSnapshot(const string name,const SWV5_ExposureRiskSnapshot &v,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("symbol",v.symbol,f)) return false; body+=f;
+#define SWV5S5_CES_D(n,x) if(!SWV5S5_CanonicalDouble(n,x,f)) return false; else body+=f
+   SWV5S5_CES_D("long",v.symbol_long_volume); SWV5S5_CES_D("short",v.symbol_short_volume);
+   SWV5S5_CES_D("net",v.symbol_net_volume); SWV5S5_CES_D("aggregate_volume",v.aggregate_volume);
+   SWV5S5_CES_D("aggregate_notional",v.aggregate_notional);
+#undef SWV5S5_CES_D
+   if(!SWV5S5_CanonicalUInt("live_basket_count",v.live_basket_count,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("observed_at",v.observed_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("complete",v.complete,f)) return false; body+=f;
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalMarginProjectionEvidence(const string name,const SWV5_MarginProjectionEvidence &v,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalNamespace("scope",v.persistence_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalFence("fence",v.ownership_fence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalRequestIdentity("request",v.request_identity,f)) return false; body+=f;
+#define SWV5S5_CME_S(n,x) if(!SWV5S5_CanonicalString(n,x,f)) return false; else body+=f
+#define SWV5S5_CME_U(n,x) if(!SWV5S5_CanonicalUInt(n,x,f)) return false; else body+=f
+#define SWV5S5_CME_I(n,x) if(!SWV5S5_CanonicalInt(n,x,f)) return false; else body+=f
+#define SWV5S5_CME_D(n,x) if(!SWV5S5_CanonicalDouble(n,x,f)) return false; else body+=f
+   SWV5S5_CME_S("basket_id",v.basket_id.value); SWV5S5_CME_S("symbol",v.symbol);
+   SWV5S5_CME_U("specification_sequence",v.symbol_specification_sequence); SWV5S5_CME_I("intent_type",v.intent_type);
+   SWV5S5_CME_I("direction",v.direction); SWV5S5_CME_D("requested_volume",v.requested_volume);
+   SWV5S5_CME_D("requested_price",v.requested_price); SWV5S5_CME_D("current_margin",v.current_account_margin);
+   SWV5S5_CME_D("free_margin",v.current_free_margin); SWV5S5_CME_D("projected_margin",v.projected_account_margin);
+   SWV5S5_CME_D("additional_margin",v.additional_margin); SWV5S5_CME_S("currency",v.account_currency);
+   SWV5S5_CME_I("issuing_component",v.issuing_component); SWV5S5_CME_I("authority_source",v.authority_source);
+   SWV5S5_CME_S("calculation_reference",v.calculation_reference); SWV5S5_CME_I("observed_at",v.observed_at);
+   SWV5S5_CME_I("calculated_at",v.calculated_at); SWV5S5_CME_U("evidence_sequence",v.evidence_sequence);
+   SWV5S5_CME_S("authority_record_id",v.authority_record_id); SWV5S5_CME_U("authority_record_sequence",v.authority_record_sequence);
+   SWV5S5_CME_S("authority_record_digest",v.authority_record_digest); SWV5S5_CME_S("evidence_digest",v.evidence_digest);
+#undef SWV5S5_CME_S
+#undef SWV5S5_CME_U
+#undef SWV5S5_CME_I
+#undef SWV5S5_CME_D
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalBasketRiskProjectionEvidence(const string name,const SWV5_BasketRiskProjectionEvidence &v,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalNamespace("scope",v.persistence_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalFence("fence",v.ownership_fence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalRequestIdentity("request",v.request_identity,f)) return false; body+=f;
+#define SWV5S5_CBE_S(n,x) if(!SWV5S5_CanonicalString(n,x,f)) return false; else body+=f
+#define SWV5S5_CBE_U(n,x) if(!SWV5S5_CanonicalUInt(n,x,f)) return false; else body+=f
+#define SWV5S5_CBE_I(n,x) if(!SWV5S5_CanonicalInt(n,x,f)) return false; else body+=f
+#define SWV5S5_CBE_D(n,x) if(!SWV5S5_CanonicalDouble(n,x,f)) return false; else body+=f
+   SWV5S5_CBE_S("basket_id",v.basket_id.value); SWV5S5_CBE_U("basket_version",v.basket_state_version);
+   SWV5S5_CBE_S("symbol",v.symbol); SWV5S5_CBE_U("specification_sequence",v.symbol_specification_sequence);
+   SWV5S5_CBE_D("existing_loss",v.existing_bounded_basket_loss); SWV5S5_CBE_D("incremental_loss",v.incremental_request_bounded_loss);
+   SWV5S5_CBE_D("adjustment",v.interaction_or_offset_adjustment); SWV5S5_CBE_D("resulting_loss",v.resulting_basket_maximum_loss);
+   SWV5S5_CBE_D("realized",v.realized_loss_basis); SWV5S5_CBE_D("unrealized",v.unrealized_loss_basis);
+   SWV5S5_CBE_D("accrued",v.accrued_cost_basis);
+   if(!SWV5S5_CanonicalMonetaryBasis("monetary_basis",v.monetary_basis,f)) return false; body+=f;
+   SWV5S5_CBE_S("calculation_policy_id",v.calculation_policy_id); SWV5S5_CBE_S("source_snapshot_digest",v.source_snapshot_digest);
+   SWV5S5_CBE_I("issuing_component",v.issuing_component); SWV5S5_CBE_I("authority_source",v.authority_source);
+   SWV5S5_CBE_I("observed_at",v.observed_at); SWV5S5_CBE_I("calculated_at",v.calculated_at);
+   SWV5S5_CBE_U("evidence_sequence",v.evidence_sequence); SWV5S5_CBE_S("authority_record_id",v.authority_record_id);
+   SWV5S5_CBE_U("authority_record_sequence",v.authority_record_sequence); SWV5S5_CBE_S("authority_record_digest",v.authority_record_digest);
+   SWV5S5_CBE_S("evidence_digest",v.evidence_digest);
+#undef SWV5S5_CBE_S
+#undef SWV5S5_CBE_U
+#undef SWV5S5_CBE_I
+#undef SWV5S5_CBE_D
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
 bool SWV5S5_DeriveHardKillProjection(SWV5S5_HardKillAuthorityView &view)
 {
    string projection;
@@ -407,20 +556,89 @@ bool SWV5S5_DeriveBasketRiskProjection(SWV5S5_BasketRiskAuthorityView &view)
           SWV5S5_SHA256(projection,view.projection_digest);
 }
 
+bool SWV5S5_CanonicalBasketRiskSnapshot(const string name,const SWV5_BasketRiskSnapshot &v,string &field)
+{
+   string body="",f;
+   SWV5S5_BasketAuthorityView lifecycle; lifecycle.basket=v.lifecycle;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_DeriveBasketProjection(lifecycle) ||
+      !SWV5S5_CanonicalString("lifecycle_digest",lifecycle.projection_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("realized_net",v.realized_net,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("unrealized_net",v.unrealized_net,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("maximum_adverse_net",v.maximum_adverse_net,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("observed_at",v.observed_at,f)) return false; body+=f;
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_CanonicalProjectedRequestRisk(const string name,const SWV5_ProjectedRequestRisk &v,string &field)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("symbol",v.symbol,f)) return false; body+=f;
+#define SWV5S5_CPR_D(n,x) if(!SWV5S5_CanonicalDouble(n,x,f)) return false; else body+=f
+   SWV5S5_CPR_D("projected_volume",v.projected_volume); SWV5S5_CPR_D("projected_symbol_volume",v.projected_symbol_volume);
+   SWV5S5_CPR_D("projected_aggregate_volume",v.projected_aggregate_volume); SWV5S5_CPR_D("projected_notional",v.projected_notional);
+   if(!SWV5S5_CanonicalMarginProjectionEvidence("margin_evidence",v.margin_evidence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBasketRiskProjectionEvidence("basket_risk_evidence",v.basket_risk_evidence,f)) return false; body+=f;
+   SWV5S5_CPR_D("projected_margin",v.projected_margin); SWV5S5_CPR_D("projected_maximum_loss",v.projected_maximum_loss);
+#undef SWV5S5_CPR_D
+   if(!SWV5S5_CanonicalMonetaryBasis("monetary_basis",v.monetary_basis,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("calculated_at",v.calculated_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("complete",v.complete,f)) return false; body+=f;
+   return SWV5S5_CanonicalNested(name,body,field);
+}
+
+bool SWV5S5_DeriveRiskBindingDigest(const SWV5_RiskEvaluationInput &v,string &digest)
+{
+   string body="",f;
+   SWV5S5_SymbolSpecificationAuthorityView specification; specification.specification=v.symbol_specification;
+   if(!SWV5S5_CanonicalContractVersion("version",v.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalExecutionIntent("intent",v.intent,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account_namespace",v.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("account_mode",v.account_mode,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalRiskLimits("limits",v.limits,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountRiskSnapshot("account",v.account,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalExposureRiskSnapshot("exposure",v.exposure,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBasketRiskSnapshot("basket",v.basket,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalProjectedRequestRisk("projected",v.projected,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("has_margin_authority",v.has_margin_authority_record,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalMarginAuthority("margin_authority",v.margin_authority_record,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("has_basket_risk_authority",v.has_basket_risk_authority_record,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBasketRiskAuthority("basket_risk_authority",v.basket_risk_authority_record,f)) return false; body+=f;
+   if(!SWV5S5_DeriveSymbolProjection(specification) ||
+      !SWV5S5_CanonicalString("symbol_specification_digest",specification.projection_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalFence("ownership_fence",v.ownership_fence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalHardKillState("hard_kill",v.hard_kill_state,f)) return false; body+=f;
+   return SWV5S5_DomainDigest(SWV5S5_DOMAIN_ADMISSION_SNAPSHOT,body,digest);
+}
+
 bool SWV5S5_DeriveRiskProjection(SWV5S5_RiskAuthorizationAuthorityView &view)
 {
-   string projection;
+   string projection,binding_digest,f;
    if(view.authorization.authorization_id=="" || view.authorization.disposition!=SWV5_RISK_ALLOW) return false;
-   return SWV5S5_CanonicalRiskAuthorization("risk_authorization",view.authorization,projection) &&
-          SWV5S5_SHA256(projection,view.projection_digest);
+   if(!SWV5S5_CanonicalRiskAuthorization("risk_authorization",view.authorization,projection) ||
+      !SWV5S5_DeriveRiskBindingDigest(view.current_binding,binding_digest) ||
+      !SWV5S5_CanonicalString("current_binding_digest",binding_digest,f)) return false;
+   return SWV5S5_SHA256(projection+f,view.projection_digest);
 }
 
 bool SWV5S5_DeriveNormalizedProjection(SWV5S5_NormalizedPayloadAuthorityView &view)
 {
-   string body,f;
-   if(view.normalization_identity=="" || !SWV5S5_CanonicalNormalizedPayload("payload",view.payload,body) ||
-      !SWV5S5_CanonicalString("normalization_identity",view.normalization_identity,f)) return false;
-   return SWV5S5_SHA256(body+f,view.projection_digest);
+   string body,f,content;
+   if(view.normalization_identity=="" || view.unit_authority_id=="" || view.unit_authority_revision==0 ||
+      !SWV5S5_IsDigest64Lower(view.unit_authority_digest) ||
+      !SWV5S5_CanonicalNormalizedPayload("payload",view.payload,body) ||
+      !SWV5S5_SHA256(body,content)) return false;
+   view.payload_content_digest=content;
+   if(!SWV5S5_CanonicalString("payload_content_digest",content,f)) return false; body=f;
+   if(!SWV5S5_CanonicalString("normalization_identity",view.normalization_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("unit_authority_id",view.unit_authority_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("unit_authority_revision",view.unit_authority_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("unit_authority_digest",view.unit_authority_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("specification_sequence",view.payload.specification_sequence,f)) return false; body+=f;
+   return SWV5S5_SHA256(body,view.projection_digest);
 }
 
 bool SWV5S5_DerivePermitProjection(SWV5S5_SubmissionPermitAuthorityView &view)
@@ -504,9 +722,182 @@ bool SWV5S5_EqualCollectionSafety(const SWV5S5_AdmissionAuthorityCollection &a,
    return true;
 }
 
-bool SWV5S5_DoubleCollect(SWV5S5_AdmissionSnapshot &snapshot,SWV5S5_DoubleCollectResult &result)
+bool SWV5S5_ValidateAdmissionAuthorityCollection(
+   const SWV5_ContractValidationContext &claim_context,
+   const SWV5S5_AdmissionProofInput &proof_input,
+   SWV5S5_AdmissionAuthorityCollection &collection,
+   ISWV5RiskContract &risk_contract,
+   string &reason)
 {
-   ZeroMemory(result); SWV5S5_InitContractVersion(result.contract_version);
+   reason="";
+   SWV5_ContractValidationContext collect_context=claim_context;
+   collect_context.clock_id=collection.collect_clock.clock_id;
+   collect_context.clock_authority=collection.collect_clock.clock_authority;
+   collect_context.clock_sequence=collection.collect_clock.clock_sequence;
+   collect_context.clock_time=collection.collect_clock.observed_at;
+   SWV5S5_ValidationResult trust_validation,permit_validation;
+   SWV5_ContractDecision risk_decision;
+   string ingress_id,ingress_digest,request_canonical,permit_risk,view_risk,permit_account,view_account;
+   int request_matches=0;
+   if(!SWV5S5_IsValidationContextUsable(collect_context) || !SWV5S5_DeriveCollectionDigest(collection))
+   { reason="COLLECTION_STRUCTURE_INVALID"; return false; }
+   if(!SWV5S5_DeriveIngressIdentityAndDigest(proof_input.accepted_ingress,ingress_id,ingress_digest) ||
+      ingress_id!=proof_input.accepted_ingress.ingress_identity || ingress_digest!=proof_input.accepted_ingress.payload_digest ||
+      proof_input.trust_scope.ingress_identity!=ingress_id)
+   { reason="INGRESS_BINDING_INVALID"; return false; }
+   if(!SWV5S5_EqualNamespace(collection.persistence_namespace,collection.submission_permit.permit.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(collection.persistence_namespace,collection.producer_trust.record.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(collection.persistence_namespace,collection.request_set.persistence_namespace) ||
+      !SWV5S5_EqualOwnershipKey(collection.persistence_namespace.ownership_namespace,collection.ownership.fence.ownership_namespace) ||
+      !SWV5S5_EqualFence(collection.ownership.fence,collection.lease_liveness.lease.fence) ||
+      !SWV5S5_EqualFence(collection.ownership.fence,collection.request_set.ownership_fence) ||
+      !SWV5S5_EqualFence(collection.ownership.fence,collection.submission_permit.permit.ownership_fence))
+   { reason="NAMESPACE_OWNERSHIP_BINDING_INVALID"; return false; }
+   if(collection.lease_liveness.lease.clock_id!=collection.collect_clock.clock_id ||
+      collection.lease_liveness.lease.clock_authority!=collection.collect_clock.clock_authority ||
+      collection.lease_liveness.lease.heartbeat_clock_sequence>collection.collect_clock.clock_sequence ||
+      collection.collect_clock.observed_at<collection.lease_liveness.lease.heartbeat_at ||
+      collection.collect_clock.observed_at>=collection.lease_liveness.lease.expires_at)
+   { reason="LEASE_LIVENESS_INVALID"; return false; }
+   if(!SWV5S5_ValidateProducerTrust(collect_context,collection.producer_trust.record,
+                                    proof_input.trust_anchor,proof_input.trust_scope,
+                                    proof_input.accepted_ingress,trust_validation))
+   { reason="PRE_P_TRUST_INVALID"; return false; }
+   if(collection.hard_kill.state.state==SWV5_HARD_KILL_ACTIVE ||
+      collection.hard_kill.state.state==SWV5_HARD_KILL_RELEASE_PENDING ||
+      !SWV5S5_EqualNamespace(collection.hard_kill.state.persistence_namespace,collection.persistence_namespace) ||
+      collection.hard_kill.state.latch_id=="" || collection.hard_kill.state.latch_generation==0)
+   { reason="PRE_P_HARD_KILL_DENIED"; return false; }
+   if(collection.account.account_namespace.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      collection.account.account_namespace.snapshot_epoch==0 ||
+      collection.account.account_namespace.account_login!=collection.persistence_namespace.ownership_namespace.account_login ||
+      collection.account.account_namespace.broker_identity!=collection.persistence_namespace.ownership_namespace.broker_identity ||
+      collection.account.account_namespace.server!=collection.persistence_namespace.ownership_namespace.server ||
+      collection.account.account_namespace.strategy_id!=collection.persistence_namespace.ownership_namespace.strategy_id ||
+      collection.account.account_namespace.magic!=collection.persistence_namespace.ownership_namespace.magic)
+   { reason="ACCOUNT_BINDING_INVALID"; return false; }
+   if(collection.basket.basket.basket_id.value!=collection.persistence_namespace.basket_id.value ||
+      collection.basket.basket.state_version==0 ||
+      !SWV5S5_EqualFence(collection.basket.basket.ownership_fence,collection.ownership.fence))
+   { reason="BASKET_BINDING_INVALID"; return false; }
+   for(int i=0;i<ArraySize(collection.request_set.requests);i++)
+   {
+      if(SWV5S5_EqualRequestIdentity(collection.request_set.requests[i].intent.request_identity,collection.request_identity))
+      {
+         request_matches++;
+         if(!SWV5S5_CanonicalPendingRequest(collection.request_set.requests[i],request_canonical) ||
+            !SWV5S5_EqualRequestIdentity(collection.request_set.requests[i].intent.request_identity,
+                                         collection.submission_permit.permit.request_identity) ||
+            collection.request_set.requests[i].intent.normalized_volume!=collection.normalized_payload.payload.volume ||
+            collection.request_set.requests[i].intent.normalized_price!=collection.normalized_payload.payload.price ||
+            collection.request_set.requests[i].intent.normalized_stop_price!=collection.normalized_payload.payload.stop_price ||
+            collection.request_set.requests[i].intent.normalized_limit_price!=collection.normalized_payload.payload.limit_price ||
+            collection.request_set.requests[i].intent.symbol_specification_sequence!=collection.normalized_payload.payload.specification_sequence ||
+            collection.request_set.requests[i].intent.expected_basket_version!=collection.basket.basket.state_version ||
+            collection.request_set.requests[i].normalization_identity!=collection.normalized_payload.normalization_identity)
+         { reason="REQUEST_PAYLOAD_BINDING_INVALID"; return false; }
+      }
+   }
+   if(request_matches!=1) { reason="REQUEST_SET_EXACT_MEMBER_MISSING"; return false; }
+   if(collection.symbol_specification.specification.symbol!=collection.persistence_namespace.ownership_namespace.symbol ||
+      collection.symbol_specification.specification.specification_sequence!=collection.normalized_payload.payload.specification_sequence ||
+      collection.symbol_specification.specification.specification_sequence!=collection.submission_permit.permit.symbol_specification_sequence ||
+      !collection.symbol_specification.specification.complete)
+   { reason="SYMBOL_SPECIFICATION_BINDING_INVALID"; return false; }
+   if(collection.normalized_payload.normalization_identity!=collection.submission_permit.permit.normalization_identity ||
+      collection.normalized_payload.unit_authority_id!=collection.submission_permit.permit.unit_authority_id ||
+      collection.normalized_payload.unit_authority_revision!=collection.submission_permit.permit.unit_authority_revision ||
+      collection.normalized_payload.unit_authority_digest!=collection.submission_permit.permit.unit_authority_digest ||
+      collection.normalized_payload.payload_content_digest=="" ||
+      collection.attempt_id!=collection.request_identity.request_id.attempt_id ||
+      collection.attempt_id!=collection.submission_permit.permit.unique_attempt_id ||
+      !SWV5S5_EqualRequestIdentity(collection.request_identity,collection.submission_permit.permit.request_identity))
+   { reason="NORMALIZED_OR_PERMIT_BINDING_INVALID"; return false; }
+   if(!SWV5S5_ValidatePermit(collect_context,collection.submission_permit.permit,permit_validation) ||
+      collection.submission_permit.permit.producer_trust.record_digest!=collection.producer_trust.record.record_digest ||
+      collection.submission_permit.permit.producer_trust.authority_record_id!=proof_input.trust_anchor.current_authority_record_id ||
+      collection.submission_permit.permit.producer_trust.authority_generation!=proof_input.trust_anchor.current_authority_generation)
+   { reason="PERMIT_NESTED_AUTHORITY_INVALID"; return false; }
+   if(!SWV5S5_CanonicalRiskAuthorization("risk",collection.submission_permit.permit.risk_authorization,permit_risk) ||
+      !SWV5S5_CanonicalRiskAuthorization("risk",collection.risk_authorization.authorization,view_risk) ||
+      permit_risk!=view_risk ||
+      !SWV5S5_CanonicalAccountNamespace("account",collection.account.account_namespace,view_account) ||
+      !SWV5S5_CanonicalAccountNamespace("account",collection.risk_authorization.authorization.account_namespace,permit_account) ||
+      view_account!=permit_account ||
+      !SWV5S5_EqualRequestIdentity(collection.risk_authorization.authorization.request_identity,collection.request_identity) ||
+      !SWV5S5_EqualFence(collection.risk_authorization.authorization.ownership_fence,collection.ownership.fence) ||
+      collection.risk_authorization.authorization.basket_state_version!=collection.basket.basket.state_version ||
+      collection.risk_authorization.authorization.symbol_specification_sequence!=collection.symbol_specification.specification.specification_sequence ||
+      collection.risk_authorization.authorization.authorized_volume!=collection.normalized_payload.payload.volume ||
+      collection.risk_authorization.authorization.authorized_price!=collection.normalized_payload.payload.price ||
+      collection.risk_authorization.authorization.authorized_stop_price!=collection.normalized_payload.payload.stop_price ||
+      collection.risk_authorization.authorization.authorized_limit_price!=collection.normalized_payload.payload.limit_price ||
+      collection.risk_authorization.authorization.hard_kill_latch_id!=collection.hard_kill.state.latch_id ||
+      collection.risk_authorization.authorization.hard_kill_latch_generation!=collection.hard_kill.state.latch_generation)
+   { reason="RISK_AUTHORIZATION_BINDING_INVALID"; return false; }
+   const SWV5_RiskEvaluationInput risk_binding=collection.risk_authorization.current_binding;
+   if(!SWV5S5_EqualRequestIdentity(risk_binding.intent.request_identity,collection.request_identity) ||
+      !SWV5S5_EqualNamespace(risk_binding.intent.persistence_namespace,collection.persistence_namespace) ||
+      !SWV5S5_EqualFence(risk_binding.ownership_fence,collection.ownership.fence) ||
+      risk_binding.account_mode!=SWV5_ACCOUNT_MODE_HEDGING ||
+      risk_binding.account_namespace.snapshot_epoch!=collection.account.account_namespace.snapshot_epoch ||
+      risk_binding.basket.lifecycle.basket_id.value!=collection.basket.basket.basket_id.value ||
+      risk_binding.basket.lifecycle.state_version!=collection.basket.basket.state_version ||
+      risk_binding.symbol_specification.specification_sequence!=collection.symbol_specification.specification.specification_sequence ||
+      risk_binding.hard_kill_state.latch_id!=collection.hard_kill.state.latch_id ||
+      risk_binding.hard_kill_state.latch_generation!=collection.hard_kill.state.latch_generation ||
+      !risk_binding.has_margin_authority_record || !risk_binding.has_basket_risk_authority_record ||
+      risk_binding.margin_authority_record.authority_record_digest!=collection.margin.record.authority_record_digest ||
+      risk_binding.basket_risk_authority_record.authority_record_digest!=collection.basket_risk.record.authority_record_digest ||
+      collection.margin.record.request_identity.request_id.correlation_id!=collection.request_identity.request_id.correlation_id ||
+      collection.margin.record.requested_volume!=collection.normalized_payload.payload.volume ||
+      collection.margin.record.requested_price!=collection.normalized_payload.payload.price ||
+      collection.basket_risk.record.request_identity.request_id.correlation_id!=collection.request_identity.request_id.correlation_id ||
+      collection.basket_risk.record.basket_id.value!=collection.basket.basket.basket_id.value ||
+      collection.basket_risk.record.source_snapshot_id=="" ||
+      !SWV5S5_IsDigest64Lower(collection.basket_risk.record.source_snapshot_digest) ||
+      !risk_contract.ValidateAuthorization(collect_context,collection.risk_authorization.authorization,risk_binding,risk_decision) ||
+      risk_decision.disposition!=SWV5_DISPOSITION_ALLOW)
+   { reason="V5_RISK_BINDING_DENIED"; return false; }
+   return true;
+}
+
+bool SWV5S5_DeriveAdmissionProofDigest(SWV5S5_AdmissionProof &proof,string &digest)
+{
+   string body="",f,snapshot_digest,ingress_identity,ingress_payload;
+   if(!proof.v1_semantically_valid || !proof.v2_semantically_valid || !proof.stable_owner_evidence ||
+      !proof.safety_projections_equal || !proof.relationally_bound || !proof.pre_p_admissible ||
+      !proof.claim_time_valid || !SWV5S5_DeriveAdmissionSnapshotDigest(proof.snapshot,snapshot_digest) ||
+      proof.snapshot.snapshot_digest!=snapshot_digest ||
+      !SWV5S5_DeriveIngressIdentityAndDigest(proof.accepted_ingress,ingress_identity,ingress_payload) ||
+      proof.accepted_ingress.ingress_identity!=ingress_identity || proof.accepted_ingress.payload_digest!=ingress_payload ||
+      proof.trust_scope.ingress_identity!=ingress_identity || proof.trust_anchor.trust_anchor_id=="") return false;
+   if(!SWV5S5_CanonicalContractVersion("version",proof.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("snapshot_digest",snapshot_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("v1_semantically_valid",proof.v1_semantically_valid,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("v2_semantically_valid",proof.v2_semantically_valid,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("stable_owner_evidence",proof.stable_owner_evidence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("safety_projections_equal",proof.safety_projections_equal,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("relationally_bound",proof.relationally_bound,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("pre_p_admissible",proof.pre_p_admissible,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("claim_time_valid",proof.claim_time_valid,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("trust_anchor_id",proof.trust_anchor.trust_anchor_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("trust_current_record",proof.trust_anchor.current_authority_record_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("trust_current_generation",proof.trust_anchor.current_authority_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("accepted_ingress_identity",ingress_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("accepted_ingress_payload",ingress_payload,f)) return false; body+=f;
+   return SWV5S5_DomainDigest(SWV5S5_DOMAIN_ADMISSION_SNAPSHOT,body,digest);
+}
+
+bool SWV5S5_DoubleCollect(const SWV5_ContractValidationContext &claim_context,
+                          const SWV5S5_AdmissionProofInput &proof_input,
+                          ISWV5RiskContract &risk_contract,
+                          SWV5S5_AdmissionSnapshot &snapshot,
+                          SWV5S5_DoubleCollectResult &result,
+                          SWV5S5_AdmissionProof &proof)
+{
+   ZeroMemory(result); ZeroMemory(proof);
+   SWV5S5_InitContractVersion(result.contract_version); SWV5S5_InitContractVersion(proof.contract_version);
    string v1_digest,v2_digest,changed;
    if(!SWV5S5_IsCandidateVersion(snapshot.contract_version) || snapshot.canonical_policy_id!=SWV5S5_CANONICAL_POLICY_ID ||
       !SWV5S5_DeriveCollectionDigest(snapshot.collect_v1) || !SWV5S5_DeriveCollectionDigest(snapshot.collect_v2))
@@ -516,19 +907,47 @@ bool SWV5S5_DoubleCollect(SWV5S5_AdmissionSnapshot &snapshot,SWV5S5_DoubleCollec
       snapshot.collect_v2.collect_clock.clock_sequence<snapshot.collect_v1.collect_clock.clock_sequence ||
       snapshot.collect_v2.collect_clock.observed_at<snapshot.collect_v1.collect_clock.observed_at)
    { result.disposition=SWV5S5_COLLECT_CLOCK_REGRESSION; result.reason_code="COLLECT_CLOCK_REGRESSION"; return false; }
+   string semantic_reason;
+   if(!SWV5S5_ValidateAdmissionAuthorityCollection(claim_context,proof_input,snapshot.collect_v1,risk_contract,semantic_reason))
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="V1_"+semantic_reason; return false; }
+   proof.v1_semantically_valid=true;
+   if(!SWV5S5_ValidateAdmissionAuthorityCollection(claim_context,proof_input,snapshot.collect_v2,risk_contract,semantic_reason))
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="V2_"+semantic_reason; return false; }
+   proof.v2_semantically_valid=true;
    if(!SWV5S5_EqualCollectionSafety(snapshot.collect_v1,snapshot.collect_v2,changed))
    { result.disposition=SWV5S5_COLLECT_RETRYABLE_UNSTABLE; result.changed_authority=changed; result.reason_code="DOUBLE_COLLECT_CHANGED"; return false; }
-   // A stable pair is provisional only. It cannot manufacture the later,
-   // independently observed Claim clock or a complete Admission Snapshot.
-   string body="",f;
-   if(!SWV5S5_CanonicalString("collect_v1_digest",snapshot.collect_v1.collection_digest,f))
-   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="STABLE_PAIR_DIGEST_FAILED"; return false; }
-   body+=f;
-   if(!SWV5S5_CanonicalString("collect_v2_digest",snapshot.collect_v2.collection_digest,f) ||
-      !SWV5S5_DomainDigest(SWV5S5_DOMAIN_ADMISSION_SNAPSHOT,body+f,result.provisional_snapshot_digest))
-   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="STABLE_PAIR_DIGEST_FAILED"; return false; }
+   proof.stable_owner_evidence=true; proof.safety_projections_equal=true;
+   if(snapshot.claim_clock.clock_id!=claim_context.clock_id || snapshot.claim_clock.clock_authority!=claim_context.clock_authority ||
+      snapshot.claim_clock.clock_sequence!=claim_context.clock_sequence || snapshot.claim_clock.observed_at!=claim_context.clock_time ||
+      snapshot.claim_clock.clock_sequence<snapshot.collect_v2.collect_clock.clock_sequence ||
+      snapshot.claim_clock.observed_at<snapshot.collect_v2.collect_clock.observed_at ||
+      !SWV5S5_EqualFence(proof_input.current_ownership_lease.fence,snapshot.collect_v2.ownership.fence) ||
+      proof_input.current_ownership_lease.store_revision!=snapshot.collect_v2.lease_liveness.lease.store_revision ||
+      proof_input.current_ownership_lease.heartbeat_sequence!=snapshot.collect_v2.lease_liveness.lease.heartbeat_sequence ||
+      claim_context.clock_time>=proof_input.current_ownership_lease.expires_at ||
+      claim_context.clock_time>=snapshot.collect_v2.producer_trust.record.valid_until ||
+      claim_context.clock_time>=snapshot.collect_v2.risk_authorization.authorization.expires_at ||
+      claim_context.clock_time>=snapshot.collect_v2.submission_permit.permit.valid_until ||
+      claim_context.clock_time>=snapshot.collect_v2.symbol_specification.specification.valid_until)
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="CLAIM_TIME_AUTHORITY_INVALID"; return false; }
+   const uint max_age=snapshot.collect_v2.risk_authorization.current_binding.limits.maximum_snapshot_age_seconds;
+   if(max_age==0 || snapshot.collect_v2.margin.record.observed_at<=0 || snapshot.collect_v2.basket_risk.record.observed_at<=0 ||
+      claim_context.clock_time<snapshot.collect_v2.margin.record.observed_at ||
+      claim_context.clock_time<snapshot.collect_v2.basket_risk.record.observed_at ||
+      (ulong)(claim_context.clock_time-snapshot.collect_v2.margin.record.observed_at)>(ulong)max_age ||
+      (ulong)(claim_context.clock_time-snapshot.collect_v2.basket_risk.record.observed_at)>(ulong)max_age)
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="CLAIM_TIME_FRESHNESS_INVALID"; return false; }
+   if(!SWV5S5_DeriveAdmissionSnapshotDigest(snapshot,snapshot.snapshot_digest))
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="SNAPSHOT_DIGEST_FAILED"; return false; }
+   proof.relationally_bound=true; proof.pre_p_admissible=true; proof.claim_time_valid=true;
+   proof.trust_anchor=proof_input.trust_anchor; proof.trust_scope=proof_input.trust_scope;
+   proof.accepted_ingress=proof_input.accepted_ingress;
+   proof.snapshot=snapshot; proof.reason_code="ADMISSION_PROOF_VALID";
+   if(!SWV5S5_DeriveAdmissionProofDigest(proof,proof.proof_digest))
+   { result.disposition=SWV5S5_COLLECT_FAIL_CLOSED; result.reason_code="ADMISSION_PROOF_DIGEST_FAILED"; return false; }
+   result.provisional_snapshot_digest=snapshot.snapshot_digest;
    result.disposition=SWV5S5_COLLECT_STABLE_PROVISIONAL;
-   result.reason_code="PROVISIONAL_P_AVAILABLE";
+   result.reason_code="STABLE_SEMANTICALLY_ADMISSIBLE_RELATIONALLY_BOUND";
    return true;
 }
 

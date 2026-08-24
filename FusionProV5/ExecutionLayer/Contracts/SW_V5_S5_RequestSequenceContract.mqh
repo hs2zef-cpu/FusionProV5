@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_REQUEST_SEQUENCE_CONTRACT_MQH
 #define SW_V5_S5_REQUEST_SEQUENCE_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.1 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
 // EXPLICIT AUTHORITY-OWNED INDEX / PURE PREPARATION / NO ALLOCATOR STORE
 
 #include "SW_V5_S5_IngressLedgerContract.mqh"
@@ -72,11 +72,29 @@ bool SWV5S5_DeriveSequenceIndexDigest(const SWV5S5_RequestSequenceIndexEntry &en
    return SWV5S5_DomainDigest(SWV5S5_DOMAIN_REQUEST_SEQUENCE,body,digest);
 }
 
+bool SWV5S5_ValidateSequenceIndex(const SWV5S5_RequestSequenceIndexEntry &entries[],
+                                  const ulong high_watermark,const ulong allocator_revision)
+{
+   ulong highest=0;
+   for(int i=0;i<ArraySize(entries);i++)
+   {
+      if(entries[i].reserved_sequence==0 || entries[i].reserved_sequence>high_watermark ||
+         entries[i].reservation_revision==0 || entries[i].reservation_revision>allocator_revision) return false;
+      if(entries[i].reserved_sequence>highest) highest=entries[i].reserved_sequence;
+      for(int j=i+1;j<ArraySize(entries);j++)
+         if(entries[i].logical_correlation_id==entries[j].logical_correlation_id ||
+            entries[i].reserved_sequence==entries[j].reserved_sequence) return false;
+   }
+   if(ArraySize(entries)==0) return high_watermark==0;
+   return highest==high_watermark && allocator_revision>0;
+}
+
 bool SWV5S5_DeriveSequenceAuthorityDigest(const SWV5S5_RequestSequenceAuthority &authority,
                                            const SWV5S5_RequestSequenceIndexEntry &entries[],string &digest)
 {
    string index_digest,body="",f;
    if(authority.reservation_count!=(uint)ArraySize(entries) ||
+      !SWV5S5_ValidateSequenceIndex(entries,authority.request_sequence_high_watermark,authority.allocator_revision) ||
       !SWV5S5_DeriveSequenceIndexDigest(entries,index_digest) ||
       authority.reservation_index_digest!=index_digest) return false;
    if(!SWV5S5_CanonicalContractVersion("version",authority.contract_version,f)) return false; body+=f;

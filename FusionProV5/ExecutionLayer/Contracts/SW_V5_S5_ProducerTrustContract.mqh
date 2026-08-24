@@ -131,7 +131,14 @@ bool SWV5S5_ValidateTrustSuccessor(const SWV5S5_ProducerTrustRecord &prior,
                                   const SWV5S5_ProducerTrustRecord &current,
                                   const SWV5S5_ProducerTrustAnchor &anchor)
 {
-   return prior.status==SWV5S5_TRUST_SUPERSEDED && prior.superseding_record_id==current.authority_record_id &&
+   string prior_digest,current_digest;
+   return anchor.issuer_identity!="" && anchor.issuer_policy_id!="" && anchor.trust_anchor_id!="" &&
+          SWV5S5_IsCandidateVersion(prior.contract_version) && SWV5S5_IsCandidateVersion(current.contract_version) &&
+          SWV5S5_DeriveProducerTrustDigest(prior,prior_digest) && prior.record_digest==prior_digest &&
+          SWV5S5_DeriveProducerTrustDigest(current,current_digest) && current.record_digest==current_digest &&
+          prior.issuer_identity==anchor.issuer_identity && prior.issuer_policy_id==anchor.issuer_policy_id &&
+          current.issuer_identity==anchor.issuer_identity && current.issuer_policy_id==anchor.issuer_policy_id &&
+          prior.status==SWV5S5_TRUST_SUPERSEDED && prior.superseding_record_id==current.authority_record_id &&
           prior.superseding_generation==current.authority_generation &&
           current.authority_record_id==anchor.current_authority_record_id &&
           current.authority_generation==anchor.current_authority_generation &&
@@ -141,6 +148,31 @@ bool SWV5S5_ValidateTrustSuccessor(const SWV5S5_ProducerTrustRecord &prior,
           SWV5S5_EqualNamespace(prior.persistence_namespace,current.persistence_namespace) &&
           current.status==SWV5S5_TRUST_AUTHORIZED && current.superseding_record_id=="" &&
           current.superseding_generation==0 && current.producer_epoch>prior.producer_epoch;
+}
+
+bool SWV5S5_ValidateTrustedIngressForAcceptance(
+   const SWV5_ContractValidationContext &context,
+   const SWV5S5_IngressEnvelope &ingress,
+   const SWV5S5_IngressFreshnessPolicy &freshness,
+   const SWV5S5_ProducerTrustRecord &current_trust,
+   const SWV5S5_ProducerTrustAnchor &anchor,
+   const SWV5S5_ProducerTrustScope &scope,
+   SWV5S5_IngressValidationResult &result)
+{
+   SWV5S5_IngressValidationResult ingress_result;
+   SWV5S5_ValidationResult trust_result;
+   if(!SWV5S5_ValidateIngress(context,ingress,freshness,ingress_result) ||
+      !SWV5S5_ValidateProducerTrust(context,current_trust,anchor,scope,ingress,trust_result))
+   {
+      result=ingress_result;
+      SWV5S5_Deny(context,"TRUSTED_INGRESS_ACCEPTANCE_DENIED","",result.validation);
+      result.disposition=SWV5S5_INGRESS_EVALUATION_DENIED;
+      result.directional_nomination=false;
+      result.no_entry=false;
+      return false;
+   }
+   result=ingress_result;
+   return true;
 }
 
 SWV5S5_IngressEvaluationDisposition SWV5S5_EvaluateProducerSequence(
@@ -179,6 +211,18 @@ public:
                          const SWV5S5_ProducerTrustScope &scope,
                          const SWV5S5_IngressEnvelope &ingress,
                          SWV5S5_ValidationResult &result)=0;
+};
+
+class ISWV5S5TrustedIngressAcceptanceContract
+{
+public:
+   virtual bool ValidateForAcceptance(const SWV5_ContractValidationContext &context,
+                                      const SWV5S5_IngressEnvelope &ingress,
+                                      const SWV5S5_IngressFreshnessPolicy &freshness,
+                                      const SWV5S5_ProducerTrustRecord &current_trust,
+                                      const SWV5S5_ProducerTrustAnchor &anchor,
+                                      const SWV5S5_ProducerTrustScope &scope,
+                                      SWV5S5_IngressValidationResult &result)=0;
 };
 
 #endif

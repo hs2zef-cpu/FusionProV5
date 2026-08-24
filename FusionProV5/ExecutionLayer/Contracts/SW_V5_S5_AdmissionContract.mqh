@@ -8,7 +8,7 @@
 
 struct SWV5S5_ClaimTimeAuthorityInput
 {
-   SWV5S5_AdmissionSnapshot provisional_snapshot;
+   SWV5S5_AdmissionProof admission_proof;
    SWV5S5_SubmissionPermit permit;
    SWV5_RiskAuthorization risk_authorization;
    SWV5S5_ProducerTrustRecord producer_trust;
@@ -35,6 +35,23 @@ bool SWV5S5_ValidateClaimTimeAuthorities(const SWV5_ContractValidationContext &c
                                          SWV5S5_ConditionalAdmissionResult &result)
 {
    ZeroMemory(result); SWV5S5_InitContractVersion(result.contract_version);
+   string proof_digest;
+   SWV5S5_AdmissionProof proof=authority_input.admission_proof;
+   if(!SWV5S5_DeriveAdmissionProofDigest(proof,proof_digest) ||
+      authority_input.admission_proof.proof_digest!=proof_digest)
+   { result.operation_state=SWV5S5_ADMISSION_CLAIM_TIME_FAILED; result.reason_code="ADMISSION_PROOF_INVALID"; return false; }
+   const SWV5S5_AdmissionAuthorityCollection compared=proof.snapshot.collect_v2;
+   if(compared.submission_permit.permit.permit_id!=authority_input.permit.permit_id ||
+      compared.submission_permit.permit.permit_digest!=authority_input.permit.permit_digest ||
+      compared.risk_authorization.authorization.authorization_id!=authority_input.risk_authorization.authorization_id ||
+      compared.producer_trust.record.authority_record_id!=authority_input.producer_trust.authority_record_id ||
+      compared.producer_trust.record.authority_generation!=authority_input.producer_trust.authority_generation ||
+      compared.producer_trust.record.record_digest!=authority_input.producer_trust.record_digest ||
+      proof.snapshot.claim_clock.clock_id!=context.clock_id ||
+      proof.snapshot.claim_clock.clock_authority!=context.clock_authority ||
+      proof.snapshot.claim_clock.clock_sequence!=context.clock_sequence ||
+      proof.snapshot.claim_clock.observed_at!=context.clock_time)
+   { result.operation_state=SWV5S5_ADMISSION_CLAIM_TIME_FAILED; result.reason_code="PROOF_CURRENT_AUTHORITY_MISMATCH"; return false; }
    result.provisional_p_available=true;
    if(!SWV5S5_EqualRequestIdentity(authority_input.risk_authorization.request_identity,
                                     authority_input.permit.request_identity) ||

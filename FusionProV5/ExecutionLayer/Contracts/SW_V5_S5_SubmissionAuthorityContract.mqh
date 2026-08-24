@@ -1,8 +1,8 @@
 #ifndef SW_V5_S5_SUBMISSION_AUTHORITY_CONTRACT_MQH
 #define SW_V5_S5_SUBMISSION_AUTHORITY_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.1 CANDIDATE CONTRACT
-// PURE PERMIT PREPARATION + ABSTRACT COMMIT AUTHORITY / NO BROKER OR STORE
+// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
+// PURE PERMIT VALUE / CANONICAL VALIDATION / NO BROKER OR STORE
 
 #include "SW_V5_S5_RuntimePublicationContract.mqh"
 
@@ -24,6 +24,9 @@ struct SWV5S5_SubmissionPermit
    string unique_attempt_id;
    SWV5_NormalizedUnits normalized_payload;
    string normalization_identity;
+   string unit_authority_id;
+   ulong unit_authority_revision;
+   string unit_authority_digest;
    ulong symbol_specification_sequence;
    SWV5_BasketID basket_id;
    ulong basket_state_version;
@@ -36,52 +39,6 @@ struct SWV5S5_SubmissionPermit
    datetime valid_from;
    datetime valid_until;
    string permit_digest;
-};
-
-struct SWV5S5_SubmissionAuthorityRecord
-{
-   SWV5_ContractVersion contract_version;
-   SWV5S5_SubmissionPermit permit;
-   SWV5S5_SubmissionAuthorityState state;
-   ulong authority_revision;
-   string invocation_claim_id;
-   SWV5_InstanceLease claim_ownership_lease;
-   datetime claimed_at;
-   string claim_clock_id;
-   SWV5_TimeAuthority claim_clock_authority;
-   ulong claim_clock_sequence;
-   string admission_snapshot_digest;
-   string claim_policy_id;
-   uint claim_policy_version;
-   string durable_record_digest;
-};
-
-struct SWV5S5_SubmissionAuthorityIndexEntry
-{
-   string logical_correlation_id;
-   string attempt_id;
-   string permit_id;
-   string permit_digest;
-   SWV5S5_SubmissionAuthorityState state;
-   ulong authority_revision;
-   string durable_record_digest;
-};
-
-struct SWV5S5_PermitPreparationCommand
-{
-   SWV5_ContractVersion contract_version;
-   string expected_index_digest;
-   ulong expected_index_revision;
-   SWV5S5_SubmissionPermit proposed_permit;
-   string command_digest;
-};
-
-struct SWV5S5_PermitPreparationResult
-{
-   SWV5_ContractVersion contract_version;
-   SWV5S5_PermitDisposition disposition;
-   SWV5S5_SubmissionAuthorityRecord proposed_record;
-   string reason_code;
 };
 
 bool SWV5S5_CanonicalNormalizedPayload(const string name,const SWV5_NormalizedUnits &units,string &field)
@@ -315,6 +272,9 @@ bool SWV5S5_DerivePermitDigest(const SWV5S5_SubmissionPermit &permit,string &dig
    SWV5S5_PM_S("unique_attempt_id",permit.unique_attempt_id);
    if(!SWV5S5_CanonicalNormalizedPayload("normalized_payload",permit.normalized_payload,f)) return false; body+=f;
    SWV5S5_PM_S("normalization_identity",permit.normalization_identity);
+   SWV5S5_PM_S("unit_authority_id",permit.unit_authority_id);
+   SWV5S5_PM_U("unit_authority_revision",permit.unit_authority_revision);
+   SWV5S5_PM_S("unit_authority_digest",permit.unit_authority_digest);
    SWV5S5_PM_U("symbol_specification_sequence",permit.symbol_specification_sequence);
    SWV5S5_PM_S("basket_id",permit.basket_id.value); SWV5S5_PM_U("basket_state_version",permit.basket_state_version);
    SWV5S5_PM_S("trust_record_id",permit.producer_trust.authority_record_id);
@@ -359,7 +319,9 @@ bool SWV5S5_ValidatePermit(const SWV5_ContractValidationContext &context,
       permit.basket_id.value=="" || permit.basket_id.value!=permit.persistence_namespace.basket_id.value ||
       permit.basket_state_version==0 || permit.symbol_specification_sequence==0 ||
       permit.symbol_specification_sequence!=permit.normalized_payload.specification_sequence ||
-      permit.normalization_identity=="" || permit.producer_trust.status!=SWV5S5_TRUST_AUTHORIZED ||
+      permit.normalization_identity=="" || permit.unit_authority_id=="" || permit.unit_authority_revision==0 ||
+      !SWV5S5_IsDigest64Lower(permit.unit_authority_digest) ||
+      permit.producer_trust.status!=SWV5S5_TRUST_AUTHORIZED ||
       permit.producer_trust.authority_record_id=="" ||
       !SWV5S5_DeriveProducerTrustDigest(permit.producer_trust,trust_digest) || permit.producer_trust.record_digest!=trust_digest ||
       !SWV5S5_EqualNamespace(permit.producer_trust.persistence_namespace,permit.persistence_namespace) ||
@@ -369,6 +331,8 @@ bool SWV5S5_ValidatePermit(const SWV5_ContractValidationContext &context,
       !SWV5S5_EqualFence(permit.risk_authorization.ownership_fence,permit.ownership_fence) ||
       permit.risk_authorization.account_mode!=permit.account_mode ||
       permit.risk_authorization.account_namespace.snapshot_epoch!=permit.account_epoch ||
+      permit.risk_authorization.authorized_intent_type!=SWV5_INTENT_OPEN ||
+      (permit.risk_authorization.authorized_direction!=1 && permit.risk_authorization.authorized_direction!=-1) ||
       permit.risk_authorization.basket_state_version!=permit.basket_state_version ||
       permit.risk_authorization.symbol_specification_sequence!=permit.symbol_specification_sequence ||
       permit.risk_authorization.authorized_volume!=permit.normalized_payload.volume ||
@@ -381,13 +345,27 @@ bool SWV5S5_ValidatePermit(const SWV5_ContractValidationContext &context,
       !SWV5S5_EqualFence(permit.margin_authority.ownership_fence,permit.ownership_fence) ||
       !SWV5S5_EqualRequestIdentity(permit.margin_authority.request_identity,permit.request_identity) ||
       permit.margin_authority.basket_id.value!=permit.basket_id.value ||
+      permit.margin_authority.symbol!=permit.persistence_namespace.ownership_namespace.symbol ||
       permit.margin_authority.symbol_specification_sequence!=permit.symbol_specification_sequence ||
+      permit.margin_authority.intent_type!=permit.risk_authorization.authorized_intent_type ||
+      permit.margin_authority.direction!=permit.risk_authorization.authorized_direction ||
+      permit.margin_authority.requested_volume!=permit.normalized_payload.volume ||
+      permit.margin_authority.requested_price!=permit.normalized_payload.price ||
+      permit.margin_authority.account_currency!=permit.account_namespace.account_currency ||
+      permit.margin_authority.authority_record_id=="" || permit.margin_authority.authority_record_sequence==0 ||
+      !SWV5S5_IsDigest64Lower(permit.margin_authority.authority_record_digest) ||
       !SWV5S5_EqualNamespace(permit.basket_risk_authority.persistence_namespace,permit.persistence_namespace) ||
       !SWV5S5_EqualFence(permit.basket_risk_authority.ownership_fence,permit.ownership_fence) ||
       !SWV5S5_EqualRequestIdentity(permit.basket_risk_authority.request_identity,permit.request_identity) ||
       permit.basket_risk_authority.basket_id.value!=permit.basket_id.value ||
       permit.basket_risk_authority.basket_state_version!=permit.basket_state_version ||
+      permit.basket_risk_authority.symbol!=permit.persistence_namespace.ownership_namespace.symbol ||
       permit.basket_risk_authority.symbol_specification_sequence!=permit.symbol_specification_sequence ||
+      permit.basket_risk_authority.source_snapshot_id=="" ||
+      !SWV5S5_IsDigest64Lower(permit.basket_risk_authority.source_snapshot_digest) ||
+      permit.basket_risk_authority.authority_record_id=="" ||
+      permit.basket_risk_authority.authority_record_sequence==0 ||
+      !SWV5S5_IsDigest64Lower(permit.basket_risk_authority.authority_record_digest) ||
       !SWV5S5_CanonicalAccountNamespace("account",permit.account_namespace,permit_account) ||
       !SWV5S5_CanonicalAccountNamespace("account",permit.risk_authorization.account_namespace,risk_account) ||
       !SWV5S5_CanonicalAccountNamespace("account",permit.margin_authority.account_namespace,margin_account) ||
@@ -403,109 +381,5 @@ bool SWV5S5_ValidatePermit(const SWV5_ContractValidationContext &context,
    { SWV5S5_Deny(context,"SUBMISSION_PERMIT_INVALID","",result); return false; }
    SWV5S5_Allow(context,"SUBMISSION_PERMIT_VALID",result); return true;
 }
-
-bool SWV5S5_DeriveDurableSubmissionAuthorityDigest(const SWV5S5_SubmissionAuthorityRecord &record,string &digest)
-{
-   string body="",f;
-   if(!SWV5S5_CanonicalContractVersion("version",record.contract_version,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("permit_digest",record.permit.permit_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalInt("state",record.state,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalUInt("authority_revision",record.authority_revision,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("invocation_claim_id",record.invocation_claim_id,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalInstanceLease("claim_ownership_lease",record.claim_ownership_lease,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalDatetime("claimed_at",record.claimed_at,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("claim_clock_id",record.claim_clock_id,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalInt("claim_clock_authority",record.claim_clock_authority,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalUInt("claim_clock_sequence",record.claim_clock_sequence,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("admission_snapshot_digest",record.admission_snapshot_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("claim_policy_id",record.claim_policy_id,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalUInt("claim_policy_version",record.claim_policy_version,f)) return false; body+=f;
-   return SWV5S5_DomainDigest(SWV5S5_DOMAIN_SUBMISSION_PERMIT,body,digest);
-}
-
-bool SWV5S5_DeriveSubmissionIndexDigest(const SWV5S5_SubmissionAuthorityIndexEntry &entries[],string &digest)
-{
-   string body="",entry="",f;
-   for(int i=0;i<ArraySize(entries);i++)
-   {
-      entry="";
-      if(entries[i].logical_correlation_id=="" || entries[i].attempt_id=="" || entries[i].permit_id=="" ||
-         (i>0 && (StringCompare(entries[i-1].logical_correlation_id,entries[i].logical_correlation_id)>0 ||
-          (entries[i-1].logical_correlation_id==entries[i].logical_correlation_id &&
-           StringCompare(entries[i-1].attempt_id,entries[i].attempt_id)>=0)))) return false;
-      if(!SWV5S5_CanonicalString("correlation_id",entries[i].logical_correlation_id,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalString("attempt_id",entries[i].attempt_id,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalString("permit_id",entries[i].permit_id,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalString("permit_digest",entries[i].permit_digest,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalInt("state",entries[i].state,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalUInt("authority_revision",entries[i].authority_revision,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalString("record_digest",entries[i].durable_record_digest,f)) return false; entry+=f;
-      if(!SWV5S5_CanonicalIndexed("submission",(ulong)i,entry,f)) return false; body+=f;
-   }
-   return SWV5S5_DomainDigest(SWV5S5_DOMAIN_SUBMISSION_PERMIT,body,digest);
-}
-
-bool SWV5S5_DerivePermitPreparationCommandDigest(const SWV5S5_PermitPreparationCommand &command,string &digest)
-{
-   string body="",f;
-   if(!SWV5S5_CanonicalContractVersion("version",command.contract_version,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("expected_index_digest",command.expected_index_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalUInt("expected_index_revision",command.expected_index_revision,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("permit_digest",command.proposed_permit.permit_digest,f)) return false; body+=f;
-   return SWV5S5_DomainDigest(SWV5S5_DOMAIN_SUBMISSION_PERMIT,body,digest);
-}
-
-bool SWV5S5_PreparePermitCommit(const SWV5_ContractValidationContext &context,
-                                const SWV5S5_SubmissionAuthorityIndexEntry &entries[],
-                                const SWV5S5_PermitPreparationCommand &command,
-                                SWV5S5_PermitPreparationResult &result)
-{
-   ZeroMemory(result); SWV5S5_InitContractVersion(result.contract_version);
-   string index_digest,command_digest;
-   SWV5S5_ValidationResult validation;
-   if(!SWV5S5_DeriveSubmissionIndexDigest(entries,index_digest) || index_digest!=command.expected_index_digest ||
-      !SWV5S5_DerivePermitPreparationCommandDigest(command,command_digest) || command.command_digest!=command_digest ||
-      !SWV5S5_ValidatePermit(context,command.proposed_permit,validation))
-   { result.disposition=SWV5S5_PERMIT_INVALID; result.reason_code="PERMIT_PREPARATION_INVALID"; return false; }
-   string correlation=command.proposed_permit.request_identity.request_id.correlation_id;
-   string attempt=command.proposed_permit.unique_attempt_id;
-   for(int i=0;i<ArraySize(entries);i++)
-   {
-      if(entries[i].logical_correlation_id!=correlation) continue;
-      if(entries[i].attempt_id==attempt)
-      {
-         result.disposition=(entries[i].permit_id==command.proposed_permit.permit_id &&
-                             entries[i].permit_digest==command.proposed_permit.permit_digest) ?
-                            SWV5S5_PERMIT_EXISTING_IDENTICAL : SWV5S5_PERMIT_CONFLICT;
-         result.reason_code=(result.disposition==SWV5S5_PERMIT_EXISTING_IDENTICAL ?
-                             "PERMIT_EXISTING_IDENTICAL" : "PERMIT_IDENTITY_CONFLICT");
-         return result.disposition==SWV5S5_PERMIT_EXISTING_IDENTICAL;
-      }
-      if(entries[i].state==SWV5S5_COMMITTED_NOT_INVOKED ||
-         entries[i].state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED)
-      { result.disposition=SWV5S5_PERMIT_LOGICAL_REQUEST_UNRESOLVED; result.reason_code="COMPETING_UNRESOLVED_ATTEMPT"; return false; }
-   }
-   ZeroMemory(result.proposed_record);
-   SWV5S5_InitContractVersion(result.proposed_record.contract_version);
-   result.proposed_record.permit=command.proposed_permit;
-   result.proposed_record.state=SWV5S5_COMMITTED_NOT_INVOKED;
-   result.proposed_record.authority_revision=1;
-   if(!SWV5S5_DeriveDurableSubmissionAuthorityDigest(result.proposed_record,
-                                                      result.proposed_record.durable_record_digest))
-   { result.disposition=SWV5S5_PERMIT_INVALID; result.reason_code="PERMIT_RECORD_DIGEST_FAILED"; return false; }
-   result.disposition=SWV5S5_PERMIT_PROPOSAL_VALID;
-   result.reason_code="PERMIT_PROPOSAL_VALID_NO_COMMIT";
-   return true;
-}
-
-class ISWV5S5SubmissionPermitAuthority
-{
-public:
-   // Future implementation compares the current per-request/attempt index and
-   // ownership fence atomically; only a committed result may report PERMIT_COMMITTED.
-   virtual bool TryCommitPermit(const SWV5S5_PermitPreparationCommand &command,
-                                const SWV5S5_SubmissionAuthorityIndexEntry &expected_index[],
-                                SWV5S5_PermitPreparationResult &authoritative_result)=0;
-};
 
 #endif

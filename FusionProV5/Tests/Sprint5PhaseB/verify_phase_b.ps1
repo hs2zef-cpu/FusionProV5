@@ -127,11 +127,114 @@ Assert-Oracle ((ClaimPrepare 'COMMITTED_NOT_INVOKED' 1 1 $false $true $true) -eq
 Assert-Oracle ((ClaimPrepare 'COMMITTED_NOT_INVOKED' 1 1 $true $false $true) -eq 'SNAPSHOT_MISMATCH') 'CLM-004' 'full snapshot mismatch denied'
 Assert-Oracle ((ClaimPrepare 'COMMITTED_NOT_INVOKED' 1 1 $true $true $false) -eq 'EXPIRED') 'CLM-005' 'exclusive expiry denied'
 
+# Independent semantic reference models. These assertions do not infer MQL
+# behavior from source tokens; they encode the approved fail-closed relations.
+function AdmissionEligible([hashtable]$A,[hashtable]$B) {
+  $required = @('Semantic','Namespace','Request','Attempt','Payload','Permit','Account','Basket','Specification','Trust','Risk','Margin','BasketRisk','Lease')
+  foreach ($key in $required) { if (-not $A[$key] -or -not $B[$key]) { return $false } }
+  if ($A.HardKill -ne 'INACTIVE' -or $B.HardKill -ne 'INACTIVE') { return $false }
+  if ($B.Clock -lt $A.Clock) { return $false }
+  foreach ($key in @('Owner','NamespaceId','RequestId','AttemptId','PayloadId','PermitId','AccountId','BasketId','SpecSequence','TrustGeneration','RiskId','MarginId','BasketRiskId','UnitAuthorityId','UnitRevision')) {
+    if ($A[$key] -ne $B[$key]) { return $false }
+  }
+  return $true
+}
+function New-Admission([string]$HardKill='INACTIVE') {
+  @{
+    Semantic=$true; Namespace=$true; Request=$true; Attempt=$true; Payload=$true; Permit=$true
+    Account=$true; Basket=$true; Specification=$true; Trust=$true; Risk=$true; Margin=$true
+    BasketRisk=$true; Lease=$true; HardKill=$HardKill; Clock=10; Owner='OWNER-A'
+    NamespaceId='NS-A'; RequestId='REQ-A'; AttemptId='ATT-A'; PayloadId='PAYLOAD-A'
+    PermitId='PERMIT-A'; AccountId='ACCOUNT-A'; BasketId='BASKET-A'; SpecSequence=7
+    TrustGeneration=5; RiskId='RISK-A'; MarginId='MARGIN-A'; BasketRiskId='BRISK-A'
+    UnitAuthorityId='UNIT-A'; UnitRevision=4
+  }
+}
+$admissionA=New-Admission; $admissionB=New-Admission; $admissionB.Clock=11
+Assert-Oracle (AdmissionEligible $admissionA $admissionB) 'ADM-001' 'complete stable admissible collections pass'
+$mutated=New-Admission 'ACTIVE'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-002' 'stable latched Hard Kill denied before P'
+$mutated=New-Admission; $mutated.Trust=$false; Assert-Oracle (-not (AdmissionEligible $mutated $admissionB)) 'ADM-003' 'invalid V1 Trust denied'
+$mutated=New-Admission; $mutated.Risk=$false; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-004' 'invalid V2 Risk denied'
+$mutated=New-Admission; $mutated.NamespaceId='NS-B'; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-005' 'cross-namespace authority denied'
+$mutated=New-Admission; $mutated.UnitRevision=6; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-006' 'normalized A-B-A owner revision detected'
+$mutated=New-Admission; $mutated.Clock=9; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-007' 'V2 clock regression denied'
+
+function BlueprintEligible([int]$Action,[int]$Direction,[int]$Intent,[bool]$IngressIntegrity,[bool]$PayloadExact,[bool]$RiskExact) {
+  $IngressIntegrity -and $PayloadExact -and $RiskExact -and ($Action -eq 1 -or $Action -eq -1) -and
+    $Direction -eq $Action -and $Intent -eq 0
+}
+Assert-Oracle (BlueprintEligible 1 1 0 $true $true $true) 'BLP-001' 'BUY OPEN exact authorities pass'
+Assert-Oracle (-not (BlueprintEligible 1 -1 0 $true $true $true)) 'BLP-002' 'BUY ingress plus SELL request denied'
+Assert-Oracle (-not (BlueprintEligible -1 1 0 $true $true $true)) 'BLP-003' 'SELL ingress plus BUY request denied'
+Assert-Oracle (-not (BlueprintEligible 0 0 0 $true $true $true)) 'BLP-004' 'WAIT cannot materialize request'
+Assert-Oracle (-not (BlueprintEligible 9 0 0 $true $true $true)) 'BLP-005' 'BLOCKED cannot materialize request'
+Assert-Oracle (-not (BlueprintEligible 1 1 3 $true $true $true)) 'BLP-006' 'CLOSE cannot materialize initial entry'
+Assert-Oracle (-not (BlueprintEligible 1 1 0 $true $false $true)) 'BLP-007' 'normalized payload mismatch denied'
+Assert-Oracle (-not (BlueprintEligible 1 1 0 $true $true $false)) 'BLP-008' 'Risk identity/request mismatch denied'
+
+function SequenceIndexValid([object[]]$Rows,[UInt64]$Hwm,[UInt64]$AllocatorRevision) {
+  if ($Rows.Count -eq 0) { return $Hwm -eq 0 }
+  $correlations=@{}; $sequences=@{}; [UInt64]$max=0
+  foreach ($row in $Rows) {
+    if (-not $row.Correlation -or $row.Sequence -eq 0 -or $row.Sequence -gt $Hwm -or
+        $row.Revision -eq 0 -or $row.Revision -gt $AllocatorRevision -or
+        $correlations.ContainsKey($row.Correlation) -or $sequences.ContainsKey([string]$row.Sequence)) { return $false }
+    $correlations[$row.Correlation]=$true; $sequences[[string]$row.Sequence]=$true
+    if ($row.Sequence -gt $max) { $max=$row.Sequence }
+  }
+  return $max -eq $Hwm
+}
+$sequenceRows=@([pscustomobject]@{Correlation='A';Sequence=[UInt64]1;Revision=[UInt64]1},[pscustomobject]@{Correlation='B';Sequence=[UInt64]2;Revision=[UInt64]2})
+Assert-Oracle (SequenceIndexValid $sequenceRows 2 2) 'SEQ-004' 'complete unique reservation index'
+$duplicateSequence=@($sequenceRows[0],[pscustomobject]@{Correlation='B';Sequence=[UInt64]1;Revision=[UInt64]2})
+Assert-Oracle (-not (SequenceIndexValid $duplicateSequence 1 2)) 'SEQ-005' 'two correlations cannot share sequence'
+Assert-Oracle (-not (SequenceIndexValid $sequenceRows 1 2)) 'SEQ-006' 'HWM below indexed maximum denied'
+
+function LedgerLinkValid([hashtable]$Index,[hashtable]$Record) {
+  foreach ($key in @('Ingress','Publication','Payload','State','Correlation','Sequence','AcceptedAt','Request','Terminal','RecordSequence','RecordRevision','RecordDigest')) {
+    if ($Index[$key] -ne $Record[$key]) { return $false }
+  }
+  return $Index.AcceptedAt -gt 0 -and $Index.RecordSequence -gt 0 -and $Index.RecordRevision -gt 0
+}
+$ledgerIndex=@{Ingress='I';Publication=11;Payload='P';State='BOUND';Correlation='C';Sequence=1;AcceptedAt=900;Request='R';Terminal='';RecordSequence=1;RecordRevision=2;RecordDigest='D'}
+$ledgerRecord=$ledgerIndex.Clone()
+Assert-Oracle (LedgerLinkValid $ledgerIndex $ledgerRecord) 'LED-005' 'index links exact complete record'
+$ledgerMutation=$ledgerRecord.Clone(); $ledgerMutation.AcceptedAt=901
+Assert-Oracle (-not (LedgerLinkValid $ledgerIndex $ledgerMutation)) 'LED-006' 'acceptance-time mutation denied'
+
+function TrustSuccessorValid([hashtable]$Prior,[hashtable]$Current,[hashtable]$Anchor) {
+  $Prior.DigestValid -and $Current.DigestValid -and $Prior.Issuer -eq $Anchor.Issuer -and
+    $Current.Issuer -eq $Anchor.Issuer -and $Prior.Policy -eq $Anchor.Policy -and
+    $Current.Policy -eq $Anchor.Policy -and $Prior.Status -eq 'SUPERSEDED' -and
+    $Current.Status -eq 'AUTHORIZED' -and $Prior.Successor -eq $Current.Id -and
+    $Prior.SuccessorGeneration -eq $Current.Generation -and $Anchor.CurrentId -eq $Current.Id -and
+    $Anchor.CurrentGeneration -eq $Current.Generation
+}
+$prior=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='SUPERSEDED';Successor='T2';SuccessorGeneration=2}
+$current=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='AUTHORIZED';Id='T2';Generation=2}
+$anchor=@{Issuer='ISS';Policy='POL';CurrentId='T2';CurrentGeneration=2}
+Assert-Oracle (TrustSuccessorValid $prior $current $anchor) 'TRU-001' 'anchored successor passes'
+$badPrior=$prior.Clone(); $badPrior.DigestValid=$false
+Assert-Oracle (-not (TrustSuccessorValid $badPrior $current $anchor)) 'TRU-002' 'corrupt prior digest denied'
+$badCurrent=$current.Clone(); $badCurrent.Policy='OTHER'
+Assert-Oracle (-not (TrustSuccessorValid $prior $badCurrent $anchor)) 'TRU-003' 'untrusted current policy denied'
+
+$checkpointBase=[ordered]@{BasketState=2;BasketVersion=7;RequestSet='RS';LatestRequest='REQ';LastCorrelation='COR';HardKill='HK';ReleaseAuthority='HKA';Reconciliation='REC';TransactionHwm=12;QueryHwm=8;Clean=$false}
+function Checkpoint-Digest([System.Collections.IDictionary]$Checkpoint) { Sha ($Checkpoint | ConvertTo-Json -Compress) }
+$checkpointDigest=Checkpoint-Digest $checkpointBase
+foreach ($field in @('BasketState','LatestRequest','LastCorrelation','HardKill','ReleaseAuthority','Reconciliation','TransactionHwm','QueryHwm','Clean')) {
+  $changed=[ordered]@{}; foreach($key in $checkpointBase.Keys){$changed[$key]=$checkpointBase[$key]}
+  if ($changed[$field] -is [bool]) { $changed[$field]=-not $changed[$field] }
+  elseif ($changed[$field] -is [int]) { $changed[$field]++ }
+  else { $changed[$field]=[string]$changed[$field]+'-CHANGED' }
+  Assert-Oracle ((Checkpoint-Digest $changed) -ne $checkpointDigest) 'CHK-001' "checkpoint mutation $field changes digest"
+}
+
 # Repository structural and safety assertions.
 $contracts = Join-Path $RepositoryRoot 'FusionProV5\ExecutionLayer\Contracts'
 $production = Join-Path $RepositoryRoot 'FusionProV5\ProductionArchitecture'
 $headers = @(Get-ChildItem -LiteralPath $contracts -Filter '*.mqh' -File | Sort-Object Name)
-$expectedHeaders = @('SW_V5_S5_Common.mqh','SW_V5_S5_Canonical.mqh','SW_V5_S5_IngressContract.mqh','SW_V5_S5_ProducerTrustContract.mqh','SW_V5_S5_IngressLedgerContract.mqh','SW_V5_S5_RequestSequenceContract.mqh','SW_V5_S5_RequestBindingContract.mqh','SW_V5_S5_RuntimePublicationContract.mqh','SW_V5_S5_SubmissionAuthorityContract.mqh','SW_V5_S5_AdmissionSnapshotContract.mqh','SW_V5_S5_InvocationClaimContract.mqh','SW_V5_S5_AdmissionContract.mqh','SW_V5_S5_OrchestrationContract.mqh','SW_V5_S5_Contracts.mqh')
+$expectedHeaders = @('SW_V5_S5_Common.mqh','SW_V5_S5_Canonical.mqh','SW_V5_S5_IngressContract.mqh','SW_V5_S5_ProducerTrustContract.mqh','SW_V5_S5_IngressLedgerContract.mqh','SW_V5_S5_RequestSequenceContract.mqh','SW_V5_S5_RequestBindingContract.mqh','SW_V5_S5_RuntimePublicationContract.mqh','SW_V5_S5_SubmissionAuthorityContract.mqh','SW_V5_S5_AdmissionSnapshotContract.mqh','SW_V5_S5_SubmissionRecordContract.mqh','SW_V5_S5_InvocationClaimContract.mqh','SW_V5_S5_AdmissionContract.mqh','SW_V5_S5_OrchestrationContract.mqh','SW_V5_S5_Contracts.mqh')
 foreach ($name in $expectedHeaders) { Assert-Oracle (Test-Path -LiteralPath (Join-Path $contracts $name)) 'STA-001' "missing $name" }
 $allContractText = ($headers | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n"
 
@@ -178,7 +281,7 @@ Assert-Oracle (Adversarial-Fails { $binding0.Correlation -eq ('f'*64) }) 'ADV-00
 Assert-Oracle (Adversarial-Fails { PublicationEligible 'SET-B' 'SET-A' 'STORE-1' 'STORE-1' 7 7 }) 'ADV-005' 'stale publication fixture must fail'
 
 $summary = [ordered]@{
-  oracle='SPRINT5_PHASE_B1_INDEPENDENT_TEST_ORACLE'
+  oracle='SPRINT5_PHASE_B2_INDEPENDENT_TEST_ORACLE'
   mql_production_executed=$false
   total=$script:Total
   passed=$script:Passed
