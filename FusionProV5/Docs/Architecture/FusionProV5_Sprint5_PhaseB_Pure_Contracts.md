@@ -8,8 +8,8 @@
 | Architecture Review Gate | **CLOSED** |
 | Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
 | Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
-| First independent Phase B implementation audit | **FAIL — 2 CRITICAL / 10 MAJOR / 3 MINOR** |
-| Phase B.1 correction | **AUTHORIZED — PHASE B CONTRACT CONFORMANCE ONLY** |
+| Independent Phase B.1 contract re-audit | **FAIL — 2 CRITICAL / 6 MAJOR / 0 MINOR** |
+| Phase B.2 correction | **AUTHORIZED — FINAL PHASE B CONTRACT CONFORMANCE ONLY** |
 | Phase C | **NOT AUTHORIZED** |
 | Architecture Lock | **NOT GRANTED** |
 | Runtime | **NOT AUTHORIZED** |
@@ -56,11 +56,11 @@ Frozen Signal/Decision
 
 ## Verification And Exit Gate
 
-The first independent Phase B Contract Implementation Audit returned **FAIL**, with **2 Critical, 10 Major, and 3 Minor findings**. This is an implementation-conformance failure against the approved ADRs; it does not reopen architecture, and the Architecture Review Gate remains **CLOSED**. Phase B.1 is authorized only to correct those Phase B contract and verification findings.
+The independent Phase B.1 Contract Re-Audit returned **FAIL**, with **2 Critical, 6 Major, and 0 Minor findings**. This is an implementation-conformance failure against the approved ADRs; it does not reopen architecture, and the Architecture Review Gate remains **CLOSED**. Phase B.2 is authorized only to correct the remaining Phase B contract and verification findings.
 
-Phase B.1 verification must cover canonical/reference vectors, ingress and Trust boundaries, ledger replay, request reservation/binding, fenced publication, permit/Claim exactly-once semantics, stable collection, Claim-time exclusive expiry, conditional linearization, forbidden APIs, dependency direction, include cycles, and contract coverage. MetaEditor may compile compile-only probes and an assertion harness; MT5 Terminal and Strategy Tester must not run.
+Phase B.2 verification must cover the complete Admission Proof, ingress-to-request transitivity, Trust continuity and current-authority boundaries, ledger/sequence integrity, complete checkpoint projection, permit/Claim exactly-once semantics, stable collection, Claim-time exclusive expiry, conditional linearization, forbidden APIs, dependency direction, include cycles, and exact contract coverage. MetaEditor may compile compile-only probes and an assertion harness; MT5 Terminal and Strategy Tester must not run.
 
-The corrected Phase B package remains a candidate until a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT RE-AUDIT** is performed in a fresh review task. Completion does not authorize Phase C, merge, runtime, broker work, Architecture Lock, or production use.
+The corrected Phase B package remains a candidate until a **NEW INDEPENDENT SPRINT 5 PHASE B.2 CONTRACT RE-AUDIT** is performed in a fresh review task. Completion does not authorize Phase C, merge, runtime, broker work, Architecture Lock, or production use.
 
 ## Deferred Work
 
