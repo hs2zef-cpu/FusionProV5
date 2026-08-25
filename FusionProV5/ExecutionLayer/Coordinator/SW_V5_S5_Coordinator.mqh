@@ -1,0 +1,10 @@
+#ifndef SW_V5_S5_COORDINATOR_MQH
+#define SW_V5_S5_COORDINATOR_MQH
+
+// SPRINT 5 PHASE C CANDIDATE UMBRELLA
+// DETERMINISTIC COORDINATOR ONLY / NO PRODUCTION RUNTIME AUTHORIZATION
+
+#include "SW_V5_S5_CoordinatorCommon.mqh"
+#include "SW_V5_S5_DeterministicCoordinator.mqh"
+
+#endif
