@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase B closure and Phase C deterministic orchestration authorization
+
+- Recorded the New Independent Sprint 5 Phase B.3 Contract Re-Audit result: `PASS`, with no Critical, Major, or Minor findings.
+- Closed the Phase B pure-contract gate at audited commit `1366edb25238463c9a76fa78257196dbf4c64e34`; the approved architecture and closed Architecture Review Gate are unchanged.
+- Authorized Sprint 5 Phase C only for an isolated deterministic coordinator, deterministic in-memory test queue, scripted fake authorities, and a test-only fake broker.
+- Phase D, Phase E, Phase F, Phase G, physical persistence, real broker/platform integration, MT5 Terminal/Strategy Tester execution, Architecture Lock, merge to main, production, and live trading remain unauthorized.
+
 ### Sprint 5 Phase B.3 narrow final contract-conformance correction authorization
 
 - Recorded the independent Sprint 5 Phase B.2 Contract Re-Audit result: `FAIL`, with 1 Critical, 3 Major, and 0 Minor findings.

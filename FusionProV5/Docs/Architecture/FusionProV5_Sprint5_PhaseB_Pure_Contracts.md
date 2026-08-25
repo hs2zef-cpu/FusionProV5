@@ -8,9 +8,9 @@
 | Architecture Review Gate | **CLOSED** |
 | Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
 | Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
-| Independent Phase B.2 contract re-audit | **FAIL — 1 CRITICAL / 3 MAJOR / 0 MINOR** |
-| Phase B.3 correction | **AUTHORIZED — NARROW FINAL PHASE B CONTRACT CONFORMANCE ONLY** |
-| Phase C | **NOT AUTHORIZED** |
+| Independent Phase B.3 contract re-audit | **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE** |
+| Phase B pure-contract gate | **CLOSED / PASS at `1366edb25238463c9a76fa78257196dbf4c64e34`** |
+| Phase C | **AUTHORIZED — DETERMINISTIC COORDINATOR / FAKE BROKER / TEST QUEUE ONLY** |
 | Architecture Lock | **NOT GRANTED** |
 | Runtime | **NOT AUTHORIZED** |
 | Broker | **NOT AUTHORIZED** |
@@ -56,11 +56,11 @@ Frozen Signal/Decision
 
 ## Verification And Exit Gate
 
-The independent Phase B.2 Contract Re-Audit returned **FAIL**, with **1 Critical, 3 Major, and 0 Minor findings**. This is an implementation-conformance failure against the approved ADRs; it does not reopen architecture, and the Architecture Review Gate remains **CLOSED**. Phase B.3 is authorized only to correct request-lifecycle admission, Producer Trust successor scope, ordinary Ledger complete-authority evaluation, and directly related verification credibility.
+The New Independent Phase B.3 Contract Re-Audit returned **PASS**, with no Critical, Major, or Minor findings. The Phase B pure-contract gate is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`; the approved ADRs and closed Architecture Review Gate are unchanged. Phase B contract headers are frozen for Phase C.
 
-Phase B.3 verification must directly cover the exact `SUBMISSION_PENDING`/Submission admission boundary, stable terminal-request denial, exact Trust successor scope, ordinary Ledger complete-record/index linkage, conditional-admission completion, and the corrected stale-owner disposition while preserving every independently passing B.2 property. MetaEditor may compile compile-only probes and an assertion harness; MT5 Terminal and Strategy Tester must not run.
+Phase C is authorized only to consume the frozen contracts through a deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker. It may compile dedicated probes and assertion source with MetaEditor, but may not modify Phase B contracts, launch MT5 Terminal/Strategy Tester, implement physical persistence, or connect to a real broker.
 
-The corrected Phase B package remains a candidate until a **NEW INDEPENDENT SPRINT 5 PHASE B.3 CONTRACT RE-AUDIT** is performed in a fresh review task. Completion does not authorize Phase C, merge, runtime, broker work, Architecture Lock, or production use.
+The required next gate is a **NEW INDEPENDENT SPRINT 5 PHASE C DETERMINISTIC ORCHESTRATION AUDIT** in a fresh review task. Phase D/E/F/G, merge, runtime integration, real broker work, Architecture Lock, and production use remain unauthorized.
 
 ## Deferred Work
 

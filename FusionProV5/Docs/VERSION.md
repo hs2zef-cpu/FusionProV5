@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase B.3 — Narrow Final Contract Conformance Closure
+Sprint 5 Phase C — Deterministic Coordinator, Fake Broker, and Queue Behavior
 
 ### Date
 
@@ -12,27 +12,29 @@ Sprint 5 Phase B.3 — Narrow Final Contract Conformance Closure
 
 ### Status
 
-**PHASE B.3 NARROW CORRECTIVE IMPLEMENTATION AUTHORIZED — PHASE B CONTRACTS ONLY**
+**PHASE C IMPLEMENTATION AUTHORIZED — DETERMINISTIC ORCHESTRATION TEST BOUNDARY ONLY**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate passed with no Critical or Major findings and is closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. The independent Sprint 5 Phase B.2 Contract Re-Audit returned **FAIL** with **1 Critical, 3 Major, and 0 Minor findings**. This is an implementation-conformance failure, not an architecture failure; the Architecture Review Gate remains **CLOSED**. Phase B.3 is authorized only to correct request-lifecycle admission, Producer Trust successor scope, ordinary Ledger complete-authority evaluation, and directly related deterministic-verification credibility.
+Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate remains closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. The New Independent Sprint 5 Phase B.3 Contract Re-Audit returned **PASS** with no Critical, Major, or Minor findings and closed the Phase B pure-contract gate at `1366edb25238463c9a76fa78257196dbf4c64e34`. Phase C is authorized only for deterministic orchestration, scripted fake authorities, a deterministic in-memory test queue, and a test-only fake broker.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
-- Phase B.3: **NARROW CORRECTIVE IMPLEMENTATION AUTHORIZED — PHASE B CONTRACTS ONLY**
-- Phase C: **NOT AUTHORIZED**
+- Phase B pure-contract gate: **CLOSED / PASS**
+- Phase C: **AUTHORIZED — DETERMINISTIC COORDINATOR / FAKE BROKER / TEST QUEUE ONLY**
+- Phase D/E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase B.3 — Narrow Final Contract Conformance Closure
+Sprint 5 Phase C — Deterministic Coordinator, Fake Broker, and Queue Behavior
 
-- Status: **AUTHORIZED CORRECTION / IN PROGRESS — PHASE B CONTRACTS ONLY**
+- Status: **AUTHORIZED / IN PROGRESS — PHASE C DETERMINISTIC TEST BOUNDARY ONLY**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
-- Scope: immutable DTOs, pure interfaces/validators, deterministic canonical identities, and contract verification
-- Independent Phase B.2 re-audit: **FAIL — 1 Critical / 3 Major / 0 Minor**
-- Next gate: **New Independent Sprint 5 Phase B.3 Contract Re-Audit**
-- Phase C: **NOT AUTHORIZED**
+- Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
+- Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
+- Phase B gate: **CLOSED / PASS**
+- Next gate: **New Independent Sprint 5 Phase C Deterministic Orchestration Audit**
+- Phase D/E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -109,6 +111,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Complete and self-verify the isolated Sprint 5 Phase B.3 narrow contract-conformance correction, then submit it to a new independent Sprint 5 Phase B.3 Contract Re-Audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Complete and self-verify the isolated Sprint 5 Phase C deterministic coordinator, fake broker, and deterministic queue package, then submit it to a new independent Sprint 5 Phase C Deterministic Orchestration Audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
 Do not begin Phase C or runtime implementation without separate approval. Any adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
