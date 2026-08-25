@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_INGRESS_LEDGER_CONTRACT_MQH
 #define SW_V5_S5_INGRESS_LEDGER_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.3 CANDIDATE CONTRACT
 // EXPLICIT ORDERED MEMBERSHIP/BINDING INDEX / NO CAS OR PHYSICAL STORE
 
 #include "SW_V5_S5_ProducerTrustContract.mqh"
@@ -209,12 +209,14 @@ int SWV5S5_FindLedgerMembership(const SWV5S5_IngressLedgerIndexEntry &entries[],
 
 SWV5S5_IngressEvaluationDisposition SWV5S5_EvaluateLedgerIngress(
    const SWV5S5_IngressLedgerHeader &header,const SWV5S5_IngressLedgerIndexEntry &entries[],
+   const SWV5S5_IngressLedgerRecord &records[],
    const string ingress_identity,const string payload_digest,const ulong publication_sequence)
 {
    string expected;
    if(ingress_identity=="" || !SWV5S5_IsDigest64Lower(payload_digest) || publication_sequence==0 ||
       !SWV5S5_IsCandidateVersion(header.contract_version) ||
-      !SWV5S5_DeriveLedgerHeaderDigest(header,entries,expected) || header.ledger_digest!=expected)
+      !SWV5S5_DeriveLedgerHeaderDigest(header,entries,expected) || header.ledger_digest!=expected ||
+      !SWV5S5_ValidateLedgerRecordIndexLinkage(entries,records))
       return SWV5S5_INGRESS_EVALUATION_INVALID;
    int found=SWV5S5_FindLedgerMembership(entries,ingress_identity);
    if(found>=0)

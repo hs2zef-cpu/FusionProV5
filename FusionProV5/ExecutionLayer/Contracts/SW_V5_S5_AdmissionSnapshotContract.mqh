@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_ADMISSION_SNAPSHOT_CONTRACT_MQH
 #define SW_V5_S5_ADMISSION_SNAPSHOT_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.3 CANDIDATE CONTRACT
 // COMPLETE TYPED OWNER VIEWS / NO MANUFACTURED GENERIC AUTHORITY TOKEN
 
 #include "SW_V5_S5_SubmissionAuthorityContract.mqh"
@@ -785,6 +785,9 @@ bool SWV5S5_ValidateAdmissionAuthorityCollection(
       if(SWV5S5_EqualRequestIdentity(collection.request_set.requests[i].intent.request_identity,collection.request_identity))
       {
          request_matches++;
+         if(collection.request_set.requests[i].state!=SWV5_REQUEST_SUBMISSION_PENDING ||
+            collection.request_set.requests[i].lifecycle_phase!=SWV5_EXECUTION_PHASE_SUBMISSION)
+         { reason="REQUEST_LIFECYCLE_NOT_ADMISSIBLE"; return false; }
          if(!SWV5S5_CanonicalPendingRequest(collection.request_set.requests[i],request_canonical) ||
             !SWV5S5_EqualRequestIdentity(collection.request_set.requests[i].intent.request_identity,
                                          collection.submission_permit.permit.request_identity) ||

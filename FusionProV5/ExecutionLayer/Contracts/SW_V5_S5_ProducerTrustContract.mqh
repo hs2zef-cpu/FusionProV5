@@ -144,8 +144,11 @@ bool SWV5S5_ValidateTrustSuccessor(const SWV5S5_ProducerTrustRecord &prior,
           current.authority_generation==anchor.current_authority_generation &&
           prior.authority_generation<current.authority_generation &&
           prior.issuer_identity==current.issuer_identity && prior.issuer_policy_id==current.issuer_policy_id &&
-          prior.producer_component==current.producer_component &&
+          prior.producer_component==current.producer_component && prior.producer_instance==current.producer_instance &&
           SWV5S5_EqualNamespace(prior.persistence_namespace,current.persistence_namespace) &&
+          prior.symbol==current.symbol && prior.timeframe==current.timeframe &&
+          prior.execution_mode==current.execution_mode && prior.clock_id==current.clock_id &&
+          prior.clock_authority==current.clock_authority &&
           current.status==SWV5S5_TRUST_AUTHORIZED && current.superseding_record_id=="" &&
           current.superseding_generation==0 && current.producer_epoch>prior.producer_epoch;
 }

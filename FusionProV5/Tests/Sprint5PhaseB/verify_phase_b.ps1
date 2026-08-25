@@ -133,6 +133,8 @@ function AdmissionEligible([hashtable]$A,[hashtable]$B) {
   $required = @('Semantic','Namespace','Request','Attempt','Payload','Permit','Account','Basket','Specification','Trust','Risk','Margin','BasketRisk','Lease')
   foreach ($key in $required) { if (-not $A[$key] -or -not $B[$key]) { return $false } }
   if ($A.HardKill -ne 'INACTIVE' -or $B.HardKill -ne 'INACTIVE') { return $false }
+  if ($A.RequestState -ne 'SUBMISSION_PENDING' -or $B.RequestState -ne 'SUBMISSION_PENDING' -or
+      $A.LifecyclePhase -ne 'SUBMISSION' -or $B.LifecyclePhase -ne 'SUBMISSION') { return $false }
   if ($B.Clock -lt $A.Clock) { return $false }
   foreach ($key in @('Owner','NamespaceId','RequestId','AttemptId','PayloadId','PermitId','AccountId','BasketId','SpecSequence','TrustGeneration','RiskId','MarginId','BasketRiskId','UnitAuthorityId','UnitRevision')) {
     if ($A[$key] -ne $B[$key]) { return $false }
@@ -147,7 +149,7 @@ function New-Admission([string]$HardKill='INACTIVE') {
     NamespaceId='NS-A'; RequestId='REQ-A'; AttemptId='ATT-A'; PayloadId='PAYLOAD-A'
     PermitId='PERMIT-A'; AccountId='ACCOUNT-A'; BasketId='BASKET-A'; SpecSequence=7
     TrustGeneration=5; RiskId='RISK-A'; MarginId='MARGIN-A'; BasketRiskId='BRISK-A'
-    UnitAuthorityId='UNIT-A'; UnitRevision=4
+    UnitAuthorityId='UNIT-A'; UnitRevision=4; RequestState='SUBMISSION_PENDING'; LifecyclePhase='SUBMISSION'
   }
 }
 $admissionA=New-Admission; $admissionB=New-Admission; $admissionB.Clock=11
@@ -158,6 +160,11 @@ $mutated=New-Admission; $mutated.Risk=$false; Assert-Oracle (-not (AdmissionElig
 $mutated=New-Admission; $mutated.NamespaceId='NS-B'; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-005' 'cross-namespace authority denied'
 $mutated=New-Admission; $mutated.UnitRevision=6; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-006' 'normalized A-B-A owner revision detected'
 $mutated=New-Admission; $mutated.Clock=9; Assert-Oracle (-not (AdmissionEligible $admissionA $mutated)) 'ADM-007' 'V2 clock regression denied'
+$mutated=New-Admission; $mutated.RequestState='CONFIRMED'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-008' 'stable confirmed request denied'
+$mutated=New-Admission; $mutated.RequestState='REJECTED'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-009' 'stable rejected request denied'
+$mutated=New-Admission; $mutated.RequestState='EXPIRED'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-010' 'stable expired request denied'
+$mutated=New-Admission; $mutated.RequestState='CREATED'; $mutated.LifecyclePhase='INTENT'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-011' 'created request denied at admission'
+$mutated=New-Admission; $mutated.LifecyclePhase='INTENT'; Assert-Oracle (-not (AdmissionEligible $mutated $mutated)) 'ADM-012' 'submission-pending with incompatible phase denied'
 
 function BlueprintEligible([int]$Action,[int]$Direction,[int]$Intent,[bool]$IngressIntegrity,[bool]$PayloadExact,[bool]$RiskExact) {
   $IngressIntegrity -and $PayloadExact -and $RiskExact -and ($Action -eq 1 -or $Action -eq -1) -and
@@ -196,11 +203,37 @@ function LedgerLinkValid([hashtable]$Index,[hashtable]$Record) {
   }
   return $Index.AcceptedAt -gt 0 -and $Index.RecordSequence -gt 0 -and $Index.RecordRevision -gt 0
 }
+function LedgerAuthorityDisposition([hashtable]$Header,[object[]]$Index,[object[]]$Records,
+                                    [string]$Ingress,[string]$Payload,[UInt64]$Publication) {
+  if (-not $Header.DigestValid -or $Header.MembershipCount -ne $Index.Count -or $Index.Count -ne $Records.Count) { return 'INVALID' }
+  [UInt64]$highest=0
+  for ($i=0; $i -lt $Index.Count; $i++) {
+    if (-not $Records[$i].DigestValid -or -not (LedgerLinkValid $Index[$i] $Records[$i])) { return 'INVALID' }
+    if ([UInt64]$Index[$i].Publication -gt $highest) { $highest=[UInt64]$Index[$i].Publication }
+  }
+  if ($highest -ne [UInt64]$Header.Hwm) { return 'INVALID' }
+  $found=@($Index | Where-Object { $_.Ingress -eq $Ingress })
+  if ($found.Count -gt 1) { return 'INVALID' }
+  if ($found.Count -eq 1) {
+    if ($found[0].Payload -eq $Payload -and [UInt64]$found[0].Publication -eq $Publication) { return 'DUPLICATE' }
+    return 'CONFLICT'
+  }
+  if ($Publication -le [UInt64]$Header.Hwm) { return 'DENIED' }
+  return 'NEW'
+}
 $ledgerIndex=@{Ingress='I';Publication=11;Payload='P';State='BOUND';Correlation='C';Sequence=1;AcceptedAt=900;Request='R';Terminal='';RecordSequence=1;RecordRevision=2;RecordDigest='D'}
-$ledgerRecord=$ledgerIndex.Clone()
+$ledgerRecord=$ledgerIndex.Clone(); $ledgerRecord.DigestValid=$true
 Assert-Oracle (LedgerLinkValid $ledgerIndex $ledgerRecord) 'LED-005' 'index links exact complete record'
 $ledgerMutation=$ledgerRecord.Clone(); $ledgerMutation.AcceptedAt=901
 Assert-Oracle (-not (LedgerLinkValid $ledgerIndex $ledgerMutation)) 'LED-006' 'acceptance-time mutation denied'
+$ledgerHeader=@{DigestValid=$true;MembershipCount=1;Hwm=[UInt64]11}
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @($ledgerRecord) 'I' 'P' 11) -eq 'DUPLICATE') 'LED-007' 'complete linked authority resolves duplicate'
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @() 'I' 'P' 11) -eq 'INVALID') 'LED-008' 'orphan index is invalid authority'
+$ledgerCorrupt=$ledgerRecord.Clone(); $ledgerCorrupt.DigestValid=$false
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @($ledgerCorrupt) 'I' 'P' 11) -eq 'INVALID') 'LED-009' 'corrupt complete record is invalid authority'
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @($ledgerRecord) 'NEW' 'P' 12) -eq 'NEW') 'LED-010' 'linked authority permits new sequence above HWM'
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @($ledgerRecord) 'OLD' 'P' 11) -eq 'DENIED') 'LED-011' 'linked authority denies absent sequence at HWM'
+Assert-Oracle ((LedgerAuthorityDisposition $ledgerHeader @($ledgerIndex) @($ledgerRecord) 'I' 'OTHER' 11) -eq 'CONFLICT') 'LED-012' 'linked authority detects conflicting replay'
 
 function TrustSuccessorValid([hashtable]$Prior,[hashtable]$Current,[hashtable]$Anchor) {
   $Prior.DigestValid -and $Current.DigestValid -and $Prior.Issuer -eq $Anchor.Issuer -and
@@ -208,16 +241,28 @@ function TrustSuccessorValid([hashtable]$Prior,[hashtable]$Current,[hashtable]$A
     $Current.Policy -eq $Anchor.Policy -and $Prior.Status -eq 'SUPERSEDED' -and
     $Current.Status -eq 'AUTHORIZED' -and $Prior.Successor -eq $Current.Id -and
     $Prior.SuccessorGeneration -eq $Current.Generation -and $Anchor.CurrentId -eq $Current.Id -and
-    $Anchor.CurrentGeneration -eq $Current.Generation
+    $Anchor.CurrentGeneration -eq $Current.Generation -and $Current.Generation -gt $Prior.Generation -and
+    $Current.ProducerEpoch -gt $Prior.ProducerEpoch -and
+    $Prior.ProducerComponent -eq $Current.ProducerComponent -and
+    $Prior.ProducerInstance -eq $Current.ProducerInstance -and
+    $Prior.Namespace -eq $Current.Namespace -and $Prior.Symbol -eq $Current.Symbol -and
+    $Prior.Timeframe -eq $Current.Timeframe -and $Prior.ExecutionMode -eq $Current.ExecutionMode -and
+    $Prior.ClockId -eq $Current.ClockId -and $Prior.ClockAuthority -eq $Current.ClockAuthority
 }
-$prior=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='SUPERSEDED';Successor='T2';SuccessorGeneration=2}
-$current=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='AUTHORIZED';Id='T2';Generation=2}
+$prior=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='SUPERSEDED';Successor='T2';SuccessorGeneration=2;Generation=1;ProducerEpoch=4;ProducerComponent='DECISION';ProducerInstance='P1';Namespace='NS1';Symbol='XAUUSD';Timeframe=15;ExecutionMode=1;ClockId='CLOCK1';ClockAuthority=4}
+$current=@{DigestValid=$true;Issuer='ISS';Policy='POL';Status='AUTHORIZED';Id='T2';Generation=2;ProducerEpoch=5;ProducerComponent='DECISION';ProducerInstance='P1';Namespace='NS1';Symbol='XAUUSD';Timeframe=15;ExecutionMode=1;ClockId='CLOCK1';ClockAuthority=4}
 $anchor=@{Issuer='ISS';Policy='POL';CurrentId='T2';CurrentGeneration=2}
 Assert-Oracle (TrustSuccessorValid $prior $current $anchor) 'TRU-001' 'anchored successor passes'
 $badPrior=$prior.Clone(); $badPrior.DigestValid=$false
 Assert-Oracle (-not (TrustSuccessorValid $badPrior $current $anchor)) 'TRU-002' 'corrupt prior digest denied'
 $badCurrent=$current.Clone(); $badCurrent.Policy='OTHER'
 Assert-Oracle (-not (TrustSuccessorValid $prior $badCurrent $anchor)) 'TRU-003' 'untrusted current policy denied'
+$trustMutations=@('Symbol','Timeframe','ExecutionMode','ClockId','ClockAuthority','ProducerInstance')
+foreach($field in $trustMutations) {
+  $changed=$current.Clone()
+  if($changed[$field] -is [int]) { $changed[$field]++ } else { $changed[$field]=[string]$changed[$field]+'-OTHER' }
+  Assert-Oracle (-not (TrustSuccessorValid $prior $changed $anchor)) 'TRU-004' "successor scope mutation $field denied"
+}
 
 $checkpointBase=[ordered]@{BasketState=2;BasketVersion=7;RequestSet='RS';LatestRequest='REQ';LastCorrelation='COR';HardKill='HK';ReleaseAuthority='HKA';Reconciliation='REC';TransactionHwm=12;QueryHwm=8;Clean=$false}
 function Checkpoint-Digest([System.Collections.IDictionary]$Checkpoint) { Sha ($Checkpoint | ConvertTo-Json -Compress) }
@@ -281,7 +326,7 @@ Assert-Oracle (Adversarial-Fails { $binding0.Correlation -eq ('f'*64) }) 'ADV-00
 Assert-Oracle (Adversarial-Fails { PublicationEligible 'SET-B' 'SET-A' 'STORE-1' 'STORE-1' 7 7 }) 'ADV-005' 'stale publication fixture must fail'
 
 $summary = [ordered]@{
-  oracle='SPRINT5_PHASE_B2_INDEPENDENT_TEST_ORACLE'
+  oracle='SPRINT5_PHASE_B3_INDEPENDENT_TEST_ORACLE'
   mql_production_executed=$false
   total=$script:Total
   passed=$script:Passed

@@ -2,7 +2,7 @@
 #define SW_V5_S5_PHASE_B_ASSERTIONS_MQH
 
 // TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS
-// Actual MQL assertions over Phase B pure functions. COMPILE ONLY in Phase B.2.
+// Actual MQL assertions over Phase B pure functions. COMPILE ONLY in Phase B.3.
 
 #include "../../ExecutionLayer/Contracts/SW_V5_S5_Contracts.mqh"
 #include "SW_V5_S5_PhaseB_TestVectors.mqh"
@@ -312,8 +312,8 @@ bool SWV5S5_BuildClaimFixture(SWV5_ContractValidationContext &context,
    collect.request_set.requests[0].intent.risk_authorization_id="RISK-A";
    collect.request_set.requests[0].intent.authorization_expires_at=1100;
    collect.request_set.requests[0].account_mode=SWV5_ACCOUNT_MODE_HEDGING;
-   collect.request_set.requests[0].lifecycle_phase=SWV5_EXECUTION_PHASE_INTENT;
-   collect.request_set.requests[0].state=SWV5_REQUEST_RISK_AUTHORIZED;
+   collect.request_set.requests[0].lifecycle_phase=SWV5_EXECUTION_PHASE_SUBMISSION;
+   collect.request_set.requests[0].state=SWV5_REQUEST_SUBMISSION_PENDING;
    collect.request_set.requests[0].residual_requested_volume=0.10;
    collect.request_set.requests[0].retry_disposition=SWV5_RETRY_FORBIDDEN;
    collect.request_set.requests[0].authorization_identity="RISK-A";
@@ -440,6 +440,32 @@ bool SWV5S5_RefreshClaimFixture(SWV5S5_InvocationClaimCommand &command)
    return true;
 }
 
+bool SWV5S5_SetAdmissionRequestLifecycle(SWV5S5_AdmissionSnapshot &snapshot,
+                                         const SWV5_PendingRequestState state,
+                                         const SWV5_ExecutionLifecyclePhase phase)
+{
+   snapshot.collect_v1.request_set.requests[0].state=state;
+   snapshot.collect_v1.request_set.requests[0].lifecycle_phase=phase;
+   snapshot.collect_v2.request_set.requests[0].state=state;
+   snapshot.collect_v2.request_set.requests[0].lifecycle_phase=phase;
+   return SWV5S5_DeriveCompleteRequestSetDigest(snapshot.collect_v1.request_set.requests,
+      snapshot.collect_v1.request_set.header.request_set_digest) &&
+      SWV5S5_DeriveCompleteRequestSetDigest(snapshot.collect_v2.request_set.requests,
+      snapshot.collect_v2.request_set.header.request_set_digest);
+}
+
+bool SWV5S5_RefreshAdversarialAdmissionEvidence(SWV5S5_InvocationClaimCommand &command)
+{
+   if(!SWV5S5_DeriveCollectionDigest(command.admission_proof.snapshot.collect_v1) ||
+      !SWV5S5_DeriveCollectionDigest(command.admission_proof.snapshot.collect_v2) ||
+      !SWV5S5_DeriveAdmissionSnapshotDigest(command.admission_proof.snapshot,
+                                             command.admission_proof.snapshot.snapshot_digest) ||
+      !SWV5S5_DeriveAdmissionProofDigest(command.admission_proof,command.admission_proof.proof_digest) ||
+      !SWV5S5_DeriveClaimId(command,command.claim_id) ||
+      !SWV5S5_DeriveClaimCommandDigest(command,command.command_digest)) return false;
+   return true;
+}
+
 void SWV5S5_TestCanonicalAndIdentity()
 {
    SWV5S5_Assert(SWV5S5_VectorSHA256Empty());
@@ -467,7 +493,21 @@ void SWV5S5_TestLedgerAndSequence()
    entries[0].payload_digest=SWV5S5_SHA256_EMPTY; entries[0].lifecycle_state=SWV5S5_BOUND_TO_REQUEST;
    entries[0].logical_correlation_id="KNOWN-CORR"; entries[0].reserved_request_sequence=1;
    entries[0].accepted_at=900; entries[0].bound_request_id="KNOWN-REQUEST";
-   entries[0].record_sequence=1; entries[0].record_revision=1; entries[0].record_digest=SWV5S5_SHA256_ABC;
+   entries[0].record_sequence=1; entries[0].record_revision=1;
+   SWV5S5_IngressLedgerRecord records[]; ArrayResize(records,1); ZeroMemory(records[0]);
+   SWV5S5_TestInitV5(records[0].contract_version);
+   records[0].ingress_identity=entries[0].ingress_identity;
+   records[0].publication_sequence=entries[0].publication_sequence;
+   records[0].payload_digest=entries[0].payload_digest;
+   records[0].lifecycle_state=entries[0].lifecycle_state;
+   records[0].logical_correlation_id=entries[0].logical_correlation_id;
+   records[0].reserved_request_sequence=entries[0].reserved_request_sequence;
+   records[0].accepted_at=entries[0].accepted_at;
+   records[0].bound_request_id=entries[0].bound_request_id;
+   records[0].record_sequence=entries[0].record_sequence;
+   records[0].record_revision=entries[0].record_revision;
+   SWV5S5_DeriveLedgerRecordDigest(records[0],records[0].record_digest);
+   entries[0].record_digest=records[0].record_digest;
    SWV5S5_IngressLedgerHeader header; ZeroMemory(header); SWV5S5_InitContractVersion(header.contract_version);
    header.policy_id=SWV5S5_POLICY_ID; header.persistence_namespace=scope; header.ownership_fence=fence;
    header.producer_authority_record_id="TRUST-A"; header.producer_authority_generation=1;
@@ -475,8 +515,24 @@ void SWV5S5_TestLedgerAndSequence()
    header.highest_accepted_publication_sequence=10; header.revision=2; header.membership_count=1;
    SWV5S5_DeriveLedgerIndexDigest(entries,header.membership_binding_index_digest);
    SWV5S5_DeriveLedgerHeaderDigest(header,entries,header.ledger_digest);
-   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,"UNSEEN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_DENIED);
-   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,"NEW",SWV5S5_SHA256_EMPTY,11)==SWV5S5_INGRESS_EVALUATION_NEW);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_DUPLICATE);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,records,"KNOWN",SWV5S5_SHA256_ABC,10)==SWV5S5_INGRESS_EVALUATION_CONFLICT);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,records,"UNSEEN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_DENIED);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,records,"NEW",SWV5S5_SHA256_EMPTY,11)==SWV5S5_INGRESS_EVALUATION_NEW);
+   SWV5S5_IngressLedgerRecord orphan_records[]; ArrayResize(orphan_records,0);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,orphan_records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_INVALID);
+   SWV5S5_IngressLedgerRecord corrupt_records[]; ArrayResize(corrupt_records,1); corrupt_records[0]=records[0];
+   corrupt_records[0].record_digest=SWV5S5_SHA256_ABC;
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,corrupt_records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_INVALID);
+   corrupt_records[0]=records[0]; corrupt_records[0].record_revision++;
+   SWV5S5_DeriveLedgerRecordDigest(corrupt_records[0],corrupt_records[0].record_digest);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,corrupt_records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_INVALID);
+   corrupt_records[0]=records[0]; corrupt_records[0].record_sequence++;
+   SWV5S5_DeriveLedgerRecordDigest(corrupt_records[0],corrupt_records[0].record_digest);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,corrupt_records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_INVALID);
+   corrupt_records[0]=records[0]; corrupt_records[0].accepted_at++;
+   SWV5S5_DeriveLedgerRecordDigest(corrupt_records[0],corrupt_records[0].record_digest);
+   SWV5S5_Assert(SWV5S5_EvaluateLedgerIngress(header,entries,corrupt_records,"KNOWN",SWV5S5_SHA256_EMPTY,10)==SWV5S5_INGRESS_EVALUATION_INVALID);
 
    SWV5S5_RequestSequenceIndexEntry reservations[]; ArrayResize(reservations,0);
    SWV5S5_RequestSequenceAuthority authority; ZeroMemory(authority); SWV5S5_InitContractVersion(authority.contract_version);
@@ -579,6 +635,29 @@ void SWV5S5_TestSnapshotSemantics()
    SWV5S5_AdmissionSnapshot stable_pair=command.admission_proof.snapshot;
    SWV5S5_Assert(SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,stable_pair,result,proof));
    SWV5S5_Assert(proof.v1_semantically_valid && proof.v2_semantically_valid && proof.pre_p_admissible);
+   SWV5S5_Assert(stable_pair.collect_v1.request_set.requests[0].state==SWV5_REQUEST_SUBMISSION_PENDING &&
+                 stable_pair.collect_v1.request_set.requests[0].lifecycle_phase==SWV5_EXECUTION_PHASE_SUBMISSION);
+
+   SWV5S5_AdmissionSnapshot terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,SWV5_REQUEST_CONFIRMED,SWV5_EXECUTION_PHASE_COMPLETED));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
+   SWV5S5_Assert(result.reason_code=="V1_REQUEST_LIFECYCLE_NOT_ADMISSIBLE");
+   terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,SWV5_REQUEST_REJECTED,SWV5_EXECUTION_PHASE_REJECTED));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
+   terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,SWV5_REQUEST_EXPIRED,SWV5_EXECUTION_PHASE_REJECTED));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
+   terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,SWV5_REQUEST_CREATED,SWV5_EXECUTION_PHASE_INTENT));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
+   terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,SWV5_REQUEST_SUBMISSION_PENDING,SWV5_EXECUTION_PHASE_INTENT));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
+   terminal=command.admission_proof.snapshot;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal,(SWV5_PendingRequestState)99,
+                                                               (SWV5_ExecutionLifecyclePhase)99));
+   SWV5S5_Assert(!SWV5S5_DoubleCollect(context,proof_input,SWV5S5_TEST_RISK,terminal,result,proof));
 
    SWV5S5_AdmissionSnapshot regressed=command.admission_proof.snapshot;
    regressed.collect_v2.collect_clock.clock_sequence=0;
@@ -703,6 +782,24 @@ void SWV5S5_TestProducerTrust()
    SWV5S5_ProducerTrustAnchor successor_anchor=anchor; successor_anchor.current_authority_record_id="NEXT";
    successor_anchor.current_authority_generation=successor.authority_generation;
    SWV5S5_Assert(SWV5S5_ValidateTrustSuccessor(status,successor,successor_anchor));
+   SWV5S5_ProducerTrustRecord wrong_successor=successor; wrong_successor.symbol="OTHER";
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
+   wrong_successor=successor; wrong_successor.timeframe++;
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
+   wrong_successor=successor; wrong_successor.execution_mode++;
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
+   wrong_successor=successor; wrong_successor.clock_id="OTHER";
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
+   wrong_successor=successor; wrong_successor.clock_authority=SWV5_TIME_AUTHORITY_BROKER_SERVER;
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
+   wrong_successor=successor; wrong_successor.producer_instance="OTHER";
+   SWV5S5_DeriveProducerTrustDigest(wrong_successor,wrong_successor.record_digest);
+   SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(status,wrong_successor,successor_anchor));
    SWV5S5_ProducerTrustRecord corrupt_prior=status; corrupt_prior.record_digest=SWV5S5_SHA256_EMPTY;
    SWV5S5_Assert(!SWV5S5_ValidateTrustSuccessor(corrupt_prior,successor,successor_anchor));
    SWV5S5_ProducerTrustRecord corrupt_current=successor; corrupt_current.record_digest=SWV5S5_SHA256_EMPTY;
@@ -745,6 +842,24 @@ void SWV5S5_TestClaimBoundary()
    authoritative.disposition=SWV5S5_CLAIM_GRANTED_NOW; authoritative.claim_granted_now=true;
    authoritative.resulting_authority_record=transition.proposed_next_record;
    SWV5S5_Assert(SWV5S5_ValidateAuthoritativeClaimResult(transition,authoritative));
+   SWV5S5_ConditionalAdmissionResult conditional; ZeroMemory(conditional);
+   SWV5S5_CompleteConditionalAdmission(authoritative,conditional);
+   SWV5S5_Assert(conditional.operation_state==SWV5S5_ADMISSION_COMPLETED &&
+                 conditional.policy_linearized_at_p && conditional.claim_authorized);
+   SWV5S5_InvocationClaimResult failed_claim=authoritative;
+   failed_claim.disposition=SWV5S5_CLAIM_CONFLICT; failed_claim.claim_granted_now=false;
+   SWV5S5_CompleteConditionalAdmission(failed_claim,conditional);
+   SWV5S5_Assert(conditional.operation_state==SWV5S5_ADMISSION_CLAIM_LOST &&
+                 !conditional.policy_linearized_at_p && !conditional.claim_authorized);
+
+   SWV5S5_InvocationClaimCommand terminal_request=command;
+   SWV5S5_Assert(SWV5S5_SetAdmissionRequestLifecycle(terminal_request.admission_proof.snapshot,
+      SWV5_REQUEST_CONFIRMED,SWV5_EXECUTION_PHASE_COMPLETED));
+   SWV5S5_Assert(SWV5S5_RefreshAdversarialAdmissionEvidence(terminal_request));
+   SWV5S5_InvocationClaimTransition terminal_transition;
+   SWV5S5_Assert(!SWV5S5_PrepareInvocationClaimTransition(context,SWV5S5_TEST_RISK,
+      terminal_request,terminal_transition));
+   SWV5S5_Assert(terminal_transition.disposition==SWV5S5_CLAIM_SNAPSHOT_MISMATCH);
 
    SWV5S5_InvocationClaimCommand replay=command;
    replay.expected_authority_record=transition.proposed_next_record;

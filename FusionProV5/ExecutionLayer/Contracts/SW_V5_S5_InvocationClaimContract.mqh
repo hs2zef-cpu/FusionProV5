@@ -1,7 +1,7 @@
 #ifndef SW_V5_S5_INVOCATION_CLAIM_CONTRACT_MQH
 #define SW_V5_S5_INVOCATION_CLAIM_CONTRACT_MQH
 
-// SPRINT 5 PHASE B.2 CANDIDATE CONTRACT
+// SPRINT 5 PHASE B.3 CANDIDATE CONTRACT
 // PURE TRANSITION PREPARATION NEVER GRANTS INVOCATION AUTHORITY
 
 #include "SW_V5_S5_SubmissionRecordContract.mqh"
@@ -107,6 +107,12 @@ bool SWV5S5_PrepareInvocationClaimTransition(const SWV5_ContractValidationContex
    { transition.disposition=SWV5S5_CLAIM_EXPIRED; transition.reason_code="CLAIM_AUTHORITY_EXPIRED"; return false; }
    if(!SWV5S5_ValidatePermit(context,observed.permit,permit_validation))
    { transition.disposition=SWV5S5_CLAIM_PERMIT_MISMATCH; transition.reason_code="PERMIT_INVALID"; return false; }
+   // Ownership/takeover is the separately serialized Claim authority. A current
+   // fence that no longer equals the Permit/Snapshot owner is takeover-first,
+   // not a generic proof-content mismatch.
+   if(!SWV5S5_EqualFence(command.current_ownership_lease.fence,observed.permit.ownership_fence) ||
+      !SWV5S5_EqualFence(command.current_ownership_lease.fence,snapshot.collect_v2.ownership.fence))
+   { transition.disposition=SWV5S5_CLAIM_STALE_OWNER; transition.reason_code="CURRENT_OWNER_TAKEOVER_MISMATCH"; return false; }
    if(!SWV5S5_DoubleCollect(context,proof_input,risk_contract,snapshot,collect_result,validated_proof) ||
       !SWV5S5_DeriveAdmissionProofDigest(validated_proof,proof_digest) ||
       command.admission_proof.proof_digest!=proof_digest ||
