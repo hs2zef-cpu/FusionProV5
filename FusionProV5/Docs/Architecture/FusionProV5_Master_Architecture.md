@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.0 |
-| Date | 2026-08-25 |
+| Version | 5.1 |
+| Date | 2026-08-26 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -49,6 +49,7 @@
 | 4.8 | 2026-08-25 | Recorded the independent Sprint 5 Phase B.2 Contract Re-Audit FAIL with 1 Critical, 3 Major, and 0 Minor findings, and authorized the narrow Phase B.3 implementation-conformance correction only. The approved Phase A architecture and ADR semantics are unchanged, the Architecture Review Gate remains closed, and Phase C/runtime remain unauthorized. |
 | 4.9 | 2026-08-25 | Recorded the New Independent Sprint 5 Phase B.3 Contract Re-Audit PASS with no Critical, Major, or Minor findings; closed the Phase B pure-contract gate at `1366edb25238463c9a76fa78257196dbf4c64e34`; and authorized Phase C only for deterministic orchestration, scripted fake authorities, a deterministic in-memory test queue, and a test-only fake broker. Phase D/E/F/G, physical persistence, real broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized. |
 | 5.0 | 2026-08-26 | Recorded the independent Phase C audit FAIL with 2 Critical, 2 Major, and 0 Minor findings and authorized Phase C.1 implementation-conformance correction only. Phase B and the Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G and runtime remain unauthorized. |
+| 5.1 | 2026-08-26 | Recorded the independent Phase C.1 re-audit FAIL with 0 Critical, 4 Major, and 0 Minor findings. The two prior Critical findings and the truthful verification-model correction remain closed. Authorized Phase C.2 only for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase B and Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G, persistence, broker/runtime, MT5, and main merge remain unauthorized. |
 
 ## Purpose
 
@@ -64,7 +65,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, and Phase B remains **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C audit returned **FAIL — Critical 2 / Major 2 / Minor 0**. Phase C.1 is authorized only to correct the four implementation-conformance findings. Phase D/E/F/G, persistence, broker/platform integration, runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, and Phase B remains **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 is authorized only to correct Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase D/E/F/G, persistence, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 

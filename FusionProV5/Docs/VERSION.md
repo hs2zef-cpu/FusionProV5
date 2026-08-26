@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase C.1 — Deterministic Orchestration Conformance Correction
+Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closure
 
 ### Date
 
@@ -12,29 +12,31 @@ Sprint 5 Phase C.1 — Deterministic Orchestration Conformance Correction
 
 ### Status
 
-**PHASE C AUDIT FAILED — PHASE C.1 CORRECTION AUTHORIZED**
+**PHASE C.1 RE-AUDIT FAILED — PHASE C.2 CORRECTION AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C audit returned **FAIL — Critical 2 / Major 2 / Minor 0**. Phase C.1 is authorized only to correct those implementation-conformance findings.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 is authorized only to correct Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
 - Phase B pure-contract gate: **CLOSED / PASS**
-- Phase C.1: **AUTHORIZED — CONFORMANCE CORRECTION ONLY**
+- Phase C.2: **AUTHORIZED — NARROW PHASE-C-ONLY CORRECTION**
 - Phase D/E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase C.1 — Deterministic Orchestration Conformance Correction
+Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closure
 
-- Status: **AUTHORIZED / IN PROGRESS — PHASE-C-ONLY CORRECTION**
+- Status: **AUTHORIZED / IN PROGRESS — NARROW PHASE-C-ONLY CORRECTION**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
-- Independent Phase C audit: **FAIL — Critical 2 / Major 2 / Minor 0**
-- Next gate: **New Independent Sprint 5 Phase C.1 Deterministic Orchestration Re-Audit**
+- Independent Phase C.1 re-audit: **FAIL — Critical 0 / Major 4 / Minor 0**
+- Closed findings preserved: **initial ordinal 0; coherent prepared/Claim binding and frozen Claim-result validation; truthful verification-model classification**
+- Phase C.2 scope: **Ledger authority integrity; Request Sequence authority integrity; request-progression validation; core queue-to-coordinator dispatch**
+- Next gate: **New Independent Sprint 5 Phase C.2 Final Orchestration Re-Audit**
 - Phase D/E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Phase B pure-contract gate remains closed at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C audit failed with 2 Critical and 2 Major findings; Phase C.1 is authorized only to correct deterministic-orchestration conformance. It contains no production broker execution.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Phase B pure-contract gate remains closed at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit failed with 0 Critical and 4 Major findings; Phase C.2 is authorized only to correct the remaining deterministic-orchestration authority and queue gaps. It contains no production broker execution.
 
 ## Repository Location
 
@@ -32,13 +32,13 @@ GitHub remote:
 
 Sprint 4 Architecture remains the current authorized architecture baseline. The audited Sprint 4 Production Contract V5 package has been fast-forwarded into `main`, but it remains **UNLOCKED / PENDING FORMAL ARCHITECTURE APPROVAL**.
 
-The Final Independent Sprint 5 Phase A.4 Architecture Gate is **CLOSED** at `31e76411829e2f2e6acb24740ddca32b886969e0`. The Phase B gate is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The New Independent Phase C audit returned **FAIL — Critical 2 / Major 2 / Minor 0**. Phase C.1 is authorized on `sprint5-phase-c-deterministic-coordinator` only to close those implementation-conformance findings.
+The Final Independent Sprint 5 Phase A.4 Architecture Gate is **CLOSED** at `31e76411829e2f2e6acb24740ddca32b886969e0`. The Phase B gate is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The New Independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 is authorized on `sprint5-phase-c-deterministic-coordinator` only to close Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch.
 
 The Final Independent Merge Audit passed with no Critical or Major findings. All six Critical findings, all three prior Final-Audit MAJOR findings, and the infrastructure closure matrix are closed. Merge Safety was `SAFE`, the final verdict was `PASS`, and the audited package was declared ready to merge.
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Architecture Lock, Phase D/E/F/G, physical persistence, real broker/platform integration, MT5 Terminal/Strategy Tester, Signal-to-Execution runtime wiring, merge to main, production, and live trading remain unauthorized. After Phase C.1 self-verification, the next gate is a **NEW INDEPENDENT SPRINT 5 PHASE C.1 DETERMINISTIC ORCHESTRATION RE-AUDIT** in a fresh review task.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Architecture Lock, Phase D/E/F/G, physical persistence, real broker/platform integration, MT5 runtime, MT5 Terminal/Strategy Tester, Signal-to-Execution runtime wiring, merge to main, production, and live trading remain unauthorized. After Phase C.2 self-verification, the next gate is a **NEW INDEPENDENT SPRINT 5 PHASE C.2 FINAL ORCHESTRATION RE-AUDIT** in a fresh review task.
 
 ## Repository Workflow
 

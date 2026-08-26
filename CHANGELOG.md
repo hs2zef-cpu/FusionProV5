@@ -1,5 +1,13 @@
 # Changelog
 
+### Sprint 5 Phase C.2 authoritative-orchestration correction authorization
+
+- Recorded the New Independent Sprint 5 Phase C.1 Deterministic Orchestration Re-Audit result: `FAIL`, with 0 Critical, 4 Major, and 0 Minor findings.
+- Confirmed that the two prior Critical findings remain closed: initial request ordinal is 0, and the prepared/Claim path is coherent and uses the full frozen Claim-result validator. The prior verification-model finding also remains closed.
+- Kept the Phase B pure-contract gate `CLOSED / PASS` and the Architecture Review Gate `CLOSED`; no Phase B or ADR semantic change is authorized.
+- Authorized Phase C.2 only to correct Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch.
+- Phase D/E/F/G, physical persistence, real broker/platform integration, MT5 runtime, MT5 Terminal/Strategy Tester execution, main merge, production, and live trading remain unauthorized.
+
 ### Sprint 5 Phase C.1 deterministic-orchestration correction authorization
 
 - Recorded the New Independent Sprint 5 Phase C Deterministic Orchestration Audit result: `FAIL`, with 2 Critical, 2 Major, and 0 Minor findings.
