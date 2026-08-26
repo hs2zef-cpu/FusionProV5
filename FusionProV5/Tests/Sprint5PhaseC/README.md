@@ -1,17 +1,13 @@
-# Sprint 5 Phase C deterministic coordinator verification
+# Sprint 5 Phase C.1 deterministic-orchestration verification
 
-Status: **candidate / self-verification only**. This package is test-only, non-production, and has no broker access.
+Status: **corrective candidate / self-verification only**. All doubles are test-only, non-production, non-durable, and have no broker access.
 
-The production-side Phase C package is a serialized, event-local coordinator. It consumes frozen Phase B authority results and may call the fake-broker port only when the current `ProcessAdmission` call receives both authoritative `CLAIM_GRANTED_NOW` and resulting `INVOCATION_CLAIMED_UNRESOLVED`. A stored claim, duplicate event, previous grant, or reconstructed Boolean cannot invoke the port.
+The initial accepted directional request uses frozen `SWV5S5_DeriveRequestBinding` with attempt ordinal `0`. Ordinals greater than zero are explicit retry lineage only; the coordinator never creates a retry automatically.
 
-The in-memory queue is a non-authoritative deterministic scheduler. Its ordinal is diagnostic only; it is not Risk, Hard Kill, Trust, Ownership, Permit, Claim, persistence, or cross-domain authority. The fake broker records scripted test observations only. Request receipt is not authoritative execution confirmation.
+Admission preparation returns one immutable package containing the exact Claim command and prepared transition from the same frozen Phase B preparation call. The coordinator submits only that command, requires current-event operation binding, and calls `SWV5S5_ValidateAuthoritativeClaimResult(prepared.transition, claim)` before conditional completion or fake-broker invocation. Revision, Permit, snapshot, Claim-ID, durable-record, ownership, split-package, and replay mismatches fail closed.
 
-Verification consists of MetaEditor compilation only for MQL sources and an independently executable Python reference model. MQL assertions are not executed. The reference model runs all 15 required queue scenarios twice and requires byte-identical structured results and traces. It is not MQL runtime evidence.
+The deterministic orchestration surface covers trusted ingress, abstract Ledger acceptance/deduplication, abstract Request Sequence reservation, ordinal-0 binding, frozen initial Blueprint validation, owner-returned request progression, admission/Claim, takeover, reconciliation-required, and fake-broker-response handling. The queue and dispatcher are non-authoritative test schedulers. Acknowledgement is not execution confirmation.
 
-Explicitly deferred and unauthorized: Phase D physical persistence/CAS/leases/genesis, Phase E integrated V5 fixtures, Phase F real broker/platform/MT5 work, Phase G final integration evidence, Terminal, Strategy Tester, production, and live trading.
+The MQL assertions are compiled only and are not executed. The Python model executes 19 orchestration scenarios twice, but is explicitly not a frozen Phase B identity/authority oracle and not MQL evidence. Fixed Phase B identity controls come from the unchanged frozen vectors.
 
-Run the reference model from the repository root:
-
-```powershell
-python FusionProV5/Tests/Sprint5PhaseC/verify_phase_c_reference.py
-```
+There is no physical persistence, real broker/platform integration, MT5 Terminal, Strategy Tester, production/runtime authorization, or Phase D/E/F/G implementation.

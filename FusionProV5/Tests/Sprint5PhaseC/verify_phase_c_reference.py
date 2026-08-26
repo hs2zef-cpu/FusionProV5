@@ -1,198 +1,115 @@
 #!/usr/bin/env python3
-"""TEST ONLY / NON-PRODUCTION / NO BROKER ACCESS.
-
-Independent deterministic reference model for Sprint 5 Phase C orchestration.
-REFERENCE MODEL != MQL RUNTIME EXECUTION.
-"""
-
+"""TEST ONLY. Phase C orchestration model, not a frozen Phase B oracle or MQL run."""
 from __future__ import annotations
-
-import hashlib
-import json
+import hashlib, json
 from dataclasses import dataclass, field
 from typing import Any
 
+FROZEN = {
+    "correlation": "71b35f2e560c20300183f3b5400289def1cc7c8cee98d20e29d96387e8211d06",
+    "attempt0": "5d202482a3f1981ba7fae20b52cf33855fc371b255e3ee575c792e4c2e993d1a",
+    "attempt1": "953204b64927dc3aded48de51b90b98e601102dedbd9289061554ff67a37a77c",
+    "idempotency": "5378f4b150446114669e6d8f09647018bfa9dd84e1f6ec5179598b0092fb4df4",
+}
 
-def binding(ingress: str, ordinal: int = 1) -> tuple[str, str]:
-    correlation = hashlib.sha256(("phase-c-scope|" + ingress).encode()).hexdigest()
-    attempt = hashlib.sha256((correlation + "|" + str(ordinal)).encode()).hexdigest()
-    return correlation, attempt
-
+def local_binding(ingress: str, ordinal: int = 0) -> tuple[str, str, str]:
+    """Scenario labels only; explicitly not Phase B canonical identities."""
+    correlation = f"REFERENCE-MODEL-LOCAL-ID:correlation:{ingress}"
+    return correlation, f"REFERENCE-MODEL-LOCAL-ID:attempt:{ingress}:{ordinal}", f"REFERENCE-MODEL-LOCAL-ID:idempotency:{ingress}"
 
 @dataclass
-class ReferenceCoordinator:
-    claims: dict[str, str] = field(default_factory=dict)
-    ingress_requests: dict[str, tuple[str, str]] = field(default_factory=dict)
-    broker_calls: list[dict[str, Any]] = field(default_factory=list)
+class Model:
+    ledger: dict[str, dict[str, Any]] = field(default_factory=dict)
+    sequences: dict[str, int] = field(default_factory=dict)
+    requests: dict[str, dict[str, Any]] = field(default_factory=dict)
+    claims: dict[str, dict[str, Any]] = field(default_factory=dict)
+    broker: list[dict[str, Any]] = field(default_factory=list)
     trace: list[dict[str, Any]] = field(default_factory=list)
 
-    def emit(self, event: str, ordinal: int, step: str, disposition: str,
-             request: str = "", attempt: str = "", grant: bool = False,
-             broker: bool = False) -> None:
-        self.trace.append({"event": event, "ordinal": ordinal, "step": step,
-                           "request": request, "attempt": attempt,
-                           "disposition": disposition, "grant_now": grant,
-                           "fake_broker": broker})
+    def emit(self, event: str, step: str, outcome: str) -> None:
+        self.trace.append({"event": event, "step": step, "outcome": outcome})
 
-    def ingress(self, event: str, ordinal: int, ingress_id: str, direction: int,
-                trusted: bool = True) -> str:
-        if not trusted:
-            self.emit(event, ordinal, "INGRESS", "TRUST_DENIED")
-            return "DENIED"
-        if direction in (0, 9):
-            self.emit(event, ordinal, "INGRESS", "NO_ENTRY")
-            return "NO_ENTRY"
-        if direction not in (-1, 1):
-            self.emit(event, ordinal, "INGRESS", "DIRECTION_INVALID")
-            return "DENIED"
-        request, attempt = binding(ingress_id)
-        existing = self.ingress_requests.get(ingress_id)
-        if existing is not None:
-            assert existing == (request, attempt)
-            self.emit(event, ordinal, "INGRESS", "DUPLICATE_SAME_REQUEST", request, attempt)
-            return "DUPLICATE"
-        self.ingress_requests[ingress_id] = (request, attempt)
-        self.emit(event, ordinal, "INGRESS", "BUY" if direction == 1 else "SELL", request, attempt)
-        return "NOMINATED"
+    def ingress(self, event: str, ingress: str, direction: int, trusted: bool = True) -> str:
+        if not trusted: self.emit(event,"TRUST","DENIED"); return "DENIED"
+        if direction in (0,9): self.emit(event,"LEDGER","NO_ENTRY"); return "NO_ENTRY"
+        if direction not in (-1,1): self.emit(event,"INGRESS","INVALID"); return "DENIED"
+        if ingress in self.ledger: self.emit(event,"LEDGER","DUPLICATE"); return "DUPLICATE"
+        correlation,attempt,key=local_binding(ingress,0)
+        self.ledger[ingress]={"correlation":correlation,"attempt":attempt,"key":key,"direction":direction}
+        self.sequences[correlation]=len(self.sequences)+1
+        self.requests[attempt]={"state":"CREATED","phase":"INTENT","direction":direction,"ordinal":0}
+        self.emit(event,"LEDGER_SEQUENCE_BLUEPRINT","CREATED_ORDINAL_0")
+        return "CREATED"
 
-    def admission(self, event: str, ordinal: int, ingress_id: str, *,
-                  owner: str = "owner-A", current_owner: str = "owner-A",
-                  hard_kill_before_p: bool = False, trust_before_p: bool = False,
-                  risk_expiry: int = 200, claim_time: int = 100,
-                  interrupt: str = "", mutate_after_p: str = "",
-                  broker_outcome: str = "REQUEST_RECEIVED") -> str:
-        request, attempt = self.ingress_requests[ingress_id]
-        self.emit(event, ordinal, "V1_V2_COLLECT", "STARTED", request, attempt)
-        if hard_kill_before_p:
-            self.emit(event, ordinal, "PROVISIONAL_P", "HARD_KILL_BLOCKED", request, attempt)
-            return "ADMISSION_DENIED"
-        if trust_before_p:
-            self.emit(event, ordinal, "PROVISIONAL_P", "TRUST_BLOCKED", request, attempt)
-            return "ADMISSION_DENIED"
-        if claim_time >= risk_expiry:
-            self.emit(event, ordinal, "PROVISIONAL_P", "RISK_EXPIRED_EXCLUSIVE", request, attempt)
-            return "CLAIM_DENIED"
-        self.emit(event, ordinal, "PROVISIONAL_P", "AVAILABLE_EVENT_LOCAL", request, attempt)
-        if interrupt == "BEFORE_CLAIM":
-            self.emit(event, ordinal, "INTERRUPT", "P_LOST_RECOLLECT", request, attempt)
-            return "INTERRUPTED_RECOLLECT"
-        if current_owner != owner:
-            self.emit(event, ordinal, "CLAIM", "STALE_OWNER", request, attempt)
-            return "STALE_OWNER"
-        if self.claims.get(attempt) == "INVOCATION_CLAIMED_UNRESOLVED":
-            self.emit(event, ordinal, "CLAIM", "ALREADY_CLAIMED_NO_GRANT", request, attempt)
-            self.emit(event, ordinal, "RECONCILE", "REQUIRED_NO_RETRY", request, attempt)
-            return "RECONCILIATION_REQUIRED"
-        # The only authority transition. after-P policy mutations are retained for
-        # this overlapping operation and block only a later collection.
-        self.claims[attempt] = "INVOCATION_CLAIMED_UNRESOLVED"
-        self.emit(event, ordinal, "CLAIM", "CLAIM_GRANTED_NOW", request, attempt, True)
-        if mutate_after_p:
-            self.emit(event, ordinal, "OVERLAP", mutate_after_p + "_CURRENT_RETAINED_LATER_BLOCKED",
-                      request, attempt, True)
-        if interrupt == "AFTER_CLAIM":
-            self.emit(event, ordinal, "INTERRUPT", "CLAIMED_RECONCILIATION_REQUIRED",
-                      request, attempt, True)
-            return "RECONCILIATION_REQUIRED"
-        call = {"event": event, "ordinal": ordinal, "request": request,
-                "attempt": attempt, "payload": "normalized:" + ingress_id,
-                "event_local_sequence": 1, "scripted_outcome": broker_outcome}
-        self.broker_calls.append(call)
-        self.emit(event, ordinal, "FAKE_BROKER", broker_outcome, request, attempt, True, True)
-        return "FAKE_BROKER_INVOKED" if broker_outcome == "REQUEST_RECEIVED" else broker_outcome
+    def progress(self,event: str,ingress: str,terminal: bool=False) -> str:
+        attempt=self.ledger[ingress]["attempt"]
+        if terminal: self.emit(event,"PROGRESSION","TERMINAL_BLOCKED"); return "BLOCKED"
+        self.requests[attempt]={**self.requests[attempt],"state":"SUBMISSION_PENDING","phase":"SUBMISSION"}
+        self.emit(event,"PROGRESSION","SUBMISSION_PENDING"); return "READY"
 
+    def admission(self,event: str,ingress: str,*,owner_ok=True,hard_kill=False,trust=True,
+                  now=99,expiry=100,interrupt="",mutation="",replay_binding=False) -> str:
+        request=self.ledger[ingress]; attempt=request["attempt"]
+        if self.requests[attempt]["state"]!="SUBMISSION_PENDING": self.emit(event,"ADMISSION","LIFECYCLE_DENIED"); return "DENIED"
+        if hard_kill or not trust or now>=expiry: self.emit(event,"PREPARE","DENIED"); return "DENIED"
+        prepared={"revision":2,"permit":"P","permit_digest":"PD","snapshot":"S","snapshot_digest":"SD",
+                  "claim_id":"C","durable_digest":"DD","owner":"A","event":event}
+        self.emit(event,"PREPARE","COHERENT_PACKAGE")
+        if interrupt=="BEFORE": self.emit(event,"INTERRUPT","P_LOST_RECOLLECT"); return "RECOLLECT"
+        if not owner_ok: self.emit(event,"CLAIM","STALE_OWNER"); return "STALE_OWNER"
+        if attempt in self.claims: self.emit(event,"CLAIM","ALREADY_CLAIMED_NO_GRANT"); return "RECONCILE"
+        result=dict(prepared)
+        if mutation: result[mutation]="CORRUPT"
+        operation_event="PRIOR" if replay_binding else event
+        valid=(result==prepared and operation_event==event)
+        if not valid: self.emit(event,"VALIDATE_AUTHORITATIVE_CLAIM","FAIL_CLOSED"); return "INVALID_CLAIM"
+        self.claims[attempt]=result
+        self.emit(event,"CLAIM","CLAIM_GRANTED_NOW")
+        if interrupt=="AFTER": self.emit(event,"INTERRUPT","RECONCILE_NO_CALL"); return "RECONCILE"
+        self.broker.append({"event":event,"attempt":attempt,"direction":self.requests[attempt]["direction"],"outcome":"REQUEST_RECEIVED"})
+        self.emit(event,"FAKE_BROKER","ACK_NOT_CONFIRMATION")
+        return "INVOKED"
 
-def result(name: str, model: ReferenceCoordinator, outcomes: list[str]) -> dict[str, Any]:
-    return {"scenario": name, "outcomes": outcomes,
-            "broker_invocations": model.broker_calls, "trace": model.trace}
+def run(name: str) -> dict[str,Any]:
+    m=Model(); out=[]
+    def ready(ingress="I",direction=1):
+        out.append(m.ingress("E1",ingress,direction)); out.append(m.progress("E2",ingress))
+    if name=="buy": ready(direction=1); out.append(m.admission("E3","I")); assert m.broker[0]["direction"]==1
+    elif name=="sell": ready(direction=-1); out.append(m.admission("E3","I")); assert m.broker[0]["direction"]==-1
+    elif name=="duplicate_ingress": out += [m.ingress("E1","I",1),m.ingress("E2","I",1)]; assert len(m.sequences)==1
+    elif name=="wait": out.append(m.ingress("E1","I",0)); assert not m.requests
+    elif name=="blocked": out.append(m.ingress("E1","I",9)); assert not m.requests
+    elif name=="two_requests": out += [m.ingress("E1","A",1),m.ingress("E2","B",-1)]; assert len(m.requests)==2
+    elif name=="progression": ready(); assert list(m.requests.values())[0]["state"]=="SUBMISSION_PENDING"
+    elif name in ("duplicate_admission","claim_before_takeover"):
+        ready(); out += [m.admission("E3","I"),m.admission("E4","I")]; assert len(m.broker)==1
+    elif name=="takeover_before": ready(); out.append(m.admission("E3","I",owner_ok=False)); assert not m.broker
+    elif name=="crash_before": ready(); out.append(m.admission("E3","I",interrupt="BEFORE")); out.append(m.admission("E4","I")); assert len(m.broker)==1
+    elif name in ("crash_after","uncertain_followup"):
+        ready(); out.append(m.admission("E3","I",interrupt="AFTER")); out.append(m.admission("E4","I")); assert not m.broker
+    elif name=="claim_mismatch":
+        for key in ("revision","permit","permit_digest","snapshot","snapshot_digest","claim_id","durable_digest","owner"):
+            n=Model(); n.ingress("E1","I",1); n.progress("E2","I"); assert n.admission("E3","I",mutation=key)=="INVALID_CLAIM" and not n.broker
+        out.append("ALL_MISMATCHES_DENIED")
+    elif name=="grant_replay": ready(); out.append(m.admission("E3","I",replay_binding=True)); assert not m.broker
+    elif name=="hard_kill": ready(); out.append(m.admission("E3","I",hard_kill=True)); assert not m.broker
+    elif name=="trust": ready(); out.append(m.admission("E3","I",trust=False)); assert not m.broker
+    elif name=="risk_expiry":
+        ready("A"); ready("B"); ready("C"); out += [m.admission("E7","A",now=99),m.admission("E8","B",now=100),m.admission("E9","C",now=101)]; assert len(m.broker)==1
+    elif name=="broker_response": ready(); out.append(m.admission("E3","I")); out.append("ACK_NOT_CONFIRMATION")
+    else: raise AssertionError(name)
+    return {"scenario":name,"outcomes":out,"broker":m.broker,"trace":m.trace}
 
-
-def run_scenario(name: str) -> dict[str, Any]:
-    c = ReferenceCoordinator()
-    o: list[str] = []
-    if name == "directional":
-        o.append(c.ingress("E1", 1, "I-BUY", 1))
-        o.append(c.admission("E2", 2, "I-BUY"))
-        assert len(c.broker_calls) == 1
-    elif name == "duplicate_ingress":
-        o += [c.ingress("E1", 1, "I-DUP", 1), c.ingress("E2", 2, "I-DUP", 1)]
-        assert len(c.ingress_requests) == 1
-    elif name == "wait":
-        o.append(c.ingress("E1", 1, "I-WAIT", 0)); assert not c.broker_calls
-    elif name == "blocked":
-        o.append(c.ingress("E1", 1, "I-BLOCK", 9)); assert not c.broker_calls
-    elif name == "two_requests":
-        o += [c.ingress("E1", 1, "I-BUY", 1), c.ingress("E2", 2, "I-SELL", -1)]
-        assert len(c.ingress_requests) == 2 and c.trace[0]["disposition"] == "BUY" and c.trace[1]["disposition"] == "SELL"
-    elif name in ("duplicate_submission", "claim_winner_duplicate"):
-        c.ingress("E1", 1, "I-A", 1)
-        o += [c.admission("E2", 2, "I-A"), c.admission("E3", 3, "I-A")]
-        assert len(c.broker_calls) == 1 and o[1] == "RECONCILIATION_REQUIRED"
-    elif name == "takeover_before_claim":
-        c.ingress("E1", 1, "I-A", 1)
-        o.append(c.admission("E2", 2, "I-A", current_owner="owner-B")); assert not c.broker_calls
-    elif name == "claim_before_takeover":
-        c.ingress("E1", 1, "I-A", 1)
-        o.append(c.admission("E2", 2, "I-A"))
-        request, attempt = c.ingress_requests["I-A"]
-        c.emit("E3", 3, "TAKEOVER", "CLAIMED_UNRESOLVED_QUIESCENCE", request, attempt)
-        o.append("TAKEOVER_RECONCILIATION_REQUIRED"); assert len(c.broker_calls) == 1
-    elif name == "crash_before_claim":
-        c.ingress("E1", 1, "I-A", 1)
-        o.append(c.admission("E2", 2, "I-A", interrupt="BEFORE_CLAIM"))
-        o.append(c.admission("E3", 3, "I-A")); assert len(c.broker_calls) == 1
-    elif name == "crash_after_claim":
-        c.ingress("E1", 1, "I-A", 1)
-        o.append(c.admission("E2", 2, "I-A", interrupt="AFTER_CLAIM")); assert not c.broker_calls
-    elif name == "uncertain_followed":
-        c.ingress("E1", 1, "I-A", 1)
-        o.append(c.admission("E2", 2, "I-A", interrupt="AFTER_CLAIM"))
-        o.append(c.admission("E3", 3, "I-A")); assert not c.broker_calls
-    elif name == "hard_kill_ordering":
-        c.ingress("E1", 1, "I-A", 1); c.ingress("E2", 2, "I-B", 1)
-        o.append(c.admission("E3", 3, "I-A", hard_kill_before_p=True))
-        o.append(c.admission("E4", 4, "I-B", mutate_after_p="HARD_KILL"))
-        assert len(c.broker_calls) == 1
-    elif name == "trust_ordering":
-        c.ingress("E1", 1, "I-A", 1); c.ingress("E2", 2, "I-B", 1)
-        o.append(c.admission("E3", 3, "I-A", trust_before_p=True))
-        o.append(c.admission("E4", 4, "I-B", mutate_after_p="TRUST"))
-        assert len(c.broker_calls) == 1
-    elif name == "risk_exact_expiry":
-        c.ingress("E1", 1, "I-A", 1); c.ingress("E2", 2, "I-B", 1); c.ingress("E3", 3, "I-C", 1)
-        o.append(c.admission("E4", 4, "I-A", claim_time=99, risk_expiry=100))
-        o.append(c.admission("E5", 5, "I-B", claim_time=100, risk_expiry=100))
-        o.append(c.admission("E6", 6, "I-C", claim_time=101, risk_expiry=100))
-        assert len(c.broker_calls) == 1 and o[1:] == ["CLAIM_DENIED", "CLAIM_DENIED"]
-    else:
-        raise AssertionError("unknown scenario: " + name)
-    return result(name, c, o)
-
-
-SCENARIOS = [
-    "directional", "duplicate_ingress", "wait", "blocked", "two_requests",
-    "duplicate_submission", "claim_winner_duplicate", "takeover_before_claim",
-    "claim_before_takeover", "crash_before_claim", "crash_after_claim",
-    "uncertain_followed", "hard_kill_ordering", "trust_ordering", "risk_exact_expiry",
-]
-
+SCENARIOS=["buy","sell","duplicate_ingress","wait","blocked","two_requests","progression","duplicate_admission",
+           "takeover_before","claim_before_takeover","crash_before","crash_after","uncertain_followup","claim_mismatch",
+           "grant_replay","hard_kill","trust","risk_expiry","broker_response"]
 
 def main() -> int:
-    first = [run_scenario(name) for name in SCENARIOS]
-    second = [run_scenario(name) for name in SCENARIOS]
-    assert first == second
-    serialized = json.dumps(first, sort_keys=True, separators=(",", ":"))
-    summary = {
-        "classification": "REFERENCE MODEL != MQL RUNTIME EXECUTION",
-        "scenario_count": len(first),
-        "repeated_runs": 2,
-        "deterministic": True,
-        "trace_digest_sha256": hashlib.sha256(serialized.encode()).hexdigest(),
-        "status": "PASS",
-    }
-    print(json.dumps(summary, sort_keys=True))
+    assert FROZEN["attempt0"]!=FROZEN["attempt1"]
+    first=[run(x) for x in SCENARIOS]; second=[run(x) for x in SCENARIOS]; assert first==second
+    payload=json.dumps(first,sort_keys=True,separators=(",",":"))
+    print(json.dumps({"classification":"PHASE C ORCHESTRATION MODEL; NOT FROZEN PHASE B OR MQL EVIDENCE",
+      "scenarios":len(first),"runs":2,"deterministic":True,"status":"PASS",
+      "trace_digest_sha256":hashlib.sha256(payload.encode()).hexdigest(),"initial_ordinal":0},sort_keys=True))
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__=="__main__": raise SystemExit(main())

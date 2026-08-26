@@ -39,7 +39,13 @@ enum SWV5S5_CoordinatorDisposition
    SWV5S5_COORD_CLAIMED_RECONCILIATION_REQUIRED=8,
    SWV5S5_COORD_FAKE_BROKER_INVOKED=9,
    SWV5S5_COORD_FAKE_BROKER_REJECTED=10,
-   SWV5S5_COORD_FAKE_BROKER_UNCERTAIN=11
+   SWV5S5_COORD_FAKE_BROKER_UNCERTAIN=11,
+   SWV5S5_COORD_LEDGER_ACCEPTED_NEW=12,
+   SWV5S5_COORD_LEDGER_DUPLICATE=13,
+   SWV5S5_COORD_REQUEST_MATERIALIZED=14,
+   SWV5S5_COORD_REQUEST_SUBMISSION_READY=15,
+   SWV5S5_COORD_TAKEOVER_RECONCILIATION=16,
+   SWV5S5_COORD_BROKER_ACKNOWLEDGED=17
 };
 
 enum SWV5S5_CoordinatorTraceStep
@@ -73,7 +79,55 @@ struct SWV5S5_CoordinatorAdmissionEvent
    SWV5_PendingRequestState request_state;
    SWV5_ExecutionLifecyclePhase request_phase;
    SWV5S5_CoordinatorInterruptionPoint interruption_point;
+   // Fixture/source input only. It is never submitted directly to Claim.
+   SWV5S5_InvocationClaimCommand preparation_seed;
+};
+
+struct SWV5S5_CoordinatorPreparedAdmission
+{
+   string event_id;
+   ulong event_ordinal;
+   string operation_token;
    SWV5S5_InvocationClaimCommand claim_command;
+   SWV5S5_InvocationClaimTransition transition;
+};
+
+struct SWV5S5_CoordinatorClaimOperationResult
+{
+   string event_id;
+   ulong event_ordinal;
+   string operation_token;
+   SWV5S5_InvocationClaimResult claim;
+};
+
+struct SWV5S5_CoordinatorLedgerResult
+{
+   SWV5S5_IngressEvaluationDisposition disposition;
+   SWV5S5_IngressLedgerHeader header;
+   SWV5S5_IngressLedgerRecord record;
+   string reason_code;
+};
+
+struct SWV5S5_CoordinatorMaterializationInput
+{
+   string event_id;
+   ulong event_ordinal;
+   SWV5_ContractValidationContext context;
+   SWV5S5_IngressEnvelope accepted_ingress;
+   SWV5S5_CoordinatorLedgerResult ledger;
+   SWV5_NormalizedUnits normalized_payload;
+   string normalization_identity;
+   SWV5_RiskAuthorization risk_authorization;
+};
+
+struct SWV5S5_CoordinatorMaterializationResult
+{
+   SWV5S5_RequestSequenceResult sequence;
+   SWV5S5_RequestBinding binding;
+   SWV5S5_InitialRequestBlueprint blueprint;
+   SWV5_PendingRequest progressed_request;
+   SWV5S5_CoordinatorDisposition disposition;
+   string reason_code;
 };
 
 struct SWV5S5_CoordinatorIngressEvent
@@ -138,7 +192,55 @@ public:
    // The implementation owns V1/V2 collection and Phase B preparation. Returned
    // transition is a complete owner result; the coordinator never reconstructs it.
    virtual bool PrepareSameEvent(const SWV5S5_CoordinatorAdmissionEvent &event,
-                                 SWV5S5_InvocationClaimTransition &prepared)=0;
+                                 SWV5S5_CoordinatorPreparedAdmission &prepared)=0;
+};
+
+class ISWV5S5CoordinatorInvocationClaimAuthority
+{
+public:
+   // Adapter boundary over frozen Invocation Claim authority. The operation
+   // binding makes an ephemeral result non-transferable between host events.
+   virtual bool TryClaimInvocation(const SWV5S5_InvocationClaimCommand &command,
+                                   const string event_id,const ulong event_ordinal,
+                                   const string operation_token,
+                                   SWV5S5_CoordinatorClaimOperationResult &result)=0;
+};
+
+class ISWV5S5CoordinatorLedgerAuthority
+{
+public:
+   virtual bool AcceptOrDeduplicate(const SWV5S5_CoordinatorIngressEvent &event,
+                                    const SWV5S5_IngressValidationResult &validated,
+                                    SWV5S5_CoordinatorLedgerResult &result)=0;
+};
+
+class ISWV5S5CoordinatorRequestSequenceAuthority
+{
+public:
+   virtual bool Reserve(const string logical_correlation_id,
+                        SWV5S5_RequestSequenceResult &result)=0;
+};
+
+class ISWV5S5CoordinatorBlueprintAuthority
+{
+public:
+   virtual bool BuildInitial(const SWV5S5_CoordinatorMaterializationInput &materialization,
+                             const SWV5S5_RequestBinding &binding,
+                             SWV5S5_InitialRequestBlueprint &blueprint)=0;
+};
+
+class ISWV5S5CoordinatorRequestProgressionAuthority
+{
+public:
+   virtual bool ProgressToSubmission(const SWV5_PendingRequest &created,
+                                     SWV5_PendingRequest &progressed)=0;
+};
+
+class ISWV5S5CoordinatorOwnershipAuthority
+{
+public:
+   virtual bool EvaluateTakeover(const string request_correlation_id,
+                                 SWV5S5_CoordinatorDisposition &disposition)=0;
 };
 
 class ISWV5S5CoordinatorFakeBrokerPort

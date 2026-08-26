@@ -1,21 +1,27 @@
-# Sprint 5 Phase C test inventory
+# Sprint 5 Phase C.1 test inventory
 
-| ID | Scenario | Required result |
-|---|---|---|
-| C-01 | One directional event | BUY nominates BUY; one current-event Claim invokes once |
-| C-02 | Duplicate ingress | Same deterministic logical request; no duplicate creation |
-| C-03 | WAIT | No request and no fake-broker call |
-| C-04 | BLOCKED | No request and no fake-broker call |
-| C-05 | Two different requests | Stable distinct identities; BUY/SELL preserved |
-| C-06 | Duplicate submission | One invocation; duplicate becomes reconciliation |
-| C-07 | Claim winner then duplicate | Only winner receives current-event grant |
-| C-08 | Takeover before Claim | Stale owner; no invocation |
-| C-09 | Claim before takeover | One invocation; takeover observes quiescence/uncertainty |
-| C-10 | Crash before Claim | Provisional P lost; later event recollects |
-| C-11 | Crash after Claim before call | Zero call; claimed-unresolved requires reconciliation |
-| C-12 | Uncertain followed by event | No grant reconstruction and no retry |
-| C-13 | Hard Kill ordering | Before-P blocks; after-P overlap retained; later blocked |
-| C-14 | Trust ordering | Before-P/expiry blocks; after-P overlap retained |
-| C-15 | Risk expiry boundary | `<` eligible; `==` and `>` denied |
+MQL assertions are **present and compiled, not executed**. Direct controls cover ordinal 0/1 fixed vectors, a complete valid prepared/Claim pair, exactly once, duplicate denial, ten full-result corruptions, Prepared-A/Command-B, prior-event replay, both crash boundaries, recollection, frozen Ledger/Sequence/Blueprint controls, takeover, reconciliation, acknowledgement classification, conforming Hard Kill/Trust/Risk denials, and queue dispatch.
 
-The MQL source contains 33 compile-only assertions covering the coordinator gate, duplicate behavior, both interruption boundaries, stale ownership, lifecycle denial, denied-ingress non-materialization, and FIFO queue ordering. `MQL ASSERTIONS EXECUTED = NO`.
+The executed reference model contains 19 deterministic cases:
+
+1. BUY end-to-end
+2. SELL end-to-end
+3. duplicate ingress
+4. WAIT
+5. BLOCKED
+6. two requests
+7. request progression
+8. duplicate admission
+9. takeover before Claim
+10. Claim before takeover
+11. crash before Claim and recollect
+12. crash after Claim
+13. uncertain follow-up
+14. Claim mismatch family
+15. prior-event grant replay
+16. Hard Kill denial
+17. Trust denial
+18. Risk `<`, `==`, and `>` expiry
+19. acknowledgement-not-confirmation response
+
+Each reference case runs twice with identical results and traces. Determinism does not prove frozen Phase B correctness.

@@ -18,7 +18,7 @@ private:
       return SWV5S5_DeriveRequestBinding(persistence_namespace,
                                          SWV5S5_REQUEST_BINDING_POLICY_ID,
                                          SWV5S5_REQUEST_BINDING_POLICY_VERSION,
-                                         ingress_identity,1,
+                                         ingress_identity,0,
                                          correlation_id,attempt_id,idempotency_key);
    }
 
@@ -49,6 +49,21 @@ private:
              event.normalized_payload_identity!="";
    }
 
+   bool PreparedCommandCoherent(const SWV5S5_CoordinatorPreparedAdmission &prepared)
+   {
+      return prepared.claim_command.expected_authority_revision==
+                prepared.claim_command.expected_authority_record.authority_revision &&
+             prepared.transition.proposed_next_record.authority_revision==
+                prepared.claim_command.expected_authority_revision+1 &&
+             prepared.transition.proposed_next_record.permit.permit_id==
+                prepared.claim_command.expected_authority_record.permit.permit_id &&
+             prepared.transition.proposed_next_record.permit.permit_digest==
+                prepared.claim_command.expected_authority_record.permit.permit_digest &&
+             prepared.transition.proposed_next_record.invocation_claim_id==prepared.claim_command.claim_id &&
+             prepared.transition.proposed_next_record.admission_snapshot_digest==
+                prepared.claim_command.admission_proof.snapshot.snapshot_digest;
+   }
+
    void Finish(SWV5S5_CoordinatorResult &result,
                const SWV5S5_CoordinatorDisposition disposition,
                const string reason,const bool grant,const bool invoked,
@@ -63,7 +78,9 @@ private:
 
 public:
    bool ProcessIngress(const SWV5S5_CoordinatorIngressEvent &event,
+                       ISWV5S5CoordinatorLedgerAuthority &ledger_authority,
                        ISWV5S5CoordinatorTraceSink &trace_sink,
+                       SWV5S5_CoordinatorLedgerResult &ledger_result,
                        SWV5S5_CoordinatorResult &result)
    {
       ZeroMemory(result);
@@ -75,6 +92,7 @@ public:
       diagnostic.event_ordinal=event.event_ordinal;
       SWV5S5_IngressValidationResult authoritative_result;
       ZeroMemory(authoritative_result);
+      ZeroMemory(ledger_result);
       if(event.event_id=="" || event.event_ordinal==0 ||
          !SWV5S5_ValidateTrustedIngressForAcceptance(event.context,event.ingress,event.freshness,
                                                       event.current_trust,event.trust_anchor,event.trust_scope,
@@ -85,39 +103,165 @@ public:
               (int)authoritative_result.disposition,false,false,result.disposition);
          return false;
       }
+      if(!ledger_authority.AcceptOrDeduplicate(event,authoritative_result,ledger_result) ||
+         ledger_result.record.ingress_identity!=event.ingress.ingress_identity ||
+         ledger_result.record.payload_digest!=event.ingress.payload_digest ||
+         ledger_result.record.publication_sequence!=event.ingress.publication.publication_sequence ||
+         ledger_result.header.ledger_digest=="" ||
+         !SWV5S5_EqualNamespace(ledger_result.header.persistence_namespace,event.persistence_namespace))
+      {
+         Finish(result,SWV5S5_COORD_ADMISSION_DENIED,"LEDGER_AUTHORITY_DENIED_OR_MISMATCHED",false,false,false);
+         Emit(trace_sink,diagnostic,SWV5S5_COORD_TRACE_COMPLETED,
+              (int)ledger_result.disposition,false,false,result.disposition);
+         return false;
+      }
+      string ledger_record_digest;
+      if(!SWV5S5_ValidLedgerLifecycle(ledger_result.record) ||
+         !SWV5S5_DeriveLedgerRecordDigest(ledger_result.record,ledger_record_digest) ||
+         ledger_result.record.record_digest!=ledger_record_digest)
+      { Finish(result,SWV5S5_COORD_ADMISSION_DENIED,"LEDGER_COMPLETE_RECORD_INVALID",false,false,false); return false; }
       if(authoritative_result.no_entry)
       {
+         if(ledger_result.record.lifecycle_state!=SWV5S5_REJECTED_NO_ENTRY)
+            return false;
          Finish(result,SWV5S5_COORD_NO_ENTRY,"WAIT_OR_BLOCKED_NO_REQUEST",false,false,false);
          Emit(trace_sink,diagnostic,SWV5S5_COORD_TRACE_INGRESS_VALIDATED,
               (int)authoritative_result.disposition,false,false,result.disposition);
          return true;
       }
-      string correlation_id,attempt_id,idempotency_key;
-      if(!authoritative_result.directional_nomination ||
-         !DeriveDirectionalRequestBinding(event.persistence_namespace,event.ingress.ingress_identity,
-                                           event.ingress.decision.direction,
-                                           correlation_id,attempt_id,idempotency_key))
+      if(ledger_result.disposition==SWV5S5_INGRESS_EVALUATION_DUPLICATE)
       {
-         Finish(result,SWV5S5_COORD_ADMISSION_DENIED,"DIRECTIONAL_BINDING_DENIED",false,false,false);
+         result.request_correlation_id=ledger_result.record.logical_correlation_id;
+         Finish(result,SWV5S5_COORD_LEDGER_DUPLICATE,"LEDGER_DUPLICATE_NO_NEW_SEQUENCE",false,false,false);
+         Emit(trace_sink,diagnostic,SWV5S5_COORD_TRACE_COMPLETED,(int)ledger_result.disposition,false,false,result.disposition);
+         return true;
+      }
+      if(!authoritative_result.directional_nomination || ledger_result.disposition!=SWV5S5_INGRESS_EVALUATION_NEW)
+      {
+         Finish(result,SWV5S5_COORD_ADMISSION_DENIED,"LEDGER_DIRECTIONAL_ACCEPTANCE_DENIED",false,false,false);
          Emit(trace_sink,diagnostic,SWV5S5_COORD_TRACE_INGRESS_VALIDATED,
               (int)authoritative_result.disposition,false,false,result.disposition);
          return false;
       }
-      result.request_correlation_id=correlation_id;
-      result.attempt_id=attempt_id;
-      diagnostic.request_correlation_id=correlation_id;
-      diagnostic.attempt_id=attempt_id;
-      Finish(result,SWV5S5_COORD_REQUEST_NOMINATED,
-             (event.ingress.decision.direction==1 ? "BUY_NOMINATED" : "SELL_NOMINATED"),
+      result.request_correlation_id=ledger_result.record.logical_correlation_id;
+      diagnostic.request_correlation_id=result.request_correlation_id;
+      Finish(result,SWV5S5_COORD_LEDGER_ACCEPTED_NEW,
+             (event.ingress.decision.direction==1 ? "BUY_LEDGER_ACCEPTED" : "SELL_LEDGER_ACCEPTED"),
              false,false,false);
       Emit(trace_sink,diagnostic,SWV5S5_COORD_TRACE_REQUEST_BOUND,
            (int)authoritative_result.disposition,false,false,result.disposition);
       return true;
    }
 
+   bool MaterializeAndProgress(const SWV5S5_CoordinatorMaterializationInput &materialization,
+                               ISWV5S5CoordinatorRequestSequenceAuthority &sequence_authority,
+                               ISWV5S5CoordinatorBlueprintAuthority &blueprint_authority,
+                               ISWV5S5CoordinatorRequestProgressionAuthority &progression_authority,
+                               SWV5S5_CoordinatorMaterializationResult &result)
+   {
+      ZeroMemory(result);
+      string correlation,attempt,idempotency,binding_digest;
+      if(materialization.ledger.disposition!=SWV5S5_INGRESS_EVALUATION_NEW ||
+         !DeriveDirectionalRequestBinding(materialization.ledger.header.persistence_namespace,
+                                           materialization.accepted_ingress.ingress_identity,
+                                           materialization.accepted_ingress.decision.direction,
+                                           correlation,attempt,idempotency))
+      { result.reason_code="ORDINAL_ZERO_BINDING_FAILED"; return false; }
+      if(!sequence_authority.Reserve(correlation,result.sequence) ||
+         (result.sequence.disposition!=SWV5S5_SEQUENCE_RESERVED_NEW &&
+          result.sequence.disposition!=SWV5S5_SEQUENCE_EXISTING_IDEMPOTENT) ||
+         result.sequence.logical_correlation_id!=correlation || result.sequence.reserved_sequence==0)
+      { result.reason_code="SEQUENCE_AUTHORITY_DENIED"; return false; }
+      ZeroMemory(result.binding); SWV5S5_InitContractVersion(result.binding.contract_version);
+      result.binding.binding_policy_id=SWV5S5_REQUEST_BINDING_POLICY_ID;
+      result.binding.binding_policy_version=SWV5S5_REQUEST_BINDING_POLICY_VERSION;
+      result.binding.persistence_namespace=materialization.ledger.header.persistence_namespace;
+      result.binding.accepted_ingress_identity=materialization.accepted_ingress.ingress_identity;
+      result.binding.accepted_at=materialization.ledger.record.accepted_at;
+      result.binding.logical_correlation_id=correlation;
+      result.binding.logical_request_sequence=result.sequence.reserved_sequence;
+      result.binding.attempt_ordinal=0;
+      result.binding.attempt_id=attempt;
+      result.binding.idempotency_key=idempotency;
+      if(!SWV5S5_DeriveRequestBindingDigest(result.binding,binding_digest))
+      { result.reason_code="BINDING_DIGEST_FAILED"; return false; }
+      result.binding.binding_digest=binding_digest;
+      if(!blueprint_authority.BuildInitial(materialization,result.binding,result.blueprint))
+      { result.reason_code="BLUEPRINT_AUTHORITY_DENIED"; return false; }
+      SWV5S5_ValidationResult blueprint_validation;
+      if(!SWV5S5_ValidateInitialBlueprint(materialization.context,result.blueprint,materialization.accepted_ingress,
+                                           materialization.ledger.record,materialization.normalized_payload,
+                                           materialization.normalization_identity,materialization.risk_authorization,
+                                           blueprint_validation))
+      { result.reason_code="FROZEN_INITIAL_BLUEPRINT_INVALID"; return false; }
+      if(!progression_authority.ProgressToSubmission(result.blueprint.pending_request,result.progressed_request) ||
+         result.progressed_request.state!=SWV5_REQUEST_SUBMISSION_PENDING ||
+         result.progressed_request.lifecycle_phase!=SWV5_EXECUTION_PHASE_SUBMISSION ||
+         !SWV5S5_EqualRequestIdentity(result.progressed_request.intent.request_identity,
+                                      result.blueprint.pending_request.intent.request_identity))
+      { result.reason_code="REQUEST_PROGRESSION_NOT_ADMISSIBLE"; return false; }
+      result.disposition=SWV5S5_COORD_REQUEST_SUBMISSION_READY;
+      result.reason_code="OWNER_RETURNED_SUBMISSION_PENDING";
+      return true;
+   }
+
+   bool ProcessTakeover(const string request_correlation_id,
+                        ISWV5S5CoordinatorOwnershipAuthority &ownership_authority,
+                        SWV5S5_CoordinatorResult &result)
+   {
+      ZeroMemory(result);
+      SWV5S5_CoordinatorDisposition owner_result=SWV5S5_COORD_INVALID;
+      if(request_correlation_id=="" ||
+         !ownership_authority.EvaluateTakeover(request_correlation_id,owner_result))
+      { result.disposition=SWV5S5_COORD_INVALID; result.reason_code="TAKEOVER_AUTHORITY_DENIED"; return false; }
+      result.request_correlation_id=request_correlation_id;
+      result.disposition=owner_result;
+      result.reconciliation_required=(owner_result==SWV5S5_COORD_TAKEOVER_RECONCILIATION ||
+                                      owner_result==SWV5S5_COORD_ALREADY_CLAIMED_UNCERTAIN);
+      result.reason_code="OWNER_RETURNED_TAKEOVER_DISPOSITION";
+      return true;
+   }
+
+   bool ProcessReconciliationRequired(const SWV5S5_SubmissionAuthorityRecord &record,
+                                      SWV5S5_CoordinatorResult &result)
+   {
+      ZeroMemory(result);
+      if(record.state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED)
+      { result.disposition=SWV5S5_COORD_INVALID; result.reason_code="RECONCILIATION_STATE_INVALID"; return false; }
+      result.request_correlation_id=record.permit.request_identity.request_id.correlation_id;
+      result.attempt_id=record.permit.unique_attempt_id;
+      result.disposition=SWV5S5_COORD_CLAIMED_RECONCILIATION_REQUIRED;
+      result.reconciliation_required=true;
+      result.fake_broker_invoked=false;
+      result.reason_code="CLAIMED_UNRESOLVED_NO_RETRY";
+      return true;
+   }
+
+   bool ProcessFakeBrokerResponse(const SWV5S5_FakeBrokerResult &response,
+                                  SWV5S5_CoordinatorResult &result)
+   {
+      ZeroMemory(result);
+      if(response.outcome==SWV5S5_FAKE_BROKER_REQUEST_RECEIVED)
+      {
+         result.disposition=SWV5S5_COORD_BROKER_ACKNOWLEDGED;
+         result.reason_code="ACKNOWLEDGEMENT_NOT_EXECUTION_CONFIRMATION";
+         return true;
+      }
+      if(response.outcome==SWV5S5_FAKE_BROKER_REJECTED)
+      {
+         result.disposition=SWV5S5_COORD_FAKE_BROKER_REJECTED;
+         result.reason_code="SCRIPTED_REJECTION_NOT_BASKET_MUTATION";
+         return true;
+      }
+      result.disposition=SWV5S5_COORD_FAKE_BROKER_UNCERTAIN;
+      result.reconciliation_required=true;
+      result.reason_code="UNKNOWN_RESPONSE_RECONCILIATION_REQUIRED";
+      return true;
+   }
+
    bool ProcessAdmission(const SWV5S5_CoordinatorAdmissionEvent &event,
                          ISWV5S5CoordinatorAdmissionPreparation &preparation,
-                         ISWV5S5InvocationClaimAuthority &claim_authority,
+                         ISWV5S5CoordinatorInvocationClaimAuthority &claim_authority,
                          ISWV5S5CoordinatorFakeBrokerPort &fake_broker,
                          ISWV5S5CoordinatorTraceSink &trace_sink,
                          SWV5S5_CoordinatorResult &result)
@@ -138,31 +282,41 @@ public:
          return false;
       }
 
-      SWV5S5_InvocationClaimTransition prepared;
+      SWV5S5_CoordinatorPreparedAdmission prepared;
       ZeroMemory(prepared);
-      if(!preparation.PrepareSameEvent(event,prepared) || !prepared.transition_eligible ||
-         prepared.disposition!=SWV5S5_CLAIM_TRANSITION_ELIGIBLE)
+      if(!preparation.PrepareSameEvent(event,prepared) ||
+         prepared.event_id!=event.event_id || prepared.event_ordinal!=event.event_ordinal ||
+         prepared.operation_token=="" || !prepared.transition.transition_eligible ||
+         prepared.transition.disposition!=SWV5S5_CLAIM_TRANSITION_ELIGIBLE ||
+         !PreparedCommandCoherent(prepared))
       {
          Finish(result,SWV5S5_COORD_ADMISSION_DENIED,"SAME_EVENT_ADMISSION_NOT_PREPARED",false,false,false);
-         Emit(trace_sink,event,SWV5S5_COORD_TRACE_COMPLETED,(int)prepared.disposition,false,false,result.disposition);
+         Emit(trace_sink,event,SWV5S5_COORD_TRACE_COMPLETED,(int)prepared.transition.disposition,false,false,result.disposition);
          return false;
       }
-      Emit(trace_sink,event,SWV5S5_COORD_TRACE_ADMISSION_PREPARED,(int)prepared.disposition,false,false,SWV5S5_COORD_INVALID);
+      Emit(trace_sink,event,SWV5S5_COORD_TRACE_ADMISSION_PREPARED,(int)prepared.transition.disposition,false,false,SWV5S5_COORD_INVALID);
 
       if(event.interruption_point==SWV5S5_COORD_INTERRUPT_BEFORE_CLAIM)
       {
          Finish(result,SWV5S5_COORD_INTERRUPTED_RECOLLECT,"PROVISIONAL_P_LOST_RECOLLECT",false,false,false);
-         Emit(trace_sink,event,SWV5S5_COORD_TRACE_COMPLETED,(int)prepared.disposition,false,false,result.disposition);
+         Emit(trace_sink,event,SWV5S5_COORD_TRACE_COMPLETED,(int)prepared.transition.disposition,false,false,result.disposition);
          return true;
       }
 
-      SWV5S5_InvocationClaimResult claim;
-      ZeroMemory(claim);
-      bool claim_call=claim_authority.TryClaimInvocation(event.claim_command,claim);
-      Emit(trace_sink,event,SWV5S5_COORD_TRACE_CLAIM_ATTEMPTED,(int)claim.disposition,
-           claim.claim_granted_now,false,SWV5S5_COORD_INVALID);
+      SWV5S5_CoordinatorClaimOperationResult claim_operation;
+      ZeroMemory(claim_operation);
+      bool claim_call=claim_authority.TryClaimInvocation(prepared.claim_command,event.event_id,
+         event.event_ordinal,prepared.operation_token,claim_operation);
+      SWV5S5_InvocationClaimResult claim=claim_operation.claim;
+      Emit(trace_sink,event,SWV5S5_COORD_TRACE_CLAIM_ATTEMPTED,(int)claim.disposition,claim.claim_granted_now,false,SWV5S5_COORD_INVALID);
 
-      const bool authoritative_grant=claim_call && claim.claim_granted_now &&
+      const bool operation_bound=claim_operation.event_id==event.event_id &&
+         claim_operation.event_ordinal==event.event_ordinal &&
+         claim_operation.operation_token==prepared.operation_token;
+      const bool frozen_result_valid=claim_call && operation_bound &&
+         SWV5S5_ValidateAuthoritativeClaimResult(prepared.transition,claim);
+
+      const bool authoritative_grant=frozen_result_valid && claim.claim_granted_now &&
          claim.disposition==SWV5S5_CLAIM_GRANTED_NOW &&
          claim.resulting_authority_record.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED &&
          claim.resulting_authority_record.permit.request_identity.request_id.correlation_id==event.request_correlation_id &&
@@ -171,6 +325,12 @@ public:
          claim.resulting_authority_record.permit.normalization_identity==event.normalized_payload_identity;
       if(!authoritative_grant)
       {
+         if(claim.claim_granted_now || claim.disposition==SWV5S5_CLAIM_GRANTED_NOW)
+         {
+            Finish(result,SWV5S5_COORD_INVALID,"AUTHORITATIVE_CLAIM_RESULT_INVALID_OR_REPLAYED",false,false,true);
+            Emit(trace_sink,event,SWV5S5_COORD_TRACE_RECONCILIATION_REQUIRED,(int)claim.disposition,false,false,result.disposition);
+            return false;
+         }
          if(claim.resulting_authority_record.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED ||
             claim.disposition==SWV5S5_CLAIM_ALREADY_CLAIMED)
          {

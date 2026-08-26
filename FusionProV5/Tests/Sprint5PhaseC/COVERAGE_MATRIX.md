@@ -1,17 +1,24 @@
-# Sprint 5 Phase C coverage matrix
+# Sprint 5 Phase C.1 coverage matrix
 
-| Requirement | Production boundary | MQL compile assertion | Executable reference scenario |
+| Requirement | Coordinator implementation | Direct MQL source | Reference case |
 |---|---|---|---|
-| Same-event Claim gate | `ProcessAdmission` authoritative-grant predicate | Success and duplicate controls | C-01, C-06, C-07 |
-| Exact request lifecycle | Submission Pending + Submission checks | Stable-terminal denial | C-01, C-06 |
-| No reusable provisional P | Before-Claim interruption returns recollect | Claim call count remains zero | C-10 |
-| Claimed uncertainty | Claimed record without grant emits reconciliation | Duplicate and after-Claim controls | C-07, C-11, C-12 |
-| Takeover ordering | Phase B Claim disposition is consumed | Stale-owner denial | C-08, C-09 |
-| Ingress authority | Frozen trusted-ingress validator and binding function | Invalid no-entry direction controls | C-02–C-05 |
-| Hard Kill / Trust overlap | Complete owner result is consumed; no post-P re-read | Interface path compiles | C-13, C-14 |
-| Risk exclusive expiry | Phase B Claim result is consumed | Denied result cannot call broker | C-15 |
-| Queue non-authority | Test-only FIFO stores only event identity/order/scenario | FIFO assertions | All scenarios |
-| Deterministic trace | Immutable diagnostic entry emitted at each step | Trace population assertions | Two identical full runs |
-| Broker isolation | Fake-only abstract port; no platform APIs | Invocation record assertions | C-01, C-06–C-12 |
+| Initial ordinal 0 | Private frozen binding call uses `0` | Exact ordinal-0/1 fixed vectors | All new requests use local ordinal 0 |
+| Coherent prepared package | Command and transition returned together | Prepared-A/Command-B denial | Explicit prepared/result identity |
+| Full Claim validation | Frozen validator precedes completion/broker | Ten mismatch controls | Claim mismatch family |
+| Current-event grant | Event/ordinal/operation token binding | Prior-event replay denial | Grant replay |
+| Ledger/Sequence/Blueprint | Abstract authorities plus frozen Blueprint validator | Frozen direct controls compiled | Ingress-to-created flow |
+| Progression | Complete owner-returned request required | Submission boundary controls | Progression/terminal denial |
+| Takeover/reconciliation/response | Dedicated handlers | Handler/dispatcher controls | Ordering and acknowledgement cases |
+| Queue | Test-only FIFO dispatcher | Dequeue-to-handler assertions | Stable ordered scenario execution |
+| Safety ordering | Frozen preparation result consumed | Hard Kill/Trust/Risk fixtures | Hard Kill/Trust/Risk cases |
 
-This matrix demonstrates Phase C orchestration semantics only. It does not prove physical persistence, linearizability, real broker behavior, MQL runtime behavior, or production readiness.
+## Event implementation matrix
+
+| Public event kind | Phase C status |
+|---|---|
+| Accepted ingress | Implemented by `ProcessIngress` with trusted validation and Ledger authority |
+| Request progression | Implemented by `MaterializeAndProgress` with Sequence, Blueprint, and progression authorities |
+| Submission/admission | Implemented by `ProcessAdmission` |
+| Ownership/takeover | Implemented by `ProcessTakeover` |
+| Fake broker response | Implemented by `ProcessFakeBrokerResponse`; acknowledgement is not confirmation |
+| Reconciliation required | Implemented by `ProcessReconciliationRequired`; no retry or broker call |
