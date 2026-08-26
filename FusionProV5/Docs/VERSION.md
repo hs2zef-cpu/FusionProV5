@@ -4,36 +4,37 @@
 
 ### Current Version
 
-Sprint 5 Phase C — Deterministic Coordinator, Fake Broker, and Queue Behavior
+Sprint 5 Phase C.1 — Deterministic Orchestration Conformance Correction
 
 ### Date
 
-2026-08-25
+2026-08-26
 
 ### Status
 
-**PHASE C IMPLEMENTATION AUTHORIZED — DETERMINISTIC ORCHESTRATION TEST BOUNDARY ONLY**
+**PHASE C AUDIT FAILED — PHASE C.1 CORRECTION AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The audited Production Contract V5 package is present on `main` at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`, but remains unlocked pending an explicit formal Architecture Lock decision. The Final Independent Sprint 5 Phase A.4 Architecture Gate remains closed at authority commit `31e76411829e2f2e6acb24740ddca32b886969e0`. The New Independent Sprint 5 Phase B.3 Contract Re-Audit returned **PASS** with no Critical, Major, or Minor findings and closed the Phase B pure-contract gate at `1366edb25238463c9a76fa78257196dbf4c64e34`. Phase C is authorized only for deterministic orchestration, scripted fake authorities, a deterministic in-memory test queue, and a test-only fake broker.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C audit returned **FAIL — Critical 2 / Major 2 / Minor 0**. Phase C.1 is authorized only to correct those implementation-conformance findings.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
 - Phase B pure-contract gate: **CLOSED / PASS**
-- Phase C: **AUTHORIZED — DETERMINISTIC COORDINATOR / FAKE BROKER / TEST QUEUE ONLY**
+- Phase C.1: **AUTHORIZED — CONFORMANCE CORRECTION ONLY**
 - Phase D/E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase C — Deterministic Coordinator, Fake Broker, and Queue Behavior
+Sprint 5 Phase C.1 — Deterministic Orchestration Conformance Correction
 
-- Status: **AUTHORIZED / IN PROGRESS — PHASE C DETERMINISTIC TEST BOUNDARY ONLY**
+- Status: **AUTHORIZED / IN PROGRESS — PHASE-C-ONLY CORRECTION**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
-- Next gate: **New Independent Sprint 5 Phase C Deterministic Orchestration Audit**
+- Independent Phase C audit: **FAIL — Critical 2 / Major 2 / Minor 0**
+- Next gate: **New Independent Sprint 5 Phase C.1 Deterministic Orchestration Re-Audit**
 - Phase D/E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 

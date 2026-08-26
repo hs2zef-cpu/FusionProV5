@@ -10,7 +10,8 @@
 | Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
 | Independent Phase B.3 contract re-audit | **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE** |
 | Phase B pure-contract gate | **CLOSED / PASS at `1366edb25238463c9a76fa78257196dbf4c64e34`** |
-| Phase C | **AUTHORIZED — DETERMINISTIC COORDINATOR / FAKE BROKER / TEST QUEUE ONLY** |
+| Independent Phase C audit | **FAIL — 2 CRITICAL / 2 MAJOR / 0 MINOR** |
+| Phase C.1 | **AUTHORIZED — IMPLEMENTATION-CONFORMANCE CORRECTION ONLY** |
 | Architecture Lock | **NOT GRANTED** |
 | Runtime | **NOT AUTHORIZED** |
 | Broker | **NOT AUTHORIZED** |
@@ -58,7 +59,7 @@ Frozen Signal/Decision
 
 The New Independent Phase B.3 Contract Re-Audit returned **PASS**, with no Critical, Major, or Minor findings. The Phase B pure-contract gate is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`; the approved ADRs and closed Architecture Review Gate are unchanged. Phase B contract headers are frozen for Phase C.
 
-Phase C is authorized only to consume the frozen contracts through a deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker. It may compile dedicated probes and assertion source with MetaEditor, but may not modify Phase B contracts, launch MT5 Terminal/Strategy Tester, implement physical persistence, or connect to a real broker.
+The independent Phase C audit failed with 2 Critical and 2 Major findings. Phase C.1 may correct only initial-attempt ordinal, coherent prepared-Claim validation, complete fake-authority orchestration, and verification credibility. Phase B contracts remain frozen; Terminal/Tester, persistence, and real broker access remain forbidden.
 
 The required next gate is a **NEW INDEPENDENT SPRINT 5 PHASE C DETERMINISTIC ORCHESTRATION AUDIT** in a fresh review task. Phase D/E/F/G, merge, runtime integration, real broker work, Architecture Lock, and production use remain unauthorized.
 
