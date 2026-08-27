@@ -65,7 +65,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, and Phase B remains **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 is authorized only to correct Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase D/E/F/G, persistence, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, and Phase B remains **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 completed narrow development self-verification for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch; it remains a candidate pending a new independent final orchestration re-audit, and the Phase C gate is not closed. Phase D/E/F/G, persistence, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 
@@ -464,7 +464,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- Will the New Independent Sprint 5 Phase C.1 re-audit close all four deterministic-orchestration findings?
+- Will the New Independent Sprint 5 Phase C.2 final orchestration re-audit independently close all four remaining C.1 findings?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -523,4 +523,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Complete and self-verify the four Sprint 5 Phase C.1 conformance corrections on `sprint5-phase-c-deterministic-coordinator`, then request a new independent Phase C.1 Deterministic Orchestration Re-Audit. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`; ADR semantics remain closed. Phase D/E/F/G, persistence, broker/platform integration, runtime, main merge, production, and live trading remain unauthorized."
+"Submit the self-verified Sprint 5 Phase C.2 correction candidate on `sprint5-phase-c-deterministic-coordinator` to a NEW INDEPENDENT SPRINT 5 PHASE C.2 FINAL ORCHESTRATION RE-AUDIT in a fresh review task. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`; ADR semantics remain closed. Phase D/E/F/G, persistence, broker/platform integration, runtime, main merge, production, and live trading remain unauthorized."

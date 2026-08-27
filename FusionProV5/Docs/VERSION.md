@@ -12,23 +12,23 @@ Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closu
 
 ### Status
 
-**PHASE C.1 RE-AUDIT FAILED — PHASE C.2 CORRECTION AUTHORIZED**
+**PHASE C.2 SELF-VERIFICATION PASS — PENDING INDEPENDENT FINAL RE-AUDIT**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 is authorized only to correct Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 completed narrow development self-verification for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch; it is not independently approved and the Phase C gate remains open.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
 - Phase B pure-contract gate: **CLOSED / PASS**
-- Phase C.2: **AUTHORIZED — NARROW PHASE-C-ONLY CORRECTION**
+- Phase C.2: **CANDIDATE / SELF-VERIFIED — PENDING INDEPENDENT FINAL RE-AUDIT**
 - Phase D/E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
 Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closure
 
-- Status: **AUTHORIZED / IN PROGRESS — NARROW PHASE-C-ONLY CORRECTION**
+- Status: **CANDIDATE / SELF-VERIFICATION PASS — PHASE C GATE NOT CLOSED**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
@@ -114,6 +114,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Complete and self-verify the isolated Sprint 5 Phase C deterministic coordinator, fake broker, and deterministic queue package, then submit it to a new independent Sprint 5 Phase C Deterministic Orchestration Audit. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Submit the self-verified Sprint 5 Phase C.2 correction candidate to a **NEW INDEPENDENT SPRINT 5 PHASE C.2 FINAL ORCHESTRATION RE-AUDIT** in a fresh review task. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
-Do not begin Phase C or runtime implementation without separate approval. Any adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
+Do not begin Phase D or runtime implementation without separate approval. Any adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.

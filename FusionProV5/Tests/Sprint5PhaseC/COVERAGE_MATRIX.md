@@ -1,24 +1,39 @@
-# Sprint 5 Phase C.1 coverage matrix
+# Sprint 5 Phase C.2 coverage matrix
 
-| Requirement | Coordinator implementation | Direct MQL source | Reference case |
-|---|---|---|---|
-| Initial ordinal 0 | Private frozen binding call uses `0` | Exact ordinal-0/1 fixed vectors | All new requests use local ordinal 0 |
-| Coherent prepared package | Command and transition returned together | Prepared-A/Command-B denial | Explicit prepared/result identity |
-| Full Claim validation | Frozen validator precedes completion/broker | Ten mismatch controls | Claim mismatch family |
-| Current-event grant | Event/ordinal/operation token binding | Prior-event replay denial | Grant replay |
-| Ledger/Sequence/Blueprint | Abstract authorities plus frozen Blueprint validator | Frozen direct controls compiled | Ingress-to-created flow |
-| Progression | Complete owner-returned request required | Submission boundary controls | Progression/terminal denial |
-| Takeover/reconciliation/response | Dedicated handlers | Handler/dispatcher controls | Ordering and acknowledgement cases |
-| Queue | Test-only FIFO dispatcher | Dequeue-to-handler assertions | Stable ordered scenario execution |
-| Safety ordering | Frozen preparation result consumed | Hard Kill/Trust/Risk fixtures | Hard Kill/Trust/Risk cases |
+| Scenario | Direct MQL | Queue-dispatched MQL | Reference model |
+|---|---:|---:|---:|
+| BUY full path | YES | YES | YES |
+| SELL full path | YES | YES | YES |
+| Duplicate ingress / no second reservation | YES | YES | YES |
+| WAIT / no request | YES | YES | YES |
+| BLOCKED / no request | YES | YES | YES |
+| Two distinct requests | NO | YES | YES |
+| Request progression | YES | YES | YES |
+| Malformed Ledger authority | YES | NO | YES |
+| Malformed Sequence authority | YES | NO | YES |
+| BUY→SELL and SELL→BUY reversal | YES | YES | YES |
+| Duplicate admission | YES | YES | YES |
+| Takeover before Claim | YES | YES | YES |
+| Claim before takeover | YES | YES | YES |
+| Crash before Claim / recollect | YES | YES | YES |
+| Crash after Claim | YES | YES | YES |
+| Claimed-unresolved reconciliation follow-up | YES | YES | YES |
+| Claim corruption family | YES | NO | YES |
+| Prior-event grant replay | YES | NO | YES |
+| Hard Kill before P | YES | NO | YES |
+| Producer Trust invalid before P | YES | NO | YES |
+| Risk expiry `<`, `==`, `>` | YES | NO | YES |
+| Fake-broker acknowledgement, not confirmation | YES | YES | YES |
 
-## Event implementation matrix
+## Public event dispatch matrix
 
-| Public event kind | Phase C status |
-|---|---|
-| Accepted ingress | Implemented by `ProcessIngress` with trusted validation and Ledger authority |
-| Request progression | Implemented by `MaterializeAndProgress` with Sequence, Blueprint, and progression authorities |
-| Submission/admission | Implemented by `ProcessAdmission` |
-| Ownership/takeover | Implemented by `ProcessTakeover` |
-| Fake broker response | Implemented by `ProcessFakeBrokerResponse`; acknowledgement is not confirmation |
-| Reconciliation required | Implemented by `ProcessReconciliationRequired`; no retry or broker call |
+| Event kind | Handler | Direct MQL | Queue-dispatched MQL |
+|---|---|---:|---:|
+| `ACCEPTED_INGRESS` | `ProcessIngress` | YES | YES |
+| `REQUEST_PROGRESSION` | `MaterializeAndProgress` | YES | YES |
+| `SUBMISSION_ADMISSION` | `ProcessAdmission` | YES | YES |
+| `OWNERSHIP_TAKEOVER` | `ProcessTakeover` | YES | YES |
+| `FAKE_BROKER_RESPONSE` | `ProcessFakeBrokerResponse` | YES | YES |
+| `RECONCILIATION_REQUIRED` | `ProcessReconciliationRequired` | YES | YES |
+
+All MQL assertions are compile-only in Phase C.2 and are not execution evidence. The queue is a deterministic test scheduler and is never an authority source.

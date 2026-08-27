@@ -100,12 +100,29 @@ struct SWV5S5_CoordinatorClaimOperationResult
    SWV5S5_InvocationClaimResult claim;
 };
 
-struct SWV5S5_CoordinatorLedgerResult
+struct SWV5S5_CoordinatorLedgerEvaluation
 {
    SWV5S5_IngressEvaluationDisposition disposition;
    SWV5S5_IngressLedgerHeader header;
-   SWV5S5_IngressLedgerRecord record;
+   SWV5S5_IngressLedgerRecord matched_record;
+   int matched_index;
    string reason_code;
+};
+
+struct SWV5S5_CoordinatorLedgerOperationResult
+{
+   string event_id;
+   ulong event_ordinal;
+   string proposal_digest;
+   SWV5S5_ValidationResult authoritative_result;
+};
+
+struct SWV5S5_CoordinatorSequenceOperationResult
+{
+   string event_id;
+   ulong event_ordinal;
+   string reservation_digest;
+   SWV5S5_RequestSequenceResult authoritative_result;
 };
 
 struct SWV5S5_CoordinatorMaterializationInput
@@ -114,7 +131,7 @@ struct SWV5S5_CoordinatorMaterializationInput
    ulong event_ordinal;
    SWV5_ContractValidationContext context;
    SWV5S5_IngressEnvelope accepted_ingress;
-   SWV5S5_CoordinatorLedgerResult ledger;
+   SWV5S5_CoordinatorLedgerEvaluation ledger;
    SWV5_NormalizedUnits normalized_payload;
    string normalization_identity;
    SWV5_RiskAuthorization risk_authorization;
@@ -152,6 +169,7 @@ struct SWV5S5_FakeBrokerInvocation
    string attempt_id;
    string normalized_payload_identity;
    string claim_id;
+   int direction;
 };
 
 struct SWV5S5_FakeBrokerResult
@@ -209,16 +227,32 @@ public:
 class ISWV5S5CoordinatorLedgerAuthority
 {
 public:
-   virtual bool AcceptOrDeduplicate(const SWV5S5_CoordinatorIngressEvent &event,
-                                    const SWV5S5_IngressValidationResult &validated,
-                                    SWV5S5_CoordinatorLedgerResult &result)=0;
+   // Explicit adapter over the frozen Ledger owner operation. Snapshot arrays
+   // are complete and ordered; the coordinator independently validates them.
+   virtual bool ReadSnapshot(const string event_id,const ulong event_ordinal,
+                             SWV5S5_IngressLedgerHeader &header,
+                             SWV5S5_IngressLedgerIndexEntry &entries[],
+                             SWV5S5_IngressLedgerRecord &records[])=0;
+   virtual bool TryCommitAcceptance(const SWV5S5_IngressLedgerHeader &expected_header,
+                                    const SWV5S5_IngressLedgerIndexEntry &expected_entries[],
+                                    const SWV5S5_IngressLedgerRecord &expected_records[],
+                                    const SWV5S5_IngressLedgerProposal &proposal,
+                                    const string event_id,const ulong event_ordinal,
+                                    SWV5S5_CoordinatorLedgerOperationResult &result)=0;
 };
 
 class ISWV5S5CoordinatorRequestSequenceAuthority
 {
 public:
-   virtual bool Reserve(const string logical_correlation_id,
-                        SWV5S5_RequestSequenceResult &result)=0;
+   // Explicit adapter over the frozen Request Sequence owner operation.
+   virtual bool ReadState(const string event_id,const ulong event_ordinal,
+                          SWV5S5_RequestSequenceAuthority &authority,
+                          SWV5S5_RequestSequenceIndexEntry &entries[])=0;
+   virtual bool TryReserveRequestSequence(const SWV5S5_RequestSequenceAuthority &expected,
+                                          const SWV5S5_RequestSequenceIndexEntry &expected_entries[],
+                                          const SWV5S5_RequestSequenceReservation &proposal,
+                                          const string event_id,const ulong event_ordinal,
+                                          SWV5S5_CoordinatorSequenceOperationResult &result)=0;
 };
 
 class ISWV5S5CoordinatorBlueprintAuthority
