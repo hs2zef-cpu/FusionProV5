@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase C closure and Phase D0 ADR-resolution authorization
+
+- Recorded the New Independent Sprint 5 Phase C.2 Final Orchestration Re-Audit result: `PASS`, with no Critical, Major, or Minor findings and Phase C completeness `COMPLETE`.
+- Closed the Phase C deterministic orchestration gate at audited commit `55cd230ca222c60cd42dd218efe5e175ba70acd6`; the Phase B gate remains `CLOSED / PASS` and the Architecture Review remains `CLOSED`.
+- Authorized Sprint 5 Phase D0 only for documentation-only resolution of the physical store/CAS/lease-clock and genesis-provisioning ADRs.
+- Phase D implementation, Phase E/F/G, physical persistence or database code, broker/runtime integration, MT5 Terminal/Strategy Tester, main merge, production, and live trading remain unauthorized.
+
 ### Sprint 5 Phase C.2 authoritative-orchestration correction candidate
 
 - Completed the narrow Phase C.2 self-verification correction for complete Ledger authority integrity, complete Request Sequence authority integrity, V5-authorized full request-content preservation, and typed core queue-to-coordinator dispatch.

@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.1 |
-| Date | 2026-08-26 |
+| Version | 5.2 |
+| Date | 2026-08-27 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -50,6 +50,7 @@
 | 4.9 | 2026-08-25 | Recorded the New Independent Sprint 5 Phase B.3 Contract Re-Audit PASS with no Critical, Major, or Minor findings; closed the Phase B pure-contract gate at `1366edb25238463c9a76fa78257196dbf4c64e34`; and authorized Phase C only for deterministic orchestration, scripted fake authorities, a deterministic in-memory test queue, and a test-only fake broker. Phase D/E/F/G, physical persistence, real broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized. |
 | 5.0 | 2026-08-26 | Recorded the independent Phase C audit FAIL with 2 Critical, 2 Major, and 0 Minor findings and authorized Phase C.1 implementation-conformance correction only. Phase B and the Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G and runtime remain unauthorized. |
 | 5.1 | 2026-08-26 | Recorded the independent Phase C.1 re-audit FAIL with 0 Critical, 4 Major, and 0 Minor findings. The two prior Critical findings and the truthful verification-model correction remain closed. Authorized Phase C.2 only for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase B and Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G, persistence, broker/runtime, MT5, and main merge remain unauthorized. |
+| 5.2 | 2026-08-27 | Recorded the New Independent Phase C.2 Final Orchestration Re-Audit PASS with no Critical, Major, or Minor findings; closed the Phase C deterministic orchestration gate at `55cd230ca222c60cd42dd218efe5e175ba70acd6`; and authorized Phase D0 documentation-only store/CAS/lease-clock and genesis ADR resolution. Phase D implementation, Phase E/F/G, persistence/database code, broker/runtime, MT5, main merge, production, and live trading remain unauthorized. |
 
 ## Purpose
 
@@ -65,7 +66,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, and Phase B remains **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 completed narrow development self-verification for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch; it remains a candidate pending a new independent final orchestration re-audit, and the Phase C gate is not closed. Phase D/E/F/G, persistence, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, Phase B is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`, and Phase C deterministic orchestration is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. The independent Phase C.2 final re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE**, with Phase C completeness **COMPLETE**. Phase D0 documentation-only ADR resolution is authorized. Phase D implementation, Phase E/F/G, physical persistence/database code, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 
@@ -284,7 +285,8 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Merged / Audited / Unlocked — Formal Architecture Approval Pending | Sprint 4 Production Contract V5 package |
 | Architecture Review Gate Closed / PASS | Sprint 5 Phase A.4 Final Policy Admission Linearization Closure at `31e76411829e2f2e6acb24740ddca32b886969e0` |
 | Phase B Pure-Contract Gate Closed / PASS | Sprint 5 Phase B.3 at `1366edb25238463c9a76fa78257196dbf4c64e34` |
-| Authorized — Deterministic Orchestration Test Boundary Only | Sprint 5 Phase C deterministic coordinator, fake broker, and test queue |
+| Phase C Deterministic Orchestration Gate Closed / PASS | Sprint 5 Phase C.2 at `55cd230ca222c60cd42dd218efe5e175ba70acd6` |
+| Authorized — Documentation-Only ADR Resolution | Sprint 5 Phase D0 physical store/CAS/lease-clock and genesis ADRs |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -464,7 +466,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- Will the New Independent Sprint 5 Phase C.2 final orchestration re-audit independently close all four remaining C.1 findings?
+- Will the New Independent Sprint 5 Phase D0 store/genesis ADR review approve both targeted implementation-technology decisions?
 - Which V4.2 domain should be migrated next?
 - Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
@@ -481,8 +483,8 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 These are recommendations only and are not authorized implementation:
 
-1. Complete and independently audit Sprint 5 Phase B pure contracts, and separately decide Architecture Lock for the audited Production Contract V5 package.
-2. Approve, revise, or reject the Sprint 5 Phase B implementation before authorizing Phase C or selecting runtime implementation work.
+1. Preserve the closed Sprint 5 Architecture, Phase B, and Phase C gates, and separately decide Architecture Lock for the audited Production Contract V5 package.
+2. Complete and independently review the authorized Phase D0 store/genesis ADR package before any Phase D implementation authorization.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
 4. Keep any future Execution Layer runtime physically and logically separate until the Sprint 5 Phase B pure contracts are independently audited and accepted.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
@@ -493,8 +495,8 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 
 1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Independently audit and approve, revise, or reject the Sprint 5 Phase B pure contract implementation and repository structure.
-4. Select technologies that satisfy the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
+3. Independently approve, revise, or reject both Phase D0 targeted ADRs.
+4. Only after D0 approval, separately authorize a fake-platform/fake-store Phase D reference implementation that satisfies the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
 5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
 6. Add basket lifecycle before Recovery.
 7. Add bounded Recovery only after fault testing.
@@ -523,4 +525,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Submit the self-verified Sprint 5 Phase C.2 correction candidate on `sprint5-phase-c-deterministic-coordinator` to a NEW INDEPENDENT SPRINT 5 PHASE C.2 FINAL ORCHESTRATION RE-AUDIT in a fresh review task. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`; ADR semantics remain closed. Phase D/E/F/G, persistence, broker/platform integration, runtime, main merge, production, and live trading remain unauthorized."
+"Resolve only the authorized Sprint 5 Phase D0 physical store/CAS/lease-clock and genesis-provisioning ADRs on `sprint5-phase-d0-store-genesis-adrs`. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`, Phase C is closed at `55cd230ca222c60cd42dd218efe5e175ba70acd6`, and ADR-009 through ADR-020 semantics remain closed. Phase D implementation, Phase E/F/G, persistence/database code, broker/platform integration, runtime, MT5, main merge, production, and live trading remain unauthorized."

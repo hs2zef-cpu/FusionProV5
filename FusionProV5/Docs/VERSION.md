@@ -4,40 +4,41 @@
 
 ### Current Version
 
-Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closure
+Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolution
 
 ### Date
 
-2026-08-26
+2026-08-27
 
 ### Status
 
-**PHASE C.2 SELF-VERIFICATION PASS — PENDING INDEPENDENT FINAL RE-AUDIT**
+**PHASE D0 ADR RESOLUTION AUTHORIZED — DOCUMENTATION ONLY**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review Gate remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.1 re-audit returned **FAIL — Critical 0 / Major 4 / Minor 0**. The two prior Critical findings and the prior verification-model finding remain closed. Phase C.2 completed narrow development self-verification for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch; it is not independently approved and the Phase C gate remains open.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.2 final re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE**. Phase C completeness is **COMPLETE**, and the deterministic orchestration gate is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. Phase D0 is authorized only to resolve the deferred store/CAS/lease-clock and genesis ADRs.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
 - Production trading authorization: **NOT GRANTED**
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
 - Phase B pure-contract gate: **CLOSED / PASS**
-- Phase C.2: **CANDIDATE / SELF-VERIFIED — PENDING INDEPENDENT FINAL RE-AUDIT**
-- Phase D/E/F/G: **NOT AUTHORIZED**
+- Phase C deterministic orchestration gate: **CLOSED / PASS**
+- Phase D0 ADR resolution: **AUTHORIZED — DOCUMENTATION ONLY**
+- Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase C.2 — Authoritative Orchestration Boundary and Core Queue Closure
+Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolution
 
-- Status: **CANDIDATE / SELF-VERIFICATION PASS — PHASE C GATE NOT CLOSED**
+- Status: **AUTHORIZED ADR RESOLUTION — NO IMPLEMENTATION**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
-- Independent Phase C.1 re-audit: **FAIL — Critical 0 / Major 4 / Minor 0**
-- Closed findings preserved: **initial ordinal 0; coherent prepared/Claim binding and frozen Claim-result validation; truthful verification-model classification**
-- Phase C.2 scope: **Ledger authority integrity; Request Sequence authority integrity; request-progression validation; core queue-to-coordinator dispatch**
-- Next gate: **New Independent Sprint 5 Phase C.2 Final Orchestration Re-Audit**
-- Phase D/E/F/G: **NOT AUTHORIZED**
+- Independent Phase C.2 final re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
+- Phase C deterministic orchestration gate: **CLOSED / PASS**
+- D0 scope: **physical store/CAS/lease-clock and genesis-provisioning ADR resolution only**
+- Next gate: **New Independent Sprint 5 Phase D0 Store / Genesis ADR Review**
+- Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -114,6 +115,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Submit the self-verified Sprint 5 Phase C.2 correction candidate to a **NEW INDEPENDENT SPRINT 5 PHASE C.2 FINAL ORCHESTRATION RE-AUDIT** in a fresh review task. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Resolve only the authorized Sprint 5 Phase D0 store/CAS/lease-clock and genesis-provisioning ADRs, then submit the package to a **NEW INDEPENDENT SPRINT 5 PHASE D0 STORE / GENESIS ADR REVIEW**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
-Do not begin Phase D or runtime implementation without separate approval. Any adapter, host, store, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
+Do not begin Phase D implementation or runtime implementation without separate approval. Any adapter, host, store, database, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
