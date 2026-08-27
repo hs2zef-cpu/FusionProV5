@@ -6,18 +6,20 @@
 |---|---|
 | Sprint 5 Phase A.4 | **ARCHITECTURE REVIEW GATE CLOSED / PASS** |
 | Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
-| Authorized work | Sprint 5 Phase B pure, platform-independent candidate contracts and deterministic verification only |
+| Authorized work | Sprint 5 Phase D0 documentation-only store/CAS/lease-clock and genesis ADR resolution |
 | Authorized architecture baseline | Sprint 4 Architecture |
 | Production Contract V5 | Audited and merged; **Architecture Lock not granted** |
 | Runtime implementation | **NOT AUTHORIZED** |
 | Broker implementation | **NOT AUTHORIZED** |
 | Production or live trading | **NOT AUTHORIZED** |
-| Phase B | **EXPLICITLY AUTHORIZED — PURE CONTRACTS ONLY** |
-| Next gate | **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT** |
+| Phase B | **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34` |
+| Phase C | **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6` |
+| Phase D0 | **ADR CANDIDATES COMPLETE — PENDING INDEPENDENT REVIEW** |
+| Next gate | **NEW INDEPENDENT SPRINT 5 PHASE D0 STORE / GENESIS ADR REVIEW** |
 
 This document answers: **How can the audited Production Contract V5 become an Execution Layer architecture without coupling broker runtime into the frozen Signal Engine, duplicating requests after a crash, or allowing competing external broker side effects across lease takeover?** It does not authorize or specify how to call a broker API.
 
-The Phase A.3 final independent re-review returned **FAIL** with one Phase-B-blocking Major. Phase A.4 closed that contradiction through one Increasing Execution Admission operation, a conditional Policy Admission Linearization Point, and Claim as its completion/uncertainty boundary. The subsequent Final Independent Phase A.4 Architecture Gate returned **PASS**, with no Critical or Major findings; the Architecture Review Gate is closed. The separate Phase B authorization permits only the pure candidate contracts specified by this architecture.
+The Phase A.3 final independent re-review returned **FAIL** with one Phase-B-blocking Major. Phase A.4 closed that contradiction through one Increasing Execution Admission operation, a conditional Policy Admission Linearization Point, and Claim as its completion/uncertainty boundary. The subsequent Final Independent Phase A.4 Architecture Gate returned **PASS**, with no Critical or Major findings; the Architecture Review Gate is closed. Phase B and Phase C subsequently closed/pass. Phase D0 adds only the targeted ADR-021/ADR-022 implementation-technology candidates and does not reopen this architecture review or authorize Phase D implementation.
 
 ## Authorities And Preserved Baselines
 
@@ -33,6 +35,8 @@ This candidate is subordinate to, and reconciled with:
 - ADR-016 through ADR-018 introduced by Phase A.2 and revised through Phase A.4 where required
 - ADR-019 Coherent Admission Snapshot Protocol introduced by Phase A.3 and revised by Phase A.4
 - ADR-020 Conditional Policy Admission Linearization introduced by Phase A.4
+- ADR-021 Physical Store, Compare-And-Set, And Lease Clock introduced by Phase D0 as an implementation-technology candidate
+- ADR-022 Genesis Provisioning Authority introduced by Phase D0 as an implementation-technology candidate
 
 Sprint 3.2.1 remains the frozen Signal Engine. `DecisionEngine` remains the sole authority for `BUY`, `SELL`, `WAIT`, and `BLOCKED`. Production Contract V5 remains the merged, audited, unlocked contract authority. Sprint 5 Phase A.4 neither changes those sources nor grants Architecture Lock or Phase B authorization.
 
@@ -675,16 +679,16 @@ Logs and dashboard DTOs are read-only projections. Log presence, ordering, or te
 
 | Question | Why it matters | Blocking? | Proposed ADR owner | Blocks phase |
 |---|---|---|---|---|
-| Which physical store/lock technology proves the required durable compare-and-set, atomic publication, crash consistency, and authoritative lease clock on MT5? | V5 specifies semantics but not a technology. | Blocking | Persistence architecture owner | Phase D |
+| Which physical store/lock technology proves the required durable compare-and-set, atomic publication, crash consistency, and authoritative lease clock on MT5? | Resolved by ADR-021 as a SQLite/MQL5 common-folder approved candidate; independent D0 review and later platform evidence remain required. | Blocking gate candidate complete | Persistence architecture owner | Phase D |
 | What versioned broker/platform retcode table and transaction-order profile applies to each supported terminal/broker build? | Adapter classification and ordering cannot be guessed. | Blocking | Broker Adapter owner | Phase F |
-| What concrete host queue durability and capacity policy preserves captured transaction evidence during overload or process failure? | Single-writer semantics require a bounded failure policy, not silent event loss. | Blocking | EA Host owner | Phase C |
-| What deployment authority provisions a new namespace's genesis Hard Kill/checkpoint state? | Missing persistence cannot be treated as clean authority. | Blocking | Operations/Risk Governance owner | Phase D |
+| What concrete host queue durability and capacity policy preserves captured transaction evidence during overload or process failure? | Closed by the audited Phase C deterministic orchestration package. | Closed | EA Host owner | Phase C |
+| What deployment authority provisions a new namespace's genesis Hard Kill/checkpoint state? | Resolved by ADR-022 as a separate Operator/Deployment Genesis Provisioning Authority candidate; independent D0 review remains required. | Blocking gate candidate complete | Operations/Risk Governance owner | Phase D |
 | What broker/build-specific negative-evidence horizon and complete proof rule establishes that a claimed attempt had no side effect? | Architecture forbids timeout-as-proof, but broker evidence behavior is deployment-specific. | Blocking | Broker Adapter / Verification authority | Phase F |
 | What exact Risk thresholds and trading-day configuration apply to a deployment? | Contracts define validation, not deployment values. | Nonblocking for pure contracts | Risk Governance owner | Phase E/F deployment |
 | Where are Producer Trust, Hard Kill release, and operator credentials stored and rotated? | Trust semantics are fixed, but secret mechanics are deployment concerns. | Nonblocking for pure contracts | Security/Operations owner | Production deployment |
 | What broker-specific Hedging fixtures and evidence threshold permit a Demo adapter to pass independent audit? | Architecture alone cannot prove broker behavior. | Blocking | Verification authority | Phase F/G |
 
-Phase B requires no new safety decision: ADR-009 and ADR-013 through ADR-020 fix canonical construction, continuing trust, durable replay/binding, namespace-wide sequence reservation, fenced publication, permit reservation, exactly-once claim, stable authority tokens, coherent double collect, conditional policy linearization, concurrent mutation ordering, expiry, and final snapshot semantics. Remaining questions concern Phase C queue implementation, Phase D physical store/genesis feasibility, Phase F broker profiles/negative evidence/evidence thresholds, or deployment values/credentials. No unresolved question permits an implementation phase to weaken or bypass V5.
+Phase B required no new safety decision: ADR-009 and ADR-013 through ADR-020 fix canonical construction, continuing trust, durable replay/binding, namespace-wide sequence reservation, fenced publication, permit reservation, exactly-once claim, stable authority tokens, coherent double collect, conditional policy linearization, concurrent mutation ordering, expiry, and final snapshot semantics. Phase C is closed/pass. ADR-021 and ADR-022 now provide the Phase D physical-store/clock and genesis candidates without changing those semantics. Independent D0 approval remains the Phase D entry gate. Remaining questions concern later platform evidence, Phase F broker profiles/negative evidence/evidence thresholds, or deployment values/credentials. No unresolved question permits an implementation phase to weaken or bypass V5.
 
 ## Proposed Sprint 5 Implementation Phases
 
@@ -756,4 +760,4 @@ V3S remains an independent Research Lab. Its M5 logic, experiments, and discover
 
 ## Review Recommendation
 
-The Final Independent Sprint 5 Phase A.4 Architecture Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`. Phase B pure contract implementation is separately authorized; its required next gate is a **NEW INDEPENDENT SPRINT 5 PHASE B CONTRACT IMPLEMENTATION AUDIT**. Phase C, runtime implementation, broker implementation, MT5 integration, Architecture Lock, merge to main, production, and live trading remain not granted.
+The Final Independent Sprint 5 Phase A.4 Architecture Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`; Phase B is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`; and Phase C is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. ADR-021 and ADR-022 are approved candidates pending a **NEW INDEPENDENT SPRINT 5 PHASE D0 STORE / GENESIS ADR REVIEW**. Phase D implementation, broker implementation, MT5 integration, Architecture Lock, merge to main, production, and live trading remain not granted.

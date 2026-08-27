@@ -12,7 +12,7 @@ Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolutio
 
 ### Status
 
-**PHASE D0 ADR RESOLUTION AUTHORIZED — DOCUMENTATION ONLY**
+**PHASE D0 ADR CANDIDATES COMPLETE — PENDING INDEPENDENT REVIEW**
 
 Sprint 4 remains the authorized architecture baseline. The Architecture Review remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.2 final re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE**. Phase C completeness is **COMPLETE**, and the deterministic orchestration gate is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. Phase D0 is authorized only to resolve the deferred store/CAS/lease-clock and genesis ADRs.
 
@@ -23,20 +23,23 @@ Sprint 4 remains the authorized architecture baseline. The Architecture Review r
 - Phase B pure-contract gate: **CLOSED / PASS**
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
 - Phase D0 ADR resolution: **AUTHORIZED — DOCUMENTATION ONLY**
+- ADR-021 physical store/CAS/lease clock: **APPROVED CANDIDATE**
+- ADR-022 genesis provisioning: **APPROVED CANDIDATE**
 - Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
 Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolution
 
-- Status: **AUTHORIZED ADR RESOLUTION — NO IMPLEMENTATION**
+- Status: **SELF-PASS / APPROVED CANDIDATES — PENDING INDEPENDENT D0 REVIEW**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
-- Scope: deterministic coordinator, scripted fake authorities, deterministic in-memory test queue, and test-only fake broker
+- Scope: documentation-only store/CAS/lease-clock feasibility, ADR-021, ADR-022, genesis policy, threat matrix, and future Phase D test plan
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
 - Independent Phase C.2 final re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
 - D0 scope: **physical store/CAS/lease-clock and genesis-provisioning ADR resolution only**
+- D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
 - Next gate: **New Independent Sprint 5 Phase D0 Store / Genesis ADR Review**
 - Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**

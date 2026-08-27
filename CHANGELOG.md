@@ -1,5 +1,12 @@
 # Changelog
 
+### Sprint 5 Phase D0 store/CAS/lease-clock and genesis ADR candidate
+
+- Added ADR-021 selecting native MQL5 SQLite in the terminal common folder as the physical-store candidate, with exact one-domain conditional CAS, transaction/readback uncertainty handling, stable ownership fencing, and a `TimeCurrent()` server-formed observation policy.
+- Added ADR-022 defining a separate Operator/Deployment Genesis Provisioning Authority, unique idempotent genesis identity, active Hard Kill, unresolved bootstrap checkpoint, canonical empty domains, and mandatory fresh zero-state reconciliation.
+- Added the official-evidence comparison, 22-case feasibility threat matrix, and future Phase D crash/CAS/corruption/full-query/restart test families.
+- ADR-021 and ADR-022 are approved candidates pending a new independent D0 review. Phase D implementation, MQL/database code, MT5 execution, broker/runtime integration, main merge, production, and live trading remain unauthorized.
+
 ### Sprint 5 Phase C closure and Phase D0 ADR-resolution authorization
 
 - Recorded the New Independent Sprint 5 Phase C.2 Final Orchestration Re-Audit result: `PASS`, with no Critical, Major, or Minor findings and Phase C completeness `COMPLETE`.

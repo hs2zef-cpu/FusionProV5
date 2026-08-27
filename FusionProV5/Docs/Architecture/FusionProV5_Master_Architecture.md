@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.2 |
+| Version | 5.3 |
 | Date | 2026-08-27 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -51,6 +51,7 @@
 | 5.0 | 2026-08-26 | Recorded the independent Phase C audit FAIL with 2 Critical, 2 Major, and 0 Minor findings and authorized Phase C.1 implementation-conformance correction only. Phase B and the Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G and runtime remain unauthorized. |
 | 5.1 | 2026-08-26 | Recorded the independent Phase C.1 re-audit FAIL with 0 Critical, 4 Major, and 0 Minor findings. The two prior Critical findings and the truthful verification-model correction remain closed. Authorized Phase C.2 only for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase B and Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G, persistence, broker/runtime, MT5, and main merge remain unauthorized. |
 | 5.2 | 2026-08-27 | Recorded the New Independent Phase C.2 Final Orchestration Re-Audit PASS with no Critical, Major, or Minor findings; closed the Phase C deterministic orchestration gate at `55cd230ca222c60cd42dd218efe5e175ba70acd6`; and authorized Phase D0 documentation-only store/CAS/lease-clock and genesis ADR resolution. Phase D implementation, Phase E/F/G, persistence/database code, broker/runtime, MT5, main merge, production, and live trading remain unauthorized. |
+| 5.3 | 2026-08-27 | Completed the Phase D0 documentation-only candidate package: ADR-021 selects native MQL5 SQLite in the common folder with one-domain transactions, exact conditional CAS, authoritative readback, and `TimeCurrent()` server-formed observation policy; ADR-022 defines separate fail-closed genesis provisioning with active Hard Kill and mandatory zero-state reconciliation. Both remain pending new independent D0 review; Phase D implementation remains unauthorized. |
 
 ## Purpose
 
@@ -224,6 +225,8 @@ The current `ExecutionPolicy` name refers to an advisory signal-policy gate insi
 | Unmigrated scores remain zero or unavailable | Avoids inventing trading rules during architectural migration. |
 | History/stale detection belongs in Platform Adapter | These checks depend on terminal history, sessions, and wall-clock context. |
 | Execution remains outside the indicator | Broker-side state requires different ownership, lifecycle, persistence, and reconciliation guarantees. |
+| SQLite/MQL5 common-folder store is the Phase D physical candidate | Native transactions, conditional SQL, shared placement, and deterministic readback can model exact one-domain CAS; cross-terminal platform evidence remains mandatory. |
+| Genesis uses a separate provisioning authority | Missing persistence is never clean, initial Hard Kill remains active, and runtime cannot self-authorize bootstrap. |
 | Legacy compatibility is isolated | Existing evidence can be observed without allowing legacy implementation to control the new architecture. |
 | Runtime evidence is separate from compilation | Compile success cannot prove broker behavior, chart lifecycle, historical parity, or transaction correctness. |
 
@@ -466,9 +469,8 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 
 ## Open Design Questions
 
-- Will the New Independent Sprint 5 Phase D0 store/genesis ADR review approve both targeted implementation-technology decisions?
 - Which V4.2 domain should be migrated next?
-- Which physical technology will satisfy the approved persistence and lease compare-and-set requirements?
+- Will independent D0 review approve ADR-021/ADR-022 and their required later cross-terminal platform-evidence conditions?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
 - What external datasets qualify as golden regression fixtures?
 - What score model will eventually replace or reproduce the V4.2 composite model?
