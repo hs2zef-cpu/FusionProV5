@@ -2,9 +2,9 @@
 
 ## Status
 
-**Approved Candidate for new independent Sprint 5 Phase D0 review.**
+**APPROVED — New Independent Sprint 5 Phase D0 review PASS.**
 
-This decision resolves a Phase D entry question only. It does not authorize Phase D implementation, real MQL5 database code, MT5 Terminal or Strategy Tester execution, broker access, runtime wiring, production, live trading, Architecture Lock, or merge to `main`.
+This decision resolves a Phase D entry question. Separate governance authorizes only a deterministic fake-store/fake-clock Phase D reference implementation. This ADR does not authorize real MQL5 database code, MT5 Terminal or Strategy Tester execution, broker access, runtime wiring, production, live trading, Architecture Lock, or merge to `main`.
 
 ## Context
 

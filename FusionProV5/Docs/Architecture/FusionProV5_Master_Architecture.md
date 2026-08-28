@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.3 |
-| Date | 2026-08-27 |
+| Version | 5.4 |
+| Date | 2026-08-28 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -52,6 +52,7 @@
 | 5.1 | 2026-08-26 | Recorded the independent Phase C.1 re-audit FAIL with 0 Critical, 4 Major, and 0 Minor findings. The two prior Critical findings and the truthful verification-model correction remain closed. Authorized Phase C.2 only for Ledger authority integrity, Request Sequence authority integrity, request-progression validation, and core queue-to-coordinator dispatch. Phase B and Architecture Review remain closed; ADR semantics are unchanged. Phase D/E/F/G, persistence, broker/runtime, MT5, and main merge remain unauthorized. |
 | 5.2 | 2026-08-27 | Recorded the New Independent Phase C.2 Final Orchestration Re-Audit PASS with no Critical, Major, or Minor findings; closed the Phase C deterministic orchestration gate at `55cd230ca222c60cd42dd218efe5e175ba70acd6`; and authorized Phase D0 documentation-only store/CAS/lease-clock and genesis ADR resolution. Phase D implementation, Phase E/F/G, persistence/database code, broker/runtime, MT5, main merge, production, and live trading remain unauthorized. |
 | 5.3 | 2026-08-27 | Completed the Phase D0 documentation-only candidate package: ADR-021 selects native MQL5 SQLite in the common folder with one-domain transactions, exact conditional CAS, authoritative readback, and `TimeCurrent()` server-formed observation policy; ADR-022 defines separate fail-closed genesis provisioning with active Hard Kill and mandatory zero-state reconciliation. Both remain pending new independent D0 review; Phase D implementation remains unauthorized. |
+| 5.4 | 2026-08-28 | Recorded the New Independent Sprint 5 Phase D0 review PASS with no Critical, Major, or Minor findings; approved ADR-021 and ADR-022; closed the D0 gate; and authorized Phase D only for deterministic fake-store/fake-clock persistence/restart reference implementation. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5, runtime, main merge, production, and live trading remain unauthorized. |
 
 ## Purpose
 
@@ -67,7 +68,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Phase A.4 Architecture Review Gate is **CLOSED / PASS** at `31e76411829e2f2e6acb24740ddca32b886969e0`, Phase B is **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34`, and Phase C deterministic orchestration is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. The independent Phase C.2 final re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE**, with Phase C completeness **COMPLETE**. Phase D0 documentation-only ADR resolution is authorized. Phase D implementation, Phase E/F/G, physical persistence/database code, broker/platform integration, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Phase A.4 Architecture Review Gate, Phase B, and Phase C are **CLOSED / PASS** at their approved authorities. The New Independent Phase D0 review returned **PASS — Critical NONE / Major NONE / Minor NONE**; ADR-021 and ADR-022 are approved, and the Phase D entry gate is satisfied. Phase D is authorized only for deterministic fake-store/fake-clock persistence/restart reference implementation. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 
@@ -470,7 +471,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 ## Open Design Questions
 
 - Which V4.2 domain should be migrated next?
-- Will independent D0 review approve ADR-021/ADR-022 and their required later cross-terminal platform-evidence conditions?
+- What exact later cross-terminal evidence will be required for the approved ADR-021 SQLite/clock candidate?
 - Which broker-specific retcode mapping tables and transaction-order fixtures are required before adapter work?
 - What external datasets qualify as golden regression fixtures?
 - What score model will eventually replace or reproduce the V4.2 composite model?
@@ -486,7 +487,7 @@ For the unlocked Production Contract V5 architecture now merged to main, restart
 These are recommendations only and are not authorized implementation:
 
 1. Preserve the closed Sprint 5 Architecture, Phase B, and Phase C gates, and separately decide Architecture Lock for the audited Production Contract V5 package.
-2. Complete and independently review the authorized Phase D0 store/genesis ADR package before any Phase D implementation authorization.
+2. Preserve the approved Phase D0 store/genesis decisions while implementing only the authorized fake-store/fake-clock Phase D reference.
 3. Require an approved scope, file list, exclusions, rollback point, failure tests, and Definition of Done.
 4. Keep any future Execution Layer runtime physically and logically separate until the Sprint 5 Phase B pure contracts are independently audited and accepted.
 5. Evaluate v17 Regime Detection, Signal Logic, and Dashboard concepts only through independent specifications and tests.
@@ -497,8 +498,8 @@ A provisional risk-oriented order, requiring separate approval at every step, wo
 
 1. Formally approve or reject Architecture Lock for the audited V5 contracts.
 2. Complete remaining Signal Engine migrations or explicitly close their scope.
-3. Independently approve, revise, or reject both Phase D0 targeted ADRs.
-4. Only after D0 approval, separately authorize a fake-platform/fake-store Phase D reference implementation that satisfies the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
+3. Complete and independently audit the authorized fake-platform/fake-store Phase D reference implementation against the approved lifecycle, persistence, reconciliation, ownership, and risk contracts.
+4. Require separate later authorization and real-platform evidence before any physical SQLite, clock, broker, or runtime integration.
 5. Implement and test any separately authorized broker execution in Strategy Tester and demo only.
 6. Add basket lifecycle before Recovery.
 7. Add bounded Recovery only after fault testing.
@@ -527,4 +528,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Resolve only the authorized Sprint 5 Phase D0 physical store/CAS/lease-clock and genesis-provisioning ADRs on `sprint5-phase-d0-store-genesis-adrs`. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`, Phase C is closed at `55cd230ca222c60cd42dd218efe5e175ba70acd6`, and ADR-009 through ADR-020 semantics remain closed. Phase D implementation, Phase E/F/G, persistence/database code, broker/platform integration, runtime, MT5, main merge, production, and live trading remain unauthorized."
+"Implement only the authorized Sprint 5 Phase D persistence/restart reference on `sprint5-phase-d-persistence-restart-reference`, using a deterministic in-memory fake transactional store and fake authoritative clock/query source. Phase B remains frozen at `1366edb25238463c9a76fa78257196dbf4c64e34`, Phase C is closed at `55cd230ca222c60cd42dd218efe5e175ba70acd6`, and ADR semantics remain closed. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."

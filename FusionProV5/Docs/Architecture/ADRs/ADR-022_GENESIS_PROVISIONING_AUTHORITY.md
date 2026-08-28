@@ -2,9 +2,9 @@
 
 ## Status
 
-**Approved Candidate for new independent Sprint 5 Phase D0 review.**
+**APPROVED — New Independent Sprint 5 Phase D0 review PASS.**
 
-This decision defines namespace bootstrap governance only. It does not authorize Phase D implementation, a provisioning utility, database code, runtime enablement, broker access, MT5 execution, production, live trading, Architecture Lock, or merge to `main`.
+This decision defines namespace bootstrap governance only. Separate governance authorizes only a deterministic fake-store/fake-clock Phase D reference implementation. This ADR does not authorize a real provisioning utility, database code, runtime enablement, broker access, MT5 execution, production, live trading, Architecture Lock, or merge to `main`.
 
 ## Context
 

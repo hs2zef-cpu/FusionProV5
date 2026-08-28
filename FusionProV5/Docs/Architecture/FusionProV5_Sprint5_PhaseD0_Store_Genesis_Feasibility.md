@@ -8,9 +8,10 @@
 | Phase B pure-contract gate | **CLOSED / PASS** |
 | Phase C deterministic orchestration gate | **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6` |
 | D0 scope | **Documentation-only targeted ADR resolution** |
-| Phase D implementation | **NOT AUTHORIZED** |
+| Phase D reference implementation | **AUTHORIZED — FAKE STORE / FAKE CLOCK ONLY** |
 | MT5 Terminal / Strategy Tester / broker / trading | **NOT AUTHORIZED** |
-| D0 self-assessment | **PASS — APPROVED CANDIDATES PENDING INDEPENDENT REVIEW** |
+| Independent D0 review | **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE** |
+| ADR-021 / ADR-022 | **APPROVED** |
 
 ADR-021 and ADR-022 resolve only the two intentionally deferred Phase D entry questions. ADR-009 through ADR-020 and the frozen Phase B/C sources are unchanged.
 
@@ -100,7 +101,7 @@ The separate Operator/Deployment Genesis Provisioning Authority creates one cano
 
 ## Future Phase D boundary
 
-After both ADRs pass a new independent review and Phase D is separately authorized, Phase D may implement only:
+Following independent D0 approval and separate Phase D authorization, Phase D may implement only:
 
 - a deterministic fake transactional store matching the selected SQLite/CAS semantics;
 - a fake authoritative clock matching the observation protocol;
@@ -127,4 +128,4 @@ Phase D must not add real MQL5 `Database*` calls unless a later explicit scope a
 
 ## Self-pass result
 
-The package selects a concrete candidate, defines falsifiable CAS/clock/genesis behavior, preserves every frozen authority boundary, and contains documentation only. It is ready for a new independent D0 ADR review; Phase D implementation remains unauthorized.
+The package selected the approved candidate, defined falsifiable CAS/clock/genesis behavior, preserved every frozen authority boundary, and contained documentation only. The New Independent D0 review passed with no findings and approved ADR-021/ADR-022. Phase D is authorized only for the deterministic fake-store/fake-clock reference implementation; real platform persistence and runtime remain unauthorized.

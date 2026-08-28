@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolution
+Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
 ### Date
 
-2026-08-27
+2026-08-28
 
 ### Status
 
-**PHASE D0 ADR CANDIDATES COMPLETE — PENDING INDEPENDENT REVIEW**
+**PHASE D0 CLOSED / PASS — PHASE D FAKE-STORE/FAKE-CLOCK REFERENCE IMPLEMENTATION AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; the Phase B gate remains closed/pass at `1366edb25238463c9a76fa78257196dbf4c64e34`. The independent Phase C.2 final re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE**. Phase C completeness is **COMPLETE**, and the deterministic orchestration gate is **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6`. Phase D0 is authorized only to resolve the deferred store/CAS/lease-clock and genesis ADRs.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; Phase B and Phase C remain closed/pass. The New Independent Phase D0 review returned **PASS — Critical NONE / Major NONE / Minor NONE**. ADR-021 and ADR-022 are approved, the Phase D entry gate is satisfied, and Phase D is authorized only for the deterministic fake-store/fake-clock persistence/restart reference implementation.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -22,26 +22,27 @@ Sprint 4 remains the authorized architecture baseline. The Architecture Review r
 - Signal-to-Execution runtime wiring: **NOT AUTHORIZED**
 - Phase B pure-contract gate: **CLOSED / PASS**
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
-- Phase D0 ADR resolution: **AUTHORIZED — DOCUMENTATION ONLY**
-- ADR-021 physical store/CAS/lease clock: **APPROVED CANDIDATE**
-- ADR-022 genesis provisioning: **APPROVED CANDIDATE**
-- Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
+- Phase D0 ADR review: **CLOSED / PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
+- ADR-021 physical store/CAS/lease clock: **APPROVED**
+- ADR-022 genesis provisioning: **APPROVED**
+- Phase D fake-store/fake-clock reference implementation: **AUTHORIZED**
+- Real database/SQLite/clock/platform implementation and Phase E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase D0 — Physical Store / CAS / Lease Clock / Genesis ADR Resolution
+Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
-- Status: **SELF-PASS / APPROVED CANDIDATES — PENDING INDEPENDENT D0 REVIEW**
+- Status: **AUTHORIZED — FAKE STORE / FAKE CLOCK REFERENCE ONLY**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
-- Scope: documentation-only store/CAS/lease-clock feasibility, ADR-021, ADR-022, genesis policy, threat matrix, and future Phase D test plan
+- Scope: deterministic in-memory fake transactional store, fake authoritative clock/query source, and persistence/restart reference verification
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
 - Independent Phase C.2 final re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
-- D0 scope: **physical store/CAS/lease-clock and genesis-provisioning ADR resolution only**
+- Independent D0 review: **PASS — Critical NONE / Major NONE / Minor NONE**
 - D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
-- Next gate: **New Independent Sprint 5 Phase D0 Store / Genesis ADR Review**
-- Phase D implementation and Phase E/F/G: **NOT AUTHORIZED**
+- Next gate after Phase D self-pass: **New Independent Sprint 5 Phase D Persistence / Restart Reference Audit**
+- Phase E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -118,6 +119,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Resolve only the authorized Sprint 5 Phase D0 store/CAS/lease-clock and genesis-provisioning ADRs, then submit the package to a **NEW INDEPENDENT SPRINT 5 PHASE D0 STORE / GENESIS ADR REVIEW**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Implement only the authorized Sprint 5 Phase D persistence/restart reference against a fake transactional store and fake authoritative clock/query source, then submit it to a **NEW INDEPENDENT SPRINT 5 PHASE D PERSISTENCE / RESTART REFERENCE AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
-Do not begin Phase D implementation or runtime implementation without separate approval. Any adapter, host, store, database, lock, risk calculation, broker integration, recovery behavior, basket execution, or Signal-to-Execution wiring requires a separately approved implementation phase.
+Do not implement a real database/SQLite adapter, real platform clock, broker/runtime integration, Phase E/F/G, basket execution, or Signal-to-Execution wiring. Phase D authorization is reference-only and does not grant production or live-trading authority.
