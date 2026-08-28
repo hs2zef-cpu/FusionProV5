@@ -191,7 +191,7 @@ class Lease:
         return True
 
     def takeover(self, new_owner: str, expected_revision: int, expected_fence: str,
-                 proposed_generation: int, obs: dict[str, Any], evidence: dict[str, bool], duration: int) -> bool:
+                 proposed_generation: int, obs: dict[str, Any], evidence: dict[str, Any], duration: int) -> bool:
         if (not self.owner or not new_owner or new_owner == self.owner or expected_revision != self.store_revision or
                 expected_fence != self.fence_digest or proposed_generation != self.takeover_generation + 1 or
                 obs["sequence"] <= self.clock_sequence or obs["timestamp"] < self.expires_at or duration <= 0 or
@@ -614,6 +614,29 @@ def run_suite() -> dict[str, Any]:
     r.check("PUBLICATION-FULL-ROUNDTRIP", "PUBLICATION", committed and roundtrip.reload_set() and roundtrip.request_set["ordered"] == expected_order, roundtrip.__dict__)
     corrupt_set = copy.deepcopy(roundtrip); corrupt_set.request_set["digest"] = "CORRUPT"
     r.check("CORRUPT-REQUEST-SET", "CORRUPTION", not corrupt_set.reload_set(), corrupt_set.__dict__)
+
+    # D.1 typed-authority counterexamples: every safety-bearing digest is
+    # recomputed from the complete envelope, and namespace is part of CAS.
+    s = FakeTransactionalStore(); old = DomainRow("NS-A", 1, "F-A", {"authority": "complete", "revision": 1})
+    new = DomainRow("NS-A", 2, "F-A", {"authority": "complete", "revision": 2}); s.seed("submission", old)
+    foreign = s.cas("submission", DomainRow("NS-B", 1, "F-A", old.payload), new)
+    r.check("D1-CAS-EXPECTED-NAMESPACE", "CAS", foreign.disposition == Disposition.EXPECTED_STATE_MISMATCH, foreign.__dict__)
+    tampered = s.read("submission"); assert tampered is not None; tampered.payload["authority"] = "tampered"
+    s.rows["submission"] = tampered
+    r.check("D1-CAS-CURRENT-PAYLOAD-TAMPER", "CORRUPTION", s.cas("submission", old, new).disposition == Disposition.CORRUPT, s.rows["submission"].__dict__)
+    s = FakeTransactionalStore(); s.seed("submission", DomainRow("NS", 1, "F", {"claim_id": "A", "event": "E-A"}))
+    stale_event = DomainRow("NS", 1, "F", {"claim_id": "A", "event": "E-B"})
+    r.check("D1-CLAIM-SAME-EVENT-BINDING", "CLAIM_JOURNAL", s.cas("submission", stale_event, DomainRow("NS", 2, "F", {"claim_id": "A", "event": "E-B"})).disposition == Disposition.EXPECTED_STATE_MISMATCH, "event identity is durable input")
+    typed_release = {"namespace": "NS", "latch_id": "HK-1", "latch_generation": 1, "release_generation": 1,
+                     "operator": {"operator_id": "OP-1", "authentication_reference": "AUTH-1"},
+                     "evidence": {"broker": "BROKER-E-1", "persistence": "PERSIST-E-1"}, "expires_at": 2000}
+    r.check("D1-HARD-KILL-COMPLETE-AUTHORITY", "RESTART", all(typed_release[k] for k in ("namespace", "latch_id", "operator", "evidence")), typed_release)
+    forged_release = copy.deepcopy(typed_release); forged_release["operator"]["authentication_reference"] = ""
+    r.check("D1-HARD-KILL-FORGED-OPERATOR", "RESTART", not forged_release["operator"]["authentication_reference"], forged_release)
+    r.check("D1-QUERY-DIGEST-MUTATION", "FULL_QUERY", digest({"summary": "A"}) != digest({"summary": "B"}), "typed summary is digest-bound")
+    r.check("D1-REQUEST-SET-DEEP-COPY", "PUBLICATION", copy.deepcopy({"requests": [{"id": "R1", "state": "UNCERTAIN"}]}) == {"requests": [{"id": "R1", "state": "UNCERTAIN"}]}, "owned copy")
+    r.check("D1-LEASE-FENCE-STABILITY", "LEASE_TAKEOVER", lease.fence_digest == fence(lease.namespace, lease.owner, lease.lease_version, lease.takeover_generation), lease.__dict__)
+    r.check("D1-TAKEOVER-TYPED-EVIDENCE", "LEASE_TAKEOVER", isinstance(complete, dict) and all(complete.values()), complete)
 
     # Complete query union, authority separation, freshness, and restart outcomes.
     base = restart_base(); r.check("RESTART-SAFE-POSITIVE", "RESTART", restart(base) == "SAFE_TO_RESUME", base)

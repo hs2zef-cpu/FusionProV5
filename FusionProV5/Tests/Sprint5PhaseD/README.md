@@ -6,7 +6,7 @@ This package verifies the authorized Phase D persistence/restart design using an
 
 It does not execute MQL assertions and does not prove MQL runtime behavior, real SQLite/database behavior, filesystem durability, cross-terminal locking, real platform-clock provenance, broker behavior, or production readiness. MT5 Terminal and Strategy Tester are not used.
 
-The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. Request-set publication must be authoritatively reloaded before checkpoint publication. An uncertain committed Claim never recreates event-local `CLAIM_GRANTED_NOW` authority.
+The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. Every durable transition carries a complete typed DTO envelope, namespace/fence binding, and recomputed canonical payload digest. Request-set publication must be authoritatively reloaded before checkpoint publication. An uncertain committed Claim never recreates event-local `CLAIM_GRANTED_NOW` authority.
 
 Run the offline verifier twice-internally:
 

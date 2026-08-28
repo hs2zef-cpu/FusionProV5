@@ -15,4 +15,4 @@
 | PUBLICATION | fenced request set, stale revision/fence, reload gate, checkpoint, split crash, clean-shutdown convergence |
 | CLAIM_JOURNAL | one winner, competing/stale writers, persisted replay, permit/fence mismatch, uncertain commit, restart/takeover no grant |
 
-All executable scenarios run twice in one invocation. Equality covers test output, final durable state digest, authority revisions, grant counts, traces, and the serialized result digest.
+The corrected D.1 oracle currently executes 136 scenarios (136 passed, 0 failed, 0 skipped) twice in one invocation. Equality covers test output, final durable state digest, authority revisions, grant counts, traces, and the serialized result digest. MQL probes compile only and are never executed.

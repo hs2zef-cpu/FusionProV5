@@ -40,7 +40,7 @@ public:
 
    bool Seed(const SWV5S5_ReferenceDomainRow &row)
    {
-      if(FindRow(row.domain)>=0 || row.store_revision==0 || row.payload_digest=="")
+      if(FindRow(row.domain)>=0 || !SWV5S5_ReferenceRowIntegrity(row))
          return false;
       int n=ArraySize(m_rows);
       ArrayResize(m_rows,n+1);
@@ -54,10 +54,11 @@ public:
       if(index<0)
          return false;
       row=m_rows[index];
-      return !row.corrupt;
+      return SWV5S5_ReferenceRowIntegrity(row);
    }
 
    bool CompareAndSet(const SWV5S5_ReferenceDomain domain,
+                      const string expected_namespace_digest,
                       const ulong expected_revision,
                       const string expected_payload_digest,
                       const string expected_fence_digest,
@@ -70,7 +71,7 @@ public:
       result.expected_revision=expected_revision;
       result.transaction_id="REF-TXN-"+(string)(++m_transaction_sequence);
       int index=FindRow(domain);
-      if(index<0 || m_rows[index].corrupt)
+      if(index<0 || !SWV5S5_ReferenceRowIntegrity(m_rows[index]))
       {
          result.disposition=SWV5S5_REF_CORRUPT_STATE;
          result.diagnostic="MISSING_OR_CORRUPT_DOMAIN";
@@ -87,7 +88,9 @@ public:
          Trace(result.transaction_id,domain,"PRE_MUTATION_CRASH",expected_revision,result.durable_revision,result.disposition);
          return false;
       }
-      if(m_rows[index].store_revision!=expected_revision ||
+      if(m_rows[index].domain!=domain ||
+         m_rows[index].persistence_namespace_digest!=expected_namespace_digest ||
+         m_rows[index].store_revision!=expected_revision ||
          m_rows[index].payload_digest!=expected_payload_digest ||
          m_rows[index].authority_fence_digest!=expected_fence_digest)
       {
@@ -97,8 +100,9 @@ public:
          return false;
       }
       if(proposed.domain!=domain || proposed.store_revision!=expected_revision+1 ||
-         proposed.persistence_namespace_digest!=m_rows[index].persistence_namespace_digest ||
-         proposed.payload_digest=="")
+         proposed.persistence_namespace_digest!=expected_namespace_digest ||
+         proposed.authority_fence_digest=="" ||
+         !SWV5S5_ReferenceRowIntegrity(proposed))
       {
          result.disposition=SWV5S5_REF_CONFLICT;
          result.diagnostic="PROPOSED_STATE_INVALID";
@@ -140,6 +144,14 @@ public:
    }
 
    int TraceCount(void) const { return ArraySize(m_trace); }
+
+   bool InjectStoredPayloadWithoutDigest(const SWV5S5_ReferenceDomain domain,const string payload)
+   {
+      int index=FindRow(domain);
+      if(index<0) return false;
+      m_rows[index].payload=payload;
+      return true;
+   }
 };
 
 #endif

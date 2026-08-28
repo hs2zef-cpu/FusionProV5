@@ -1,6 +1,6 @@
 # Fusion Pro V5 Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
-> **Independent audit status: FAIL — Critical 3 / Major 7 / Minor 0.** The candidate described below is incomplete and does not authorize Phase E. Sprint 5 Phase D.1 is authorized to correct its frozen-authority-conformance and verification gaps.
+> **Independent audit status: FAIL — Critical 3 / Major 7 / Minor 0 (superseded candidate).** Sprint 5 Phase D.1 is the narrow corrective implementation and remains subject to a fresh independent audit; Phase E is not authorized.
 
 ## Scope and status
 
@@ -39,10 +39,10 @@ There is no global transaction. A partial cross-domain combination remains dirty
 
 | Gate | Result |
 |---|---|
-| Phase D executable reference | **127 / 127 PASS**, 0 failed, 0 skipped |
+| Phase D.1 executable reference | **136 / 136 PASS**, 0 failed, 0 skipped |
 | Repeated deterministic runs | **2 — identical** |
 | Final durable-state digest | `a1da58e9b0b78c0071a6f83cc9f3be28dae3b5e72fc3cc9576d48c0febfe1de9` |
-| Reference result digest | `24c2becde97ef466e4478051619fd8c6c821050a98eb51190d057677dfc2830a` |
+| Reference result digest | `57f6ec076e92e493398591ecc0b95803b54cd4a80192c094583af71692f41412` |
 | Frozen Phase B verifier | **139 / 139 PASS**, MQL production executed false |
 | Phase C reference regression | **22 scenarios PASS**, 2 identical runs |
 | Phase D umbrella compile | **0 errors / 0 warnings**, X64 Regular |
@@ -52,4 +52,4 @@ There is no global transaction. A partial cross-domain combination remains dirty
 | MQL assertions executed | **NO** |
 | Forbidden executable API scan | **PASS — 0 matches** |
 
-The recorded 127/127 Python result is historical evidence for the failed parallel oracle and is not MQL conformance proof. The next gate after D.1 correction is a **New Independent Sprint 5 Phase D.1 Persistence / Restart Re-Audit**. Phase E remains unauthorized.
+The Python result is an independent executable adversarial oracle, not MQL conformance proof. MQL assertions are compile-only and were not executed. The next gate is a **New Independent Sprint 5 Phase D.1 Persistence / Restart Re-Audit**. Phase E remains unauthorized.

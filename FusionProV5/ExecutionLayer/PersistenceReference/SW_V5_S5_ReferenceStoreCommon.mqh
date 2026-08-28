@@ -59,6 +59,21 @@ struct SWV5S5_ReferenceDomainRow
    bool corrupt;
 };
 
+string SWV5S5_ReferenceDomainName(const SWV5S5_ReferenceDomain domain)
+{
+   switch(domain)
+   {
+      case SWV5S5_REF_DOMAIN_GENESIS: return "GENESIS";
+      case SWV5S5_REF_DOMAIN_LEASE: return "LEASE";
+      case SWV5S5_REF_DOMAIN_LEDGER: return "LEDGER";
+      case SWV5S5_REF_DOMAIN_SEQUENCE: return "SEQUENCE";
+      case SWV5S5_REF_DOMAIN_SUBMISSION: return "SUBMISSION";
+      case SWV5S5_REF_DOMAIN_REQUEST_SET: return "REQUEST-SET";
+      case SWV5S5_REF_DOMAIN_CHECKPOINT: return "CHECKPOINT";
+   }
+   return "INVALID";
+}
+
 struct SWV5S5_ReferenceTransactionResult
 {
    SWV5S5_ReferenceTransactionDisposition disposition;
@@ -89,6 +104,39 @@ string SWV5S5_ReferenceDigest(const string domain,const string value)
       !SWV5S5_DomainDigest(domain,canonical_value,hex))
       return "";
    return hex;
+}
+
+bool SWV5S5_ReferenceCanonicalPayloadDigest(const SWV5S5_ReferenceDomain domain,
+                                             const string canonical_payload,
+                                             string &digest)
+{
+   if(canonical_payload=="" || SWV5S5_ReferenceDomainName(domain)=="INVALID") return false;
+   return SWV5S5_DomainDigest("SWV5-S5-PHASE-D1-"+SWV5S5_ReferenceDomainName(domain),
+                              canonical_payload,digest);
+}
+
+bool SWV5S5_ReferenceCanonicalNamespaceDigest(const SWV5_PersistenceNamespace &scope,
+                                               string &digest)
+{
+   string canonical;
+   return SWV5S5_CanonicalNamespace("persistence_namespace",scope,canonical) &&
+          SWV5S5_DomainDigest("SWV5-S5-PHASE-D1-NAMESPACE",canonical,digest);
+}
+
+bool SWV5S5_ReferenceCanonicalFenceDigest(const SWV5_OwnershipFence &fence,string &digest)
+{
+   string canonical;
+   return SWV5S5_CanonicalFence("ownership_fence",fence,canonical) &&
+          SWV5S5_DomainDigest("SWV5-S5-PHASE-D1-FENCE",canonical,digest);
+}
+
+bool SWV5S5_ReferenceRowIntegrity(const SWV5S5_ReferenceDomainRow &row)
+{
+   string recomputed;
+   return row.persistence_namespace_digest!="" && row.store_revision>0 &&
+          row.authority_fence_digest!="" && !row.corrupt &&
+          SWV5S5_ReferenceCanonicalPayloadDigest(row.domain,row.payload,recomputed) &&
+          row.payload_digest==recomputed;
 }
 
 bool SWV5S5_ReferenceSchemaCompatible(const string schema_id,

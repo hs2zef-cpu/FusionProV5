@@ -4,10 +4,10 @@
 
 | Requirement | Reference authority / operation | Test IDs |
 |---|---|---|
-| One-domain CAS and event-local winner | `FakeTransactionalStore.cas` | `CAS-TWO-WRITERS-*`, `CAS-UNCERTAIN-*` |
+| One-domain CAS and event-local winner | `SWV5S5_FakeTransactionalStore::CompareAndSet`; Python `FakeTransactionalStore.cas` | `CAS-TWO-WRITERS-*`, `CAS-UNCERTAIN-*`, `D1-CAS-*` |
 | Genesis unique provisioning and partial failure | `Genesis.begin/initialize/finalize` | `GENESIS-*` |
 | Initial Hard Kill and bootstrap checkpoint | Genesis domain payloads | `GENESIS-HARD-KILL`, `GENESIS-CHECKPOINT` |
-| Authoritative clock observation | `Clock.accept` | `CLOCK-*` |
+| Validated authoritative clock observation | `SWV5S5_FakeAuthoritativeClock::AcceptAndSeal/ValidateAccepted`; Python `Clock.accept` | `CLOCK-*`, D1 typed clock probes |
 | Stable heartbeat fence / complete takeover evidence | `Lease.heartbeat/takeover` | `LEASE-*` |
 | Complete durable Ledger and compaction | `Ledger.accept/validate/compact` | `LEDGER-*`, `CORRUPT-*` |
 | Namespace sequence idempotency and gaps | `SequenceStore.reserve` | `SEQUENCE-*`, `CRASH-SEQ-*` |
