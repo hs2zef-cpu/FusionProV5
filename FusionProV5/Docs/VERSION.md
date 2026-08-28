@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase D — Persistence / Restart Reference Implementation
+Sprint 5 Phase D.1 — Frozen-Authority-Faithful Persistence / Restart Correction
 
 ### Date
 
@@ -12,9 +12,9 @@ Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
 ### Status
 
-**PHASE D0 CLOSED / PASS — PHASE D FAKE-STORE/FAKE-CLOCK REFERENCE IMPLEMENTATION AUTHORIZED**
+**PHASE D INDEPENDENT AUDIT FAIL — D.1 NARROW CORRECTION AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review remains closed at `31e76411829e2f2e6acb24740ddca32b886969e0`; Phase B and Phase C remain closed/pass. The New Independent Phase D0 review returned **PASS — Critical NONE / Major NONE / Minor NONE**. ADR-021 and ADR-022 are approved, the Phase D entry gate is satisfied, and Phase D is authorized only for the deterministic fake-store/fake-clock persistence/restart reference implementation.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review and Phase B, Phase C, and Phase D0 gates remain closed/pass. The independent Phase D audit returned **FAIL — Critical 3 / Major 7 / Minor 0** and classified Phase D as **INCOMPLETE**. Phase D.1 is authorized only to close frozen-authority-conformance gaps in the fake-store/fake-clock reference implementation.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -25,14 +25,16 @@ Sprint 4 remains the authorized architecture baseline. The Architecture Review r
 - Phase D0 ADR review: **CLOSED / PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
 - ADR-021 physical store/CAS/lease clock: **APPROVED**
 - ADR-022 genesis provisioning: **APPROVED**
-- Phase D fake-store/fake-clock reference implementation: **AUTHORIZED**
+- Phase D independent audit: **FAIL — CRITICAL 3 / MAJOR 7 / MINOR 0**
+- Phase D completeness: **INCOMPLETE**
+- Phase D.1 authority-conformance correction: **AUTHORIZED**
 - Real database/SQLite/clock/platform implementation and Phase E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase D — Persistence / Restart Reference Implementation
+Sprint 5 Phase D.1 — Frozen-Authority-Faithful Persistence / Restart Correction
 
-- Status: **AUTHORIZED — FAKE STORE / FAKE CLOCK REFERENCE ONLY**
+- Status: **NARROW CORRECTIVE IMPLEMENTATION AUTHORIZED**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic in-memory fake transactional store, fake authoritative clock/query source, and persistence/restart reference verification
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
@@ -41,7 +43,7 @@ Sprint 5 Phase D — Persistence / Restart Reference Implementation
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
 - Independent D0 review: **PASS — Critical NONE / Major NONE / Minor NONE**
 - D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
-- Next gate after Phase D self-pass: **New Independent Sprint 5 Phase D Persistence / Restart Reference Audit**
+- Next gate after D.1 self-pass: **New Independent Sprint 5 Phase D.1 Persistence / Restart Re-Audit**
 - Phase E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
@@ -119,6 +121,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Implement only the authorized Sprint 5 Phase D persistence/restart reference against a fake transactional store and fake authoritative clock/query source, then submit it to a **NEW INDEPENDENT SPRINT 5 PHASE D PERSISTENCE / RESTART REFERENCE AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Correct only the authorized Sprint 5 Phase D.1 frozen-authority-conformance gaps in the fake transactional store/clock/query reference, then submit it to a **NEW INDEPENDENT SPRINT 5 PHASE D.1 PERSISTENCE / RESTART RE-AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
 Do not implement a real database/SQLite adapter, real platform clock, broker/runtime integration, Phase E/F/G, basket execution, or Signal-to-Execution wiring. Phase D authorization is reference-only and does not grant production or live-trading authority.

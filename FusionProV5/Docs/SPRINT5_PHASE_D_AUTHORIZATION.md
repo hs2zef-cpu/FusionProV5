@@ -32,3 +32,7 @@ Not authorized:
 - broker or runtime integration, Phase E/F/G, production, live trading, Architecture Lock, or merge to `main`.
 
 The approved technical authority is D0 commit `cbf973b4f024e5d9c83c6530a6a0e02eb2d9432d`. This authorization does not change ADR-021 or ADR-022 semantics.
+
+## Independent Phase D audit outcome
+
+The first Phase D technical candidate at `50c024580e3422d466da63b44485cffe92743da0` failed independent audit with **3 Critical / 7 Major / 0 Minor** findings and is incomplete. Phase D.1 is authorized only for the narrow frozen-authority-conformance correction. Phase E remains unauthorized.

@@ -1,5 +1,7 @@
 # Fusion Pro V5 Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
+> **Independent audit status: FAIL — Critical 3 / Major 7 / Minor 0.** The candidate described below is incomplete and does not authorize Phase E. Sprint 5 Phase D.1 is authorized to correct its frozen-authority-conformance and verification gaps.
+
 ## Scope and status
 
 Sprint 5 Phase D implements a deterministic reference model only. It uses an in-memory fake transactional store and explicitly supplied fake authoritative clock/query observations. It has no physical persistence, real SQLite adapter, real platform clock, broker access, runtime wiring, MT5 Terminal execution, or Strategy Tester execution.
@@ -50,4 +52,4 @@ There is no global transaction. A partial cross-domain combination remains dirty
 | MQL assertions executed | **NO** |
 | Forbidden executable API scan | **PASS — 0 matches** |
 
-The next gate after a clean technical commit and normal push is a **New Independent Sprint 5 Phase D Persistence / Restart Reference Audit**. Phase E remains unauthorized.
+The recorded 127/127 Python result is historical evidence for the failed parallel oracle and is not MQL conformance proof. The next gate after D.1 correction is a **New Independent Sprint 5 Phase D.1 Persistence / Restart Re-Audit**. Phase E remains unauthorized.
