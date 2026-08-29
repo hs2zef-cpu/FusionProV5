@@ -13,7 +13,12 @@
 - Phase D assertion compile errors / warnings:
 - Frozen Phase B compile errors / warnings:
 - Phase C dependency compile errors / warnings:
+- MQL direct positive assertion function count: **5**
+- MQL direct negative assertion function count: **65**
+- MQL direct negative assertions: **YES**
+- MQL assertions compiled: **YES / NO**
 - MQL assertions executed: **NO**
+- Python executable scenario count: **167 per run**
 - Forbidden executable API matches:
 - Frozen-source changes:
 - `git diff --check`:

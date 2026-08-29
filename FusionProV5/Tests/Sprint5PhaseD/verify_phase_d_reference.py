@@ -215,18 +215,22 @@ class Genesis:
     operational: bool = False
 
     def begin(self, request: dict[str, Any], runtime_host: bool = False) -> str:
-        required = {"namespace", "ownership_namespace", "genesis_id", "policy_id", "policy_version",
-                    "operator", "authority", "clock_id", "clock_authority", "clock_sequence", "created_at", "manifest"}
+        required = set(genesis_request())
         if self.state == "READY_FOR_RECONCILIATION":
             return "IDEMPOTENT" if request == self.request else "CONFLICT"
         if self.state == "PROVISIONING" or self.operational or runtime_host or set(request) != required or not all(request.values()):
             return "CONFLICT"
-        if request["policy_version"] != 1 or request["authority"] != "OPERATOR": return "CONFLICT"
+        if (request["contract_version"] != 5 or request["policy_version"] != 1 or
+                request["authority_component"] != "OPERATOR" or request["authority_source"] != "OPERATOR" or
+                request["clock_authority"] == "NONE"): return "CONFLICT"
         self.state, self.request, self.generation, self.revision = "PROVISIONING", copy.deepcopy(request), 1, 1
         return "CREATED"
 
     def initialize(self, domain: str, payload: Any) -> bool:
-        if self.state != "PROVISIONING" or domain not in ALL_DOMAINS or domain in self.domains: return False
+        if (self.state != "PROVISIONING" or domain not in ALL_DOMAINS or domain in self.domains or
+                payload.get("domain") != domain or
+                payload.get("canonical_digest") != digest({k: v for k, v in payload.items() if k != "canonical_digest"})):
+            return False
         self.domains[domain] = copy.deepcopy(payload); return True
 
     def finalize(self) -> bool:
@@ -235,22 +239,26 @@ class Genesis:
 
     def validate_domains(self) -> bool:
         if self.request is None: return False
-        return all(payload.get("genesis") == self.request["genesis_id"] and
+        return all(payload.get("domain") == domain and
+                   payload.get("canonical_digest") == digest({k: v for k, v in payload.items() if k != "canonical_digest"}) and
+                   payload.get("genesis") == self.request["genesis_id"] and
                    payload.get("generation") == 1 and payload.get("namespace") == self.request["namespace"] and
                    payload.get("manifest") == self.request["manifest"] and payload.get("revision") == 1
-                   for payload in self.domains.values())
+                   for domain, payload in self.domains.items())
 
 
 def genesis_request(**changes: Any) -> dict[str, Any]:
-    value = {"namespace": "NS", "ownership_namespace": "OWN-NS", "genesis_id": "GEN-1",
-             "policy_id": "GENESIS-V1", "policy_version": 1, "operator": "OP-1", "authority": "OPERATOR",
+    value = {"contract_version": 5, "namespace": "NS", "ownership_namespace": "OWN-NS", "ownership_fence": "FENCE-0",
+             "genesis_id": "GEN-1", "policy_id": "GENESIS-V1", "policy_version": 1,
+             "operator_id": "OP-1", "authority_role": "GENESIS-ADMIN", "authentication_reference": "AUTH-1",
+             "authenticated_at": 990, "authority_component": "OPERATOR", "authority_source": "OPERATOR",
              "clock_id": "BROKER-CLOCK", "clock_authority": "BROKER_SERVER", "clock_sequence": 1,
              "created_at": 1000, "manifest": "MANIFEST-1"}
     value.update(changes); return value
 
 
 def genesis_payload(domain: str) -> dict[str, Any]:
-    base = {"genesis": "GEN-1", "generation": 1, "namespace": "NS", "manifest": "MANIFEST-1", "revision": 1}
+    base = {"domain": domain, "genesis": "GEN-1", "generation": 1, "namespace": "NS", "manifest": "MANIFEST-1", "revision": 1}
     if domain == "genesis": base.update({"schema": SCHEMA_ID, "schema_version": 1})
     elif domain == "lease": base.update({"status": "UNCLAIMED", "owner": None, "fence": None})
     elif domain == "checkpoint": base.update({"clean_shutdown": False, "reconciliation": "REQUIRED",
@@ -259,6 +267,7 @@ def genesis_payload(domain: str) -> dict[str, Any]:
     elif domain == "ledger": base.update({"records": [], "hwm": 0, "compaction": 0})
     elif domain == "sequence": base.update({"index": {}, "hwm": 0})
     elif domain == "submission": base.update({"journal": [], "grant": None})
+    base["canonical_digest"] = digest(base)
     return base
 
 
@@ -389,6 +398,47 @@ class PublicationStore:
         self.checkpoint = copy.deepcopy(proposed); return True
 
 
+def release_authority_record(**changes: Any) -> dict[str, Any]:
+    value = {"contract_version": 5, "namespace": "NS", "account_mode": "HEDGING",
+             "latch_id": "LATCH-1", "latch_generation": 1, "release_id": "RELEASE-1",
+             "release_generation": 1, "operator_id": "OP-1", "authority_role": "RISK-APPROVER",
+             "authentication_reference": "AUTH-1", "authenticated_at": 970,
+             "approving_component": "RISK_GOVERNANCE", "approval_policy_id": "HK-RELEASE-V5",
+             "approval_sequence": 50, "broker_evidence": "BROKER-EVIDENCE-1",
+             "persistence_evidence": "PERSISTENCE-EVIDENCE-1", "exposure_evidence": "EXPOSURE-EVIDENCE-1",
+             "approved_at": 980, "released_at": 985, "expires_at": 1060,
+             "release_record_sequence": 51, "authority_record_id": "HK-AUTHORITY-1",
+             "issuing_component": "RISK_GOVERNANCE", "authority_source": "HARD_KILL_RELEASE_RECORD"}
+    value.update(changes)
+    value["authority_record_digest"] = digest(value)
+    return value
+
+
+def release_authority_reference(record: dict[str, Any]) -> dict[str, Any]:
+    return {"authority_record_id": record["authority_record_id"],
+            "authority_record_sequence": record["release_record_sequence"],
+            "authority_record_digest": record["authority_record_digest"],
+            "release_id": record["release_id"], "latch_generation": record["latch_generation"],
+            "release_generation": record["release_generation"]}
+
+
+def valid_release_authority(x: dict[str, Any]) -> bool:
+    record = x["release_record"]; reference = x["release_reference"]
+    body = {k: v for k, v in record.items() if k != "authority_record_digest"}
+    return (record.get("authority_record_digest") == digest(body) and record.get("contract_version") == 5 and
+            record.get("namespace") == x["namespace"] and record.get("account_mode") == x["account_mode"] and
+            record.get("latch_id") == x["release_latch_id"] and record.get("latch_generation") == x["release_latch_generation"] and
+            record.get("release_id") == x["release_id"] and record.get("release_generation") == x["release_generation"] and
+            all(record.get(key) for key in ("operator_id", "authority_role", "authentication_reference", "approval_policy_id",
+                                             "broker_evidence", "persistence_evidence", "exposure_evidence", "authority_record_id")) and
+            record.get("authenticated_at", 0) > 0 and record.get("approval_sequence", 0) > 0 and
+            0 < record.get("approved_at", 0) <= record.get("released_at", 0) and record.get("expires_at", 0) > x["now"] and
+            record.get("release_record_sequence", 0) > 0 and record.get("approving_component") == "RISK_GOVERNANCE" and
+            record.get("issuing_component") == "RISK_GOVERNANCE" and
+            record.get("authority_source") == "HARD_KILL_RELEASE_RECORD" and
+            reference == release_authority_reference(record))
+
+
 def restart(base: dict[str, Any], **changes: Any) -> str:
     x = copy.deepcopy(base); x.update(changes)
     if not x["schema"] or not x["genesis"] or not x["persistence"]: return "HALTED"
@@ -405,7 +455,7 @@ def restart(base: dict[str, Any], **changes: Any) -> str:
         return "RECONCILIATION_REQUIRED"
     if not x["broker_matches"] or not x["execution_matches"] or not x["clean"]: return "RECONCILIATION_REQUIRED"
     if x["hard_kill"]: return "CLOSE_ONLY"
-    if not x["release_authority"]: return "HALTED"
+    if not x["release_authority"] or not valid_release_authority(x): return "HALTED"
     return "SAFE_TO_RESUME"
 
 
@@ -428,6 +478,7 @@ class FakePlatformQuerySource:
 
 def restart_base() -> dict[str, Any]:
     source = FakePlatformQuerySource(); broker = source.broker(); execution = source.execution()
+    release_record = release_authority_record()
     return {"schema": True, "genesis": True, "persistence": True, "lease": True, "claimed": False,
             "broker_mask": broker["mask"], "execution_mask": execution["mask"],
             "broker_authority": broker["authority"], "execution_authority": execution["authority"], "requests_complete": True,
@@ -437,7 +488,9 @@ def restart_base() -> dict[str, Any]:
             "checkpoint_matches": True, "broker_sequence": 11, "execution_sequence": 21,
             "broker_hwm": 10, "execution_hwm": 20, "broker_time": broker["observed_at"], "execution_time": execution["observed_at"], "now": 1000,
             "broker_matches": True, "execution_matches": True, "clean": True,
-            "hard_kill": False, "release_authority": True}
+            "hard_kill": False, "release_authority": True, "release_record": release_record,
+            "release_reference": release_authority_reference(release_record), "release_latch_id": "LATCH-1",
+            "release_latch_generation": 1, "release_id": "RELEASE-1", "release_generation": 1}
 
 
 class Runner:
@@ -502,13 +555,36 @@ def run_suite() -> dict[str, Any]:
     r.check("GENESIS-UNCLAIMED", "GENESIS", g.domains["lease"]["status"] == "UNCLAIMED" and g.domains["lease"]["fence"] is None, g.domains["lease"])
     r.check("GENESIS-FINALIZE", "GENESIS", g.finalize() and g.state == "READY_FOR_RECONCILIATION", g.__dict__)
     r.check("GENESIS-DUPLICATE", "GENESIS", g.begin(req) == "IDEMPOTENT" and g.revision == 2, g.__dict__)
-    r.check("GENESIS-CONFLICT", "GENESIS", g.begin(genesis_request(manifest="OTHER")) == "CONFLICT", g.__dict__)
+    for test_id, field_name, changed_value in (
+            ("GENESIS-CONFLICT-VERSION", "contract_version", 6),
+            ("GENESIS-CONFLICT-NAMESPACE", "namespace", "OTHER-NS"),
+            ("GENESIS-CONFLICT-OWNERSHIP-NAMESPACE", "ownership_namespace", "OTHER-OWN"),
+            ("GENESIS-CONFLICT-FENCE", "ownership_fence", "OTHER-FENCE"),
+            ("GENESIS-CONFLICT-ID", "genesis_id", "GEN-OTHER"),
+            ("GENESIS-CONFLICT-POLICY", "policy_id", "GENESIS-OTHER"),
+            ("GENESIS-CONFLICT-POLICY-VERSION", "policy_version", 2),
+            ("GENESIS-CONFLICT-OPERATOR", "operator_id", "OP-OTHER"),
+            ("GENESIS-CONFLICT-ROLE", "authority_role", "OTHER-ROLE"),
+            ("GENESIS-CONFLICT-AUTH-REF", "authentication_reference", "AUTH-OTHER"),
+            ("GENESIS-CONFLICT-AUTH-TIME", "authenticated_at", 991),
+            ("GENESIS-CONFLICT-COMPONENT", "authority_component", "PERSISTENCE"),
+            ("GENESIS-CONFLICT-SOURCE", "authority_source", "PERSISTED_CHECKPOINT"),
+            ("GENESIS-CONFLICT-CLOCK-ID", "clock_id", "OTHER-CLOCK"),
+            ("GENESIS-CONFLICT-CLOCK-AUTHORITY", "clock_authority", "DURABLE_STORE"),
+            ("GENESIS-CONFLICT-CLOCK-SEQUENCE", "clock_sequence", 2),
+            ("GENESIS-CONFLICT-CREATED-AT", "created_at", 1001),
+            ("GENESIS-CONFLICT-MANIFEST", "manifest", "OTHER")):
+        r.check(test_id, "GENESIS", g.begin(genesis_request(**{field_name: changed_value})) == "CONFLICT",
+                {field_name: changed_value})
     partial = Genesis(); partial.begin(req); partial.initialize("genesis", genesis_payload("genesis"))
     r.check("GENESIS-PARTIAL", "GENESIS", not partial.finalize() and partial.state == "PROVISIONING", partial.__dict__)
     corrupt_genesis = Genesis(); corrupt_genesis.begin(req)
     for domain in ALL_DOMAINS: corrupt_genesis.initialize(domain, genesis_payload(domain))
     corrupt_genesis.domains["checkpoint"]["manifest"] = "CORRUPT"
-    r.check("GENESIS-CORRUPT-MANIFEST", "CORRUPTION", not corrupt_genesis.finalize() and corrupt_genesis.state == "PROVISIONING", corrupt_genesis.__dict__)
+    corrupt_genesis.domains["checkpoint"]["canonical_digest"] = digest(
+        {k: v for k, v in corrupt_genesis.domains["checkpoint"].items() if k != "canonical_digest"})
+    r.check("GENESIS-DIGEST-VALID-WRONG-DOMAIN", "CORRUPTION",
+            not corrupt_genesis.finalize() and corrupt_genesis.state == "PROVISIONING", corrupt_genesis.__dict__)
     runtime = Genesis(); r.check("GENESIS-NO-HOST-SELF-PROVISION", "GENESIS", runtime.begin(req, runtime_host=True) == "CONFLICT" and runtime.state == "ABSENT", runtime.__dict__)
     operational = Genesis(); operational.operational = True
     r.check("GENESIS-NO-REPROVISION", "GENESIS", operational.begin(req) == "CONFLICT", operational.__dict__)
@@ -675,6 +751,29 @@ def run_suite() -> dict[str, Any]:
             ("RESTART-GENESIS-NOT-READY", {"genesis": False}, "HALTED")):
         r.check(test_id, "RESTART", restart(base, **changes) == expected, {"changes": changes, "expected": expected})
     r.check("RESTART-RELEASE-WITH-AUTHORITY", "RESTART", restart(base, hard_kill=False, release_authority=True) == "SAFE_TO_RESUME", base)
+    corrupt_release = copy.deepcopy(base["release_record"]); corrupt_release["authority_record_digest"] = "CORRUPT"
+    r.check("RESTART-RELEASE-CORRUPT-DIGEST", "RESTART",
+            restart(base, release_record=corrupt_release) == "HALTED", corrupt_release)
+    for test_id, field_name, changed_value in (
+            ("RESTART-RELEASE-FOREIGN-NAMESPACE", "namespace", "FOREIGN"),
+            ("RESTART-RELEASE-WRONG-ACCOUNT-MODE", "account_mode", "NETTING"),
+            ("RESTART-RELEASE-WRONG-LATCH", "latch_id", "LATCH-OTHER"),
+            ("RESTART-RELEASE-WRONG-LATCH-GENERATION", "latch_generation", 2),
+            ("RESTART-RELEASE-WRONG-RELEASE-GENERATION", "release_generation", 2),
+            ("RESTART-RELEASE-WRONG-OPERATOR", "operator_id", "OP-FORGED"),
+            ("RESTART-RELEASE-WRONG-EVIDENCE", "broker_evidence", "BROKER-FORGED"),
+            ("RESTART-RELEASE-EXPIRED", "expires_at", 999),
+            ("RESTART-RELEASE-WRONG-SEQUENCE", "release_record_sequence", 52),
+            ("RESTART-RELEASE-WRONG-POLICY", "approval_policy_id", "POLICY-FORGED"),
+            ("RESTART-RELEASE-WRONG-VERSION", "contract_version", 4),
+            ("RESTART-RELEASE-WRONG-ISSUER", "issuing_component", "PERSISTENCE")):
+        changed = copy.deepcopy(base["release_record"]); changed[field_name] = changed_value
+        changed["authority_record_digest"] = digest({k: v for k, v in changed.items() if k != "authority_record_digest"})
+        r.check(test_id, "RESTART", restart(base, release_record=changed) == "HALTED",
+                {field_name: changed_value, "digest_valid": True})
+    wrong_reference = copy.deepcopy(base["release_reference"]); wrong_reference["authority_record_id"] = "OTHER"
+    r.check("RESTART-RELEASE-WRONG-REFERENCE", "RESTART",
+            restart(base, release_reference=wrong_reference) == "HALTED", wrong_reference)
     r.check("RESTART-CLAIM-NO-RETRY", "RESTART", restart(base, claimed=True) == "RETRY_FORBIDDEN", "no retry/invocation")
     r.check("RESTART-PARTIAL-REQUEST-RECONSTRUCTION", "RESTART", restart(base, requests_complete=False) == "RECONCILIATION_REQUIRED", "full ordered array required")
     r.check("RESTART-GENESIS-HARD-KILL", "RESTART", restart(base, clean=False, hard_kill=True) == "RECONCILIATION_REQUIRED", "genesis is not ordinary checkpoint")

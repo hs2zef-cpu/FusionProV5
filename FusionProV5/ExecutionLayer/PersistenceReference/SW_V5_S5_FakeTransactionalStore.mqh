@@ -152,6 +152,17 @@ public:
       m_rows[index].payload=payload;
       return true;
    }
+
+   // TEST-VERIFICATION FAULT INJECTION ONLY. This cannot grant authority; it
+   // installs an already canonical row so semantic validators can prove that a
+   // matching digest is not sufficient for readiness.
+   bool InjectDigestValidRowForVerification(const SWV5S5_ReferenceDomainRow &row)
+   {
+      int index=FindRow(row.domain);
+      if(index<0 || !SWV5S5_ReferenceRowIntegrity(row)) return false;
+      m_rows[index]=row;
+      return true;
+   }
 };
 
 #endif

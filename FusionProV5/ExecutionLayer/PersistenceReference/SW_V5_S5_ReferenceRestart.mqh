@@ -15,17 +15,131 @@ struct SWV5S5_ReferenceRestartResult
    string diagnostic;
 };
 
+bool SWV5S5_ReferenceReleaseAuthorityPreimage(const SWV5_HardKillReleaseAuthorityRecord &record,
+                                               string &preimage)
+{
+   string f; preimage="";
+#define SWV5S5_HKA_ADD(x) if(!(x)) return false; else preimage+=f
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalContractVersion("contract_version",record.contract_version,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalNamespace("persistence_namespace",record.persistence_namespace,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalAccountNamespace("account_namespace",record.account_namespace,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("latch_id",record.latch_id,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("latch_generation",record.latch_generation,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("release_id",record.release_id,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("release_generation",record.release_generation,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalOperatorIdentity("operator_identity",record.operator_identity,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("approving_component",record.approving_component,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("approval_policy_id",record.approval_policy_id,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("approval_sequence",record.approval_sequence,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointTypedEvidence("broker_evidence_reference",record.broker_evidence_reference,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointTypedEvidence("persistence_evidence_reference",record.persistence_evidence_reference,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointExposureEvidence("exposure_evidence_reference",record.exposure_evidence_reference,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("approved_at",record.approved_at,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("released_at",record.released_at,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("expires_at",record.expires_at,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("release_record_sequence",record.release_record_sequence,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("authority_record_id",record.authority_record_id,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("issuing_component",record.issuing_component,f));
+   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("authority_source",record.authority_source,f));
+#undef SWV5S5_HKA_ADD
+   return true;
+}
+
+bool SWV5S5_ReferenceReleaseAuthorityDigest(const SWV5_HardKillReleaseAuthorityRecord &record,
+                                             string &digest)
+{
+   string preimage,format;
+   return SWV5S5_ReferenceReleaseAuthorityPreimage(record,preimage) &&
+      SWV5S5_CanonicalString("format","SWV5-HARD-KILL-AUTHORITY-V5-LP1",format) &&
+      SWV5S5_SHA256(format+preimage,digest);
+}
+
+bool SWV5S5_ReferenceAccountNamespaceEqual(const SWV5_AccountRiskNamespace &a,
+                                            const SWV5_AccountRiskNamespace &b)
+{
+   string ca,cb;
+   return SWV5S5_CanonicalAccountNamespace("account_namespace",a,ca) &&
+      SWV5S5_CanonicalAccountNamespace("account_namespace",b,cb) && ca==cb;
+}
+
+bool SWV5S5_ReferenceTypedEvidenceEqual(const SWV5_TypedReconciliationEvidence &a,
+                                         const SWV5_TypedReconciliationEvidence &b)
+{
+   string ca,cb;
+   return SWV5S5_CanonicalCheckpointTypedEvidence("evidence",a,ca) &&
+      SWV5S5_CanonicalCheckpointTypedEvidence("evidence",b,cb) && ca==cb;
+}
+
+bool SWV5S5_ReferenceExposureEvidenceEqual(const SWV5_ExposureReductionEvidence &a,
+                                            const SWV5_ExposureReductionEvidence &b)
+{
+   string ca,cb;
+   return SWV5S5_CanonicalCheckpointExposureEvidence("evidence",a,ca) &&
+      SWV5S5_CanonicalCheckpointExposureEvidence("evidence",b,cb) && ca==cb;
+}
+
 bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRecord &record,
                                            const SWV5_PersistedCheckpoint &checkpoint,
                                            const SWV5_ContractValidationContext &context)
 {
-   return record.authority_record_id!="" && record.authority_record_digest!="" && record.latch_id==checkpoint.hard_kill_state.latch_id &&
-      record.latch_generation==checkpoint.hard_kill_state.latch_generation && record.release_generation>=checkpoint.hard_kill_state.release_generation &&
-      record.persistence_namespace.basket_id.value==checkpoint.header.persistence_namespace.basket_id.value &&
-      record.account_namespace.account_mode==checkpoint.hard_kill_state.account_namespace.account_mode &&
-      record.operator_identity.operator_id!="" && record.operator_identity.authentication_reference!="" &&
-      record.operator_identity.authenticated_at>0 && record.approved_at>0 && record.released_at>=record.approved_at &&
-      record.expires_at>context.clock_time;
+   const SWV5_HardKillState state=checkpoint.hard_kill_state;
+   const SWV5_HardKillReleaseEvidence evidence=state.release_evidence;
+   const SWV5_HardKillReleaseAuthorityReference reference=state.release_authority_reference;
+   string expected_digest,operator_record,operator_evidence;
+   if(!SWV5S5_IsV5Version(record.contract_version) ||
+      !SWV5S5_ReferenceReleaseAuthorityDigest(record,expected_digest) ||
+      record.authority_record_digest!=expected_digest || !SWV5S5_IsDigest64Lower(record.authority_record_digest) ||
+      !SWV5S5_EqualNamespace(record.persistence_namespace,checkpoint.header.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(record.persistence_namespace,state.persistence_namespace) ||
+      !SWV5S5_ReferenceAccountNamespaceEqual(record.account_namespace,state.account_namespace) ||
+      record.latch_id=="" || record.latch_id!=state.latch_id ||
+      record.latch_generation==0 || record.latch_generation!=state.latch_generation ||
+      record.release_id=="" || record.release_id!=evidence.release_id ||
+      record.release_generation==0 || record.release_generation!=state.release_generation ||
+      record.release_generation!=evidence.release_generation || record.approval_policy_id=="" ||
+      record.approval_policy_id!=evidence.approval_policy_id || record.approval_sequence==0 ||
+      record.approval_sequence!=evidence.approval_sequence || record.release_record_sequence==0 ||
+      record.release_record_sequence!=evidence.release_record_sequence ||
+      record.issuing_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
+      record.authority_source!=SWV5_AUTHORITY_HARD_KILL_RELEASE_RECORD ||
+      record.approving_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
+      record.operator_identity.operator_id=="" || record.operator_identity.authority_role=="" ||
+      record.operator_identity.authentication_reference=="" || record.operator_identity.authenticated_at<=0 ||
+      !SWV5S5_CanonicalOperatorIdentity("operator",record.operator_identity,operator_record) ||
+      !SWV5S5_CanonicalOperatorIdentity("operator",evidence.operator_identity,operator_evidence) ||
+      operator_record!=operator_evidence || record.approving_component!=evidence.approving_component ||
+      !SWV5S5_ReferenceTypedEvidenceEqual(record.broker_evidence_reference,evidence.broker_evidence) ||
+      !SWV5S5_ReferenceTypedEvidenceEqual(record.persistence_evidence_reference,evidence.persistence_evidence) ||
+      !SWV5S5_ReferenceExposureEvidenceEqual(record.exposure_evidence_reference,evidence.exposure_evidence) ||
+      record.broker_evidence_reference.evidence_id=="" || record.broker_evidence_reference.state_digest=="" ||
+      record.broker_evidence_reference.evidence_sequence==0 || record.broker_evidence_reference.observed_at<=0 ||
+      !SWV5S5_EqualNamespace(record.broker_evidence_reference.persistence_namespace,record.persistence_namespace) ||
+      record.broker_evidence_reference.issuing_component!=SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER ||
+      record.broker_evidence_reference.authority_source!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
+      record.persistence_evidence_reference.evidence_id=="" || record.persistence_evidence_reference.state_digest=="" ||
+      record.persistence_evidence_reference.evidence_sequence==0 || record.persistence_evidence_reference.observed_at<=0 ||
+      !SWV5S5_EqualNamespace(record.persistence_evidence_reference.persistence_namespace,record.persistence_namespace) ||
+      record.persistence_evidence_reference.issuing_component!=SWV5_COMPONENT_AUTHORITY_PERSISTENCE ||
+      record.persistence_evidence_reference.authority_source!=SWV5_AUTHORITY_PERSISTED_CHECKPOINT ||
+      record.exposure_evidence_reference.evidence_id=="" ||
+      record.exposure_evidence_reference.evidence_sequence==0 || record.exposure_evidence_reference.observed_at<=0 ||
+      !SWV5_IsFiniteNumber(record.exposure_evidence_reference.observed_exposure_volume) ||
+      !SWV5_IsFiniteNumber(record.exposure_evidence_reference.prior_exposure_volume) ||
+      record.exposure_evidence_reference.issuing_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
+      record.exposure_evidence_reference.authority_source!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
+      !record.exposure_evidence_reference.zero_or_reducing ||
+      record.approved_at<=0 || record.released_at<record.approved_at || record.expires_at<=context.clock_time ||
+      record.operator_identity.authenticated_at>record.approved_at ||
+      record.broker_evidence_reference.observed_at>record.approved_at ||
+      record.persistence_evidence_reference.observed_at>record.approved_at ||
+      record.exposure_evidence_reference.observed_at>record.approved_at ||
+      record.approved_at!=evidence.approved_at || record.released_at!=evidence.released_at ||
+      record.expires_at!=evidence.expires_at || record.authority_record_id=="" ||
+      reference.authority_record_id!=record.authority_record_id ||
+      reference.authority_record_sequence!=record.release_record_sequence ||
+      reference.authority_record_digest!=record.authority_record_digest || reference.release_id!=record.release_id ||
+      reference.latch_generation!=record.latch_generation || reference.release_generation!=record.release_generation) return false;
+   return true;
 }
 
 bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &context,
