@@ -19,7 +19,17 @@ bool SWV5S5_ReferenceCanonicalSequence(const SWV5S5_RequestSequenceAuthority &au
       !SWV5S5_CanonicalUInt("high_watermark",authority.request_sequence_high_watermark,hwm) ||
       !SWV5S5_CanonicalUInt("reservation_count",authority.reservation_count,count) ||
       !SWV5S5_CanonicalString("authority_digest",ad,f)) return false;
-   canonical=scope+fence+revision+hwm+count+f+index;
+   canonical=scope+fence+revision+hwm+count+f;
+   if(!SWV5S5_CanonicalString("reservation_index_digest",index,f)) return false; canonical+=f;
+   for(int i=0;i<ArraySize(entries);i++)
+   {
+      string entry="";
+      if(!SWV5S5_CanonicalString("logical_correlation_id",entries[i].logical_correlation_id,f)) return false; entry+=f;
+      if(!SWV5S5_CanonicalUInt("reserved_sequence",entries[i].reserved_sequence,f)) return false; entry+=f;
+      if(!SWV5S5_CanonicalUInt("reservation_revision",entries[i].reservation_revision,f)) return false; entry+=f;
+      if(!SWV5S5_CanonicalString("binding_digest",entries[i].binding_digest,f)) return false; entry+=f;
+      if(!SWV5S5_CanonicalIndexed("reservation",(ulong)i,entry,f)) return false; canonical+=f;
+   }
    return true;
 }
 
@@ -64,6 +74,12 @@ public:
       ZeroMemory(result); SWV5S5_InitContractVersion(result.contract_version);
       result.logical_correlation_id=proposal.logical_correlation_id;
       if(!m_initialized) return false;
+      SWV5S5_ReferenceDomainRow durable,expected_row;
+      if(!m_store.Load(SWV5S5_REF_DOMAIN_SEQUENCE,durable) ||
+         !BuildRow(m_authority,m_entries,durable.store_revision,expected_row) ||
+         durable.payload!=expected_row.payload || durable.payload_digest!=expected_row.payload_digest ||
+         durable.persistence_namespace_digest!=expected_row.persistence_namespace_digest ||
+         durable.authority_fence_digest!=expected_row.authority_fence_digest) return false;
       SWV5S5_RequestSequenceResult prepared;
       if(!SWV5S5_PrepareSequenceReservation(m_authority,m_entries,proposal,prepared)) { result=prepared; return false; }
       int existing=SWV5S5_FindSequenceReservation(m_entries,proposal.logical_correlation_id);
@@ -87,16 +103,18 @@ public:
       proposed.reservation_count=(uint)(n+1);
       if(!SWV5S5_DeriveSequenceIndexDigest(m_entries,proposed.reservation_index_digest) ||
          !SWV5S5_DeriveSequenceAuthorityDigest(proposed,m_entries,proposed.authority_digest)) { ArrayResize(m_entries,n); return false; }
-      SWV5S5_ReferenceDomainRow current,row; string canonical,scope,fence;
+      SWV5S5_ReferenceDomainRow current,row,readback; string canonical,scope,fence;
       if(!m_store.Load(SWV5S5_REF_DOMAIN_SEQUENCE,current) ||
-         !SWV5S5_ReferenceCanonicalSequence(m_authority,old_entries,canonical,scope,fence)) { ArrayResize(m_entries,n); return false; }
-      // Rebuild current row from the pre-mutation state.
-      if(!BuildRow(m_authority,old_entries,current.store_revision,current)) { ArrayResize(m_entries,n); return false; }
+         !SWV5S5_ReferenceCanonicalSequence(m_authority,old_entries,canonical,scope,fence) ||
+         current.payload!=expected_row.payload || current.payload_digest!=expected_row.payload_digest)
+      { ArrayResize(m_entries,n); return false; }
       if(!BuildRow(proposed,m_entries,current.store_revision+1,row)) { ArrayResize(m_entries,n); return false; }
       const bool committed=m_store.CompareAndSet(SWV5S5_REF_DOMAIN_SEQUENCE,scope,current.store_revision,
          current.payload_digest,current.authority_fence_digest,row,SWV5S5_REF_FAULT_NONE,transaction);
       if(!committed || !transaction.this_transaction_won) { ArrayResize(m_entries,ArraySize(old_entries)); for(int ri=0;ri<ArraySize(old_entries);ri++) m_entries[ri]=old_entries[ri]; return false; }
       m_authority=proposed;
+      if(!m_store.Load(SWV5S5_REF_DOMAIN_SEQUENCE,readback) || readback.payload!=row.payload ||
+         readback.payload_digest!=row.payload_digest) return false;
       result=prepared; result.disposition=SWV5S5_SEQUENCE_RESERVED_NEW;
       result.resulting_authority_digest=proposed.authority_digest; return true;
    }
@@ -104,6 +122,16 @@ public:
    ulong Revision(void) const { return m_authority.allocator_revision; }
    ulong HighWatermark(void) const { return m_authority.request_sequence_high_watermark; }
    int Count(void) const { return ArraySize(m_entries); }
+   bool Load(SWV5S5_RequestSequenceAuthority &authority,SWV5S5_RequestSequenceIndexEntry &entries[]) const
+   {
+      SWV5S5_ReferenceDomainRow row,expected;
+      if(!m_initialized || !m_store.Load(SWV5S5_REF_DOMAIN_SEQUENCE,row) ||
+         !BuildRow(m_authority,m_entries,row.store_revision,expected) || row.payload!=expected.payload ||
+         row.payload_digest!=expected.payload_digest) return false;
+      authority=m_authority; ArrayResize(entries,ArraySize(m_entries));
+      for(int i=0;i<ArraySize(m_entries);i++) entries[i]=m_entries[i];
+      return true;
+   }
 };
 
 #endif

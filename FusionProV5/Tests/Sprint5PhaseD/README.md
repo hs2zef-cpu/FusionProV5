@@ -6,7 +6,7 @@ This package verifies the authorized Phase D persistence/restart design using an
 
 It does not execute MQL assertions and does not prove MQL runtime behavior, real SQLite/database behavior, filesystem durability, cross-terminal locking, real platform-clock provenance, broker behavior, or production readiness. MT5 Terminal and Strategy Tester are not used.
 
-The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. Genesis accepts only typed bootstrap DTOs, binds every domain to the immutable Genesis ID/manifest/namespace/fence, and validates complete readback before readiness. Every durable transition carries a complete typed DTO envelope, namespace/fence binding, and recomputed canonical payload digest. Request-set publication must be authoritatively reloaded before checkpoint publication. An uncertain committed Claim never recreates event-local `CLAIM_GRANTED_NOW` authority. Independent Hard Kill release authority is accepted only after complete canonical digest recomputation and semantic/reference binding.
+The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. Genesis accepts only typed bootstrap DTOs, binds every domain to the immutable Genesis ID/manifest/namespace/fence, and validates complete readback before readiness. Each durable transition validates the complete typed authority and derives its domain-canonical row before CAS. Complete Permit/Risk/normalization authority is bound at Claim; Takeover binds a complete Persistence Namespace and typed reconciliation; Request Set and row digests remain distinct; Request Set is authoritatively reloaded before checkpoint publication; Sequence and Ledger reconstruct complete durable state; Restart validates complete Broker/Execution summaries and every persisted request. An uncertain committed Claim never recreates event-local `CLAIM_GRANTED_NOW` authority.
 
 Run the offline verifier twice-internally:
 
@@ -29,9 +29,11 @@ MQL assertions executed: **NO**.
 
 Evidence classification for this hardening revision:
 
-- MQL direct positive assertion functions: **5**
-- MQL direct negative assertion functions: **65**
+- MQL direct positive assertion functions: **10**
+- MQL direct negative assertion functions: **86**
+- Re-sealed semantic negative assertion functions: **28**
+- Non-proving assertion functions used as closure evidence: **0**
 - MQL direct negative assertions: **YES**
 - MQL assertions compiled: **YES**
 - MQL assertions executed: **NO**
-- Python executable scenarios: **167** per run, repeated twice internally
+- Python executable scenarios: **209** unique IDs per run, repeated twice internally

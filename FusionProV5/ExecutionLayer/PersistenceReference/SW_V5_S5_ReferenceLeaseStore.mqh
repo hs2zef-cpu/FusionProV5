@@ -58,6 +58,8 @@ class SWV5S5_ReferenceLeaseStore
 private:
    SWV5S5_FakeTransactionalStore m_store;
    SWV5_InstanceLease m_lease;
+   SWV5_PersistenceNamespace m_persistence_namespace;
+   bool m_namespace_configured;
    bool m_initialized;
 
    bool BuildRow(const SWV5_InstanceLease &lease,const ulong revision,SWV5S5_ReferenceDomainRow &row) const
@@ -73,36 +75,61 @@ private:
    bool Commit(const SWV5_InstanceLease &proposed,const SWV5S5_ReferenceFaultPoint fault,
                SWV5S5_ReferenceTransactionResult &transaction)
    {
-      SWV5S5_ReferenceDomainRow current,row;
+      SWV5S5_ReferenceDomainRow current,row,readback;
       string canonical,scope,fence;
       if(!m_store.Load(SWV5S5_REF_DOMAIN_LEASE,current) ||
          !SWV5S5_ReferenceCanonicalLease(m_lease,canonical,scope,fence) || current.payload!=canonical ||
+         current.persistence_namespace_digest!=scope || current.authority_fence_digest!=fence ||
          !BuildRow(proposed,current.store_revision+1,row)) return false;
       const bool committed=m_store.CompareAndSet(SWV5S5_REF_DOMAIN_LEASE,scope,current.store_revision,
          current.payload_digest,current.authority_fence_digest,row,fault,transaction);
       if(transaction.durable_state_matches_proposal) m_lease=proposed;
-      return committed && transaction.this_transaction_won;
+      return committed && transaction.this_transaction_won &&
+         m_store.Load(SWV5S5_REF_DOMAIN_LEASE,readback) && readback.payload==row.payload &&
+         readback.payload_digest==row.payload_digest;
    }
 
    bool TypedReconciliationValid(const SWV5_TypedReconciliationEvidence &evidence,
                                   const SWV5_ComponentAuthority component,
                                   const SWV5_AuthoritySource source,
-                                  const SWV5S5_ReferenceClockObservation &clock) const
+                                  const SWV5S5_ReferenceClockObservation &clock,
+                                  const ulong enclosing_sequence,
+                                  const datetime enclosing_observed_at) const
    {
-      return SWV5S5_ReferenceOwnershipKeyEqual(evidence.persistence_namespace.ownership_namespace,
-         m_lease.fence.ownership_namespace) && evidence.evidence_id!="" && evidence.state_digest!="" &&
+      return m_namespace_configured && SWV5S5_IsV5Version(evidence.contract_version) &&
+         SWV5S5_EqualNamespace(evidence.persistence_namespace,m_persistence_namespace) &&
+         SWV5S5_ReferenceOwnershipKeyEqual(evidence.persistence_namespace.ownership_namespace,
+            m_lease.fence.ownership_namespace) && evidence.persistence_namespace.basket_id.value!="" &&
+         evidence.evidence_id!="" && SWV5S5_IsDigest64Lower(evidence.state_digest) &&
          evidence.issuing_component==component && evidence.authority_source==source &&
-         evidence.evidence_sequence>0 && evidence.observed_at>0 && evidence.observed_at<=clock.observed_at;
+         evidence.evidence_sequence>0 && evidence.evidence_sequence<=enclosing_sequence &&
+         evidence.observed_at>=m_lease.expires_at && evidence.observed_at<=enclosing_observed_at &&
+         evidence.observed_at<=clock.observed_at;
    }
 
 public:
-   SWV5S5_ReferenceLeaseStore(void):m_initialized(false) { ZeroMemory(m_lease); }
+   SWV5S5_ReferenceLeaseStore(void):m_namespace_configured(false),m_initialized(false)
+   { ZeroMemory(m_lease); ZeroMemory(m_persistence_namespace); }
 
    bool Initialize(const SWV5_InstanceLease &unclaimed)
    {
       if(m_initialized || unclaimed.status!=SWV5_LOCK_UNCLAIMED) return false;
       SWV5S5_ReferenceDomainRow row; if(!BuildRow(unclaimed,1,row) || !m_store.Seed(row)) return false;
       m_lease=unclaimed; m_initialized=true; return true;
+   }
+
+   // Takeover requires an independently configured complete Persistence
+   // Namespace. The Lease DTO alone contains only the ownership namespace and
+   // cannot authorize a Basket-scoped reconciliation.
+   bool Initialize(const SWV5_InstanceLease &unclaimed,const SWV5_PersistenceNamespace &persistence_namespace)
+   {
+      if(!SWV5S5_IsV5Version(persistence_namespace.contract_version) ||
+         persistence_namespace.basket_id.value=="" ||
+         !SWV5S5_ReferenceOwnershipKeyEqual(persistence_namespace.ownership_namespace,
+                                             unclaimed.fence.ownership_namespace)) return false;
+      if(!Initialize(unclaimed)) return false;
+      m_persistence_namespace=persistence_namespace; m_namespace_configured=true;
+      return true;
    }
 
    bool Acquire(SWV5S5_FakeAuthoritativeClock &clock,
@@ -177,11 +204,17 @@ public:
          e.proposed_takeover_generation!=m_lease.fence.takeover_generation+1 ||
          e.authority==SWV5_COMPONENT_AUTHORITY_NONE || e.authority==SWV5_COMPONENT_AUTHORITY_EXECUTION ||
          e.authority==SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE || e.independent_authority_source!=SWV5_AUTHORITY_OPERATOR ||
-         e.evidence_sequence==0 || e.evidenced_at<=0 || e.evidenced_at>validated_clock.observed_at ||
+         e.evidence_sequence==0 || e.evidenced_at<m_lease.expires_at || e.evidenced_at>validated_clock.observed_at ||
+         !m_namespace_configured ||
+         !SWV5S5_EqualNamespace(e.broker_reconciliation.persistence_namespace,m_persistence_namespace) ||
+         !SWV5S5_EqualNamespace(e.persistence_reconciliation.persistence_namespace,m_persistence_namespace) ||
+         e.broker_reconciliation.evidence_id==e.persistence_reconciliation.evidence_id ||
          !TypedReconciliationValid(e.broker_reconciliation,SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,
-                                    SWV5_AUTHORITY_LIVE_BROKER_STATE,validated_clock) ||
+                                     SWV5_AUTHORITY_LIVE_BROKER_STATE,validated_clock,
+                                     e.evidence_sequence,e.evidenced_at) ||
          !TypedReconciliationValid(e.persistence_reconciliation,SWV5_COMPONENT_AUTHORITY_PERSISTENCE,
-                                    SWV5_AUTHORITY_PERSISTED_CHECKPOINT,validated_clock)) return false;
+                                     SWV5_AUTHORITY_PERSISTED_CHECKPOINT,validated_clock,
+                                     e.evidence_sequence,e.evidenced_at)) return false;
       result=m_lease; result.status=SWV5_LOCK_ACQUIRED; result.fence.owner=claim.claimant;
       result.fence.lease_version=m_lease.fence.lease_version+1;
       result.fence.takeover_generation=e.proposed_takeover_generation;

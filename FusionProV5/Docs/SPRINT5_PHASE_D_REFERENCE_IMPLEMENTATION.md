@@ -1,6 +1,6 @@
 # Fusion Pro V5 Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
-> **Independent audit status: FAIL — Critical 3 / Major 7 / Minor 0 (superseded candidate).** Sprint 5 Phase D.1 is the narrow corrective implementation and remains subject to a fresh independent audit; Phase E is not authorized.
+> **Phase D.1 independent re-audit status: FAIL — Critical 3 / Major 5 / Minor 0.** Sprint 5 Phase D.2 is the authorized narrow corrective implementation and remains subject to a new independent final re-audit; Phase E is not authorized.
 
 ## Scope and status
 
@@ -24,25 +24,25 @@ There is no global transaction. A partial cross-domain combination remains dirty
 
 ## Core semantics
 
-- CAS compares the complete expected namespace, store revision, payload digest, and authority fence before staging one next revision.
+- Each authority domain validates a complete typed proposed state, derives its own canonical row, and only then calls central CAS; CAS also compares the complete expected namespace, store revision, payload digest, and authority fence.
 - The result distinguishes the transaction that won now from a later read observing the same proposed state.
 - A durable commit whose caller did not observe success is `COMMIT_OUTCOME_UNCERTAIN`; readback may discover it, but event-local authority is never recreated.
 - `CLAIM_GRANTED_NOW` exists only on the exact observed Claim transaction winner. Persisted `INVOCATION_CLAIMED_UNRESOLVED`, restart, replay, and takeover never grant.
 - Same-owner heartbeat advances store/liveness evidence while preserving owner, ownership namespace, lease version, takeover generation, and fencing digest.
-- Takeover requires expiry, Broker reconciliation, Persistence reconciliation, fresh clock evidence, independent authority, and one exact CAS winner.
+- Takeover requires the complete Persistence Namespace, typed Broker/Persistence reconciliation, expiry, fresh clock evidence, independent authority, and one exact CAS winner.
 - Genesis is `ABSENT -> PROVISIONING -> READY_FOR_RECONCILIATION`, initializes every domain independently, starts with active Hard Kill generation 1, and uses a bootstrap checkpoint with `clean_shutdown=false`.
 - A partial or corrupt genesis remains disabled and is not auto-repaired.
-- The full ordered request set publishes first, must be authoritatively reloaded, and only then may a matching checkpoint publish.
-- Restart requires the exact Broker positions/orders/deals/transactions union plus the separate Execution pending-request query, fresh owner-specific sequences, matching namespace/fence/account mode, and independent Hard Kill release authority.
+- The full ordered request set publishes with distinct frozen set and durable-row digests, must be authoritatively reloaded, and only then may a matching checkpoint publish.
+- Restart binds complete Broker and Execution summary digests, reconciles checkpoint/vector/request relations, scans every persisted request, and requires the exact Broker positions/orders/deals/transactions union plus the separate Execution pending-request query, fresh owner-specific sequences, matching namespace/fence/account mode, and independent Hard Kill release authority.
 
 ## Verification result
 
 | Gate | Result |
 |---|---|
-| Phase D.1 executable reference | **136 / 136 PASS**, 0 failed, 0 skipped |
+| Phase D.2 executable reference | **209 / 209 PASS**, 0 failed, 0 skipped, 209 unique IDs |
 | Repeated deterministic runs | **2 — identical** |
-| Final durable-state digest | `a1da58e9b0b78c0071a6f83cc9f3be28dae3b5e72fc3cc9576d48c0febfe1de9` |
-| Reference result digest | `57f6ec076e92e493398591ecc0b95803b54cd4a80192c094583af71692f41412` |
+| Final durable-state digest | `75ca56a79a70d8bfd5025acf30eb535a1999bba19c1ccd11c61f2e674df3ef76` |
+| Reference result digest | `031318a4721b377ae323ccaae4dc0c2c273fceb8470ad98b7667c9b8d083d4a4` |
 | Frozen Phase B verifier | **139 / 139 PASS**, MQL production executed false |
 | Phase C reference regression | **22 scenarios PASS**, 2 identical runs |
 | Phase D umbrella compile | **0 errors / 0 warnings**, X64 Regular |
@@ -52,4 +52,4 @@ There is no global transaction. A partial cross-domain combination remains dirty
 | MQL assertions executed | **NO** |
 | Forbidden executable API scan | **PASS — 0 matches** |
 
-The Python result is an independent executable adversarial oracle, not MQL conformance proof. MQL assertions are compile-only and were not executed. The next gate is a **New Independent Sprint 5 Phase D.1 Persistence / Restart Re-Audit**. Phase E remains unauthorized.
+The Python result is an independent executable adversarial oracle aligned with the corrected boundaries, not MQL conformance proof. The MQL source provides 10 positive and 86 negative compile-only probes, including 28 re-sealed semantic probes; those assertions were not executed. The next gate is a **New Independent Sprint 5 Phase D.2 Final Persistence / Restart Re-Audit**. Phase E remains unauthorized.

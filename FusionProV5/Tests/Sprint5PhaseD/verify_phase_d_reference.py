@@ -153,9 +153,50 @@ def fence(namespace: str, owner: str, lease_version: int, takeover: int) -> str:
     return digest({"namespace": namespace, "owner": owner, "lease_version": lease_version, "takeover": takeover})
 
 
+def persistence_namespace(basket: str = "BASKET-XAU-M15", ownership: str = "NS",
+                          execution: str = "EXEC-NS", account: str = "ACCOUNT-DEMO") -> dict[str, str]:
+    return {"basket": basket, "ownership": ownership, "execution": execution, "account": account}
+
+
+def reconciliation_evidence(namespace: dict[str, str], owner: str, fence_digest: str,
+                            store_revision: int, takeover_generation: int,
+                            sequence: int, observed_at: int, **changes: Any) -> dict[str, Any]:
+    broker = {"contract_version": 5, "namespace": copy.deepcopy(namespace), "component": "BROKER",
+              "source": "BROKER", "evidence_id": f"BROKER-{sequence}", "sequence": sequence,
+              "observed_at": observed_at, "owner": owner, "fence": fence_digest,
+              "store_revision": store_revision, "takeover_generation": takeover_generation,
+              "state": "NO_ACTIVE_EXPOSURE"}
+    broker["state_digest"] = digest(broker)
+    durable = {"contract_version": 5, "namespace": copy.deepcopy(namespace), "component": "PERSISTENCE",
+               "source": "PERSISTENCE", "evidence_id": f"PERSIST-{sequence}", "sequence": sequence,
+               "observed_at": observed_at, "owner": owner, "fence": fence_digest,
+               "store_revision": store_revision, "takeover_generation": takeover_generation,
+               "state": "CHECKPOINT_RECONCILED"}
+    durable["state_digest"] = digest(durable)
+    value = {"expiry": True, "broker": broker, "persistence": durable, "independent": True,
+             "sequence": sequence, "observed_at": observed_at}
+    value.update(changes)
+    return value
+
+
+def valid_reconciliation_item(item: dict[str, Any], component: str, source: str,
+                              expected_namespace: dict[str, str], lease: "Lease",
+                              sequence: int, observed_at: int) -> bool:
+    body = {key: value for key, value in item.items() if key != "state_digest"}
+    return (item.get("contract_version") == 5 and item.get("namespace") == expected_namespace and
+            item.get("component") == component and item.get("source") == source and
+            item.get("state") == ("NO_ACTIVE_EXPOSURE" if component == "BROKER" else "CHECKPOINT_RECONCILED") and
+            bool(item.get("evidence_id")) and item.get("state_digest") == digest(body) and
+            item.get("sequence") == sequence and item.get("observed_at") == observed_at and
+            item.get("owner") == lease.owner and item.get("fence") == lease.fence_digest and
+            item.get("store_revision") == lease.store_revision and
+            item.get("takeover_generation") == lease.takeover_generation)
+
+
 @dataclass
 class Lease:
     namespace: str = "NS"
+    complete_namespace: dict[str, str] = field(default_factory=persistence_namespace)
     owner: str = ""
     lease_version: int = 0
     takeover_generation: int = 0
@@ -195,7 +236,12 @@ class Lease:
         if (not self.owner or not new_owner or new_owner == self.owner or expected_revision != self.store_revision or
                 expected_fence != self.fence_digest or proposed_generation != self.takeover_generation + 1 or
                 obs["sequence"] <= self.clock_sequence or obs["timestamp"] < self.expires_at or duration <= 0 or
-                not all(evidence.get(x, False) for x in ("expiry", "broker", "persistence", "independent"))):
+                not evidence.get("expiry") or not evidence.get("independent") or
+                evidence.get("sequence") != obs["sequence"] or evidence.get("observed_at") != obs["timestamp"] or
+                not valid_reconciliation_item(evidence.get("broker", {}), "BROKER", "BROKER",
+                                              self.complete_namespace, self, obs["sequence"], obs["timestamp"]) or
+                not valid_reconciliation_item(evidence.get("persistence", {}), "PERSISTENCE", "PERSISTENCE",
+                                              self.complete_namespace, self, obs["sequence"], obs["timestamp"])):
             return False
         self.owner = new_owner; self.lease_version += 1; self.takeover_generation = proposed_generation
         self.store_revision += 1; self.heartbeat_sequence = 1
@@ -274,6 +320,7 @@ def genesis_payload(domain: str) -> dict[str, Any]:
 @dataclass
 class Ledger:
     revision: int = 1
+    previous_revision: int = 0
     hwm: int = 0
     compaction: int = 0
     records: list[dict[str, Any]] = field(default_factory=list)
@@ -282,6 +329,7 @@ class Ledger:
 
     def validate(self) -> bool:
         if self.corrupt: return False
+        if self.revision <= 0 or self.previous_revision != self.revision - 1: return False
         if len(self.index) != len(self.records): return False
         ids: set[str] = set(); sequences: list[int] = []
         for index, record in enumerate(self.records):
@@ -293,6 +341,25 @@ class Ledger:
                 return False
             ids.add(record["ingress"]); sequences.append(record["publication"])
         return self.hwm == (max(sequences) if sequences else 0)
+
+    def durable_payload(self) -> dict[str, Any]:
+        records = copy.deepcopy(self.records); index = copy.deepcopy(self.index)
+        body = {"revision": self.revision, "previous_revision": self.previous_revision,
+                "membership_count": len(records), "hwm": self.hwm, "compaction": self.compaction,
+                "index_digest": digest(index), "records_digest": digest(records),
+                "index": index, "records": records}
+        return {**body, "ledger_digest": digest(body)}
+
+    @classmethod
+    def reload(cls, payload: dict[str, Any]) -> "Ledger | None":
+        body = {key: value for key, value in payload.items() if key != "ledger_digest"}
+        if (payload.get("ledger_digest") != digest(body) or payload.get("membership_count") != len(payload.get("records", [])) or
+                payload.get("index_digest") != digest(payload.get("index", [])) or
+                payload.get("records_digest") != digest(payload.get("records", []))): return None
+        value = cls(revision=payload.get("revision", 0), previous_revision=payload.get("previous_revision", -1),
+                    hwm=payload.get("hwm", 0), compaction=payload.get("compaction", 0),
+                    records=copy.deepcopy(payload.get("records", [])), index=copy.deepcopy(payload.get("index", [])))
+        return value if value.validate() else None
 
     def accept(self, expected_revision: int, ingress: str, payload: str, correlation: str,
                request_sequence: int, publication: int, accepted_at: int) -> str:
@@ -307,12 +374,12 @@ class Ledger:
         record = {**body, "digest": digest(body)}
         index_body = {k: record[k] for k in ("ingress", "payload", "correlation", "request_sequence", "publication", "accepted_at", "record_sequence", "digest")}
         self.records.append(record); self.index.append({**index_body, "index_digest": digest(index_body)})
-        self.hwm = publication; self.revision += 1
+        self.hwm = publication; self.previous_revision = self.revision; self.revision += 1
         return "COMMITTED"
 
     def compact(self, expected_revision: int) -> bool:
         if not self.validate() or expected_revision != self.revision: return False
-        self.compaction += 1; self.revision += 1; return True
+        self.compaction += 1; self.previous_revision = self.revision; self.revision += 1; return True
 
 
 @dataclass
@@ -326,6 +393,25 @@ class SequenceStore:
         sequences = [x["sequence"] for x in self.index.values()]
         return (not self.corrupt and len(sequences) == len(set(sequences)) and
                 all(x > 0 for x in sequences) and self.hwm == (max(sequences) if sequences else 0))
+
+    def durable_payload(self) -> dict[str, Any]:
+        ordered = [{"correlation": key, **copy.deepcopy(self.index[key])} for key in sorted(self.index)]
+        body = {"revision": self.revision, "hwm": self.hwm, "reservations": ordered}
+        return {**body, "payload_digest": digest(body)}
+
+    @classmethod
+    def reload(cls, payload: dict[str, Any]) -> "SequenceStore | None":
+        body = {key: value for key, value in payload.items() if key != "payload_digest"}
+        if payload.get("payload_digest") != digest(body): return None
+        entries = payload.get("reservations")
+        if not isinstance(entries, list): return None
+        index: dict[str, dict[str, Any]] = {}
+        for entry in entries:
+            correlation = entry.get("correlation", "")
+            if not correlation or correlation in index: return None
+            index[correlation] = {key: copy.deepcopy(entry[key]) for key in ("sequence", "binding", "reservation_revision")}
+        restored = cls(revision=payload.get("revision", 0), hwm=payload.get("hwm", 0), index=index)
+        return restored if restored.validate() else None
 
     def reserve(self, expected_revision: int, correlation: str, binding: str) -> tuple[str, int]:
         if not self.validate(): return "CORRUPT", 0
@@ -343,18 +429,22 @@ class SubmissionJournal:
     records: dict[str, dict[str, Any]] = field(default_factory=dict)
     grants: int = 0
 
-    def permit(self, request: str, attempt: str, permit: str, fence_digest: str) -> bool:
-        if not all((request, attempt, permit, fence_digest)) or attempt in self.records: return False
-        self.records[attempt] = {"request": request, "attempt": attempt, "permit": permit, "fence": fence_digest,
+    def permit(self, request: str, attempt: str, permit: dict[str, Any], fence_digest: str) -> bool:
+        if (not all((request, attempt, fence_digest)) or attempt in self.records or
+                not valid_permit(permit, request, attempt, fence_digest)): return False
+        self.records[attempt] = {"request": request, "attempt": attempt, "permit": copy.deepcopy(permit),
+                                 "permit_digest": permit["permit_digest"], "fence": fence_digest,
                                  "revision": 1, "state": "COMMITTED_NOT_INVOKED"}
         return True
 
-    def claim(self, attempt: str, expected_revision: int, permit: str, current_fence: str,
+    def claim(self, attempt: str, expected_revision: int, permit: dict[str, Any], current_fence: str,
               fault: str = "") -> tuple[str, bool]:
         row = self.records.get(attempt)
         if not row: return "MISSING", False
         if row["state"] != "COMMITTED_NOT_INVOKED": return "ALREADY_CLAIMED", False
-        if (row["revision"], row["permit"], row["fence"]) != (expected_revision, permit, current_fence):
+        if (not valid_permit(permit, row["request"], attempt, current_fence) or
+                row["revision"] != expected_revision or row["fence"] != current_fence or
+                row["permit_digest"] != permit["permit_digest"] or row["permit"] != permit):
             return "STALE_OR_CONFLICT", False
         if fault in {"BEFORE", "DURING"}: return "CRASH_NO_COMMIT", False
         row["state"], row["revision"] = "INVOCATION_CLAIMED_UNRESOLVED", row["revision"] + 1
@@ -366,15 +456,62 @@ class SubmissionJournal:
         return (row["state"], False) if row else ("MISSING", False)
 
 
+def permit_fixture(request: str = "R1", attempt: str = "A1", fence_digest: str = "F1",
+                   **changes: Any) -> dict[str, Any]:
+    risk = {"authorization_id": "RISK-1", "request": request, "attempt": attempt,
+            "namespace": persistence_namespace(), "fence": fence_digest, "max_volume": "0.20",
+            "expires_at": 1200, "policy": "RISK-V5", "revision": 1}
+    risk["risk_digest"] = digest(risk)
+    normalization = {"normalization_id": "NORM-1", "request": request, "attempt": attempt,
+                     "basket": "BASKET-XAU-M15", "symbol": "XAUUSD", "specification_sequence": 77,
+                     "normalized_payload": {"volume": "0.10", "price": "2500.00", "stops_points": 100}}
+    normalization["normalization_digest"] = digest(normalization)
+    value = {"contract_version": 5, "permit_id": "PERMIT-1", "permit_revision": 1,
+             "state": "APPROVED", "namespace": persistence_namespace(), "fence": fence_digest,
+             "request": request, "attempt": attempt, "basket": "BASKET-XAU-M15",
+             "specification_sequence": 77, "risk": risk, "normalization": normalization,
+             "expires_at": 1200, "policy": "ADMISSION-V5"}
+    value.update(changes)
+    value["permit_digest"] = digest(value)
+    return value
+
+
+def valid_permit(value: dict[str, Any], request: str, attempt: str, fence_digest: str) -> bool:
+    if not isinstance(value, dict): return False
+    body = {key: item for key, item in value.items() if key != "permit_digest"}
+    risk = value.get("risk", {}); risk_body = {key: item for key, item in risk.items() if key != "risk_digest"}
+    norm = value.get("normalization", {}); norm_body = {key: item for key, item in norm.items() if key != "normalization_digest"}
+    return (value.get("permit_digest") == digest(body) and risk.get("risk_digest") == digest(risk_body) and
+            norm.get("normalization_digest") == digest(norm_body) and value.get("contract_version") == 5 and
+            value.get("state") == "APPROVED" and value.get("namespace") == persistence_namespace() and
+            value.get("fence") == fence_digest and value.get("request") == request and value.get("attempt") == attempt and
+            value.get("basket") == norm.get("basket") == "BASKET-XAU-M15" and
+            value.get("specification_sequence") == norm.get("specification_sequence") == 77 and
+            risk.get("request") == request and risk.get("attempt") == attempt and
+            risk.get("namespace") == value.get("namespace") and risk.get("fence") == fence_digest and
+            value.get("expires_at", 0) > 1000 and risk.get("expires_at", 0) > 1000 and
+            all(value.get(key) for key in ("permit_id", "policy")) and
+            all(risk.get(key) for key in ("authorization_id", "policy")) and
+            all(norm.get(key) for key in ("normalization_id", "normalized_payload")))
+
+
 @dataclass
 class PublicationStore:
-    request_set: dict[str, Any] = field(default_factory=lambda: {"revision": 1, "store_revision": 1, "record_sequence": 1, "digest": digest([]), "fence": "F1", "takeover": 1, "ordered": []})
+    request_set: dict[str, Any] = field(default_factory=lambda: PublicationStore.initial_set())
     checkpoint: dict[str, Any] = field(default_factory=lambda: {"revision": 1, "store_revision": 1, "record_sequence": 1, "digest": "CP1", "fence": "F1", "takeover": 1, "clean": False, "request_set_digest": digest([])})
     reloaded_set_digest: str = ""
 
     @staticmethod
+    def initial_set() -> dict[str, Any]:
+        value = {"revision": 1, "store_revision": 1, "record_sequence": 1, "digest": digest([]),
+                 "fence": "F1", "takeover": 1, "ordered": []}
+        value["row_digest"] = digest({key: item for key, item in value.items() if key != "row_digest"})
+        return value
+
+    @staticmethod
     def expected_equal(current: dict[str, Any], expected: dict[str, Any]) -> bool:
-        keys = ("revision", "store_revision", "record_sequence", "digest", "fence", "takeover")
+        keys = ["revision", "store_revision", "record_sequence", "digest", "fence", "takeover"]
+        if "row_digest" in current or "row_digest" in expected: keys.append("row_digest")
         return all(current[k] == expected[k] for k in keys)
 
     def publish_set(self, expected: dict[str, Any], proposed: dict[str, Any]) -> bool:
@@ -382,11 +519,14 @@ class PublicationStore:
                 proposed["store_revision"] != expected["store_revision"] + 1 or
                 proposed["record_sequence"] != expected["record_sequence"] + 1 or
                 proposed["fence"] != expected["fence"] or proposed["takeover"] != expected["takeover"] or
-                proposed["digest"] != digest(proposed["ordered"])): return False
+                proposed["digest"] != digest(proposed["ordered"]) or
+                proposed.get("row_digest") != digest({key: item for key, item in proposed.items() if key != "row_digest"})):
+            return False
         self.request_set = copy.deepcopy(proposed); self.reloaded_set_digest = ""; return True
 
     def reload_set(self) -> bool:
-        valid = self.request_set["digest"] == digest(self.request_set["ordered"])
+        valid = (self.request_set["digest"] == digest(self.request_set["ordered"]) and
+                 self.request_set.get("row_digest") == digest({key: item for key, item in self.request_set.items() if key != "row_digest"}))
         self.reloaded_set_digest = self.request_set["digest"] if valid else ""; return valid
 
     def publish_checkpoint(self, expected: dict[str, Any], proposed: dict[str, Any], converged: bool) -> bool:
@@ -443,12 +583,57 @@ def restart(base: dict[str, Any], **changes: Any) -> str:
     x = copy.deepcopy(base); x.update(changes)
     if not x["schema"] or not x["genesis"] or not x["persistence"]: return "HALTED"
     if not x["lease"] or x["claimed"]: return "RETRY_FORBIDDEN"
+    broker = x["broker_summary"]; execution = x["execution_summary"]
+    if (broker.get("summary_digest") != digest({key: value for key, value in broker.items() if key != "summary_digest"}) or
+            execution.get("summary_digest") != digest({key: value for key, value in execution.items() if key != "summary_digest"})):
+        return "RECONCILIATION_REQUIRED"
     if (x["broker_mask"] != BROKER_QUERY_MASK or x["execution_mask"] != EXECUTION_QUERY_MASK or
             x["broker_authority"] != "BROKER" or x["execution_authority"] != "EXECUTION" or
             x["broker_namespace"] != x["namespace"] or x["execution_namespace"] != x["namespace"] or
             x["broker_account_mode"] != x["account_mode"] or x["execution_account_mode"] != x["account_mode"] or
             x["current_fence"] != x["persisted_fence"] or
             not x["requests_complete"] or not x["checkpoint_matches"]): return "RECONCILIATION_REQUIRED"
+    if (broker.get("namespace") != x["namespace"] or broker.get("basket") != x["basket"] or
+            broker.get("account_mode") != x["account_mode"] or broker.get("fence") != x["persisted_fence"] or
+            broker.get("query", {}).get("mask") != BROKER_QUERY_MASK or
+            broker.get("query", {}).get("authority") != "BROKER" or
+            broker.get("query", {}).get("source") != "BROKER" or
+            broker.get("query", {}).get("namespace") != x["namespace"] or
+            broker.get("query", {}).get("fence") != x["persisted_fence"] or
+            broker.get("query", {}).get("account_mode") != x["account_mode"] or
+            not broker.get("query", {}).get("required_complete") or
+            not broker.get("query", {}).get("completed") or not broker.get("query", {}).get("authoritative") or
+            broker.get("query", {}).get("sequence") != x["broker_sequence"] or
+            broker.get("query", {}).get("observed_at") != x["broker_time"] or
+            broker.get("query", {}).get("snapshot_digest") != digest({key: value for key, value in broker["query"].items() if key != "snapshot_digest"}) or
+            broker.get("transaction_hwm") != x["checkpoint_transaction_hwm"] or
+            broker.get("correlation") != x["checkpoint_correlation"]):
+        return "RECONCILIATION_REQUIRED"
+    request_set_digest = digest(x["requests"])
+    if (execution.get("namespace") != x["namespace"] or execution.get("basket") != x["basket"] or
+            execution.get("account_mode") != x["account_mode"] or execution.get("fence") != x["persisted_fence"] or
+            execution.get("query", {}).get("mask") != EXECUTION_QUERY_MASK or
+            execution.get("query", {}).get("authority") != "EXECUTION" or
+            execution.get("query", {}).get("source") != "EXECUTION" or
+            execution.get("query", {}).get("namespace") != x["namespace"] or
+            execution.get("query", {}).get("fence") != x["persisted_fence"] or
+            execution.get("query", {}).get("account_mode") != x["account_mode"] or
+            not execution.get("query", {}).get("required_complete") or
+            not execution.get("query", {}).get("completed") or not execution.get("query", {}).get("authoritative") or
+            execution.get("query", {}).get("sequence") != x["execution_sequence"] or
+            execution.get("query", {}).get("observed_at") != x["execution_time"] or
+            execution.get("query", {}).get("snapshot_digest") != digest({key: value for key, value in execution["query"].items() if key != "snapshot_digest"}) or
+            execution.get("pending_count") != len(x["requests"]) or
+            execution.get("request_set_digest") != request_set_digest or
+            execution.get("request_set_revision") != x["request_set_revision"] or
+            execution.get("reconciliation_revision") != x["reconciliation_revision"]):
+        return "RECONCILIATION_REQUIRED"
+    for request in x["requests"]:
+        body = {key: value for key, value in request.items() if key != "request_digest"}
+        if (request.get("request_digest") != digest(body) or request.get("namespace") != x["namespace"] or
+                request.get("basket") != x["basket"] or request.get("fence") != x["persisted_fence"] or
+                request.get("state") != "CONFIRMED" or request.get("retryable") is not True):
+            return "RETRY_FORBIDDEN" if request.get("state") in {"CLAIMED_UNRESOLVED", "CONFIRMATION_PENDING"} else "RECONCILIATION_REQUIRED"
     if (x["broker_sequence"] <= x["broker_hwm"] or x["execution_sequence"] <= x["execution_hwm"] or
             x["broker_time"] <= 0 or x["execution_time"] <= 0 or x["broker_time"] > x["now"] or
             x["execution_time"] > x["now"] or x["now"] - x["broker_time"] > 60 or x["now"] - x["execution_time"] > 60):
@@ -466,19 +651,59 @@ class FakePlatformQuerySource:
     account_mode: str = "HEDGING"
 
     def broker(self) -> dict[str, Any]:
-        return {"mask": BROKER_QUERY_MASK, "authority": "BROKER", "namespace": self.namespace,
+        value = {"mask": BROKER_QUERY_MASK, "authority": "BROKER", "namespace": self.namespace,
                 "fence": self.fence_digest, "account_mode": self.account_mode, "sequence": 11,
-                "observed_at": 995, "positions": [], "orders": [], "deals": [], "transactions": []}
+                "observed_at": 995, "snapshot_id": "BROKER-SNAPSHOT-11", "source": "BROKER",
+                "required_complete": True, "completed": True, "authoritative": True,
+                "positions": [], "orders": [], "deals": [], "transactions": []}
+        value["snapshot_digest"] = digest(value)
+        return value
 
     def execution(self) -> dict[str, Any]:
-        return {"mask": EXECUTION_QUERY_MASK, "authority": "EXECUTION", "namespace": self.namespace,
+        value = {"mask": EXECUTION_QUERY_MASK, "authority": "EXECUTION", "namespace": self.namespace,
                 "fence": self.fence_digest, "account_mode": self.account_mode, "sequence": 21,
-                "observed_at": 996, "pending_requests": []}
+                "observed_at": 996, "snapshot_id": "EXECUTION-SNAPSHOT-21", "source": "EXECUTION",
+                "required_complete": True, "completed": True, "authoritative": True,
+                "pending_requests": []}
+        value["snapshot_digest"] = digest(value)
+        return value
+
+
+def persisted_request(request: str = "R1", attempt: str = "A1", state: str = "CONFIRMED",
+                      retryable: bool = True, **changes: Any) -> dict[str, Any]:
+    value = {"contract_version": 5, "request": request, "attempt": attempt, "namespace": "NS",
+             "basket": "BASKET-XAU-M15", "fence": "F1", "state": state, "retryable": retryable,
+             "requested_volume": "0.10", "confirmed_volume": "0.10", "residual_volume": "0.00",
+             "correlation": f"CORR-{request}", "broker_order": f"ORDER-{request}",
+             "broker_deal": f"DEAL-{request}", "broker_position": f"POSITION-{request}",
+             "transaction_hwm": 10}
+    value.update(changes); value["request_digest"] = digest(value); return value
+
+
+def reseal_summary(value: dict[str, Any]) -> dict[str, Any]:
+    value = copy.deepcopy(value)
+    if "query" in value:
+        value["query"]["snapshot_digest"] = digest({key: item for key, item in value["query"].items() if key != "snapshot_digest"})
+    value["summary_digest"] = digest({key: item for key, item in value.items() if key != "summary_digest"})
+    return value
 
 
 def restart_base() -> dict[str, Any]:
     source = FakePlatformQuerySource(); broker = source.broker(); execution = source.execution()
     release_record = release_authority_record()
+    requests = [persisted_request()]
+    broker_summary = reseal_summary({"contract_version": 5, "namespace": source.namespace,
+                                     "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
+                                     "fence": source.fence_digest, "correlation": "CHECKPOINT-CORR-1",
+                                     "transaction_hwm": 10, "position_count": 0, "order_count": 0,
+                                     "deal_count": 1, "exposure": "0.00", "query": broker,
+                                     "observed_at": broker["observed_at"], "authority": "BROKER"})
+    execution_summary = reseal_summary({"contract_version": 5, "namespace": source.namespace,
+                                        "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
+                                        "fence": source.fence_digest, "pending_count": len(requests),
+                                        "request_set_digest": digest(requests), "request_set_revision": 4,
+                                        "reconciliation_revision": 7, "query": execution,
+                                        "observed_at": execution["observed_at"], "authority": "EXECUTION"})
     return {"schema": True, "genesis": True, "persistence": True, "lease": True, "claimed": False,
             "broker_mask": broker["mask"], "execution_mask": execution["mask"],
             "broker_authority": broker["authority"], "execution_authority": execution["authority"], "requests_complete": True,
@@ -487,6 +712,10 @@ def restart_base() -> dict[str, Any]:
             "persisted_fence": source.fence_digest, "current_fence": broker["fence"],
             "checkpoint_matches": True, "broker_sequence": 11, "execution_sequence": 21,
             "broker_hwm": 10, "execution_hwm": 20, "broker_time": broker["observed_at"], "execution_time": execution["observed_at"], "now": 1000,
+            "basket": "BASKET-XAU-M15", "checkpoint_transaction_hwm": 10,
+            "checkpoint_correlation": "CHECKPOINT-CORR-1", "request_set_revision": 4,
+            "reconciliation_revision": 7, "requests": requests,
+            "broker_summary": broker_summary, "execution_summary": execution_summary,
             "broker_matches": True, "execution_matches": True, "clean": True,
             "hard_kill": False, "release_authority": True, "release_record": release_record,
             "release_reference": release_authority_reference(release_record), "release_latch_id": "LATCH-1",
@@ -605,9 +834,13 @@ def run_suite() -> dict[str, Any]:
     r.check("LEASE-HEARTBEAT-RACE", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-A", 2, before.fence_digest, observation(3, 106), 10), lease.__dict__)
     r.check("LEASE-WRONG-OWNER", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-B", 3, lease.fence_digest, observation(3, 106), 10), lease.__dict__)
     r.check("LEASE-MISSING-CLOCK", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-A", 3, lease.fence_digest, observation(2, 106), 10), lease.__dict__)
-    weak = {"expiry": True, "broker": False, "persistence": True, "independent": True}
+    weak = reconciliation_evidence(lease.complete_namespace, lease.owner, lease.fence_digest,
+                                   lease.store_revision, lease.takeover_generation, 3, 120)
+    weak["broker"] = {}
     r.check("LEASE-MISSED-HEARTBEAT-INSUFFICIENT", "LEASE_TAKEOVER", not lease.takeover("OWNER-B", 3, lease.fence_digest, 2, observation(3, 120), weak, 10), lease.__dict__)
-    complete = {"expiry": True, "broker": True, "persistence": True, "independent": True}; stale_fence = lease.fence_digest
+    complete = reconciliation_evidence(lease.complete_namespace, lease.owner, lease.fence_digest,
+                                       lease.store_revision, lease.takeover_generation, 3, 120)
+    stale_fence = lease.fence_digest
     took = lease.takeover("OWNER-B", 3, stale_fence, 2, observation(3, 120), complete, 10)
     r.check("LEASE-VALID-TAKEOVER", "LEASE_TAKEOVER", took and lease.owner == "OWNER-B" and lease.takeover_generation == 2 and lease.fence_digest != stale_fence, lease.__dict__)
     r.check("LEASE-TAKEOVER-RACE", "LEASE_TAKEOVER", not lease.takeover("OWNER-C", 3, stale_fence, 2, observation(4, 140), complete, 10), lease.__dict__)
@@ -644,23 +877,82 @@ def run_suite() -> dict[str, Any]:
     r.check("SEQUENCE-GAP-NOT-REUSED", "SEQUENCE", gap.index["ORPHAN"]["sequence"] == 1 and gap.index["LATER"]["sequence"] == 2, gap.__dict__)
     duplicate = SequenceStore(revision=3, hwm=1, index={"A": {"sequence": 1, "binding": "A"}, "B": {"sequence": 1, "binding": "B"}})
     r.check("SEQUENCE-DUPLICATE-CORRUPTION", "SEQUENCE", not duplicate.validate() and duplicate.reserve(3, "C", "C")[0] == "CORRUPT", duplicate.__dict__)
+    durable_sequence = seq.durable_payload(); restored_sequence = SequenceStore.reload(durable_sequence)
+    r.check("D2-SEQUENCE-COMPLETE-RELOAD", "SEQUENCE", restored_sequence is not None and restored_sequence.__dict__ == seq.__dict__, durable_sequence)
+    caller_sequence = copy.deepcopy(durable_sequence); caller_sequence["reservations"][0]["binding"] = "MUTATED"
+    r.check("D2-SEQUENCE-CALLER-MUTATION-ISOLATED", "SEQUENCE", SequenceStore.reload(durable_sequence).__dict__ == seq.__dict__, durable_sequence)
+    foreign_sequence = copy.deepcopy(durable_sequence); foreign_sequence["reservations"][0]["sequence"] = 99
+    foreign_sequence["payload_digest"] = digest({key: value for key, value in foreign_sequence.items() if key != "payload_digest"})
+    r.check("D2-SEQUENCE-DIGEST-VALID-SEMANTIC-MISMATCH", "DOMAIN_CANONICAL", SequenceStore.reload(foreign_sequence) is None, foreign_sequence)
 
     # Submission/Claim durable behavior and event-local grant.
-    journal = SubmissionJournal(); r.check("CLAIM-PERMIT", "CLAIM_JOURNAL", journal.permit("R1", "A1", "P1", "F1"), journal.__dict__)
-    claim = journal.claim("A1", 1, "P1", "F1")
+    valid_claim_permit = permit_fixture()
+    journal = SubmissionJournal(); r.check("CLAIM-PERMIT", "CLAIM_JOURNAL", journal.permit("R1", "A1", valid_claim_permit, "F1"), journal.__dict__)
+    claim = journal.claim("A1", 1, valid_claim_permit, "F1")
     r.check("CLAIM-ONE-WINNER", "CLAIM_JOURNAL", claim == ("CLAIM_GRANTED_NOW", True) and journal.grants == 1, journal.__dict__)
-    replay = journal.claim("A1", 2, "P1", "F1")
+    replay = journal.claim("A1", 2, valid_claim_permit, "F1")
     r.check("CLAIM-COMPETING-WRITER", "CLAIM_JOURNAL", replay == ("ALREADY_CLAIMED", False) and journal.grants == 1, journal.__dict__)
     r.check("CLAIM-PERSISTED-REPLAY", "CLAIM_JOURNAL", journal.reload("A1") == ("INVOCATION_CLAIMED_UNRESOLVED", False), journal.__dict__)
-    for test_id, args in (("CLAIM-STALE-REVISION", (0, "P2", "F1")), ("CLAIM-PERMIT-MISMATCH", (1, "BAD", "F1")), ("CLAIM-STALE-OWNER", (1, "P2", "OLD"))):
-        j = SubmissionJournal(); j.permit("R2", "A2", "P2", "F1"); out = j.claim("A2", *args)
+    p2 = permit_fixture("R2", "A2")
+    wrong_p2 = permit_fixture("R2", "A2", permit_id="PERMIT-OTHER")
+    for test_id, args in (("CLAIM-STALE-REVISION", (0, p2, "F1")), ("CLAIM-PERMIT-MISMATCH", (1, wrong_p2, "F1")), ("CLAIM-STALE-OWNER", (1, p2, "OLD"))):
+        j = SubmissionJournal(); j.permit("R2", "A2", p2, "F1"); out = j.claim("A2", *args)
         r.check(test_id, "CLAIM_JOURNAL", out == ("STALE_OR_CONFLICT", False) and j.grants == 0, j.__dict__)
-    uncertain = SubmissionJournal(); uncertain.permit("R3", "A3", "P3", "F1")
-    out = uncertain.claim("A3", 1, "P3", "F1", "AFTER_COMMIT")
+    p3 = permit_fixture("R3", "A3")
+    uncertain = SubmissionJournal(); uncertain.permit("R3", "A3", p3, "F1")
+    out = uncertain.claim("A3", 1, p3, "F1", "AFTER_COMMIT")
     r.check("CLAIM-COMMIT-UNCERTAIN", "CLAIM_JOURNAL", out == ("COMMIT_OUTCOME_UNCERTAIN", False) and uncertain.reload("A3")[0] == "INVOCATION_CLAIMED_UNRESOLVED", uncertain.__dict__)
-    r.check("CRASH-CLAIM-PRE-BROKER", "CRASH", uncertain.grants == 0 and uncertain.claim("A3", 2, "P3", "F1") == ("ALREADY_CLAIMED", False), uncertain.__dict__)
-    r.check("CLAIM-TAKEOVER-NO-GRANT", "CLAIM_JOURNAL", uncertain.claim("A3", 2, "P3", "F2") == ("ALREADY_CLAIMED", False), uncertain.__dict__)
+    r.check("CRASH-CLAIM-PRE-BROKER", "CRASH", uncertain.grants == 0 and uncertain.claim("A3", 2, p3, "F1") == ("ALREADY_CLAIMED", False), uncertain.__dict__)
+    r.check("CLAIM-TAKEOVER-NO-GRANT", "CLAIM_JOURNAL", uncertain.claim("A3", 2, p3, "F2") == ("ALREADY_CLAIMED", False), uncertain.__dict__)
     r.check("CLAIM-NO-GRANT-RECREATION", "CLAIM_JOURNAL", uncertain.grants == 0, uncertain.__dict__)
+
+    # D.2 complete-authority Claim substitutions are re-sealed, structurally valid objects.
+    claim_mutations: list[tuple[str, Any]] = [
+        ("D2-CLAIM-RESEALED-PERMIT-ID", lambda p: p.update(permit_id="PERMIT-FOREIGN")),
+        ("D2-CLAIM-RESEALED-PERMIT-REVISION", lambda p: p.update(permit_revision=2)),
+        ("D2-CLAIM-RESEALED-RISK-ID", lambda p: p["risk"].update(authorization_id="RISK-FOREIGN")),
+        ("D2-CLAIM-RESEALED-RISK-CONTENT", lambda p: p["risk"].update(max_volume="9.99")),
+        ("D2-CLAIM-RESEALED-NORMALIZATION-ID", lambda p: p["normalization"].update(normalization_id="NORM-FOREIGN")),
+        ("D2-CLAIM-RESEALED-NORMALIZED-PAYLOAD", lambda p: p["normalization"]["normalized_payload"].update(volume="0.20")),
+        ("D2-CLAIM-RESEALED-BASKET-SPEC", lambda p: (p.update(basket="BASKET-FOREIGN", specification_sequence=88),
+                                                       p["normalization"].update(basket="BASKET-FOREIGN", specification_sequence=88))),
+        ("D2-CLAIM-RESEALED-REQUEST-ATTEMPT", lambda p: (p.update(request="R-FOREIGN", attempt="A-FOREIGN"),
+                                                          p["risk"].update(request="R-FOREIGN", attempt="A-FOREIGN"),
+                                                          p["normalization"].update(request="R-FOREIGN", attempt="A-FOREIGN"))),
+    ]
+    for test_id, mutate in claim_mutations:
+        proposed = copy.deepcopy(valid_claim_permit); mutate(proposed)
+        proposed["risk"]["risk_digest"] = digest({key: value for key, value in proposed["risk"].items() if key != "risk_digest"})
+        proposed["normalization"]["normalization_digest"] = digest({key: value for key, value in proposed["normalization"].items() if key != "normalization_digest"})
+        proposed["permit_digest"] = digest({key: value for key, value in proposed.items() if key != "permit_digest"})
+        probe = SubmissionJournal(); assert probe.permit("R1", "A1", valid_claim_permit, "F1")
+        r.check(test_id, "CLAIM_COMPLETE_AUTHORITY", probe.claim("A1", 1, proposed, "F1") == ("STALE_OR_CONFLICT", False) and probe.grants == 0,
+                {"internally_valid": proposed["permit_digest"] == digest({key: value for key, value in proposed.items() if key != "permit_digest"})})
+
+    # D.2 Takeover evidence remains structurally/digest valid while cross-object semantics are wrong.
+    takeover_mutations: list[tuple[str, Any]] = [
+        ("D2-TAKEOVER-FOREIGN-BASKET", lambda e: (e["broker"]["namespace"].update(basket="FOREIGN"), e["persistence"]["namespace"].update(basket="FOREIGN"))),
+        ("D2-TAKEOVER-FOREIGN-NAMESPACE", lambda e: (e["broker"]["namespace"].update(execution="FOREIGN"), e["persistence"]["namespace"].update(execution="FOREIGN"))),
+        ("D2-TAKEOVER-WRONG-OWNER", lambda e: (e["broker"].update(owner="OWNER-X"), e["persistence"].update(owner="OWNER-X"))),
+        ("D2-TAKEOVER-WRONG-FENCE", lambda e: (e["broker"].update(fence="FOREIGN"), e["persistence"].update(fence="FOREIGN"))),
+        ("D2-TAKEOVER-WRONG-STORE-REVISION", lambda e: e["persistence"].update(store_revision=99)),
+        ("D2-TAKEOVER-WRONG-GENERATION", lambda e: e["broker"].update(takeover_generation=99)),
+        ("D2-TAKEOVER-WRONG-BROKER-STATE", lambda e: e["broker"].update(state="EXPOSURE_PRESENT")),
+        ("D2-TAKEOVER-WRONG-PERSISTENCE-STATE", lambda e: e["persistence"].update(state="CHECKPOINT_STALE")),
+        ("D2-TAKEOVER-WRONG-SEQUENCE-TIME", lambda e: e["broker"].update(sequence=98, observed_at=98)),
+        ("D2-TAKEOVER-NON-INDEPENDENT", lambda e: e.update(independent=False)),
+    ]
+    for test_id, mutate in takeover_mutations:
+        probe_lease = Lease(); assert probe_lease.acquire("OWNER-A", 1, observation(1, 100), 10)
+        evidence = reconciliation_evidence(probe_lease.complete_namespace, probe_lease.owner, probe_lease.fence_digest,
+                                           probe_lease.store_revision, probe_lease.takeover_generation, 2, 120)
+        mutate(evidence)
+        for name in ("broker", "persistence"):
+            evidence[name]["state_digest"] = digest({key: value for key, value in evidence[name].items() if key != "state_digest"})
+        r.check(test_id, "TAKEOVER_COMPLETE_AUTHORITY",
+                not probe_lease.takeover("OWNER-B", 2, probe_lease.fence_digest, 2, observation(2, 120), evidence, 10),
+                {"broker_digest_valid": evidence["broker"]["state_digest"] == digest({key: value for key, value in evidence["broker"].items() if key != "state_digest"}),
+                 "persistence_digest_valid": evidence["persistence"]["state_digest"] == digest({key: value for key, value in evidence["persistence"].items() if key != "state_digest"})})
 
     # Fenced request-set/checkpoint publication and split crash.
     pub = PublicationStore(); expected_set = copy.deepcopy(pub.request_set)
@@ -668,6 +960,7 @@ def run_suite() -> dict[str, Any]:
                     "ordered": [{"request": "R1", "state": "PARTIAL", "residual": 0.1},
                                 {"request": "R2", "state": "UNCERTAIN", "attempt": "A2"}]}
     proposed_set["digest"] = digest(proposed_set["ordered"])
+    proposed_set["row_digest"] = digest({key: value for key, value in proposed_set.items() if key != "row_digest"})
     r.check("PUBLICATION-REQUEST-SET", "PUBLICATION", pub.publish_set(expected_set, proposed_set), pub.__dict__)
     r.check("PUBLICATION-STALE-SET", "PUBLICATION", not pub.publish_set(expected_set, proposed_set), pub.__dict__)
     r.check("PUBLICATION-STALE-FENCE", "PUBLICATION", not pub.publish_set({**pub.request_set, "fence": "OLD"}, {**proposed_set, "revision": 3, "store_revision": 3, "record_sequence": 3}), pub.__dict__)
@@ -685,11 +978,64 @@ def run_suite() -> dict[str, Any]:
     caller = {**expected_roundtrip, "revision": 2, "store_revision": 2, "record_sequence": 2,
               "ordered": [{"request": "R1", "state": "PARTIAL", "residual": 0.25},
                           {"request": "R2", "state": "UNCERTAIN", "attempt": "A2"}]}
-    caller["digest"] = digest(caller["ordered"]); expected_order = copy.deepcopy(caller["ordered"])
+    caller["digest"] = digest(caller["ordered"])
+    caller["row_digest"] = digest({key: value for key, value in caller.items() if key != "row_digest"})
+    expected_order = copy.deepcopy(caller["ordered"])
     committed = roundtrip.publish_set(expected_roundtrip, caller); caller["ordered"][0]["residual"] = 99
     r.check("PUBLICATION-FULL-ROUNDTRIP", "PUBLICATION", committed and roundtrip.reload_set() and roundtrip.request_set["ordered"] == expected_order, roundtrip.__dict__)
     corrupt_set = copy.deepcopy(roundtrip); corrupt_set.request_set["digest"] = "CORRUPT"
     r.check("CORRUPT-REQUEST-SET", "CORRUPTION", not corrupt_set.reload_set(), corrupt_set.__dict__)
+    r.check("D2-REQUEST-SET-DIGEST-DOMAINS-DISTINCT", "PUBLICATION",
+            roundtrip.request_set["digest"] != roundtrip.request_set["row_digest"], roundtrip.request_set)
+    authoritative_reload = PublicationStore(); prepared_cp = {**authoritative_reload.checkpoint, "revision": 2,
+          "store_revision": 2, "record_sequence": 2, "digest": "CP-PREPARED",
+          "request_set_digest": authoritative_reload.request_set["digest"], "clean": False}
+    expected_before_change = copy.deepcopy(authoritative_reload.request_set)
+    changed_set = {**expected_before_change, "revision": 2, "store_revision": 2, "record_sequence": 2,
+                   "ordered": [{"request": "R-LATER", "state": "CONFIRMED"}]}
+    changed_set["digest"] = digest(changed_set["ordered"])
+    changed_set["row_digest"] = digest({key: value for key, value in changed_set.items() if key != "row_digest"})
+    assert authoritative_reload.publish_set(expected_before_change, changed_set) and authoritative_reload.reload_set()
+    r.check("D2-CHECKPOINT-STALE-AFTER-SET-CHANGE", "PUBLICATION",
+            not authoritative_reload.publish_checkpoint(authoritative_reload.checkpoint, prepared_cp, True), authoritative_reload.__dict__)
+
+    domain_submission = SubmissionJournal(); assert domain_submission.permit("R1", "A1", valid_claim_permit, "F1")
+    foreign_permit = copy.deepcopy(valid_claim_permit); foreign_permit["risk"]["authorization_id"] = "FOREIGN"
+    foreign_permit["risk"]["risk_digest"] = digest({key: value for key, value in foreign_permit["risk"].items() if key != "risk_digest"})
+    foreign_permit["permit_digest"] = digest({key: value for key, value in foreign_permit.items() if key != "permit_digest"})
+    r.check("D2-DOMAIN-CANONICAL-SUBMISSION", "DOMAIN_CANONICAL",
+            domain_submission.claim("A1", 1, foreign_permit, "F1") == ("STALE_OR_CONFLICT", False), "digest-valid foreign Permit")
+    domain_lease = Lease(); assert domain_lease.acquire("OWNER-A", 1, observation(1, 100), 10)
+    foreign_evidence = reconciliation_evidence(domain_lease.complete_namespace, domain_lease.owner, domain_lease.fence_digest,
+                                               domain_lease.store_revision, domain_lease.takeover_generation, 2, 120)
+    foreign_evidence["broker"]["namespace"]["basket"] = "FOREIGN"
+    foreign_evidence["broker"]["state_digest"] = digest({key: value for key, value in foreign_evidence["broker"].items() if key != "state_digest"})
+    r.check("D2-DOMAIN-CANONICAL-LEASE", "DOMAIN_CANONICAL",
+            not domain_lease.takeover("OWNER-B", 2, domain_lease.fence_digest, 2, observation(2, 120), foreign_evidence, 10),
+            "digest-valid foreign Lease evidence")
+    domain_set = PublicationStore(); domain_expected = copy.deepcopy(domain_set.request_set)
+    foreign_set = {**domain_expected, "revision": 2, "store_revision": 2, "record_sequence": 2,
+                   "ordered": [{"request": "R", "state": "CONFIRMED"}], "digest": "FOREIGN-SET-DIGEST"}
+    foreign_set["row_digest"] = digest({key: value for key, value in foreign_set.items() if key != "row_digest"})
+    r.check("D2-DOMAIN-CANONICAL-REQUEST-SET", "DOMAIN_CANONICAL",
+            not domain_set.publish_set(domain_expected, foreign_set), "row-integrity valid but frozen set digest invalid")
+    domain_checkpoint = PublicationStore(); checkpoint_expected = copy.deepcopy(domain_checkpoint.checkpoint)
+    checkpoint_proposed = {**checkpoint_expected, "revision": 2, "store_revision": 2, "record_sequence": 2,
+                           "digest": "CP2", "request_set_digest": digest([{"foreign": True}])}
+    assert domain_checkpoint.reload_set()
+    r.check("D2-DOMAIN-CANONICAL-CHECKPOINT", "DOMAIN_CANONICAL",
+            not domain_checkpoint.publish_checkpoint(checkpoint_expected, checkpoint_proposed, True),
+            "digest-valid checkpoint projection does not bind authoritative set")
+
+    ledger_payload = ledger.durable_payload(); restored_ledger = Ledger.reload(ledger_payload)
+    r.check("D2-LEDGER-EXACT-PROPOSED-READBACK", "LEDGER_EXACT",
+            restored_ledger is not None and restored_ledger.__dict__ == ledger.__dict__, ledger_payload)
+    for test_id, field_name, value in (("D2-LEDGER-WRONG-REVISION", "revision", 99),
+                                       ("D2-LEDGER-WRONG-MEMBERSHIP", "membership_count", 99),
+                                       ("D2-LEDGER-WRONG-HWM", "hwm", 99)):
+        malformed = copy.deepcopy(ledger_payload); malformed[field_name] = value
+        malformed["ledger_digest"] = digest({key: item for key, item in malformed.items() if key != "ledger_digest"})
+        r.check(test_id, "DOMAIN_CANONICAL", Ledger.reload(malformed) is None, malformed)
 
     # D.1 typed-authority counterexamples: every safety-bearing digest is
     # recomputed from the complete envelope, and namespace is part of CAS.
@@ -736,6 +1082,39 @@ def run_suite() -> dict[str, Any]:
                                 ("QUERY-FUTURE-TIME", "execution_time", 1001)):
         r.check(test_id, "FULL_QUERY", restart(base, **{key: value}) == "RECONCILIATION_REQUIRED", {key: value})
     r.check("QUERY-EXACT-UNION", "FULL_QUERY", base["broker_mask"] | base["execution_mask"] == BROKER_QUERY_MASK | EXECUTION_QUERY_MASK, "exact union")
+    broker_mutations: list[tuple[str, Any]] = [
+        ("D2-RESTART-RESEALED-BROKER-BASKET", lambda s: s.update(basket="FOREIGN")),
+        ("D2-RESTART-RESEALED-BROKER-ACCOUNT-MODE", lambda s: s.update(account_mode="NETTING")),
+        ("D2-RESTART-RESEALED-BROKER-QUERY-PROVENANCE", lambda s: s["query"].update(source="FOREIGN")),
+        ("D2-RESTART-RESEALED-BROKER-TRANSACTION-HWM", lambda s: s.update(transaction_hwm=99)),
+        ("D2-RESTART-RESEALED-BROKER-CORRELATION", lambda s: s.update(correlation="CORR-FOREIGN")),
+    ]
+    for test_id, mutate in broker_mutations:
+        changed = copy.deepcopy(base["broker_summary"]); mutate(changed); changed = reseal_summary(changed)
+        r.check(test_id, "RESTART_COMPLETE_AUTHORITY",
+                restart(base, broker_summary=changed) == "RECONCILIATION_REQUIRED",
+                {"summary_digest_valid": changed["summary_digest"] == digest({key: value for key, value in changed.items() if key != "summary_digest"})})
+    execution_mutations: list[tuple[str, Any]] = [
+        ("D2-RESTART-RESEALED-EXECUTION-REVISION", lambda s: s.update(request_set_revision=99)),
+        ("D2-RESTART-RESEALED-EXECUTION-PENDING-COUNT", lambda s: s.update(pending_count=99)),
+        ("D2-RESTART-RESEALED-EXECUTION-SET-DIGEST", lambda s: s.update(request_set_digest=digest([{"foreign": True}]))),
+        ("D2-RESTART-RESEALED-EXECUTION-RECONCILIATION", lambda s: s.update(reconciliation_revision=99)),
+    ]
+    for test_id, mutate in execution_mutations:
+        changed = copy.deepcopy(base["execution_summary"]); mutate(changed); changed = reseal_summary(changed)
+        r.check(test_id, "RESTART_COMPLETE_AUTHORITY",
+                restart(base, execution_summary=changed) == "RECONCILIATION_REQUIRED",
+                {"summary_digest_valid": changed["summary_digest"] == digest({key: value for key, value in changed.items() if key != "summary_digest"})})
+    unsafe_requests = copy.deepcopy(base["requests"])
+    unsafe_requests.append(persisted_request("R2", "A2", state="CLAIMED_UNRESOLVED", retryable=False))
+    unsafe_execution = copy.deepcopy(base["execution_summary"])
+    unsafe_execution.update(pending_count=2, request_set_digest=digest(unsafe_requests))
+    unsafe_execution = reseal_summary(unsafe_execution)
+    r.check("D2-RESTART-UNSAFE-REQUEST-AT-INDEX-1", "RESTART_COMPLETE_AUTHORITY",
+            restart(base, requests=unsafe_requests, execution_summary=unsafe_execution) == "RETRY_FORBIDDEN",
+            {"index": 1, "state": unsafe_requests[1]["state"]})
+    r.check("D2-RESTART-CHECKPOINT-VECTOR-MISMATCH", "RESTART_COMPLETE_AUTHORITY",
+            restart(base, checkpoint_transaction_hwm=9) == "RECONCILIATION_REQUIRED", "re-sealed Broker disagrees with checkpoint")
     for test_id, changes, expected in (
             ("RESTART-DIRTY", {"clean": False}, "RECONCILIATION_REQUIRED"),
             ("RESTART-SPLIT", {"checkpoint_matches": False}, "RECONCILIATION_REQUIRED"),
@@ -780,7 +1159,10 @@ def run_suite() -> dict[str, Any]:
 
     family_counts: dict[str, int] = {}
     for item in r.results: family_counts[item["family"]] = family_counts.get(item["family"], 0) + 1
+    identifiers = [item["id"] for item in r.results]
+    if len(identifiers) != len(set(identifiers)): raise AssertionError("duplicate scenario id")
     return {"results": r.results, "family_counts": family_counts,
+            "unique_scenario_ids": len(set(identifiers)),
             "final_state_digest": digest({"genesis": g.__dict__, "lease": lease.__dict__, "ledger": ledger.__dict__,
                                           "sequence": seq.__dict__, "journal": journal.__dict__, "publication": pub.__dict__})}
 
@@ -794,6 +1176,7 @@ def main() -> int:
                "schema": {"id": SCHEMA_ID, "version": SCHEMA_VERSION, "minimum_compatible": MINIMUM_COMPATIBLE},
                "runs": 2, "deterministic": True, "total": len(first["results"]),
                "passed": len(first["results"]) - len(failed), "failed": len(failed), "skipped": 0,
+               "unique_scenario_ids": first["unique_scenario_ids"],
                "family_counts": first["family_counts"], "final_state_digest": first["final_state_digest"],
                "reference_result_digest": result_digest, "status": "PASS" if not failed else "FAIL"}
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))

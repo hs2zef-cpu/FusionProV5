@@ -78,6 +78,55 @@ bool SWV5S5_ReferenceExposureEvidenceEqual(const SWV5_ExposureReductionEvidence 
       SWV5S5_CanonicalCheckpointExposureEvidence("evidence",b,cb) && ca==cb;
 }
 
+bool SWV5S5_ReferenceRestartNear(const double a,const double b,const double tolerance)
+{ return SWV5_IsFiniteNumber(a) && SWV5_IsFiniteNumber(b) && MathAbs(a-b)<=tolerance; }
+
+bool SWV5S5_ReferenceRestartCorrelationEqual(const SWV5_ExecutionCorrelation &a,
+                                              const SWV5_ExecutionCorrelation &b)
+{
+   string ca,cb; return SWV5S5_CanonicalCheckpointCorrelation("correlation",a,ca) &&
+      SWV5S5_CanonicalCheckpointCorrelation("correlation",b,cb) && ca==cb;
+}
+
+bool SWV5S5_ReferenceRestartBrokerIdentityEqual(const SWV5_BrokerExecutionIdentity &a,
+                                                 const SWV5_BrokerExecutionIdentity &b)
+{
+   string ca,cb; return SWV5S5_CanonicalCheckpointBrokerIdentity("broker",a,ca) &&
+      SWV5S5_CanonicalCheckpointBrokerIdentity("broker",b,cb) && ca==cb;
+}
+
+bool SWV5S5_ReferencePersistedRequestEqual(const SWV5_PersistedRequestEvidence &a,
+                                            const SWV5_PersistedRequestEvidence &b)
+{
+   string ca,cb; return SWV5S5_CanonicalCheckpointPersistedRequest("request",a,ca) &&
+      SWV5S5_CanonicalCheckpointPersistedRequest("request",b,cb) && ca==cb;
+}
+
+bool SWV5S5_ReferencePersistedRequestValid(const SWV5_PersistedRequestEvidence &evidence,
+                                            const SWV5_PersistenceNamespace &scope,
+                                            const SWV5_OwnershipFence &fence,
+                                            const SWV5_AccountPositionMode account_mode)
+{
+   string canonical;
+   const SWV5_PendingRequest request=evidence.pending_request;
+   if(!SWV5S5_IsV5Version(evidence.contract_version) || !SWV5S5_IsV5Version(request.contract_version) ||
+      !SWV5S5_EqualNamespace(evidence.persistence_namespace,scope) ||
+      !SWV5S5_EqualFence(evidence.ownership_fence,fence) || evidence.account_mode!=account_mode ||
+      !SWV5S5_EqualNamespace(request.intent.persistence_namespace,scope) ||
+      !SWV5S5_EqualFence(request.intent.ownership_fence,fence) || request.account_mode!=account_mode ||
+      request.intent.account_mode!=account_mode || evidence.record_sequence==0 || evidence.recorded_at<=0 ||
+      !SWV5S5_CanonicalPendingRequest(request,canonical) ||
+      !SWV5_IsFiniteNumber(request.intent.normalized_volume) ||
+      !SWV5_IsFiniteNumber(request.cumulative_confirmed_volume) ||
+      !SWV5_IsFiniteNumber(request.residual_requested_volume) || request.intent.normalized_volume<0.0 ||
+      request.cumulative_confirmed_volume<0.0 || request.residual_requested_volume<0.0 ||
+      MathAbs(MathMax(0.0,request.intent.normalized_volume-request.cumulative_confirmed_volume)-
+              request.residual_requested_volume)>0.0000001) return false;
+   return request.intent.request_identity.request_id.correlation_id!="" &&
+      request.intent.request_identity.request_id.attempt_id!="" &&
+      request.intent.request_identity.idempotency_key!="";
+}
+
 bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRecord &record,
                                            const SWV5_PersistedCheckpoint &checkpoint,
                                            const SWV5_ContractValidationContext &context)
@@ -160,10 +209,14 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
       SWV5S5_ReferenceOwnershipKeyEqual(restart_input.persistence_namespace.ownership_namespace,restart_input.claimant_fence.ownership_namespace);
    const bool fence_ok=SWV5S5_EqualFence(restart_input.claimant_fence,restart_input.persisted.header.ownership_fence) &&
       SWV5S5_EqualFence(restart_input.claimant_fence,lease.fence);
-   result.query_union_complete=restart_input.broker.queries.required_flags==SWV5_RESTART_BROKER_QUERY_FLAGS_V5 &&
-      restart_input.broker.queries.completed_flags==SWV5_RESTART_BROKER_QUERY_FLAGS_V5 &&
-      restart_input.restart_requests.pending_request_query.required_flags==SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5 &&
-      restart_input.restart_requests.pending_request_query.completed_flags==SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5;
+   result.query_union_complete=SWV5S5_ReferenceQueryValid(restart_input.broker.queries,
+      SWV5_RESTART_BROKER_QUERY_FLAGS_V5,SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,
+      SWV5_AUTHORITY_LIVE_BROKER_STATE,restart_input.broker.observation_sequence,
+      restart_input.broker.observed_at) &&
+      SWV5S5_ReferenceQueryValid(restart_input.restart_requests.pending_request_query,
+      SWV5_RESTART_EXECUTION_QUERY_FLAGS_V5,SWV5_COMPONENT_AUTHORITY_EXECUTION,
+      SWV5_AUTHORITY_EXECUTION_REQUEST_STATE,restart_input.restart_requests.observation_sequence,
+      restart_input.restart_requests.observed_at);
    result.authoritative_sources_separated=restart_input.broker.authority==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
       restart_input.restart_requests.authority_source==SWV5_AUTHORITY_EXECUTION_REQUEST_STATE;
    if(!schema || !namespace_ok || !fence_ok || genesis.state!=SWV5S5_GENESIS_READY_FOR_RECONCILIATION ||
@@ -171,23 +224,77 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    { result.diagnostic="SCHEMA_GENESIS_PERSISTENCE_OR_OWNER_INVALID"; return false; }
    if(!SWV5S5_DeriveCheckpointProjection(restart_input.persisted,checkpoint_projection) ||
       !SWV5S5_DeriveCompleteRequestSetDigest(requests,set_digest) ||
-      restart_input.persisted.pending_request_set.request_set_digest!=set_digest ||
-      restart_input.persisted.pending_request_set.request_count!=(uint)ArraySize(requests) ||
-      restart_input.restart_requests.request_set_digest!=set_digest ||
-      !SWV5S5_ReferenceBrokerSummaryDigest(restart_input.broker,broker_digest) || restart_input.broker.complete_summary_digest!=broker_digest ||
-      !SWV5S5_ReferenceExecutionSummaryDigest(restart_input.restart_requests,execution_digest) || restart_input.restart_requests.complete_summary_digest!=execution_digest)
+       restart_input.persisted.pending_request_set.request_set_digest!=set_digest ||
+       restart_input.persisted.pending_request_set.request_count!=(uint)ArraySize(requests) ||
+       !SWV5S5_ReferenceBrokerSummaryValid(restart_input.broker) ||
+       !SWV5S5_ReferenceExecutionSummaryValid(restart_input.restart_requests) ||
+       !SWV5S5_ReferenceBrokerSummaryDigest(restart_input.broker,broker_digest) || restart_input.broker.complete_summary_digest!=broker_digest ||
+       !SWV5S5_ReferenceExecutionSummaryDigest(restart_input.restart_requests,execution_digest) || restart_input.restart_requests.complete_summary_digest!=execution_digest)
    { result.diagnostic="COMPLETE_TYPED_STATE_DIGEST_INVALID"; return false; }
    if(!result.query_union_complete || !result.authoritative_sources_separated)
    { result.disposition=SWV5_RESTART_RECONCILIATION_REQUIRED; result.diagnostic="QUERY_UNION_OR_SOURCE_SEPARATION_INVALID"; return false; }
    if(restart_input.broker.queries.observation_sequence<=restart_input.persisted.reconciliation_vector.broker_query_sequence_high_watermark ||
-      restart_input.restart_requests.pending_request_query.observation_sequence<=restart_input.persisted.reconciliation_vector.request_query_sequence_high_watermark ||
-      restart_input.broker.observed_at<=0 || restart_input.restart_requests.observed_at<=0 || context.clock_time<restart_input.broker.observed_at ||
-      context.clock_time<restart_input.restart_requests.observed_at || context.clock_time-restart_input.broker.observed_at>SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5 ||
-      context.clock_time-restart_input.restart_requests.observed_at>SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5)
+       restart_input.restart_requests.pending_request_query.observation_sequence<=restart_input.persisted.reconciliation_vector.request_query_sequence_high_watermark ||
+       restart_input.broker.observation_sequence>context.evaluation_sequence ||
+       restart_input.restart_requests.observation_sequence>context.evaluation_sequence ||
+       restart_input.persisted.header.written_at>restart_input.broker.observed_at ||
+       restart_input.persisted.header.written_at>restart_input.restart_requests.observed_at ||
+       restart_input.broker.observed_at<=0 || restart_input.restart_requests.observed_at<=0 || context.clock_time<restart_input.broker.observed_at ||
+       context.clock_time<restart_input.restart_requests.observed_at || context.clock_time-restart_input.broker.observed_at>SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5 ||
+       context.clock_time-restart_input.restart_requests.observed_at>SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5)
    { result.disposition=SWV5_RESTART_RECONCILIATION_REQUIRED; result.diagnostic="QUERY_FRESHNESS_OR_ANTI_REPLAY_FAILED"; return false; }
-   if(ArraySize(pending_requests)>0 && (pending_requests[0].pending_request.state==SWV5_REQUEST_CONFIRMATION_PENDING ||
-      pending_requests[0].pending_request.state==SWV5_REQUEST_RECONCILIATION_REQUIRED))
-   { result.disposition=SWV5_RESTART_RETRY_FORBIDDEN; result.diagnostic="CLAIMED_UNRESOLVED"; return false; }
+   const SWV5_PersistedReconciliationVector persisted_vector=restart_input.persisted.reconciliation_vector;
+   if(!SWV5S5_EqualNamespace(persisted_vector.persistence_namespace,restart_input.persistence_namespace) ||
+      persisted_vector.basket_id.value!=restart_input.persistence_namespace.basket_id.value ||
+      persisted_vector.account_mode!=restart_input.broker.account_mode ||
+      !SWV5S5_EqualFence(persisted_vector.ownership_fence,restart_input.claimant_fence) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_long_volume,persisted_vector.symbol_long_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_short_volume,persisted_vector.symbol_short_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_net_volume,persisted_vector.symbol_net_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.aggregate_position_volume,persisted_vector.aggregate_position_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.basket_open_volume,persisted_vector.basket_open_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.residual_volume,persisted_vector.residual_volume,context.volume_tolerance) ||
+      restart_input.broker.position_count!=persisted_vector.position_count || restart_input.broker.order_count!=persisted_vector.order_count ||
+      !SWV5S5_ReferenceRestartCorrelationEqual(restart_input.broker.latest_confirmed_correlation,persisted_vector.latest_confirmed_correlation) ||
+      !SWV5S5_ReferenceRestartBrokerIdentityEqual(restart_input.broker.latest_broker_event_identity,persisted_vector.latest_broker_event_identity) ||
+      restart_input.broker.transaction_high_watermark!=persisted_vector.transaction_high_watermark ||
+      restart_input.restart_requests.pending_request_count!=persisted_vector.pending_request_count ||
+      restart_input.restart_requests.pending_request_count!=(uint)ArraySize(pending_requests) ||
+      restart_input.restart_requests.request_set_digest!=set_digest ||
+      restart_input.restart_requests.request_set_digest!=persisted_vector.request_set_digest ||
+      restart_input.restart_requests.request_set_revision!=persisted_vector.request_set_revision ||
+      restart_input.restart_requests.request_set_revision!=restart_input.persisted.pending_request_set.request_index_revision ||
+      restart_input.restart_requests.reconciliation_revision!=persisted_vector.reconciliation_revision ||
+      persisted_vector.request_set_digest!=restart_input.persisted.pending_request_set.request_set_digest)
+   { result.disposition=SWV5_RESTART_RECONCILIATION_REQUIRED; result.diagnostic="BROKER_EXECUTION_CHECKPOINT_RELATION_INVALID"; return false; }
+   if(ArraySize(pending_requests)==0 && restart_input.persisted.has_latest_pending_request)
+   { result.diagnostic="LATEST_REQUEST_WITH_EMPTY_SET"; return false; }
+   if(ArraySize(pending_requests)>0 && (!restart_input.persisted.has_latest_pending_request ||
+      !SWV5S5_ReferencePersistedRequestEqual(restart_input.persisted.latest_pending_request,
+                                             pending_requests[ArraySize(pending_requests)-1])))
+   { result.diagnostic="LATEST_REQUEST_RELATION_INVALID"; return false; }
+   bool reconciliation_required=false,retry_forbidden=false;
+   ulong previous_record_sequence=0;
+   for(int p=0;p<ArraySize(pending_requests);p++)
+   {
+      if(!SWV5S5_ReferencePersistedRequestValid(pending_requests[p],restart_input.persistence_namespace,
+         restart_input.claimant_fence,restart_input.broker.account_mode) ||
+         pending_requests[p].record_sequence<=previous_record_sequence ||
+         pending_requests[p].record_sequence>restart_input.persisted.pending_request_set.record_sequence)
+      { result.diagnostic="PERSISTED_REQUEST_INVALID"; return false; }
+      previous_record_sequence=pending_requests[p].record_sequence;
+      const SWV5_PendingRequest pending=pending_requests[p].pending_request;
+      if(pending.lifecycle_phase==SWV5_EXECUTION_PHASE_UNCERTAIN ||
+         pending.state==SWV5_REQUEST_RECONCILIATION_REQUIRED ||
+         pending.state==SWV5_REQUEST_CONFIRMATION_PENDING || pending.state==SWV5_REQUEST_PARTIALLY_CONFIRMED)
+         reconciliation_required=true;
+      else if(pending.retry_disposition==SWV5_RETRY_FORBIDDEN && pending.state!=SWV5_REQUEST_CONFIRMED &&
+              pending.state!=SWV5_REQUEST_CANCELLED && pending.state!=SWV5_REQUEST_REJECTED)
+         retry_forbidden=true;
+      else if(pending.state!=SWV5_REQUEST_CONFIRMED && pending.state!=SWV5_REQUEST_CANCELLED &&
+              pending.state!=SWV5_REQUEST_REJECTED)
+         reconciliation_required=true;
+   }
    if(restart_input.persisted.hard_kill_state.state==SWV5_HARD_KILL_ACTIVE || restart_input.persisted.hard_kill_state.state==SWV5_HARD_KILL_RELEASE_PENDING)
    { result.disposition=SWV5_RESTART_CLOSE_ONLY; result.diagnostic="HARD_KILL_ACTIVE"; return false; }
    if(restart_input.persisted.hard_kill_state.state==SWV5_HARD_KILL_RELEASED &&
@@ -195,6 +302,10 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    { result.disposition=SWV5_RESTART_HALTED; result.diagnostic="INDEPENDENT_RELEASE_AUTHORITY_INVALID"; return false; }
    if(!restart_input.persisted.clean_shutdown || restart_input.persisted.reconciliation_vector.request_set_digest!=set_digest)
    { result.disposition=SWV5_RESTART_RECONCILIATION_REQUIRED; result.diagnostic="DIRTY_OR_SPLIT_PUBLICATION"; return false; }
+   if(reconciliation_required)
+   { result.disposition=SWV5_RESTART_RECONCILIATION_REQUIRED; result.diagnostic="UNRESOLVED_REQUEST_REQUIRES_RECONCILIATION"; return false; }
+   if(retry_forbidden)
+   { result.disposition=SWV5_RESTART_RETRY_FORBIDDEN; result.diagnostic="UNRESOLVED_REQUEST_RETRY_FORBIDDEN"; return false; }
    result.disposition=SWV5_RESTART_SAFE_TO_RESUME; result.increasing_execution_eligible=true; result.diagnostic="SAFE_TO_RESUME"; return true;
 }
 
