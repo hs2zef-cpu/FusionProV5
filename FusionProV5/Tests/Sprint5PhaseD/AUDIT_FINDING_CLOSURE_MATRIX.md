@@ -1,21 +1,23 @@
-# Sprint 5 Phase D.2 Audit-Finding Closure Matrix
+# Sprint 5 Phase D.3 Audit-Finding Closure Matrix
 
 **TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS**
 
-| Finding | Exact source correction | Direct MQL positive evidence | Re-sealed/direct MQL negative evidence | Python adversarial evidence | D.2 self-status |
-|---|---|---|---|---|---|
-| CRITICAL-1 Claim substitution | `ReferenceSubmissionStore` validates complete Permit/Risk/normalization, recomputes nested authority digests, canonicalizes the complete Submission record, and compares exact current/prepared/next authority before CAS and final frozen result validation | `D1PositiveClaim` | eight Permit/Risk/normalization/Basket/spec/request mutations are re-sealed before rejection | `D2-CLAIM-RESEALED-*` (8) | CLOSED; independent re-audit required |
-| CRITICAL-2 Takeover namespace/reconciliation | `ReferenceLeaseStore` independently configures and compares the complete Persistence Namespace and validates typed Broker/Persistence evidence identity, source, digest, sequence, time, lease/fence/revision/generation relation | `D1PositiveTakeover` | foreign full namespace plus semantically wrong Broker/Persistence evidence | `D2-TAKEOVER-*` (10) | CLOSED; independent re-audit required |
-| CRITICAL-3 Restart/query safety | `FakePlatformQuerySource` digests every frozen Broker/Execution DTO field; `ReferenceRestart` reconciles checkpoint/vector/request/query/lease semantics and scans every persisted request | `D1PositiveRestartSafeToResume` | re-sealed Basket/account/query/HWM/correlation/Execution-count/revision and unsafe-second-request probes | `D2-RESTART-*` (11) | CLOSED; independent re-audit required |
-| MAJOR-1 domain-canonical CAS | Each public authority store reconstructs and validates its typed proposed state, derives its row internally, and validates exact typed readback around central CAS | domain positive store paths | foreign canonical domain probes for Submission, Lease, Ledger, Sequence, Request Set, Checkpoint | `D2-DOMAIN-CANONICAL-*` (8) | CLOSED; independent re-audit required |
-| MAJOR-2 Ledger proposed-state plumbing | `ReferenceIngressLedgerStore` derives one exact next header/index/record state before CAS, commits that row, validates readback, and implements frozen compaction | `D2PositiveLedgerAcceptance`, `D2PositiveLedgerCompaction` | wrong proposed revision, re-sealed accepted-at/HWM, broken linkage and membership | `D2-LEDGER-*`, `CORRUPT-*` | CLOSED; independent re-audit required |
-| MAJOR-3 Request Set / Checkpoint publication plumbing | `ReferencePublicationStore` keeps frozen set digest separate from row digest, deep-copies/reloads the set, and requires authoritative set reload before Checkpoint evaluation/CAS | `D2PositiveRequestSetPublication`, `D2PositiveCheckpointAfterSetReload` | stale prepared Checkpoint and foreign canonical Request Set/Checkpoint probes | `D2-CHECKPOINT-*`, `D2-DOMAIN-CANONICAL-REQUEST-SET`, `D2-DOMAIN-CANONICAL-CHECKPOINT` | CLOSED; independent re-audit required |
-| MAJOR-4 Python/MQL alignment | Python models corrected complete-authority boundaries, typed domain builders, durable reconstruction, digest-domain separation, and all-request scan | 10 compile-only positive functions | 86 compile-only negative functions, including 28 re-sealed semantic probes | 209/209, two identical internal runs, 209 unique IDs | CLOSED; independent re-audit required |
-| MAJOR-5 documentation/evidence overclaim | Phase D documentation states fake-store/fake-clock/reference limits, compile-only MQL classification, exact current counts/digests, and no MQL runtime/SQLite/platform proof | documentation cross-reference | no runtime, production, or Phase E claim | verifier classification is explicit | CLOSED; independent re-audit required |
+| Finding | Frozen/ADR authority and source correction | Direct MQL evidence (compile-only) | Python adversarial evidence | D.3 self-status |
+|---|---|---|---|---|
+| CRITICAL-1 Takeover typed/version/time | Frozen Ownership V5 DTOs; centralized validator binds all envelope versions, complete claimant, namespace/lease/fence/revision/generation, and exact outer/expiry/current time before CAS | `D1PositiveTakeover`; `D3NegativeTakeover*` | `D3-TAKEOVER-*` (10) | CLOSED; independent re-audit required |
+| CRITICAL-2 Restart checkpoint/vector | Frozen Persistence V5 LP2 and reconciliation-vector LP1; one pre-readiness validator recomputes payload and source digests and binds every vector source relation | `D1PositiveRestartSafeToResume`; `D3NegativeRestart*` | `D3-RESTART-*` (7) | CLOSED; independent re-audit required |
+| CRITICAL-3 Hard Kill effective release | Frozen release evidence and independent authority reference; complete persisted evidence digest/audit plus `released_at <= clock < expires_at` | release authority positive path; D.3 future/digest/reference negatives | `D3-HARD-KILL-*` (3) plus existing authority matrix | CLOSED; independent re-audit required |
+| MAJOR-1 ADR-022 zero-history | Exact Genesis-ready zero classification accepts no prior correlation/event/HWM only when every Broker/Execution/request/exposure field proves zero | `D3PositiveRestartZeroHistory`; zero-history negatives | `D3-ZERO-*` (10) | CLOSED; independent re-audit required |
+| MAJOR-2 Publication committed result | Frozen evaluator remains proposal-only; reference store upgrades to committed only after CAS winner, authoritative readback, and typed authority update | D.3 pure proposal, committed, uncertain/readback probes | `D3-PUBLICATION-*` (6) | CLOSED; independent re-audit required |
+| MAJOR-3 Python/MQL alignment | Python models structured takeover, checkpoint/vector/release/zero-history/publication relationships instead of D.3 authority booleans | 13 named positive and 119 named negative functions compile; execution remains NO | 248/248, two identical internal runs, 248 unique IDs | CLOSED; independent re-audit required |
+| MAJOR-4 Documentation/evidence | Counts and role boundaries state current self-verification only; prior independent audit credit remains explicit | documentation cross-reference | verifier classification is explicit | CLOSED; independent re-audit required |
 
 Preserved closures:
 
-- Genesis: **CLOSED**; no D.2 semantic change.
-- Domain CAS routing: **CLOSED**; D.2 adds typed proposed-state validation without reopening the central routing decision.
+- Claim: **CLOSED**; no D.3 semantic change.
+- Domain-canonical CAS: **CLOSED**; no D.3 semantic change.
+- Ledger: **CLOSED**; no D.3 semantic change.
+- Genesis: **CLOSED**; no D.3 semantic change.
+- Sequence: **CLOSED**; no D.3 semantic change.
 
-No finding is closed by documentation alone. Phase D.2 still requires a new independent final persistence/restart re-audit. Phase E is not authorized.
+No finding is closed by documentation alone. Phase D.3 requires a new independent final persistence/restart re-audit. Phase E is not authorized.

@@ -178,6 +178,22 @@ bool SWV5S5_D1NegativeTakeoverInvalidPersistenceReconciliation(const SWV5_Instan
 { SWV5_OwnershipClaim x=q; x.takeover_evidence.persistence_reconciliation.evidence_sequence=x.takeover_evidence.evidence_sequence+1; if(!SWV5S5_SHA256("D2-WRONG-PERSISTENCE-RELATION",x.takeover_evidence.persistence_reconciliation.state_digest)) return false; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
 bool SWV5S5_D1NegativeTakeoverInvalidIndependentAuthority(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
 { SWV5_OwnershipClaim x=q; x.takeover_evidence.independent_authority_source=SWV5_AUTHORITY_NONE; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverClaimV4(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.contract_version.schema_version--; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverEvidenceV4(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.takeover_evidence.contract_version.schema_version--; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverExpiryV4(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.takeover_evidence.lease_expiry.contract_version.schema_version--; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverOuterTimeZero(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.takeover_evidence.observed_at=0; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverOuterTimeMismatch(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.takeover_evidence.observed_at--; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverEmptyInstance(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.claimant.instance_id=""; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverEmptyFingerprint(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.claimant.process_fingerprint=""; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
+bool SWV5S5_D3NegativeTakeoverZeroStartedAt(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ SWV5_OwnershipClaim x=q; x.claimant.started_at=0; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(o,c,x,v); }
 
 bool SWV5S5_D1GenesisDuplicateMutation(const SWV5S5_ReferenceGenesisRequest &valid,const SWV5S5_ReferenceGenesisRequest &changed)
 { SWV5S5_ReferenceGenesis g; bool idempotent=false; return g.BeginProvisioning(valid,idempotent)&&!g.BeginProvisioning(changed,idempotent)&&!idempotent; }
@@ -321,6 +337,97 @@ bool SWV5S5_D1NegativeRestartWrongReleasePolicy(const SWV5_ContractValidationCon
 bool SWV5S5_D1NegativeRestartWrongReleaseVersion(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
 { SWV5_RestartReconciliationInput x=v; x.release_authority_record.contract_version.schema_version--; SWV5S5_ReferenceRestartResult o; return SWV5S5_D1SealMutatedReleaseAuthority(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
 
+bool SWV5S5_D3ResealCheckpoint(SWV5_RestartReconciliationInput &x)
+{
+   x.persisted.reconciliation_vector.source_summary_digest=SWV5_TestReconciliationSourceDigest(x.persisted.reconciliation_vector);
+   SWV5_TestSealCheckpoint(x.persisted);
+   return SWV5S5_IsDigest64Lower(x.persisted.header.payload_digest);
+}
+bool SWV5S5_D3NegativeRestartReconciliationRequired(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.basket.lifecycle.reconciliation_state=SWV5_RECONCILIATION_STATE_REQUIRED; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartResealedBasketState(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.reconciliation_vector.basket_state=SWV5_BASKET_RECOVERY; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartResealedBasketVersion(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.reconciliation_vector.basket_state_version++; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartResealedHardKillGeneration(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.reconciliation_vector.hard_kill_generation++; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartSourceDigestContradiction(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.reconciliation_vector.symbol_long_volume+=0.01; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartWrongProductionPayload(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.header.payload_size++; SWV5S5_ReferenceRestartResult o; return !SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartWrongReleaseReferenceVersion(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_authority_reference.contract_version.schema_version--; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeRestartFutureEffectiveRelease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{
+   SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.approved_at=c.clock_time+10;
+   x.persisted.hard_kill_state.release_evidence.released_at=c.clock_time+20;
+   x.persisted.hard_kill_state.release_evidence.expires_at=c.clock_time+60;
+   x.persisted.hard_kill_state.release_evidence.release_record_digest=SWV5_TestHardKillReleaseDigest(x.persisted.hard_kill_state.release_evidence);
+   x.release_authority_record.approved_at=x.persisted.hard_kill_state.release_evidence.approved_at;
+   x.release_authority_record.released_at=x.persisted.hard_kill_state.release_evidence.released_at;
+   x.release_authority_record.expires_at=x.persisted.hard_kill_state.release_evidence.expires_at;
+   SWV5S5_ReferenceRestartResult o;
+   return SWV5S5_D1SealMutatedReleaseAuthority(x)&&SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o);
+}
+bool SWV5S5_D3NegativePersistedReleaseDigest(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.release_record_digest="CORRUPT"; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativePersistedReleaseAudit(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.audit_reference=""; x.persisted.hard_kill_state.release_evidence.release_record_digest=SWV5_TestHardKillReleaseDigest(x.persisted.hard_kill_state.release_evidence); SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativePersistedReleaseGeneration(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.release_generation++; x.persisted.hard_kill_state.release_evidence.release_record_digest=SWV5_TestHardKillReleaseDigest(x.persisted.hard_kill_state.release_evidence); SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+
+void SWV5S5_D3MakeZeroCorrelation(SWV5_ExecutionCorrelation &correlation)
+{
+   ZeroMemory(correlation); SWV5_TestMakeVersion(correlation.contract_version);
+   SWV5_TestMakeVersion(correlation.request_identity.contract_version);
+   SWV5_TestMakeVersion(correlation.broker_identity.contract_version);
+}
+bool SWV5S5_D3MakeZeroHistoryRestart(SWV5_RestartReconciliationInput &x)
+{
+   x.persisted.basket.lifecycle.state=SWV5_BASKET_IDLE;
+   x.persisted.basket.lifecycle.aggregate_open_volume=0.0; x.persisted.basket.lifecycle.residual_volume=0.0;
+   x.persisted.basket.lifecycle.live_position_count=0; x.persisted.basket.lifecycle.live_order_count=0;
+   x.persisted.basket.lifecycle.pending_request_count=0; x.persisted.basket.close_verification=SWV5_CLOSE_ZERO_RESIDUAL_CONFIRMED;
+   x.persisted.basket.aggregate_closed_volume=x.persisted.basket.initial_volume;
+   SWV5S5_D3MakeZeroCorrelation(x.persisted.last_confirmed_correlation);
+   x.broker.symbol_long_volume=0.0; x.broker.symbol_short_volume=0.0; x.broker.symbol_net_volume=0.0;
+   x.broker.aggregate_position_volume=0.0; x.broker.basket_open_volume=0.0; x.broker.residual_volume=0.0;
+   x.broker.position_count=0; x.broker.order_count=0; x.broker.transaction_high_watermark=0;
+   SWV5S5_D3MakeZeroCorrelation(x.broker.latest_confirmed_correlation); ZeroMemory(x.broker.latest_broker_event_identity);
+   SWV5_TestMakeVersion(x.broker.latest_broker_event_identity.contract_version);
+   x.persisted.reconciliation_vector.symbol_long_volume=0.0; x.persisted.reconciliation_vector.symbol_short_volume=0.0;
+   x.persisted.reconciliation_vector.symbol_net_volume=0.0; x.persisted.reconciliation_vector.aggregate_position_volume=0.0;
+   x.persisted.reconciliation_vector.basket_open_volume=0.0; x.persisted.reconciliation_vector.residual_volume=0.0;
+   x.persisted.reconciliation_vector.position_count=0; x.persisted.reconciliation_vector.order_count=0;
+   x.persisted.reconciliation_vector.pending_request_count=0; x.persisted.reconciliation_vector.transaction_high_watermark=0;
+   x.persisted.reconciliation_vector.basket_state=SWV5_BASKET_IDLE;
+   x.persisted.reconciliation_vector.latest_confirmed_correlation=x.persisted.last_confirmed_correlation;
+   x.persisted.reconciliation_vector.latest_broker_event_identity=x.broker.latest_broker_event_identity;
+   return SWV5S5_D2SealBrokerSummary(x.broker)&&SWV5S5_D3ResealCheckpoint(x);
+}
+bool SWV5S5_D3PositiveRestartZeroHistory(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; SWV5S5_ReferenceRestartResult o; return ArraySize(r)==0&&SWV5S5_D3MakeZeroHistoryRestart(x)&&SWV5S5_D1Restart(c,x,r,g,l,o)&&o.disposition==SWV5_RESTART_SAFE_TO_RESUME; }
+bool SWV5S5_D3NegativeZeroHistoryWithIdentity(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.latest_broker_event_identity.broker_event_id="FABRICATED"; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryNonzeroExposure(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.aggregate_position_volume=0.01; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryNonzeroHwm(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.transaction_high_watermark=1; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryPosition(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.position_count=1; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroPriorOrderCount(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.order_count=1; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryStaleQuery(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.observed_at=(datetime)(c.clock_time-SWV5_MAX_RESTART_EVIDENCE_AGE_SECONDS_V5-1); x.broker.queries.observed_at=x.broker.observed_at; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryWrongNamespace(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.persistence_namespace.basket_id.value="FOREIGN"; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryWrongFence(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.claimant_fence.lease_version++; SWV5S5_ReferenceRestartResult o; return !SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryFakeCorrelation(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.latest_confirmed_correlation.request_identity.request_id.correlation_id="FABRICATED"; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D3NegativeZeroHistoryMissingQuery(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ SWV5_RestartReconciliationInput x=v; if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false; x.broker.queries.completed_flags&=~SWV5_QUERY_TRANSACTIONS; SWV5S5_ReferenceRestartResult o; return SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+
 bool SWV5S5_D2PositiveLedgerAcceptance(const SWV5S5_IngressLedgerHeader &header,
    const SWV5S5_IngressLedgerIndexEntry &index[],const SWV5S5_IngressLedgerRecord &records[],
    const SWV5S5_IngressLedgerProposal &proposal,const SWV5S5_IngressLedgerIndexEntry &next_index[],
@@ -409,6 +516,7 @@ bool SWV5S5_D2PositiveRequestSetPublication(const SWV5S5_RequestSetPublicationAu
    SWV5S5_RequestSetPublicationAuthority loaded; SWV5_PendingRequest readback[];
    return store.Initialize(authority,current_requests,checkpoint_authority,checkpoint) &&
       store.TryPublishRequestSet(proposal,proposed_requests,result,tx) && store.LoadRequestSet(loaded,readback) &&
+      result.disposition==SWV5S5_PUBLICATION_COMMITTED && tx.this_transaction_won &&
       ArraySize(readback)==ArraySize(proposed_requests) && loaded.current_complete_set_digest==proposal.proposed_complete_set_digest;
 }
 
@@ -420,6 +528,7 @@ bool SWV5S5_D2PositiveCheckpointAfterSetReload(const SWV5S5_RequestSetPublicatio
    SWV5_PersistedCheckpoint loaded;
    return store.Initialize(authority,requests,checkpoint_authority,checkpoint) &&
       store.TryPublishCheckpoint(proposal,result,tx) && store.LoadCheckpoint(loaded) &&
+      result.disposition==SWV5S5_PUBLICATION_COMMITTED && tx.this_transaction_won &&
       loaded.header.record_sequence==proposal.proposed_checkpoint.header.record_sequence;
 }
 
@@ -431,7 +540,61 @@ bool SWV5S5_D2NegativeCheckpointStaleAfterSetChange(const SWV5S5_RequestSetPubli
    SWV5S5_ReferencePublicationStore store; SWV5S5_FencedPublicationResult result; SWV5S5_ReferenceTransactionResult tx;
    if(!store.Initialize(authority,current_requests,checkpoint_authority,checkpoint) ||
       !store.TryPublishRequestSet(set_proposal,proposed_requests,result,tx)) return false;
-   return !store.TryPublishCheckpoint(stale_checkpoint,result,tx);
+   return !store.TryPublishCheckpoint(stale_checkpoint,result,tx) && result.disposition!=SWV5S5_PUBLICATION_COMMITTED;
+}
+
+bool SWV5S5_D3PositiveRequestSetPureProposalOnly(const SWV5S5_RequestSetPublicationAuthority &authority,
+   const SWV5_PendingRequest &current_requests[],const SWV5S5_RequestSetPublicationProposal &proposal,
+   const SWV5_PendingRequest &proposed_requests[])
+{
+   SWV5S5_FencedPublicationResult result;
+   return SWV5S5_EvaluateRequestSetPublication(authority,current_requests,proposal,proposed_requests,result) &&
+      result.disposition==SWV5S5_PUBLICATION_PROPOSAL_VALID;
+}
+bool SWV5S5_D3NegativeRequestSetUncertainNotCommitted(const SWV5S5_RequestSetPublicationAuthority &authority,
+   const SWV5_PendingRequest &current_requests[],const SWV5S5_CheckpointPublicationAuthority &checkpoint_authority,
+   const SWV5_PersistedCheckpoint &checkpoint,const SWV5S5_RequestSetPublicationProposal &proposal,
+   const SWV5_PendingRequest &proposed_requests[])
+{
+   SWV5S5_ReferencePublicationStore store; SWV5S5_FencedPublicationResult result; SWV5S5_ReferenceTransactionResult tx;
+   return store.Initialize(authority,current_requests,checkpoint_authority,checkpoint) &&
+      !store.TryPublishRequestSet(proposal,proposed_requests,result,tx,SWV5S5_REF_FAULT_AFTER_DURABLE_COMMIT) &&
+      result.disposition!=SWV5S5_PUBLICATION_COMMITTED;
+}
+bool SWV5S5_D3NegativeRequestSetFailedCasNotCommitted(const SWV5S5_RequestSetPublicationAuthority &authority,
+   const SWV5_PendingRequest &current_requests[],const SWV5S5_CheckpointPublicationAuthority &checkpoint_authority,
+   const SWV5_PersistedCheckpoint &checkpoint,const SWV5S5_RequestSetPublicationProposal &proposal,
+   const SWV5_PendingRequest &proposed_requests[])
+{
+   SWV5S5_ReferencePublicationStore store; SWV5S5_FencedPublicationResult result; SWV5S5_ReferenceTransactionResult tx;
+   return store.Initialize(authority,current_requests,checkpoint_authority,checkpoint) &&
+      !store.TryPublishRequestSet(proposal,proposed_requests,result,tx,SWV5S5_REF_FAULT_BEFORE_MUTATION) &&
+      result.disposition!=SWV5S5_PUBLICATION_COMMITTED;
+}
+bool SWV5S5_D3PositiveCheckpointPureProposalOnly(const SWV5S5_CheckpointPublicationAuthority &authority,
+   const SWV5S5_CheckpointPublicationProposal &proposal)
+{
+   SWV5S5_FencedPublicationResult result;
+   return SWV5S5_EvaluateCheckpointPublication(authority,proposal,result) &&
+      result.disposition==SWV5S5_PUBLICATION_PROPOSAL_VALID;
+}
+bool SWV5S5_D3NegativeCheckpointReadbackNotCommitted(const SWV5S5_RequestSetPublicationAuthority &authority,
+   const SWV5_PendingRequest &requests[],const SWV5S5_CheckpointPublicationAuthority &checkpoint_authority,
+   const SWV5_PersistedCheckpoint &checkpoint,const SWV5S5_CheckpointPublicationProposal &proposal)
+{
+   SWV5S5_ReferencePublicationStore store; SWV5S5_FencedPublicationResult result; SWV5S5_ReferenceTransactionResult tx;
+   return store.Initialize(authority,requests,checkpoint_authority,checkpoint) &&
+      !store.TryPublishCheckpoint(proposal,result,tx,SWV5S5_REF_FAULT_BEFORE_READBACK) &&
+      result.disposition!=SWV5S5_PUBLICATION_COMMITTED;
+}
+bool SWV5S5_D3NegativeCheckpointFailedCasNotCommitted(const SWV5S5_RequestSetPublicationAuthority &authority,
+   const SWV5_PendingRequest &requests[],const SWV5S5_CheckpointPublicationAuthority &checkpoint_authority,
+   const SWV5_PersistedCheckpoint &checkpoint,const SWV5S5_CheckpointPublicationProposal &proposal)
+{
+   SWV5S5_ReferencePublicationStore store; SWV5S5_FencedPublicationResult result; SWV5S5_ReferenceTransactionResult tx;
+   return store.Initialize(authority,requests,checkpoint_authority,checkpoint) &&
+      !store.TryPublishCheckpoint(proposal,result,tx,SWV5S5_REF_FAULT_BEFORE_MUTATION) &&
+      result.disposition!=SWV5S5_PUBLICATION_COMMITTED;
 }
 
 bool SWV5S5_D2NegativeRequestSetForeignCanonicalDomain(const SWV5S5_RequestSetPublicationAuthority &authority,

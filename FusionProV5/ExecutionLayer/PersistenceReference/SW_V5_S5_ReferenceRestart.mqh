@@ -127,6 +127,145 @@ bool SWV5S5_ReferencePersistedRequestValid(const SWV5_PersistedRequestEvidence &
       request.intent.request_identity.idempotency_key!="";
 }
 
+bool SWV5S5_ReferencePersistedReleaseEvidenceValid(const SWV5_HardKillState &state,
+                                                    const SWV5_ContractValidationContext &context)
+{
+   const SWV5_HardKillReleaseEvidence evidence=state.release_evidence;
+   string expected_digest;
+   return SWV5S5_IsV5Version(state.contract_version) &&
+      SWV5S5_IsV5Version(state.persistence_namespace.contract_version) &&
+      SWV5S5_IsV5Version(state.account_namespace.contract_version) &&
+      SWV5S5_IsV5Version(evidence.contract_version) &&
+      SWV5S5_IsV5Version(evidence.broker_evidence.contract_version) &&
+      SWV5S5_IsV5Version(evidence.persistence_evidence.contract_version) &&
+      SWV5S5_IsV5Version(evidence.exposure_evidence.contract_version) &&
+      SWV5S5_EqualNamespace(evidence.persistence_namespace,state.persistence_namespace) &&
+      evidence.release_id!="" && evidence.latch_id==state.latch_id &&
+      evidence.latch_generation==state.latch_generation && evidence.latch_generation>0 &&
+      evidence.release_generation==state.release_generation && evidence.release_generation>0 &&
+      evidence.approval_policy_id!="" && evidence.approval_sequence>0 &&
+      evidence.operator_identity.operator_id!="" && evidence.operator_identity.authority_role!="" &&
+      evidence.operator_identity.authentication_reference!="" && evidence.operator_identity.authenticated_at>0 &&
+      evidence.approving_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
+      evidence.broker_evidence.evidence_id!="" && evidence.broker_evidence.state_digest!="" &&
+      evidence.broker_evidence.evidence_sequence>0 && evidence.broker_evidence.observed_at>0 &&
+      SWV5S5_EqualNamespace(evidence.broker_evidence.persistence_namespace,state.persistence_namespace) &&
+      evidence.broker_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER &&
+      evidence.broker_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
+      evidence.persistence_evidence.evidence_id!="" && evidence.persistence_evidence.state_digest!="" &&
+      evidence.persistence_evidence.evidence_sequence>0 && evidence.persistence_evidence.observed_at>0 &&
+      SWV5S5_EqualNamespace(evidence.persistence_evidence.persistence_namespace,state.persistence_namespace) &&
+      evidence.persistence_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_PERSISTENCE &&
+      evidence.persistence_evidence.authority_source==SWV5_AUTHORITY_PERSISTED_CHECKPOINT &&
+      evidence.exposure_evidence.evidence_id!="" && evidence.exposure_evidence.evidence_sequence>0 &&
+      evidence.exposure_evidence.observed_at>0 && evidence.exposure_evidence.zero_or_reducing &&
+      SWV5_IsFiniteNumber(evidence.exposure_evidence.observed_exposure_volume) &&
+      SWV5_IsFiniteNumber(evidence.exposure_evidence.prior_exposure_volume) &&
+      evidence.exposure_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
+      evidence.exposure_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
+      evidence.approved_at>0 && evidence.released_at>=evidence.approved_at &&
+      evidence.released_at<=context.clock_time && context.clock_time<evidence.expires_at &&
+      evidence.operator_identity.authenticated_at<=evidence.approved_at &&
+      evidence.broker_evidence.observed_at<=evidence.approved_at &&
+      evidence.persistence_evidence.observed_at<=evidence.approved_at &&
+      evidence.exposure_evidence.observed_at<=evidence.approved_at &&
+      evidence.release_record_sequence>0 && evidence.audit_reference!="" &&
+      SWV5S5_ReferenceReleaseEvidenceDigest(evidence,expected_digest) &&
+      evidence.release_record_digest==expected_digest && SWV5S5_IsDigest64Lower(evidence.release_record_digest);
+}
+
+bool SWV5S5_ReferenceZeroHistoryCandidate(const SWV5_RestartReconciliationInput &restart_input,
+                                           const SWV5_PersistedRequestEvidence &pending_requests[],
+                                           const SWV5S5_ReferenceGenesisRecord &genesis,
+                                           const SWV5_InstanceLease &lease)
+{
+   const SWV5_PersistedReconciliationVector reconciliation=restart_input.persisted.reconciliation_vector;
+   return genesis.state==SWV5S5_GENESIS_READY_FOR_RECONCILIATION &&
+      lease.status==SWV5_LOCK_ACQUIRED && SWV5S5_EqualFence(lease.fence,restart_input.claimant_fence) &&
+      ArraySize(pending_requests)==0 && restart_input.persisted.pending_request_set.request_count==0 &&
+      restart_input.restart_requests.pending_request_count==0 && reconciliation.pending_request_count==0 &&
+      restart_input.broker.position_count==0 && restart_input.broker.order_count==0 &&
+      restart_input.broker.symbol_long_volume==0.0 && restart_input.broker.symbol_short_volume==0.0 &&
+      restart_input.broker.symbol_net_volume==0.0 && restart_input.broker.aggregate_position_volume==0.0 &&
+      restart_input.broker.basket_open_volume==0.0 && restart_input.broker.residual_volume==0.0 &&
+      reconciliation.position_count==0 && reconciliation.order_count==0 && reconciliation.symbol_long_volume==0.0 &&
+      reconciliation.symbol_short_volume==0.0 && reconciliation.symbol_net_volume==0.0 && reconciliation.aggregate_position_volume==0.0 &&
+      reconciliation.basket_open_volume==0.0 && reconciliation.residual_volume==0.0 &&
+      restart_input.persisted.basket.lifecycle.live_position_count==0 && restart_input.persisted.basket.lifecycle.live_order_count==0 &&
+      restart_input.persisted.basket.lifecycle.pending_request_count==0 && restart_input.persisted.basket.lifecycle.aggregate_open_volume==0.0 &&
+      restart_input.persisted.basket.lifecycle.residual_volume==0.0 &&
+      restart_input.persisted.basket.lifecycle.state==SWV5_BASKET_IDLE &&
+      restart_input.persisted.basket.close_verification==SWV5_CLOSE_ZERO_RESIDUAL_CONFIRMED &&
+      restart_input.persisted.basket.aggregate_closed_volume==restart_input.persisted.basket.initial_volume &&
+      restart_input.broker.transaction_high_watermark==0 && reconciliation.transaction_high_watermark==0 &&
+      SWV5S5_ReferenceZeroCorrelation(restart_input.broker.latest_confirmed_correlation) &&
+      SWV5S5_ReferenceZeroCorrelation(reconciliation.latest_confirmed_correlation) &&
+      SWV5S5_ReferenceZeroCorrelation(restart_input.persisted.last_confirmed_correlation) &&
+      SWV5S5_ReferenceZeroBrokerIdentity(restart_input.broker.latest_broker_event_identity) &&
+      SWV5S5_ReferenceZeroBrokerIdentity(reconciliation.latest_broker_event_identity);
+}
+
+bool SWV5S5_ReferenceCheckpointSemanticValid(const SWV5_ContractValidationContext &context,
+                                              const SWV5_RestartReconciliationInput &restart_input,
+                                              const SWV5_PersistedRequestEvidence &pending_requests[],
+                                              const SWV5S5_ReferenceGenesisRecord &genesis,
+                                              const SWV5_InstanceLease &lease,
+                                              const string request_set_digest,
+                                              bool &zero_history)
+{
+   const SWV5_PersistedCheckpoint checkpoint=restart_input.persisted;
+   const SWV5_PersistedReconciliationVector reconciliation=checkpoint.reconciliation_vector;
+   string source_digest;
+   zero_history=SWV5S5_ReferenceZeroHistoryCandidate(restart_input,pending_requests,genesis,lease);
+   if(!SWV5S5_ReferenceCheckpointProductionIntegrityValid(checkpoint,context) ||
+      !SWV5S5_IsV5Version(checkpoint.basket.contract_version) ||
+      !SWV5S5_IsV5Version(checkpoint.basket.lifecycle.contract_version) ||
+      !SWV5S5_IsV5Version(checkpoint.pending_request_set.contract_version) ||
+      !SWV5S5_IsV5Version(checkpoint.hard_kill_state.contract_version) ||
+      !SWV5S5_IsV5Version(reconciliation.contract_version) ||
+      !SWV5S5_EqualNamespace(checkpoint.header.persistence_namespace,restart_input.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(checkpoint.basket.persistence_namespace,restart_input.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(checkpoint.hard_kill_state.persistence_namespace,restart_input.persistence_namespace) ||
+      !SWV5S5_EqualNamespace(reconciliation.persistence_namespace,restart_input.persistence_namespace) ||
+      checkpoint.basket.lifecycle.basket_id.value!=restart_input.persistence_namespace.basket_id.value ||
+      reconciliation.basket_id.value!=restart_input.persistence_namespace.basket_id.value ||
+      !SWV5S5_EqualFence(checkpoint.header.ownership_fence,restart_input.claimant_fence) ||
+      !SWV5S5_EqualFence(checkpoint.basket.lifecycle.ownership_fence,restart_input.claimant_fence) ||
+      !SWV5S5_EqualFence(reconciliation.ownership_fence,restart_input.claimant_fence) ||
+      !SWV5S5_EqualFence(lease.fence,restart_input.claimant_fence) ||
+      checkpoint.basket.account_mode!=restart_input.broker.account_mode || reconciliation.account_mode!=restart_input.broker.account_mode ||
+      checkpoint.basket.lifecycle.reconciliation_state!=SWV5_RECONCILIATION_STATE_MATCHED ||
+      reconciliation.basket_state!=checkpoint.basket.lifecycle.state ||
+      reconciliation.basket_state_version!=checkpoint.basket.lifecycle.state_version ||
+      reconciliation.hard_kill_generation!=checkpoint.hard_kill_state.latch_generation ||
+      reconciliation.pending_request_count!=checkpoint.pending_request_set.request_count ||
+      reconciliation.pending_request_count!=(uint)ArraySize(pending_requests) ||
+      checkpoint.pending_request_set.request_set_digest!=request_set_digest ||
+      reconciliation.request_set_digest!=request_set_digest ||
+      reconciliation.request_set_revision!=checkpoint.pending_request_set.request_index_revision ||
+      reconciliation.reconciliation_revision==0 || reconciliation.broker_query_sequence_high_watermark==0 ||
+      reconciliation.request_query_sequence_high_watermark==0 ||
+      !SWV5S5_ReferenceReconciliationSourceDigest(reconciliation,source_digest) || reconciliation.source_summary_digest!=source_digest ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.symbol_long_volume,restart_input.broker.symbol_long_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.symbol_short_volume,restart_input.broker.symbol_short_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.symbol_net_volume,restart_input.broker.symbol_net_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.aggregate_position_volume,restart_input.broker.aggregate_position_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.basket_open_volume,restart_input.broker.basket_open_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.residual_volume,restart_input.broker.residual_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.aggregate_position_volume,checkpoint.basket.lifecycle.aggregate_open_volume,context.volume_tolerance) ||
+      !SWV5S5_ReferenceRestartNear(reconciliation.residual_volume,checkpoint.basket.lifecycle.residual_volume,context.volume_tolerance) ||
+      reconciliation.position_count!=restart_input.broker.position_count || reconciliation.order_count!=restart_input.broker.order_count ||
+      reconciliation.position_count!=checkpoint.basket.lifecycle.live_position_count || reconciliation.order_count!=checkpoint.basket.lifecycle.live_order_count)
+      return false;
+   if(zero_history)
+      return SWV5S5_ReferenceBrokerSummaryValid(restart_input.broker,true);
+   return SWV5S5_ReferenceBrokerSummaryValid(restart_input.broker) && reconciliation.transaction_high_watermark>0 &&
+      SWV5S5_ReferenceRestartCorrelationEqual(reconciliation.latest_confirmed_correlation,restart_input.broker.latest_confirmed_correlation) &&
+      SWV5S5_ReferenceRestartCorrelationEqual(checkpoint.last_confirmed_correlation,restart_input.broker.latest_confirmed_correlation) &&
+      SWV5S5_ReferenceRestartBrokerIdentityEqual(reconciliation.latest_broker_event_identity,restart_input.broker.latest_broker_event_identity) &&
+      reconciliation.transaction_high_watermark==restart_input.broker.transaction_high_watermark;
+}
+
 bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRecord &record,
                                            const SWV5_PersistedCheckpoint &checkpoint,
                                            const SWV5_ContractValidationContext &context)
@@ -135,7 +274,8 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
    const SWV5_HardKillReleaseEvidence evidence=state.release_evidence;
    const SWV5_HardKillReleaseAuthorityReference reference=state.release_authority_reference;
    string expected_digest,operator_record,operator_evidence;
-   if(!SWV5S5_IsV5Version(record.contract_version) ||
+   if(!SWV5S5_ReferencePersistedReleaseEvidenceValid(state,context) ||
+      !SWV5S5_IsV5Version(record.contract_version) || !SWV5S5_IsV5Version(reference.contract_version) ||
       !SWV5S5_ReferenceReleaseAuthorityDigest(record,expected_digest) ||
       record.authority_record_digest!=expected_digest || !SWV5S5_IsDigest64Lower(record.authority_record_digest) ||
       !SWV5S5_EqualNamespace(record.persistence_namespace,checkpoint.header.persistence_namespace) ||
@@ -177,7 +317,8 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
       record.exposure_evidence_reference.issuing_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
       record.exposure_evidence_reference.authority_source!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
       !record.exposure_evidence_reference.zero_or_reducing ||
-      record.approved_at<=0 || record.released_at<record.approved_at || record.expires_at<=context.clock_time ||
+      record.approved_at<=0 || record.released_at<record.approved_at || record.released_at>context.clock_time ||
+      record.expires_at<=context.clock_time ||
       record.operator_identity.authenticated_at>record.approved_at ||
       record.broker_evidence_reference.observed_at>record.approved_at ||
       record.persistence_evidence_reference.observed_at>record.approved_at ||
@@ -222,11 +363,12 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    if(!schema || !namespace_ok || !fence_ok || genesis.state!=SWV5S5_GENESIS_READY_FOR_RECONCILIATION ||
       restart_input.persistence_status!=SWV5_PERSISTENCE_LOADED || lease.status==SWV5_LOCK_CONFLICT || lease.status==SWV5_LOCK_RECOVERY_REQUIRED)
    { result.diagnostic="SCHEMA_GENESIS_PERSISTENCE_OR_OWNER_INVALID"; return false; }
+   bool zero_history=false;
    if(!SWV5S5_DeriveCheckpointProjection(restart_input.persisted,checkpoint_projection) ||
       !SWV5S5_DeriveCompleteRequestSetDigest(requests,set_digest) ||
        restart_input.persisted.pending_request_set.request_set_digest!=set_digest ||
        restart_input.persisted.pending_request_set.request_count!=(uint)ArraySize(requests) ||
-       !SWV5S5_ReferenceBrokerSummaryValid(restart_input.broker) ||
+       !SWV5S5_ReferenceCheckpointSemanticValid(context,restart_input,pending_requests,genesis,lease,set_digest,zero_history) ||
        !SWV5S5_ReferenceExecutionSummaryValid(restart_input.restart_requests) ||
        !SWV5S5_ReferenceBrokerSummaryDigest(restart_input.broker,broker_digest) || restart_input.broker.complete_summary_digest!=broker_digest ||
        !SWV5S5_ReferenceExecutionSummaryDigest(restart_input.restart_requests,execution_digest) || restart_input.restart_requests.complete_summary_digest!=execution_digest)

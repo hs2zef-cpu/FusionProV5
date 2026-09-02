@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.5 |
-| Date | 2026-08-28 |
+| Version | 5.8 |
+| Date | 2026-09-02 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -54,6 +54,9 @@
 | 5.3 | 2026-08-27 | Completed the Phase D0 documentation-only candidate package: ADR-021 selects native MQL5 SQLite in the common folder with one-domain transactions, exact conditional CAS, authoritative readback, and `TimeCurrent()` server-formed observation policy; ADR-022 defines separate fail-closed genesis provisioning with active Hard Kill and mandatory zero-state reconciliation. Both remain pending new independent D0 review; Phase D implementation remains unauthorized. |
 | 5.4 | 2026-08-28 | Recorded the New Independent Sprint 5 Phase D0 review PASS with no Critical, Major, or Minor findings; approved ADR-021 and ADR-022; closed the D0 gate; and authorized Phase D only for deterministic fake-store/fake-clock persistence/restart reference implementation. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5, runtime, main merge, production, and live trading remain unauthorized. |
 | 5.5 | 2026-08-28 | Recorded the independent Phase D persistence/restart audit FAIL with 3 Critical, 7 Major, and 0 Minor findings; Phase D is incomplete and Phase E is not authorized. Authorized D.1 only for frozen-authority-faithful correction of the fake-store/fake-clock reference and verification gap. Architecture, Phase B/C/D0, Production V5, and ADR semantics remain unchanged. |
+| 5.6 | 2026-08-31 | Recorded the Phase D.1 re-audit FAIL with 3 Critical, 5 Major, and 0 Minor findings and authorized the narrow D.2 reference correction. |
+| 5.7 | 2026-09-01 | Recorded the Phase D.2 final independent re-audit FAIL with 3 Critical, 4 Major, and 0 Minor findings and authorized only the enumerated D.3 correction. |
+| 5.8 | 2026-09-02 | Recorded Phase D.3 self-verification of frozen-version/claimant/time takeover validation, complete Production LP2 checkpoint/vector/Hard Kill validation, ADR-022 zero-history, and post-readback publication results. Phase D remains incomplete pending a new independent D.3 re-audit; Phase E remains unauthorized. |
 
 ## Purpose
 
@@ -69,7 +72,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Architecture Review and Phase B, Phase C, and Phase D0 gates are **CLOSED / PASS**. The independent Phase D.1 re-audit returned **FAIL — Critical 3 / Major 5 / Minor 0**; Phase D is incomplete. Phase D.2 is authorized only for the enumerated narrow conformance corrections to the fake-store/fake-clock reference. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Architecture Review and Phase B, Phase C, and Phase D0 gates are **CLOSED / PASS**. The Phase D.2 final independent re-audit returned **FAIL — Critical 3 / Major 4 / Minor 0**; Phase D is incomplete. Phase D.3 is limited to the enumerated takeover, restart, Hard Kill, zero-history, publication-result, and evidence corrections in the fake-store/fake-clock reference. A new independent D.3 re-audit is required. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 
@@ -529,4 +532,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Correct only the authorized Sprint 5 Phase D.1 frozen-authority-conformance gaps on `sprint5-phase-d-persistence-restart-reference`. Preserve frozen Phase B/C, Production V5, and ADR semantics. Use only the deterministic in-memory fake transactional store and validated fake clock/query evidence. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."
+"Submit the Sprint 5 Phase D.3 fake-store/fake-clock correction on `sprint5-phase-d-persistence-restart-reference` to a new independent persistence/restart re-audit. Preserve frozen Phase B/C, Production V5, and ADR semantics. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."

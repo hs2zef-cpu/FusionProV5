@@ -103,8 +103,63 @@ private:
          evidence.evidence_id!="" && SWV5S5_IsDigest64Lower(evidence.state_digest) &&
          evidence.issuing_component==component && evidence.authority_source==source &&
          evidence.evidence_sequence>0 && evidence.evidence_sequence<=enclosing_sequence &&
-         evidence.observed_at>=m_lease.expires_at && evidence.observed_at<=enclosing_observed_at &&
-         evidence.observed_at<=clock.observed_at;
+         evidence.observed_at==enclosing_observed_at && evidence.observed_at==clock.observed_at;
+   }
+
+   bool CompleteOwnerValid(const SWV5_OwnerIdentity &owner) const
+   {
+      return SWV5S5_ReferenceOwnershipKeyEqual(owner.key,m_lease.fence.ownership_namespace) &&
+         owner.instance_id!="" && owner.process_fingerprint!="" && owner.started_at>0;
+   }
+
+   bool TakeoverEvidenceValid(const SWV5S5_ReferenceClockObservation &validated_clock,
+                              const SWV5_OwnershipClaim &claim) const
+   {
+      const SWV5_OwnershipTakeoverEvidence e=claim.takeover_evidence;
+      const SWV5_LeaseExpiryEvidence x=e.lease_expiry;
+      if(!SWV5S5_IsV5Version(claim.contract_version) ||
+         !SWV5S5_IsV5Version(e.contract_version) || !SWV5S5_IsV5Version(x.contract_version) ||
+         !SWV5S5_IsV5Version(m_lease.contract_version) ||
+         !SWV5S5_IsV5Version(m_lease.fence.contract_version) ||
+         !SWV5S5_IsV5Version(claim.expected_fence.contract_version) ||
+         !SWV5S5_IsV5Version(e.broker_reconciliation.contract_version) ||
+         !SWV5S5_IsV5Version(e.persistence_reconciliation.contract_version) ||
+         !CompleteOwnerValid(claim.claimant) || SWV5S5_ReferenceOwnerEqual(claim.claimant,m_lease.fence.owner) ||
+         !x.expired || x.observed_at<=0 || e.observed_at<=0 || e.evidenced_at<=0 ||
+         e.observed_at!=x.observed_at || e.observed_at!=validated_clock.observed_at ||
+         e.observed_at>e.evidenced_at || e.evidenced_at>validated_clock.observed_at ||
+         !SWV5S5_ReferenceOwnershipKeyEqual(x.observed_ownership_key,m_lease.fence.ownership_namespace) ||
+         !SWV5S5_ReferenceOwnershipKeyEqual(x.observed_ownership_namespace,m_lease.fence.ownership_namespace) ||
+         !SWV5S5_ReferenceOwnerEqual(x.observed_owner,m_lease.fence.owner) ||
+         x.clock_id!=validated_clock.clock_id || x.clock_authority!=validated_clock.authority ||
+         x.observed_clock_sequence!=validated_clock.observation_sequence ||
+         x.observed_lease_version!=m_lease.fence.lease_version ||
+         x.observed_heartbeat_sequence!=m_lease.heartbeat_sequence ||
+         x.observed_store_revision!=m_lease.store_revision || x.observed_expiry_time!=m_lease.expires_at ||
+         x.observed_takeover_generation!=m_lease.fence.takeover_generation ||
+         validated_clock.observed_at<m_lease.expires_at ||
+         !SWV5S5_ReferenceOwnerEqual(e.observed_owner,m_lease.fence.owner) ||
+         !SWV5S5_ReferenceOwnershipKeyEqual(e.observed_ownership_key,m_lease.fence.ownership_namespace) ||
+         !SWV5S5_ReferenceOwnershipKeyEqual(e.observed_ownership_namespace,m_lease.fence.ownership_namespace) ||
+         e.observed_lease_version!=m_lease.fence.lease_version || e.observed_store_revision!=m_lease.store_revision ||
+         e.observed_heartbeat_sequence!=m_lease.heartbeat_sequence || e.observed_clock_id!=validated_clock.clock_id ||
+         e.observed_clock_authority!=validated_clock.authority ||
+         e.observed_clock_sequence!=validated_clock.observation_sequence ||
+         e.observed_expiry_time!=m_lease.expires_at ||
+         e.observed_takeover_generation!=m_lease.fence.takeover_generation ||
+         e.proposed_takeover_generation!=m_lease.fence.takeover_generation+1 ||
+         e.authority==SWV5_COMPONENT_AUTHORITY_NONE || e.authority==SWV5_COMPONENT_AUTHORITY_EXECUTION ||
+         e.authority==SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE ||
+         e.independent_authority_source!=SWV5_AUTHORITY_OPERATOR || e.evidence_sequence==0 ||
+         !m_namespace_configured ||
+         !SWV5S5_EqualNamespace(e.broker_reconciliation.persistence_namespace,m_persistence_namespace) ||
+         !SWV5S5_EqualNamespace(e.persistence_reconciliation.persistence_namespace,m_persistence_namespace) ||
+         e.broker_reconciliation.evidence_id==e.persistence_reconciliation.evidence_id ||
+         !TypedReconciliationValid(e.broker_reconciliation,SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,
+            SWV5_AUTHORITY_LIVE_BROKER_STATE,validated_clock,e.evidence_sequence,e.observed_at) ||
+         !TypedReconciliationValid(e.persistence_reconciliation,SWV5_COMPONENT_AUTHORITY_PERSISTENCE,
+            SWV5_AUTHORITY_PERSISTED_CHECKPOINT,validated_clock,e.evidence_sequence,e.observed_at)) return false;
+      return true;
    }
 
 public:
@@ -182,39 +237,8 @@ public:
    {
       if(!m_initialized || !clock.ValidateAccepted(validated_clock) || m_lease.status!=SWV5_LOCK_EXPIRED ||
          !SWV5S5_EqualFence(claim.expected_fence,m_lease.fence) || claim.expected_store_revision!=m_lease.store_revision ||
-         !SWV5S5_ReferenceOwnershipKeyEqual(claim.claimant.key,m_lease.fence.ownership_namespace) ||
-         SWV5S5_ReferenceOwnerEqual(claim.claimant,m_lease.fence.owner) || claim.lease_duration_seconds==0) return false;
+         claim.lease_duration_seconds==0 || !TakeoverEvidenceValid(validated_clock,claim)) return false;
       const SWV5_OwnershipTakeoverEvidence e=claim.takeover_evidence;
-      const SWV5_LeaseExpiryEvidence x=e.lease_expiry;
-      if(!x.expired || !SWV5S5_ReferenceOwnershipKeyEqual(x.observed_ownership_key,m_lease.fence.ownership_namespace) ||
-         !SWV5S5_ReferenceOwnershipKeyEqual(x.observed_ownership_namespace,m_lease.fence.ownership_namespace) ||
-         !SWV5S5_ReferenceOwnerEqual(x.observed_owner,m_lease.fence.owner) ||
-         x.clock_id!=validated_clock.clock_id || x.clock_authority!=validated_clock.authority ||
-         x.observed_clock_sequence!=validated_clock.observation_sequence || x.observed_at!=validated_clock.observed_at ||
-         x.observed_lease_version!=m_lease.fence.lease_version || x.observed_heartbeat_sequence!=m_lease.heartbeat_sequence ||
-         x.observed_store_revision!=m_lease.store_revision || x.observed_expiry_time!=m_lease.expires_at ||
-         x.observed_takeover_generation!=m_lease.fence.takeover_generation || validated_clock.observed_at<m_lease.expires_at ||
-         !SWV5S5_ReferenceOwnerEqual(e.observed_owner,m_lease.fence.owner) ||
-         !SWV5S5_ReferenceOwnershipKeyEqual(e.observed_ownership_key,m_lease.fence.ownership_namespace) ||
-         !SWV5S5_ReferenceOwnershipKeyEqual(e.observed_ownership_namespace,m_lease.fence.ownership_namespace) ||
-         e.observed_lease_version!=m_lease.fence.lease_version || e.observed_store_revision!=m_lease.store_revision ||
-         e.observed_heartbeat_sequence!=m_lease.heartbeat_sequence || e.observed_clock_id!=validated_clock.clock_id ||
-         e.observed_clock_authority!=validated_clock.authority || e.observed_clock_sequence!=validated_clock.observation_sequence ||
-         e.observed_expiry_time!=m_lease.expires_at || e.observed_takeover_generation!=m_lease.fence.takeover_generation ||
-         e.proposed_takeover_generation!=m_lease.fence.takeover_generation+1 ||
-         e.authority==SWV5_COMPONENT_AUTHORITY_NONE || e.authority==SWV5_COMPONENT_AUTHORITY_EXECUTION ||
-         e.authority==SWV5_COMPONENT_AUTHORITY_TEST_FIXTURE || e.independent_authority_source!=SWV5_AUTHORITY_OPERATOR ||
-         e.evidence_sequence==0 || e.evidenced_at<m_lease.expires_at || e.evidenced_at>validated_clock.observed_at ||
-         !m_namespace_configured ||
-         !SWV5S5_EqualNamespace(e.broker_reconciliation.persistence_namespace,m_persistence_namespace) ||
-         !SWV5S5_EqualNamespace(e.persistence_reconciliation.persistence_namespace,m_persistence_namespace) ||
-         e.broker_reconciliation.evidence_id==e.persistence_reconciliation.evidence_id ||
-         !TypedReconciliationValid(e.broker_reconciliation,SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,
-                                     SWV5_AUTHORITY_LIVE_BROKER_STATE,validated_clock,
-                                     e.evidence_sequence,e.evidenced_at) ||
-         !TypedReconciliationValid(e.persistence_reconciliation,SWV5_COMPONENT_AUTHORITY_PERSISTENCE,
-                                     SWV5_AUTHORITY_PERSISTED_CHECKPOINT,validated_clock,
-                                     e.evidence_sequence,e.evidenced_at)) return false;
       result=m_lease; result.status=SWV5_LOCK_ACQUIRED; result.fence.owner=claim.claimant;
       result.fence.lease_version=m_lease.fence.lease_version+1;
       result.fence.takeover_generation=e.proposed_takeover_generation;

@@ -75,7 +75,8 @@ public:
    bool TryPublishRequestSet(const SWV5S5_RequestSetPublicationProposal &proposal,
                              const SWV5_PendingRequest &proposed_requests[],
                              SWV5S5_FencedPublicationResult &result,
-                             SWV5S5_ReferenceTransactionResult &transaction)
+                             SWV5S5_ReferenceTransactionResult &transaction,
+                             const SWV5S5_ReferenceFaultPoint fault=SWV5S5_REF_FAULT_NONE)
    {
       if(!m_initialized || !SWV5S5_EvaluateRequestSetPublication(m_request_authority,m_requests,proposal,proposed_requests,result)) return false;
       string current_payload,current_set_digest,current_row_digest,current_scope,current_fence;
@@ -93,20 +94,31 @@ public:
       row.store_revision=current.store_revision+1; row.authority_fence_digest=p_fence; row.payload=proposed_payload;
       row.payload_digest=proposed_row_digest;
       if(!m_store.CompareAndSet(row.domain,current_scope,current.store_revision,current.payload_digest,current.authority_fence_digest,row,
-                                SWV5S5_REF_FAULT_NONE,transaction)) return false;
+                                fault,transaction))
+      { result.disposition=SWV5S5_PUBLICATION_CONFLICT; result.reason_code="REQUEST_SET_COMMIT_NOT_CONFIRMED"; return false; }
+      if(!m_store.Load(SWV5S5_REF_DOMAIN_REQUEST_SET,readback) || readback.payload!=row.payload ||
+         readback.payload_digest!=row.payload_digest || readback.store_revision!=row.store_revision)
+      { result.disposition=SWV5S5_PUBLICATION_INTEGRITY_FAILURE; result.reason_code="REQUEST_SET_READBACK_MISMATCH"; return false; }
       ArrayResize(m_requests,ArraySize(proposed_requests)); for(int i=0;i<ArraySize(proposed_requests);i++) m_requests[i]=proposed_requests[i];
       m_request_authority.current_set_header=proposal.proposed_set_header; m_request_authority.current_complete_set_digest=proposed_set_digest;
       m_request_authority.store_revision=proposal.proposed_store_revision; m_request_store_revision++;
       string verify_payload,verify_set,verify_row,verify_scope,verify_fence;
-      return m_store.Load(SWV5S5_REF_DOMAIN_REQUEST_SET,readback) && readback.payload==row.payload &&
-         RequestPayload(m_requests,verify_payload,verify_set,verify_row,verify_scope,verify_fence) &&
-         verify_payload==readback.payload && verify_row==readback.payload_digest &&
-         verify_set==m_request_authority.current_complete_set_digest;
+      if(!RequestPayload(m_requests,verify_payload,verify_set,verify_row,verify_scope,verify_fence) ||
+         verify_payload!=readback.payload || verify_row!=readback.payload_digest ||
+         verify_set!=m_request_authority.current_complete_set_digest)
+      { result.disposition=SWV5S5_PUBLICATION_INTEGRITY_FAILURE; result.reason_code="REQUEST_SET_TYPED_READBACK_INVALID"; return false; }
+      result.disposition=SWV5S5_PUBLICATION_COMMITTED;
+      result.proposed_store_revision=m_request_authority.store_revision;
+      result.proposed_record_sequence=m_request_authority.current_set_header.record_sequence;
+      result.resulting_projection_digest=m_request_authority.current_complete_set_digest;
+      result.reason_code="REQUEST_SET_COMMITTED_AFTER_AUTHORITATIVE_READBACK";
+      return true;
    }
 
    bool TryPublishCheckpoint(const SWV5S5_CheckpointPublicationProposal &proposal,
                              SWV5S5_FencedPublicationResult &result,
-                             SWV5S5_ReferenceTransactionResult &transaction)
+                             SWV5S5_ReferenceTransactionResult &transaction,
+                             const SWV5S5_ReferenceFaultPoint fault=SWV5S5_REF_FAULT_NONE)
    {
       if(!m_initialized) return false;
       // Authoritative Request Set reload is intentionally before proposal
@@ -131,12 +143,20 @@ public:
       ZeroMemory(row); row.domain=SWV5S5_REF_DOMAIN_CHECKPOINT; row.persistence_namespace_digest=p_scope;
       row.store_revision=current.store_revision+1; row.authority_fence_digest=p_fence; row.payload=proposed_payload; row.payload_digest=proposed_digest;
       if(!m_store.CompareAndSet(row.domain,scope,current.store_revision,current.payload_digest,current.authority_fence_digest,row,
-                                SWV5S5_REF_FAULT_NONE,transaction)) return false;
+                                fault,transaction))
+      { result.disposition=SWV5S5_PUBLICATION_CONFLICT; result.reason_code="CHECKPOINT_COMMIT_NOT_CONFIRMED"; return false; }
+      if(!m_store.Load(SWV5S5_REF_DOMAIN_CHECKPOINT,readback) || readback.payload!=row.payload ||
+         readback.payload_digest!=row.payload_digest || readback.store_revision!=row.store_revision)
+      { result.disposition=SWV5S5_PUBLICATION_INTEGRITY_FAILURE; result.reason_code="CHECKPOINT_READBACK_MISMATCH"; return false; }
       m_checkpoint=proposal.proposed_checkpoint; m_checkpoint_store_revision++;
       m_checkpoint_authority.current_header=m_checkpoint.header;
       m_checkpoint_authority.current_checkpoint_projection_digest=proposal.proposed_checkpoint_projection_digest;
-      return m_store.Load(SWV5S5_REF_DOMAIN_CHECKPOINT,readback) && readback.payload==row.payload &&
-         readback.payload_digest==row.payload_digest;
+      result.disposition=SWV5S5_PUBLICATION_COMMITTED;
+      result.proposed_store_revision=m_checkpoint.header.store_revision;
+      result.proposed_record_sequence=m_checkpoint.header.record_sequence;
+      result.resulting_projection_digest=m_checkpoint_authority.current_checkpoint_projection_digest;
+      result.reason_code="CHECKPOINT_COMMITTED_AFTER_AUTHORITATIVE_READBACK";
+      return true;
    }
 
    bool RequestSetDeepCopyIntact(const SWV5_PendingRequest &caller[]) const

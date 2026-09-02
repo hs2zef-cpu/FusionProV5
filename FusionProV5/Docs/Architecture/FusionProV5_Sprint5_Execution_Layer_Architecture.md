@@ -6,7 +6,7 @@
 |---|---|
 | Sprint 5 Phase A.4 | **ARCHITECTURE REVIEW GATE CLOSED / PASS** |
 | Approved architecture authority | `31e76411829e2f2e6acb24740ddca32b886969e0` |
-| Authorized work | Sprint 5 Phase D.2 narrow persistence/restart conformance correction only |
+| Authorized work | Sprint 5 Phase D.3 narrow takeover/restart/publication correction only |
 | Authorized architecture baseline | Sprint 4 Architecture |
 | Production Contract V5 | Audited and merged; **Architecture Lock not granted** |
 | Runtime implementation | **NOT AUTHORIZED** |
@@ -15,9 +15,9 @@
 | Phase B | **CLOSED / PASS** at `1366edb25238463c9a76fa78257196dbf4c64e34` |
 | Phase C | **CLOSED / PASS** at `55cd230ca222c60cd42dd218efe5e175ba70acd6` |
 | Phase D0 | **CLOSED / PASS — ADR-021 AND ADR-022 APPROVED** |
-| Phase D | **D.1 INDEPENDENT RE-AUDIT FAIL — CRITICAL 3 / MAJOR 5 / MINOR 0; INCOMPLETE** |
-| Phase D.2 | **NARROW CORRECTIVE IMPLEMENTATION AUTHORIZED** |
-| Next gate | **NEW INDEPENDENT SPRINT 5 PHASE D.2 FINAL PERSISTENCE / RESTART RE-AUDIT** |
+| Phase D | **D.2 FINAL INDEPENDENT RE-AUDIT FAIL — CRITICAL 3 / MAJOR 4 / MINOR 0; INCOMPLETE** |
+| Phase D.3 | **NARROW CORRECTIVE IMPLEMENTATION SELF-VERIFIED; INDEPENDENT REVIEW PENDING** |
+| Next gate | **NEW INDEPENDENT SPRINT 5 PHASE D.3 FINAL PERSISTENCE / RESTART RE-AUDIT** |
 
 This document answers: **How can the audited Production Contract V5 become an Execution Layer architecture without coupling broker runtime into the frozen Signal Engine, duplicating requests after a crash, or allowing competing external broker side effects across lease takeover?** It does not authorize or specify how to call a broker API.
 
@@ -762,4 +762,4 @@ V3S remains an independent Research Lab. Its M5 logic, experiments, and discover
 
 ## Review Recommendation
 
-The Architecture Review and Phase B, Phase C, and Phase D0 gates remain **CLOSED / PASS**. The independent Phase D.1 re-audit returned **FAIL — Critical 3 / Major 5 / Minor 0**, so Phase D is incomplete and Phase E is not authorized. Phase D.2 may only correct the enumerated conformance gaps in the fake-store/fake-clock reference. Broker implementation, real persistence/platform integration, MT5, Architecture Lock, merge to main, production, and live trading remain not granted.
+The Architecture Review and Phase B, Phase C, and Phase D0 gates remain **CLOSED / PASS**. The Phase D.2 final independent re-audit returned **FAIL — Critical 3 / Major 4 / Minor 0**, so Phase D is incomplete and Phase E is not authorized. Phase D.3 is limited to the enumerated fake-store/fake-clock reference corrections and is not an independent audit result. Broker implementation, real persistence/platform integration, MT5, Architecture Lock, merge to main, production, and live trading remain not granted.

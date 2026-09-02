@@ -4,6 +4,7 @@
 // REFERENCE ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS
 // Typed query evidence only; no platform query APIs are reachable.
 #include "SW_V5_S5_ReferenceStoreCommon.mqh"
+#include "SW_V5_S5_ReferenceProductionIntegrity.mqh"
 
 bool SWV5S5_ReferenceQuerySnapshotDigest(const SWV5_AuthoritativeQuerySet &queries,string &digest)
 {
@@ -80,9 +81,25 @@ bool SWV5S5_ReferenceExecutionSummaryDigest(const SWV5_AuthoritativeRestartReque
       SWV5S5_SHA256(format+body,digest);
 }
 
-bool SWV5S5_ReferenceBrokerSummaryValid(const SWV5_AuthoritativeBrokerSummary &summary)
+bool SWV5S5_ReferenceBrokerSummaryValid(const SWV5_AuthoritativeBrokerSummary &summary,
+                                        const bool allow_zero_history=false)
 {
    string digest;
+   const bool ordinary_history=summary.transaction_high_watermark>0 &&
+      summary.latest_confirmed_correlation.phase==SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION &&
+      summary.latest_confirmed_correlation.request_identity.request_id.correlation_id!="" &&
+      summary.latest_confirmed_correlation.request_identity.request_id.attempt_id!="" &&
+      summary.latest_confirmed_correlation.request_identity.idempotency_key!="" &&
+      summary.latest_broker_event_identity.broker_event_id!="" &&
+      summary.latest_broker_event_identity.transaction_sequence>0 &&
+      summary.latest_broker_event_identity.broker_event_id==summary.latest_confirmed_correlation.broker_identity.broker_event_id &&
+      summary.latest_broker_event_identity.transaction_sequence==summary.latest_confirmed_correlation.broker_identity.transaction_sequence;
+   const bool zero_history=allow_zero_history && summary.transaction_high_watermark==0 &&
+      summary.symbol_long_volume==0.0 && summary.symbol_short_volume==0.0 && summary.symbol_net_volume==0.0 &&
+      summary.aggregate_position_volume==0.0 && summary.basket_open_volume==0.0 && summary.residual_volume==0.0 &&
+      summary.position_count==0 && summary.order_count==0 &&
+      SWV5S5_ReferenceZeroCorrelation(summary.latest_confirmed_correlation) &&
+      SWV5S5_ReferenceZeroBrokerIdentity(summary.latest_broker_event_identity);
    return SWV5S5_IsV5Version(summary.contract_version) && summary.persistence_namespace.basket_id.value!="" &&
       summary.basket_id.value==summary.persistence_namespace.basket_id.value &&
       summary.account_mode==SWV5_ACCOUNT_MODE_HEDGING && summary.authority==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
@@ -91,15 +108,7 @@ bool SWV5S5_ReferenceBrokerSummaryValid(const SWV5_AuthoritativeBrokerSummary &s
       SWV5_IsFiniteNumber(summary.basket_open_volume) && SWV5_IsFiniteNumber(summary.residual_volume) &&
       summary.symbol_long_volume>=0.0 && summary.symbol_short_volume>=0.0 &&
       summary.aggregate_position_volume>=0.0 && summary.basket_open_volume>=0.0 && summary.residual_volume>=0.0 &&
-      summary.transaction_high_watermark>0 && summary.observation_sequence>0 && summary.observed_at>0 &&
-      summary.latest_confirmed_correlation.phase==SWV5_EXECUTION_PHASE_AUTHORITATIVE_CONFIRMATION &&
-      summary.latest_confirmed_correlation.request_identity.request_id.correlation_id!="" &&
-      summary.latest_confirmed_correlation.request_identity.request_id.attempt_id!="" &&
-      summary.latest_confirmed_correlation.request_identity.idempotency_key!="" &&
-      summary.latest_broker_event_identity.broker_event_id!="" &&
-      summary.latest_broker_event_identity.transaction_sequence>0 &&
-      summary.latest_broker_event_identity.broker_event_id==summary.latest_confirmed_correlation.broker_identity.broker_event_id &&
-      summary.latest_broker_event_identity.transaction_sequence==summary.latest_confirmed_correlation.broker_identity.transaction_sequence &&
+      summary.observation_sequence>0 && summary.observed_at>0 && (ordinary_history || zero_history) &&
       SWV5S5_ReferenceQueryValid(summary.queries,SWV5_RESTART_BROKER_QUERY_FLAGS_V5,
          SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,SWV5_AUTHORITY_LIVE_BROKER_STATE,
          summary.observation_sequence,summary.observed_at) &&
