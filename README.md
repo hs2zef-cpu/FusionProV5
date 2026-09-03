@@ -1,5 +1,10 @@
 # Fusion Pro V5
 
+Current governance: **D.4 final independent re-audit FAIL (Critical 1 / Major 2 /
+Minor 0)**. Phase D is **INCOMPLETE**; Phase E is **NOT AUTHORIZED**. Only the
+[D.5 narrow correction](FusionProV5/Docs/SPRINT5_PHASE_D5_CORRECTION_STATUS.md)
+is authorized. The D.3/D.4 development descriptions below are historical.
+
 ## Purpose
 
 Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B, Phase C, and Phase D0 gates are closed/pass. The Sprint 5 Phase D.3 final independent re-audit failed with 3 Critical and 3 Major findings; Phase D remains incomplete and Phase E is not authorized. Sprint 5 Phase D.4 is the narrow fake-store/fake-clock reference correction and requires a new independent re-audit.
