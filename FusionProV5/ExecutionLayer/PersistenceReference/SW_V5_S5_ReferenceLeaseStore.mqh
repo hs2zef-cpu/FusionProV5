@@ -120,6 +120,8 @@ private:
       const SWV5_OwnershipTakeoverEvidence e=claim.takeover_evidence;
       const SWV5_LeaseExpiryEvidence x=e.lease_expiry;
       if(!SWV5S5_IsV5Version(claim.contract_version) ||
+         !SWV5_TestFenceComplete(m_lease.fence) ||
+         !SWV5_TestFenceComplete(claim.expected_fence) ||
          !SWV5S5_IsV5Version(e.contract_version) || !SWV5S5_IsV5Version(x.contract_version) ||
          !SWV5S5_IsV5Version(m_lease.contract_version) ||
          !SWV5S5_IsV5Version(m_lease.fence.contract_version) ||
@@ -280,6 +282,7 @@ public:
       result.acquired_at=validated_clock.observed_at; result.heartbeat_at=validated_clock.observed_at;
       result.expires_at=validated_clock.observed_at+(datetime)claim.lease_duration_seconds;
       if(!SWV5S5_ReferenceDeriveFenceToken(result.fence,result.fence.fencing_token_digest)) return false;
+      if(!SWV5_TestFenceComplete(result.fence)) return false;
       return Commit(result,SWV5S5_REF_FAULT_NONE,transaction);
    }
 

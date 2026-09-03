@@ -6,7 +6,7 @@ This package verifies the authorized Phase D persistence/restart design using an
 
 It does not execute MQL assertions and does not prove MQL runtime behavior, real SQLite/database behavior, filesystem durability, cross-terminal locking, real platform-clock provenance, broker behavior, or production readiness. MT5 Terminal and Strategy Tester are not used.
 
-The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. D.4 completes the independently identified ownership-key/Lease-clock, live-Lease/Basket/vector, Hard-Kill release and RENEWED zero-history gaps; D.3 self-verification did not independently close those gaps. Prior version/time binding, canonical digests and post-readback publication behavior are preserved. Request Set and row digests remain distinct, every persisted request is scanned, and an uncertain commit never recreates event-local authority.
+The reference enforces independent Genesis, Lease, Ledger, Sequence, Submission/Claim, Pending Request Set, and Checkpoint transaction domains. D.4 final independent re-audit FAILED (Critical 1 / Major 2 / Minor 0). D.5 corrects current fence epochs, four frozen decimal digest fields, the approved Production V5 restart-input version gate, and affected evidence. Prior ownership/clock/Basket/Hard-Kill safety and closed Publication/Claim/domain-CAS/Ledger/Genesis/Sequence semantics are preserved.
 
 Run the offline verifier twice-internally:
 
@@ -29,15 +29,16 @@ MQL assertions executed: **NO**.
 
 Evidence classification for this hardening revision:
 
-- MQL direct positive assertion functions: **17**
-- MQL direct negative assertion functions: **157**
-- Independent D.2 audit baseline: **19** complete re-sealed semantic probes and **34** non-creditable legacy probes
-- D.4 headline closure uses direct typed/re-sealed probes; compile-only presence is not reported as executed proof
+- MQL direct positive assertion functions: **26** (9 new complete D.5 controls)
+- MQL direct negative assertion functions: **173**
+- D.5 source-reviewed semantic/resealed functions: **82**; checksum-only: **13**
+- Other negative functions uncredited by this narrow review: **78**, not an assertion that all 78 are defective
+- The old 34-only and 26/12 proving classifications are superseded, not reused
 - MQL direct negative assertions: **YES**
 - MQL assertions compiled: **YES**
 - MQL assertions executed: **NO**
-- Python executable scenarios: **294** unique IDs per run, repeated twice internally
+- Python executable scenarios: **318** unique IDs per run, repeated twice internally
 
-D.3 independent final re-audit: **FAIL — Critical 3 / Major 3 / Minor 0**. D.4 self-verification is not independent closure. Phase E remains **NOT AUTHORIZED** pending independent D.4 PASS.
+D.5 self-verification is not independent closure. Phase D remains INCOMPLETE; Phase E remains **NOT AUTHORIZED** pending a new independent D.5 re-audit.
 
-D.4 adds complete governed ownership-key validation, current-Lease clock/expiry binding, a common live ACQUIRED/RENEWED restart gate, frozen Basket/vector/Hard-Kill intrinsic predicates, full Broker identity/HWM relations, exact release policy/account/exposure/chronology, and RENEWED zero-history controls. The explicit frozen-validator dependency is reference-only, not a production dependency. See `D4_SEMANTIC_EVIDENCE.md` for the 26 re-sealed / 12 direct typed-status paths and the observed-expired-row test setup correction. The 34 legacy non-proving probes are not D.4 closure evidence.
+See `D5_CONFORMANCE_EVIDENCE.md` for the version/digest-domain inventories and gate-by-gate positive trace. `verify_phase_d5_source.py` checks frozen serializer expressions, source adapters and the 79-function affected call graph. The Python oracle uses the actual frozen canonical expression bodies through a restricted offline serializer for reduced DTO projections; it is not a byte-for-byte execution of complete MQL fixtures. Complete MQL fixtures remain source/compile evidence only. No Production/frozen code is edited.

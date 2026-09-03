@@ -73,7 +73,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Architecture Review and Phase B, Phase C, and Phase D0 gates are **CLOSED / PASS**. The Phase D.3 final independent re-audit returned **FAIL — Critical 3 / Major 3 / Minor 0**; Phase D is incomplete. Phase D.4 self-verifies only the enumerated takeover ownership/clock, restart live-Lease/Basket/vector, Hard-Kill release, RENEWED zero-history, and evidence corrections. Publication, Claim, domain-CAS, Ledger, Genesis, Sequence, Production V5, Phase B/C, and ADR semantics remain unchanged. A new independent D.4 re-audit is required. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Architecture Review and Phase B/C/D0 gates are **CLOSED / PASS**. D.4 final independent re-audit returned **FAIL — Critical 1 / Major 2 / Minor 0**; Phase D is incomplete. D.5 addresses only current-fence epochs, frozen digest compatibility, the separately approved exact Production V5 restart-input gate, and affected evidence. Publication, Claim, domain-CAS, Ledger, Genesis, Sequence, Production V5, Phase B/C, and ADR semantics remain unchanged. A new independent D.5 re-audit is required; development self-verification cannot close Phase D. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 

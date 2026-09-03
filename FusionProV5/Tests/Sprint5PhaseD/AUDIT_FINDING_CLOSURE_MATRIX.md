@@ -1,20 +1,34 @@
-# Sprint 5 Phase D.4 Audit-Finding Closure Matrix
+# Sprint 5 Phase D.5 Development Closure Matrix
 
-**TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS**
+TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
 
-D.3 independent final re-audit: **FAIL — Critical 3 / Major 3 / Minor 0**. The statuses below are D.4 corrective self-verification, not an independent audit.
+D.4 independent final re-audit: **FAIL — Critical 1 / Major 2 / Minor 0**.
+The user separately authorized the discovered restart-input schema correction.
+These are **development self-verification** statuses, NOT independent closure.
+D.4 development closure claims were superseded by that independent audit.
 
-| Finding | Exact frozen authority and MQL correction | Positive/direct/re-sealed MQL evidence (compile-only) | Python evidence | D.4 self-status |
+| Finding | Frozen authority / source correction | Compile-only source evidence | Python evidence | Self-status |
 |---|---|---|---|---|
-| CRITICAL-1 Takeover ownership/clock | Ownership V5; frozen `TestOwnershipKeyComplete`, `TestOwnerComplete`, `TestTakeoverValid` clock/expiry relations; `ReferenceLeaseStore` validates before CAS and rejects incomplete governed initialization | `D1PositiveTakeover`; nine `D4NegativeTakeover*` entry points with positive-control guards; six re-sealed key/fence cases and three current-clock/expiry cases | D4_TAKEOVER: 9 | CLOSED; independent D.4 review pending |
-| CRITICAL-2 Restart live-Lease/Basket/vector | Frozen `TestHeartbeatValid`, `TestCheckpointBasketSemanticValid`, `TestReconciliationVectorValid`, `TestCheckpointHardKillSemanticValid`; one pre-readiness semantic chain | `D4PositiveOrdinaryAcquired/Renewed`; non-live Lease, intrinsic enum/version/net-volume, full tickets/HWM, and inconsistent latch envelopes | D4_RESTART: 20 | CLOSED; independent D.4 review pending |
-| CRITICAL-3 Hard Kill release semantics | Frozen `TestHardKillReleaseValid`, `TestRiskAccountNamespaceComplete/BelongsToPersistence`, `TestHistoricalHardKillReleaseValid`; exact policy/account/exposure/chronology in both envelopes | released positive restart control; nine `D4NegativeRelease*` entry points reseal persisted evidence, authority record/reference, and checkpoint | D4_HARD_KILL: 9 | CLOSED; independent D.4 review pending |
-| MAJOR-1 RENEWED zero-history | ADR-022 and frozen `TestActiveOwnedStatus`; ordinary and zero-history share `ReferenceLiveLeaseValid` | `D4PositiveZeroHistoryAcquired/Renewed`; four non-live, incomplete owner and wrong-clock negatives; retained D.3 history/query negatives | D4_ZERO_HISTORY: 8 | CLOSED; independent D.4 review pending |
-| MAJOR-2 Python/MQL alignment | Structured key/Lease/Basket/vector/Broker identity/Hard-Kill/account/exposure/time predicates; no Python pass substitutes for MQL execution | 17 positive / 157 negative named assertion functions; 26 re-sealed D.4 paths and 12 direct typed/status paths | 294 unique scenarios, 294 passed, 0 failed, 0 skipped; repeated identical | CLOSED; independent D.4 review pending |
-| MAJOR-3 Documentation/evidence | Current scope, counts and limits in README, VERSION, implementation report, inventory, gate template and D4_SEMANTIC_EVIDENCE | MQL executed **NO**; legacy non-proving probes excluded | independent executable oracle only | CLOSED; independent D.4 review pending |
+| CRITICAL-1 current fence epochs | TestFenceComplete on current/expected fence before takeover CAS and next fence before commit | Complete D5PositiveTakeover; three zero-epoch probes rebuild token, expected/observed epochs, reconciliation and clock; stored row unchanged | D5_FENCE: 3 | CLOSED |
+| MAJOR-1 frozen digest compatibility | Reuse exact frozen checkpoint/source/release/authority decimal helpers; remove incompatible 64hex and SHA authority formula | Four complete ordinary/zero ACQUIRED/RENEWED controls; released positive; mutate/reseal checkpoint; eight wrong-digest probes | D5_DIGEST: 14, source-derived frozen serializer | CLOSED |
+| MAJOR-2 evidence alignment | Positive-first common reseal path; 79 affected entry points; complete request array; typed evidence corruption | D5AffectedRestartProbeMatrix: 77 empty-set and 2 complete-array cases; explicit source-credit inventory | 294 old cases retained; 318 total; D5_SOURCE checks adapters/preimages/call graph | CLOSED |
+| Authorized expansion: restart-input schema | Exact TestExecutionVersionExact replaces only erroneous candidate V3 check on Production DTO | Production positive plus candidate/schema/minimum/policy/contract negatives | D5_VERSION: 6 | CLOSED |
 
-Preserved without semantic changes: **Publication CLOSED; Claim CLOSED; domain-CAS CLOSED; Ledger CLOSED; Genesis CLOSED; Sequence CLOSED**. Publication source is byte-identical to D.3. Production V5, frozen Phase B/C and ADRs are unchanged.
+For detailed frozen requirements, exact helpers, mutations and positive trace see
+D5_CONFORMANCE_EVIDENCE.md. No additional mutually exclusive positive gate was
+found in that narrow development review.
 
-The takeover setup defect found during D.4 continuation was corrected inside the reference/test boundary: a clearly TEST ONLY observed-expired-row seed permits a real positive takeover path; ordinary initialization stays UNCLAIMED-only. Seed does not grant authority or skip the takeover validator/CAS. D.4 negative probes establish a positive control first.
+Preserved without semantic edits: Publication **CLOSED**, Claim **CLOSED**,
+domain-CAS **CLOSED**, Ledger **CLOSED**, Genesis **CLOSED**, Sequence **CLOSED**.
+Existing owner/key/clock, active Lease, Basket and Hard-Kill safety predicates
+are retained. Production V5, frozen Phase B/C, ContractVerification and ADRs are
+unchanged.
 
-Phase D remains **INCOMPLETE** pending a new independent D.4 re-audit. Phase E is **NOT AUTHORIZED**. Fake store/clock evidence is not SQLite, platform, runtime or production proof.
+MQL assertions executed: **NO**. Named functions: 26 positive / 173 negative.
+Source-reviewed semantic negatives: **82**; checksum-only: **13**; other uncredited
+negatives: **78**. Uncredited does not newly declare all those closed-domain probes
+defective. The old 34-only and 26/12 proving classifications are withdrawn.
+
+Phase D remains **INCOMPLETE** until a **NEW INDEPENDENT D.5 RE-AUDIT** passes.
+Phase E is **NOT AUTHORIZED**. No real store/clock, broker, runtime, Terminal,
+Tester, Architecture Lock or production-readiness authorization.

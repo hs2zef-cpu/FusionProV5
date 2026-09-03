@@ -56,7 +56,6 @@ bool SWV5S5_ReferenceCheckpointProductionIntegrityValid(const SWV5_PersistedChec
       checkpoint.header.store_revision!="" && checkpoint.header.payload_digest!="" &&
       checkpoint.header.payload_size==SWV5_TestCheckpointPayloadSize(checkpoint) &&
       checkpoint.header.payload_digest==SWV5_TestCheckpointPayloadDigest(checkpoint) &&
-      SWV5S5_IsDigest64Lower(checkpoint.header.payload_digest) &&
       checkpoint.header.written_at>0 && checkpoint.header.written_at<=context.clock_time;
 }
 
@@ -64,14 +63,15 @@ bool SWV5S5_ReferenceReconciliationSourceDigest(const SWV5_PersistedReconciliati
                                                 string &digest)
 {
    digest=SWV5_TestReconciliationSourceDigest(reconciliation);
-   return SWV5S5_IsDigest64Lower(digest);
+   // The frozen helper returns decimal uint64 text, not a SHA-256 field.
+   return digest!="";
 }
 
 bool SWV5S5_ReferenceReleaseEvidenceDigest(const SWV5_HardKillReleaseEvidence &evidence,
                                            string &digest)
 {
    digest=SWV5_TestHardKillReleaseDigest(evidence);
-   return SWV5S5_IsDigest64Lower(digest);
+   return digest!="";
 }
 
 #endif

@@ -1,5 +1,10 @@
 # Sprint 5 Phase D.4 Semantic Evidence Classification
 
+**SUPERSEDED HISTORICAL DEVELOPMENT RECORD.** The subsequent D.4 independent
+final re-audit FAILED: Critical 1 / Major 2 / Minor 0. The source-credit claims
+below did not establish closure: schema/digest contradictions blocked positives.
+Current evidence and corrected classifications are in `D5_CONFORMANCE_EVIDENCE.md`.
+
 **TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS**
 
 D.4 self-verification only. MQL assertions executed: **NO**. Python is an independent executable oracle; its JSON model is not byte-for-byte MQL canonical or runtime proof.
@@ -22,7 +27,9 @@ The source contains 17 positive and 157 negative named assertion functions. Four
 
 The four positive controls cover ordinary ACQUIRED, ordinary RENEWED, zero-history ACQUIRED and zero-history RENEWED. Takeover negatives additionally require the existing positive takeover control to succeed first. All D.4 restart/release negatives use the supplied valid positive restart control before mutation; setup failure cannot satisfy them.
 
-The historical 34 non-proving probes are retained, not rewritten or used as D.4 closure evidence. No old safety scenario is deleted.
+The earlier 34-only non-proving classification and the table's 26/12 attribution
+are withdrawn as proving counts. D.5 inventories the entire affected 79-function
+restart call graph and reports explicit source-review credit separately.
 
 ## Takeover setup correction
 
@@ -45,4 +52,4 @@ The reference-only dependency on the frozen `SW_V5_ReferenceValidators.mqh` reus
 - Phase B: 139/139; Phase C: 22/22, approved digest unchanged.
 - Six MetaEditor X64 Regular compiler-only manifests: 0 errors / 0 warnings each.
 
-Fake store and fake clock are not SQLite, platform durability, real clock, cross-terminal or broker proof. D.4 independent re-audit is not yet performed. Phase D is incomplete; Phase E is not authorized.
+Fake store and fake clock are not SQLite, platform durability, real clock, cross-terminal or broker proof. D.4 independent re-audit subsequently FAILED. Phase D is incomplete; Phase E is not authorized.

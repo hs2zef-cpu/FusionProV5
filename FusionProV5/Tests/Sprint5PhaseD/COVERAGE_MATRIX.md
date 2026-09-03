@@ -20,10 +20,10 @@
 | ADR-022 exact zero-history | Genesis-ready zero classification without prior correlation/event/HWM | `D3-ZERO-*`; `SWV5S5_D3*ZeroHistory*` |
 | Publication commitment only after CAS/readback | MQL/Python reference publication stores | `D3-PUBLICATION-*` |
 | Claimed-unresolved and canonical independent Hard Kill release authority | `SWV5S5_ReferenceReleaseAuthorityValid`; Python `valid_release_authority`/`restart` | `RESTART-CLAIMED-*`, `RESTART-ACTIVE-*`, `RESTART-RELEASE-*`; `SWV5S5_D1*Restart*` |
-| Direct MQL source evidence | 17 named positive and 157 named negative functions; compile-only, executed NO | `SWV5S5_D1*`, `SWV5S5_D2*`, `SWV5S5_D3*`, `SWV5S5_D4*` |
+| Direct MQL source evidence | 26 named positive and 173 named negative functions; compile-only, executed NO | `SWV5S5_D1*` through `SWV5S5_D5*` |
 | Deterministic repeated execution | complete `run_suite` equality | verifier summary `runs=2`, `deterministic=true` |
 
-D.4 focused mappings:
+D.4 retained technical mappings (historical closure claims superseded):
 
 | Requirement | MQL source/direct evidence | Python family |
 |---|---|---|
@@ -32,4 +32,15 @@ D.4 focused mappings:
 | Exact policy, complete account, typed exposure, authentication/evidence chronology | `ReferenceReleaseAuthorityValid`; `D4NegativeRelease*` | D4_HARD_KILL (9) |
 | ACQUIRED/RENEWED zero-history and inactive/incomplete/wrong-clock denial | `ReferenceZeroHistoryCandidate`; `D4*ZeroHistory*` | D4_ZERO_HISTORY (8) |
 
-All D.4 direct probes are compile-only. Their positive-control guards and resealing classification are documented in `D4_SEMANTIC_EVIDENCE.md`.
+All MQL probes remain compile-only. Current positive-control guards and resealing classifications are documented in `D5_CONFORMANCE_EVIDENCE.md`; `D4_SEMANTIC_EVIDENCE.md` is historical, not current closure evidence.
+
+D.5 focused mappings:
+
+| Requirement | MQL source/direct evidence | Python family |
+|---|---|---|
+| Complete current/expected/proposed fence; resealed zero epochs reject before CAS | `TakeoverEvidenceValid`; `D5RejectZeroEpoch` and three named zero-epoch probes | D5_FENCE (3) |
+| Exact Production V5 restart-input version; candidate/wrong schema/minimum/policy/name reject | `SWV5_TestExecutionVersionExact`; `D5PositiveProductionSchema`, `D5RejectVersion` and five named version probes | D5_VERSION (6) |
+| Four frozen decimal canonical digests, distinct from reference SHA-256 | exact frozen helper adapters; D5 digest probes | D5_DIGEST (14) |
+| Reachable ACQUIRED/RENEWED ordinary/zero-history and released Hard Kill positives; common reseal path | `D5BuildRestart`, `D5RejectRestart`, `D5AffectedRestartProbeMatrix` | D5_SOURCE (1), existing restart families |
+
+Current narrow source-review credit: 82 semantic/resealed negatives (74 of the 79 repaired restart probes, 5 new version probes, and 3 new epoch probes), 13 checksum-only negatives (5 repaired and 8 new), and 78 other negatives not re-credited by this review. These are source classifications, not executed MQL results. The 78 are not a claim of 78 newly discovered defects. The Python oracle retains all 294 prior cases and adds 24, for 318 total.

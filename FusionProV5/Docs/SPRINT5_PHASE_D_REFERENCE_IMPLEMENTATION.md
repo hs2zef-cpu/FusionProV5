@@ -1,6 +1,6 @@
 # Fusion Pro V5 Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
-> **Phase D.3 final independent re-audit status: FAIL — Critical 3 / Major 3 / Minor 0.** Sprint 5 Phase D.4 is a narrow corrective self-verification candidate and remains subject to a new independent final re-audit; Phase E is not authorized.
+> **D.4 final independent re-audit: FAIL — Critical 1 / Major 2 / Minor 0.** D.5 is development self-verification only for current fence epochs, frozen decimal digest compatibility, the separately authorized Production V5 restart-input schema gate, and affected evidence. Phase D remains incomplete; Phase E is not authorized. See `../Tests/Sprint5PhaseD/D5_CONFORMANCE_EVIDENCE.md`.
 
 ## Scope and status
 
@@ -36,7 +36,7 @@ There is no global transaction. A partial cross-domain combination remains dirty
 - Restart validates the exact frozen Production V5 LP2 checkpoint payload and complete reconciliation-vector source digest, requires Basket reconciliation `MATCHED`, binds Basket state/version and Hard Kill generation, scans every persisted request, and requires complete fresh Broker/Execution query authority. ADR-022 zero-history is accepted only for an exact Genesis zero-state with no fabricated correlation, Broker identity, or transaction HWM. A released Hard Kill also requires a fully validated persisted release envelope and independent authority record effective at the supplied clock.
 - Publication results remain `PROPOSAL_VALID` during pure evaluation and become `COMMITTED` only after the reference store wins CAS and verifies authoritative readback; failed, uncertain, or unreadable outcomes never claim committed authority.
 
-## Verification result
+## Historical D.4 verification result (superseded as closure evidence)
 
 | Gate | Result |
 |---|---|
@@ -53,9 +53,9 @@ There is no global transaction. A partial cross-domain combination remains dirty
 | MQL assertions executed | **NO** |
 | Forbidden executable API scan | **PASS — 0 matches** |
 
-The Python result is an independent executable adversarial oracle aligned with the corrected boundaries, not MQL conformance proof. The MQL source defines 17 positive and 157 negative named assertion functions; they compile but are not executed. The previous independent audit credited 19 complete re-sealed semantic probes and identified 34 non-creditable legacy probes; D.4 adds 38 direct negative closure probes: 26 re-sealed paths and 12 direct typed/status paths, plus four positive active-Lease controls without claiming that compile-only presence is runtime proof. The next gate is a **New Independent Sprint 5 Phase D.4 Final Persistence / Restart Re-Audit**. Phase E remains unauthorized.
+The table retains actual historical D.4 tool results, not valid closure of the later audited findings. Earlier source-credit classifications were withdrawn after the D.4 independent FAIL. D.5 now has 318 executable Python scenarios, 26 named MQL positives and 173 negatives (82 semantic source-credit, 13 checksum-only, 78 other uncredited). MQL assertions remain NOT executed. Frozen canonical decimal hashes are not SHA-256; reference SHA domains remain separate. The next gate is a **New Independent Sprint 5 Phase D.5 Final Persistence / Restart Re-Audit**. Phase E remains unauthorized.
 
-## D.4 conformance closure
+## Preserved D.4 source improvements (not independent closure)
 
 The reference reuses the frozen complete ownership-key/owner, active-heartbeat Lease, Basket, reconciliation-vector, Hard-Kill state, account-namespace, and historical release predicates. Takeover additionally binds the current Lease clock and expiry sequence. Ordinary and zero-history restart share one active Lease gate and both accept valid ACQUIRED and RENEWED states. Release evidence and independent authority require exact `HARD-KILL-RELEASE-V5`, complete account identity, nonnegative non-increasing exposure, and authentication/evidence chronology.
 

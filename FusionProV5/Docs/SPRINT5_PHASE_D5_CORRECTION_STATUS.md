@@ -19,3 +19,12 @@ The earlier D.4 development self-verification does not override this independent
 failure. Production V5, frozen Phase B/C and ContractVerification helpers, and ADR
 semantics must remain unchanged. D.5 development self-verification cannot close
 Phase D; a new independent persistence/restart re-audit is required afterward.
+
+## Subsequently authorized narrow expansion
+
+The user confirmed the additional reference-layer schema contradiction and
+authorized replacing only the Production RestartReconciliationInput candidate
+V3 gate with exact frozen Production V5 version validation. Version-domain
+inventory, positive/negative source probes and one narrow positive-reachability
+review are included. The existing governance commit is not amended/recreated.
+No architecture, frozen contracts, ADRs, Phase E or platform scope is reopened.

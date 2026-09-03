@@ -15,43 +15,14 @@ struct SWV5S5_ReferenceRestartResult
    string diagnostic;
 };
 
-bool SWV5S5_ReferenceReleaseAuthorityPreimage(const SWV5_HardKillReleaseAuthorityRecord &record,
-                                               string &preimage)
-{
-   string f; preimage="";
-#define SWV5S5_HKA_ADD(x) if(!(x)) return false; else preimage+=f
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalContractVersion("contract_version",record.contract_version,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalNamespace("persistence_namespace",record.persistence_namespace,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalAccountNamespace("account_namespace",record.account_namespace,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("latch_id",record.latch_id,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("latch_generation",record.latch_generation,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("release_id",record.release_id,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("release_generation",record.release_generation,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalOperatorIdentity("operator_identity",record.operator_identity,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("approving_component",record.approving_component,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("approval_policy_id",record.approval_policy_id,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("approval_sequence",record.approval_sequence,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointTypedEvidence("broker_evidence_reference",record.broker_evidence_reference,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointTypedEvidence("persistence_evidence_reference",record.persistence_evidence_reference,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalCheckpointExposureEvidence("exposure_evidence_reference",record.exposure_evidence_reference,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("approved_at",record.approved_at,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("released_at",record.released_at,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalDatetime("expires_at",record.expires_at,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalUInt("release_record_sequence",record.release_record_sequence,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalString("authority_record_id",record.authority_record_id,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("issuing_component",record.issuing_component,f));
-   SWV5S5_HKA_ADD(SWV5S5_CanonicalInt("authority_source",record.authority_source,f));
-#undef SWV5S5_HKA_ADD
-   return true;
-}
 
 bool SWV5S5_ReferenceReleaseAuthorityDigest(const SWV5_HardKillReleaseAuthorityRecord &record,
                                              string &digest)
 {
-   string preimage,format;
-   return SWV5S5_ReferenceReleaseAuthorityPreimage(record,preimage) &&
-      SWV5S5_CanonicalString("format","SWV5-HARD-KILL-AUTHORITY-V5-LP1",format) &&
-      SWV5S5_SHA256(format+preimage,digest);
+   // One Production field, one frozen representation. Reference-store SHA-256
+   // envelopes remain separate; this authority field is decimal canonical hash.
+   digest=SWV5_TestHardKillAuthorityRecordDigest(record);
+   return digest!="";
 }
 
 bool SWV5S5_ReferenceAccountNamespaceEqual(const SWV5_AccountRiskNamespace &a,
@@ -191,7 +162,7 @@ bool SWV5S5_ReferencePersistedReleaseEvidenceValid(const SWV5_HardKillState &sta
       evidence.exposure_evidence.observed_at<=evidence.approved_at &&
       evidence.release_record_sequence>0 && evidence.audit_reference!="" &&
       SWV5S5_ReferenceReleaseEvidenceDigest(evidence,expected_digest) &&
-      evidence.release_record_digest==expected_digest && SWV5S5_IsDigest64Lower(evidence.release_record_digest);
+      evidence.release_record_digest==expected_digest;
 }
 
 bool SWV5S5_ReferenceZeroHistoryCandidate(const SWV5_RestartReconciliationInput &restart_input,
@@ -302,7 +273,7 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
    if(!SWV5S5_ReferencePersistedReleaseEvidenceValid(state,context) ||
       !SWV5S5_IsV5Version(record.contract_version) || !SWV5S5_IsV5Version(reference.contract_version) ||
       !SWV5S5_ReferenceReleaseAuthorityDigest(record,expected_digest) ||
-      record.authority_record_digest!=expected_digest || !SWV5S5_IsDigest64Lower(record.authority_record_digest) ||
+      record.authority_record_digest!=expected_digest ||
       !SWV5S5_EqualNamespace(record.persistence_namespace,checkpoint.header.persistence_namespace) ||
       !SWV5S5_EqualNamespace(record.persistence_namespace,state.persistence_namespace) ||
       !SWV5S5_ReferenceAccountNamespaceEqual(record.account_namespace,state.account_namespace) ||
@@ -378,7 +349,9 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    string checkpoint_projection,set_digest,broker_digest,execution_digest;
    SWV5_PendingRequest requests[]; ArrayResize(requests,ArraySize(pending_requests));
    for(int i=0;i<ArraySize(pending_requests);i++) requests[i]=pending_requests[i].pending_request;
-   const bool schema=SWV5S5_IsV5Version(restart_input.persisted.header.contract_version) && SWV5S5_IsCandidateVersion(restart_input.contract_version);
+   // Frozen Production DTO, not a Sprint-5 reference-domain envelope.
+   const bool schema=SWV5S5_IsV5Version(restart_input.persisted.header.contract_version) &&
+      SWV5_TestExecutionVersionExact(context,restart_input.contract_version);
    const bool namespace_ok=SWV5S5_ReferencePersistenceNamespaceComplete(restart_input.persistence_namespace) &&
       SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.persisted.header.persistence_namespace) &&
       SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.restart_requests.persistence_namespace) &&

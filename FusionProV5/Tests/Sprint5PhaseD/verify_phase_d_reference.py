@@ -14,6 +14,10 @@ import math
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+from frozen_dto_digest import (version as production_version, release_digest as frozen_release_digest,
+    vector_digest as frozen_vector_digest, checkpoint_integrity as frozen_checkpoint_integrity,
+    canonical_hash as frozen_canonical_hash)
+from verify_phase_d5_source import verify as verify_d5_source
 
 SCHEMA_ID = "SWV5-S5-STORE-SCHEMA-V1"
 SCHEMA_VERSION = 1
@@ -271,6 +275,7 @@ class Lease:
                  proposed_generation: int, obs: dict[str, Any], evidence: dict[str, Any], duration: int) -> bool:
         new_owner = claimant.get("instance_id", "")
         if (self.contract_version != 5 or self.status != "EXPIRED" or not self.owner or
+                self.lease_version <= 0 or self.takeover_generation <= 0 or
                 claimant != evidence.get("claimant") or not complete_owner_identity(claimant) or
                 not complete_owner_identity(self.governed_key) or claimant.get("ownership_key") != self.namespace or
                 any(claimant.get(key) != self.governed_key.get(key) for key in
@@ -622,11 +627,16 @@ def release_authority_record(**changes: Any) -> dict[str, Any]:
                          "currency": "USD", "strategy": "FUSION-PRO-V5", "magic": 550015,
                          "account_mode": "HEDGING", "source": "BROKER", "snapshot_epoch": 1,
                          "snapshot_sequence": 10}
-    broker_evidence = {"id": "BROKER-EVIDENCE-1", "observed_at": 975}
-    persistence_evidence = {"id": "PERSISTENCE-EVIDENCE-1", "observed_at": 976}
+    broker_evidence = {"id": "BROKER-EVIDENCE-1", "observed_at": 975, "contract_version": 5,
+                       "namespace": "NS", "component": "BROKER_ADAPTER", "source": "LIVE_BROKER_STATE",
+                       "sequence": 48, "state_digest": "BROKER-STATE-48"}
+    persistence_evidence = {"id": "PERSISTENCE-EVIDENCE-1", "observed_at": 976, "contract_version": 5,
+                            "namespace": "NS", "component": "PERSISTENCE", "source": "PERSISTED_CHECKPOINT",
+                            "sequence": 49, "state_digest": "PERSISTENCE-STATE-49"}
     exposure_evidence = {"id": "EXPOSURE-EVIDENCE-1", "observed_at": 977,
                          "observed_exposure": 0.0, "prior_exposure": 0.1,
-                         "zero_or_reducing": True}
+                         "zero_or_reducing": True, "contract_version": 5, "sequence": 50,
+                         "component": "RISK_GOVERNANCE", "source": "LIVE_BROKER_STATE"}
     value = {"contract_version": 5, "namespace": "NS", "account_mode": "HEDGING",
              "account_namespace": account_namespace,
              "latch_id": "LATCH-1", "latch_generation": 1, "release_id": "RELEASE-1",
@@ -639,7 +649,7 @@ def release_authority_record(**changes: Any) -> dict[str, Any]:
              "release_record_sequence": 51, "authority_record_id": "HK-AUTHORITY-1",
              "issuing_component": "RISK_GOVERNANCE", "authority_source": "HARD_KILL_RELEASE_RECORD"}
     value.update(changes)
-    value["authority_record_digest"] = digest(value)
+    value["authority_record_digest"] = frozen_release_digest(value, authority=True)
     return value
 
 
@@ -662,24 +672,18 @@ def persisted_release_evidence(record: dict[str, Any]) -> dict[str, Any]:
              "exposure_evidence": record["exposure_evidence"], "approved_at": record["approved_at"],
              "released_at": record["released_at"], "expires_at": record["expires_at"],
              "release_record_sequence": record["release_record_sequence"], "audit_reference": "AUDIT-HK-RELEASE-1"}
-    value["release_record_digest"] = digest(value)
+    value["release_record_digest"] = frozen_release_digest(value)
     return value
 
 
 def reconciliation_source_digest(value: dict[str, Any]) -> str:
-    return digest({key: item for key, item in value.items() if key != "source_summary_digest"})
+    return frozen_vector_digest(value)
 
 
 def seal_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
     checkpoint = copy.deepcopy(checkpoint)
     header = checkpoint["header"]
-    header["payload_digest"] = ""
-    header["payload_size"] = 0
-    body = {key: value for key, value in checkpoint.items() if key != "header"}
-    header_without_integrity = {key: value for key, value in header.items() if key not in {"payload_digest", "payload_size"}}
-    canonical_body = {"header": header_without_integrity, "body": body}
-    header["payload_size"] = len(json.dumps(canonical_json_value(canonical_body), sort_keys=True, separators=(",", ":"), ensure_ascii=False))
-    header["payload_digest"] = digest({"format": "SWV5-CHECKPOINT-V5-LP2", "payload_size": header["payload_size"], "body": canonical_body})
+    header["payload_size"], header["payload_digest"] = frozen_checkpoint_integrity(checkpoint)
     return checkpoint
 
 
@@ -807,8 +811,8 @@ def valid_release_authority(x: dict[str, Any]) -> bool:
                       math.isfinite(exposure["observed_exposure"]) and math.isfinite(exposure["prior_exposure"]) and
                       exposure["observed_exposure"] >= 0 and exposure["prior_exposure"] >= 0 and
                       exposure["observed_exposure"] <= exposure["prior_exposure"] + 1e-7)
-    return (record.get("authority_record_digest") == digest(body) and record.get("contract_version") == 5 and
-            persisted.get("contract_version") == 5 and persisted.get("release_record_digest") == digest(persisted_body) and
+    return (record.get("authority_record_digest") == frozen_release_digest(body, authority=True) and record.get("contract_version") == 5 and
+            persisted.get("contract_version") == 5 and persisted.get("release_record_digest") == frozen_release_digest(persisted_body) and
             persisted.get("audit_reference") and persisted.get("namespace") == x["namespace"] and
             persisted.get("released_at", 0) <= x["now"] < persisted.get("expires_at", 0) and
             record.get("namespace") == x["namespace"] and record.get("account_mode") == x["account_mode"] and complete_account and
@@ -833,7 +837,8 @@ def valid_release_authority(x: dict[str, Any]) -> bool:
 
 def restart(base: dict[str, Any], **changes: Any) -> str:
     x = copy.deepcopy(base); x.update(changes)
-    if not x["schema"] or not x["genesis"] or not x["persistence"]: return "HALTED"
+    if (not x["schema"] or x.get("contract_version") != production_version() or
+            not x["genesis"] or not x["persistence"]): return "HALTED"
     if not x["lease"] or x["claimed"] or not live_restart_lease_valid(x): return "RETRY_FORBIDDEN"
     broker = x["broker_summary"]; execution = x["execution_summary"]
     if (broker.get("summary_digest") != digest({key: value for key, value in broker.items() if key != "summary_digest"}) or
@@ -996,7 +1001,7 @@ def restart_base() -> dict[str, Any]:
                                                 "release_evidence": release_evidence,
                                                 "release_reference": release_authority_reference(release_record)},
                                   "vector": vector, "clean_shutdown": True})
-    return {"schema": True, "genesis": True, "genesis_lineage": "READY_FOR_RECONCILIATION",
+    return {"schema": True, "contract_version": production_version(), "genesis": True, "genesis_lineage": "READY_FOR_RECONCILIATION",
             "persistence": True, "lease": True, "claimed": False,
             "governed_account_namespace": copy.deepcopy(release_record["account_namespace"]),
             "lease_state": {"contract_version": 5, "status": "ACQUIRED", "owner": owner_identity("OWNER-A"),
@@ -1528,14 +1533,14 @@ def run_suite() -> dict[str, Any]:
             ("RESTART-RELEASE-WRONG-LATCH-GENERATION", "latch_generation", 2),
             ("RESTART-RELEASE-WRONG-RELEASE-GENERATION", "release_generation", 2),
             ("RESTART-RELEASE-WRONG-OPERATOR", "operator_id", "OP-FORGED"),
-            ("RESTART-RELEASE-WRONG-EVIDENCE", "broker_evidence", "BROKER-FORGED"),
+            ("RESTART-RELEASE-WRONG-EVIDENCE", "broker_evidence", {**base["release_record"]["broker_evidence"], "state_digest": "BROKER-FORGED"}),
             ("RESTART-RELEASE-EXPIRED", "expires_at", 999),
             ("RESTART-RELEASE-WRONG-SEQUENCE", "release_record_sequence", 52),
             ("RESTART-RELEASE-WRONG-POLICY", "approval_policy_id", "POLICY-FORGED"),
             ("RESTART-RELEASE-WRONG-VERSION", "contract_version", 4),
             ("RESTART-RELEASE-WRONG-ISSUER", "issuing_component", "PERSISTENCE")):
         changed = copy.deepcopy(base["release_record"]); changed[field_name] = changed_value
-        changed["authority_record_digest"] = digest({k: v for k, v in changed.items() if k != "authority_record_digest"})
+        changed["authority_record_digest"] = frozen_release_digest(changed, authority=True)
         r.check(test_id, "RESTART", restart(base, release_record=changed) == "HALTED",
                 {field_name: changed_value, "digest_valid": True})
     wrong_reference = copy.deepcopy(base["release_reference"]); wrong_reference["authority_record_id"] = "OTHER"
@@ -1705,7 +1710,7 @@ def run_suite() -> dict[str, Any]:
     def d4_release_case(mutate: Any) -> bool:
         assert restart(base) == "SAFE_TO_RESUME"
         record = copy.deepcopy(base["release_record"]); mutate(record)
-        record["authority_record_digest"] = digest({k: v for k, v in record.items() if k != "authority_record_digest"})
+        record["authority_record_digest"] = frozen_release_digest(record, authority=True)
         checkpoint = copy.deepcopy(base["checkpoint"])
         checkpoint["hard_kill"]["account_namespace"] = copy.deepcopy(record["account_namespace"])
         checkpoint["hard_kill"]["release_evidence"] = persisted_release_evidence(record)
@@ -1762,6 +1767,71 @@ def run_suite() -> dict[str, Any]:
             not d3_cp_cas_fail.publish_checkpoint(copy.deepcopy(d3_cp_cas_fail.checkpoint), d3_proposed_cp, True, "CAS_FAIL") and
             d3_cp_cas_fail.last_result != "COMMITTED", d3_cp_cas_fail.last_result)
 
+    # D.5: current epochs cannot be repaired by a freshly sealed expected fence.
+    for suffix, lease_epoch, generation in (("LEASE", 0, 1), ("GENERATION", 1, 0), ("BOTH", 0, 0)):
+        probe = Lease(); assert probe.acquire("OWNER-A", 1, observation(1, 100), 10)
+        probe.status = "EXPIRED"; positive = copy.deepcopy(probe)
+        evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
+                                          probe.store_revision, probe.takeover_generation, 12, 120)
+        assert positive.takeover(owner_identity("OWNER-B"), probe.store_revision, probe.fence_digest,
+                                 2, observation(12, 120), evidence, 10)
+        probe.lease_version = lease_epoch; probe.takeover_generation = generation
+        probe.fence_digest = fence(probe.namespace, probe.owner, lease_epoch, generation)
+        evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
+                                          probe.store_revision, generation, 12, 120)
+        before = copy.deepcopy(probe.__dict__)
+        valid_other_evidence = all(valid_reconciliation_item(evidence[key], component, component,
+                                  probe.complete_namespace, probe, 12, 120)
+                                  for key, component in (("broker", "BROKER"), ("persistence", "PERSISTENCE")))
+        r.check("D5-EPOCH-ZERO-" + suffix, "D5_FENCE", valid_other_evidence and
+                not probe.takeover(owner_identity("OWNER-B"), probe.store_revision, probe.fence_digest,
+                                   generation + 1, observation(12, 120), evidence, 10) and probe.__dict__ == before,
+                {"lease_version": lease_epoch, "takeover_generation": generation, "fresh_integrity": valid_other_evidence})
+
+    assert restart(base) == "SAFE_TO_RESUME"
+    r.check("D5-VERSION-V5-POSITIVE", "D5_VERSION", restart(base) == "SAFE_TO_RESUME", base["contract_version"])
+    versions = [production_version() for _ in range(5)]
+    versions[0] = dict(contract_name="SWV5-SPRINT5-EXECUTION-LAYER", schema_version=3,
+                       minimum_compatible_version=3, policy_id="SWV5-SPRINT5-PHASE-B2-V3")
+    versions[1]["schema_version"] = 4; versions[2]["minimum_compatible_version"] = 4
+    versions[3]["policy_id"] = "FOREIGN"; versions[4]["contract_name"] = "FOREIGN"
+    for suffix, value in zip(("CANDIDATE-V3", "SCHEMA", "MINIMUM", "POLICY", "CONTRACT"), versions):
+        r.check("D5-VERSION-REJECT-" + suffix, "D5_VERSION", restart(base, contract_version=value) == "HALTED", value)
+
+    decimal_fields = {"CHECKPOINT": base["checkpoint"]["header"]["payload_digest"],
+                      "SOURCE": base["checkpoint"]["vector"]["source_summary_digest"],
+                      "RELEASE": base["checkpoint"]["hard_kill"]["release_evidence"]["release_record_digest"],
+                      "AUTHORITY": base["release_record"]["authority_record_digest"]}
+    for name, value in decimal_fields.items():
+        r.check("D5-DECIMAL-PARITY-" + name, "D5_DIGEST", value.isascii() and value.isdecimal() and
+                str(int(value)) == value and 0 <= int(value) < 2**64 and len(value) <= 20, value)
+        for kind, wrong in (("SHA256", digest("UNRELATED-DOMAIN")), ("NUMERIC", "0")):
+            candidate = copy.deepcopy(base)
+            if name == "CHECKPOINT": candidate["checkpoint"]["header"]["payload_digest"] = wrong
+            elif name == "SOURCE":
+                candidate["checkpoint"]["vector"]["source_summary_digest"] = wrong
+                candidate["checkpoint"] = seal_checkpoint(candidate["checkpoint"])
+            elif name == "RELEASE":
+                candidate["checkpoint"]["hard_kill"]["release_evidence"]["release_record_digest"] = wrong
+                candidate["checkpoint"] = seal_checkpoint(candidate["checkpoint"])
+            else:
+                candidate["release_record"]["authority_record_digest"] = wrong
+                candidate["release_reference"]["authority_record_digest"] = wrong
+                candidate["checkpoint"]["hard_kill"]["release_reference"]["authority_record_digest"] = wrong
+                candidate["checkpoint"] = seal_checkpoint(candidate["checkpoint"])
+            r.check("D5-REJECT-" + name + "-" + kind, "D5_DIGEST", restart(candidate) != "SAFE_TO_RESUME", wrong)
+    cp = copy.deepcopy(base["checkpoint"]); assert checkpoint_integrity_valid(cp)
+    cp["basket"]["state_version"] += 1; cp["vector"]["basket_state_version"] += 1
+    stale_rejected = not checkpoint_integrity_valid(cp)
+    cp["vector"]["source_summary_digest"] = reconciliation_source_digest(cp["vector"])
+    cp = seal_checkpoint(cp)
+    r.check("D5-CHECKPOINT-RESEAL-POSITIVE", "D5_DIGEST", stale_rejected and
+            checkpoint_integrity_valid(cp) and restart(base, checkpoint=cp) == "SAFE_TO_RESUME", cp["header"])
+    r.check("D5-FROZEN-HASH-EMPTY", "D5_DIGEST", frozen_canonical_hash("") == "1469598103934665603",
+            "exact frozen offset; not SHA256")
+
+    source_check = verify_d5_source()
+    r.check("D5-FROZEN-SOURCE-AND-CALLGRAPH", "D5_SOURCE", source_check["status"] == "PASS", source_check)
     family_counts: dict[str, int] = {}
     for item in r.results: family_counts[item["family"]] = family_counts.get(item["family"], 0) + 1
     identifiers = [item["id"] for item in r.results]

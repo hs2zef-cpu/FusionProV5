@@ -4,7 +4,7 @@
 
 ### Current Version
 
-Sprint 5 Phase D.4 — Final Takeover / Restart / Hard-Kill Conformance Correction
+Sprint 5 Phase D.5 — Fence Epoch / Frozen Digest / Restart Schema Correction
 
 ### Date
 
@@ -12,9 +12,9 @@ Sprint 5 Phase D.4 — Final Takeover / Restart / Hard-Kill Conformance Correcti
 
 ### Status
 
-**PHASE D.3 FINAL INDEPENDENT RE-AUDIT FAIL — D.4 SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
+**D.4 FINAL INDEPENDENT RE-AUDIT FAIL — D.5 DEVELOPMENT SELF-VERIFICATION ONLY**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review and Phase B, Phase C, and Phase D0 gates remain closed/pass. The Phase D.3 final independent re-audit returned **FAIL — Critical 3 / Major 3 / Minor 0** and classified Phase D as **INCOMPLETE**. Phase D.4 is limited to the enumerated takeover/restart/Hard-Kill corrections in the fake-store/fake-clock reference implementation and awaits a new independent re-audit.
+Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D0 remain closed/pass. D.4 final independent re-audit returned **FAIL — Critical 1 / Major 2 / Minor 0**. Phase D is **INCOMPLETE**; Phase E is **NOT AUTHORIZED**. D.5 is limited to fence epochs, frozen digest compatibility, the explicitly approved restart-input schema gate, and affected MQL/Python evidence. A new independent D.5 re-audit is required. Earlier revision records below remain historical.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**

@@ -25,11 +25,11 @@
 | D3_ZERO_HISTORY | legitimate Genesis zero-history plus identity/HWM/exposure/query/namespace adversarial cases |
 | D3_PUBLICATION | proposal-only state, verified post-readback commitment, and failure/uncertainty non-commitment |
 
-The D.4 oracle executes 294 unique scenarios (294 passed, 0 failed, 0 skipped) twice in one invocation. Equality covers test output, final durable state digest, authority revisions, grant counts, traces, and serialized result digest. Separately, the MQL assertion source defines 17 direct positive and 157 direct negative functions. Those MQL probes compile only and are never executed; they are not substituted for Python executable evidence or independent review.
+The D.5 oracle executes 318 unique scenarios twice in one invocation. Equality covers test output, final durable state digest, authority revisions, grant counts, traces, and serialized result digest. MQL has 26 named positive and 173 named negative functions, compile-only and NOT executed.
 
-D.4 family totals: Takeover 9; Restart 20; Hard Kill 9; Zero History 8. Retained scenarios: 248; D.4 additions: 46; total: 294 unique IDs. No old safety test was deleted.
+D.4 retained family totals: Takeover 9; Restart 20; Hard Kill 9; Zero History 8. All 294 prior scenarios remain. D.5 adds 24: FENCE 3, VERSION 6, DIGEST 14, SOURCE 1. No old safety scenario was deleted; the malformed scalar Broker-evidence substitution now mutates a real typed evidence field and is resealed.
 
-Named MQL counts exclude two parameterized rejection helpers (renamed `Reject...` to avoid counting helpers as assertions). D.4 adds 4 positive and 38 negative assertions; classification is 26 re-sealed paths and 12 direct typed/status paths. The 34 legacy non-proving probes remain excluded from D.4 closure. MQL assertions executed: **NO**.
+Named counts exclude builders and `Reject...` helpers. Of 173 negatives, 82 receive semantic/resealed source-review credit and 13 are checksum-only; 78 other parameterized negatives are uncredited by this narrow D.5 review (not newly declared defects in closed domains). The source checker enumerates every uncredited name. The old 34-only/26-and-12 claims are not retained. MQL assertions executed: **NO**. These are source-review classifications, not executed MQL test counts.
 
 ## Executed family totals
 
@@ -59,4 +59,8 @@ Named MQL counts exclude two parameterized rejection helpers (renamed `Reject...
 | RESTART_COMPLETE_AUTHORITY | 11 |
 | SEQUENCE | 9 |
 | TAKEOVER_COMPLETE_AUTHORITY | 10 |
-| **Total** | **294** |
+| D5_FENCE | 3 |
+| D5_VERSION | 6 |
+| D5_DIGEST | 14 |
+| D5_SOURCE | 1 |
+| **Total** | **318** |

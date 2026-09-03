@@ -3,11 +3,13 @@
 Current governance: **D.4 final independent re-audit FAIL (Critical 1 / Major 2 /
 Minor 0)**. Phase D is **INCOMPLETE**; Phase E is **NOT AUTHORIZED**. Only the
 [D.5 narrow correction](FusionProV5/Docs/SPRINT5_PHASE_D5_CORRECTION_STATUS.md)
-is authorized. The D.3/D.4 development descriptions below are historical.
+is authorized, including the subsequently approved Production V5 restart-input
+schema correction. See the D.5 conformance evidence for development self-checks;
+a new independent D.5 re-audit is still required.
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B, Phase C, and Phase D0 gates are closed/pass. The Sprint 5 Phase D.3 final independent re-audit failed with 3 Critical and 3 Major findings; Phase D remains incomplete and Phase E is not authorized. Sprint 5 Phase D.4 is the narrow fake-store/fake-clock reference correction and requires a new independent re-audit.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B, Phase C, and Phase D0 gates are closed/pass. D.4 final independent re-audit failed with 1 Critical and 2 Major findings. D.5 corrects only fence epochs, frozen digest compatibility, restart-input versioning, and affected reference/test evidence. Phase D remains incomplete and Phase E is not authorized.
 
 ## Repository Location
 
@@ -43,7 +45,7 @@ The Final Independent Merge Audit passed with no Critical or Major findings. All
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D0 remains **CLOSED / PASS**, with ADR-021 and ADR-022 approved. The Phase D.3 final independent re-audit result is **Critical 3 / Major 3 / Minor 0**, completeness **INCOMPLETE**. Phase D.4 may correct only the enumerated in-memory reference implementation and verification gaps; it cannot alter frozen contracts or ADR semantics. Phase E/F/G, physical persistence, real SQLite/database code, real broker/platform integration, MT5 runtime, Terminal/Strategy Tester, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D0 remains **CLOSED / PASS**, with ADR-021 and ADR-022 approved. The D.4 independent final re-audit result is **Critical 1 / Major 2 / Minor 0**, completeness **INCOMPLETE**. D.5 remains development self-verification only; it cannot alter frozen contracts or ADR semantics. Phase E/F/G, physical persistence, real SQLite/database code, real broker/platform integration, MT5 runtime, Terminal/Strategy Tester, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized.
 
 ## Repository Workflow
 
