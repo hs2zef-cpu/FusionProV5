@@ -20,5 +20,16 @@
 | ADR-022 exact zero-history | Genesis-ready zero classification without prior correlation/event/HWM | `D3-ZERO-*`; `SWV5S5_D3*ZeroHistory*` |
 | Publication commitment only after CAS/readback | MQL/Python reference publication stores | `D3-PUBLICATION-*` |
 | Claimed-unresolved and canonical independent Hard Kill release authority | `SWV5S5_ReferenceReleaseAuthorityValid`; Python `valid_release_authority`/`restart` | `RESTART-CLAIMED-*`, `RESTART-ACTIVE-*`, `RESTART-RELEASE-*`; `SWV5S5_D1*Restart*` |
-| Direct MQL source evidence | 13 named positive and 119 named negative functions; compile-only, executed NO | `SWV5S5_D1*`, `SWV5S5_D2*`, `SWV5S5_D3*` |
+| Direct MQL source evidence | 17 named positive and 157 named negative functions; compile-only, executed NO | `SWV5S5_D1*`, `SWV5S5_D2*`, `SWV5S5_D3*`, `SWV5S5_D4*` |
 | Deterministic repeated execution | complete `run_suite` equality | verifier summary `runs=2`, `deterministic=true` |
+
+D.4 focused mappings:
+
+| Requirement | MQL source/direct evidence | Python family |
+|---|---|---|
+| Complete ownership key and governed namespace; current Lease clock/expiry boundary | `ReferenceOwnershipKeyComplete`, `TakeoverEvidenceValid`; `D4NegativeTakeover*` | D4_TAKEOVER (9) |
+| Live Lease and frozen Basket/vector/Hard-Kill intrinsic semantics, full Broker identity/HWM | `ReferenceLiveLeaseValid`, `ReferenceCheckpointSemanticValid`; `D4*Ordinary*`, `D4NegativeRestart*`, `D4*ReleaseEnvelope`, `D4NegativeReleasedGeneration` | D4_RESTART (20) |
+| Exact policy, complete account, typed exposure, authentication/evidence chronology | `ReferenceReleaseAuthorityValid`; `D4NegativeRelease*` | D4_HARD_KILL (9) |
+| ACQUIRED/RENEWED zero-history and inactive/incomplete/wrong-clock denial | `ReferenceZeroHistoryCandidate`; `D4*ZeroHistory*` | D4_ZERO_HISTORY (8) |
+
+All D.4 direct probes are compile-only. Their positive-control guards and resealing classification are documented in `D4_SEMANTIC_EVIDENCE.md`.

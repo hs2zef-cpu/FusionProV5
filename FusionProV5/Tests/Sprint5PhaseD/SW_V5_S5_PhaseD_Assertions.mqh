@@ -137,8 +137,13 @@ bool SWV5S5_D2RunTakeover(const SWV5_InstanceLease &observed,const SWV5_Persiste
    SWV5S5_ReferenceLeaseStore store; SWV5S5_FakeAuthoritativeClock clock; SWV5_InstanceLease result;
    SWV5S5_ReferenceTransactionResult tx;
    clock.Configure(candidate.clock_id,candidate.authority,candidate.source_symbol);
-   if(!store.Initialize(observed,expected_namespace) || !clock.AcceptAndSeal(candidate,validated)) return false;
-   return store.Takeover(clock,validated,claim,result,tx);
+   if(!store.SeedObservedLeaseForVerification(observed,expected_namespace) || !clock.AcceptAndSeal(candidate,validated)) return false;
+   SWV5_InstanceLease loaded;
+   return store.Takeover(clock,validated,claim,result,tx) && tx.this_transaction_won &&
+      tx.durable_state_matches_proposal && store.Load(loaded) &&
+      SWV5S5_ReferenceOwnerEqual(loaded.fence.owner,claim.claimant) &&
+      loaded.fence.takeover_generation==observed.fence.takeover_generation+1 &&
+      loaded.fence.fencing_token_digest!=observed.fence.fencing_token_digest;
 }
 
 bool SWV5S5_D1RunTakeover(const SWV5_InstanceLease &observed,const SWV5S5_ReferenceClockObservation &candidate,
@@ -152,7 +157,7 @@ bool SWV5S5_D1NegativeTakeoverInvalidClockToken(const SWV5_InstanceLease &o,cons
    SWV5S5_ReferenceLeaseStore s; SWV5S5_FakeAuthoritativeClock k; SWV5S5_ReferenceClockObservation v;
    SWV5_InstanceLease z; SWV5S5_ReferenceTransactionResult tx;
    k.Configure(c.clock_id,c.authority,c.source_symbol);
-   if(!s.Initialize(o,q.takeover_evidence.persistence_reconciliation.persistence_namespace) || !k.AcceptAndSeal(c,v)) return false;
+   if(!s.SeedObservedLeaseForVerification(o,q.takeover_evidence.persistence_reconciliation.persistence_namespace) || !k.AcceptAndSeal(c,v)) return false;
    v.validation_digest="FORGED";
    return !s.Takeover(k,v,q,z,tx);
 }
@@ -637,6 +642,197 @@ bool SWV5S5_D2NegativeSequenceForeignCanonicalDomain(const SWV5S5_RequestSequenc
    SWV5S5_ReferenceSequenceStore store; SWV5S5_RequestSequenceResult result; SWV5S5_ReferenceTransactionResult tx;
    return store.Initialize(authority,entries) && !store.Reserve(x,result,tx);
 }
+
+bool SWV5S5_D4MutateCompleteTakeoverKey(SWV5_InstanceLease &observed,
+                                         SWV5_OwnershipClaim &claim,const int field)
+{
+   SWV5_OwnershipKey key=observed.fence.ownership_namespace;
+   if(field==0) key.account_login=0;
+   else if(field==1) key.magic=0;
+   else if(field==2) key.broker_identity="";
+   else if(field==3) key.server="";
+   else if(field==4) key.symbol="";
+   else if(field==5) key.strategy_id="";
+   else return false;
+   observed.fence.ownership_namespace=key; observed.fence.owner.key=key;
+   if(!SWV5S5_ReferenceDeriveFenceToken(observed.fence,observed.fence.fencing_token_digest)) return false;
+   claim.expected_fence=observed.fence; claim.claimant.key=key;
+   claim.takeover_evidence.lease_expiry.observed_ownership_key=key;
+   claim.takeover_evidence.lease_expiry.observed_ownership_namespace=key;
+   claim.takeover_evidence.lease_expiry.observed_owner.key=key;
+   claim.takeover_evidence.observed_ownership_key=key;
+   claim.takeover_evidence.observed_ownership_namespace=key;
+   claim.takeover_evidence.observed_owner.key=key;
+   claim.takeover_evidence.broker_reconciliation.persistence_namespace.ownership_namespace=key;
+   claim.takeover_evidence.persistence_reconciliation.persistence_namespace.ownership_namespace=key;
+   return true;
+}
+
+bool SWV5S5_D4RejectIncompleteTakeoverKey(const SWV5_InstanceLease &o,
+   const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q,const int field)
+{
+   if(!SWV5S5_D1PositiveTakeover(o,c,q)) return false;
+   SWV5_InstanceLease observed=o; SWV5_OwnershipClaim claim=q; SWV5S5_ReferenceClockObservation validated;
+   if(!SWV5S5_D4MutateCompleteTakeoverKey(observed,claim,field)) return false;
+   SWV5_InstanceLease unclaimed=observed; unclaimed.status=SWV5_LOCK_UNCLAIMED;
+   SWV5S5_ReferenceLeaseStore store;
+   return !store.Initialize(unclaimed,claim.takeover_evidence.persistence_reconciliation.persistence_namespace) &&
+      !SWV5S5_D1RunTakeover(observed,c,claim,validated);
+}
+
+bool SWV5S5_D4NegativeTakeoverZeroAccount(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,0); }
+bool SWV5S5_D4NegativeTakeoverZeroMagic(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,1); }
+bool SWV5S5_D4NegativeTakeoverEmptyBroker(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,2); }
+bool SWV5S5_D4NegativeTakeoverEmptyServer(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,3); }
+bool SWV5S5_D4NegativeTakeoverEmptySymbol(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,4); }
+bool SWV5S5_D4NegativeTakeoverEmptyStrategy(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ return SWV5S5_D4RejectIncompleteTakeoverKey(o,c,q,5); }
+
+bool SWV5S5_D4NegativeTakeoverCurrentLeaseClockId(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ if(!SWV5S5_D1PositiveTakeover(o,c,q)) return false; SWV5_InstanceLease x=o; x.clock_id+="-WRONG"; SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(x,c,q,v); }
+bool SWV5S5_D4NegativeTakeoverCurrentLeaseClockAuthority(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{ if(!SWV5S5_D1PositiveTakeover(o,c,q)) return false; SWV5_InstanceLease x=o; x.clock_authority=(c.authority==SWV5_TIME_AUTHORITY_DURABLE_STORE?SWV5_TIME_AUTHORITY_BROKER_SERVER:SWV5_TIME_AUTHORITY_DURABLE_STORE); SWV5S5_ReferenceClockObservation v; return !SWV5S5_D1RunTakeover(x,c,q,v); }
+bool SWV5S5_D4NegativeTakeoverBeforeExpirySequence(const SWV5_InstanceLease &o,const SWV5S5_ReferenceClockObservation &c,const SWV5_OwnershipClaim &q)
+{
+   if(!SWV5S5_D1PositiveTakeover(o,c,q) || o.expiry_clock_sequence==0) return false;
+   SWV5S5_ReferenceClockObservation x=c,v; SWV5_OwnershipClaim claim=q;
+   x.observation_sequence=o.expiry_clock_sequence-1;
+   claim.takeover_evidence.observed_clock_sequence=x.observation_sequence;
+   claim.takeover_evidence.lease_expiry.observed_clock_sequence=x.observation_sequence;
+   return !SWV5S5_D1RunTakeover(o,x,claim,v);
+}
+
+bool SWV5S5_D4RestartWithLeaseStatus(const SWV5_ContractValidationContext &c,
+   const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],
+   const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l,
+   const SWV5_InstanceLockStatus status,const bool zero_history,const bool expected_safe)
+{
+   if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false;
+   SWV5_RestartReconciliationInput x=v; SWV5_InstanceLease lease=l; lease.status=status;
+   if(zero_history && !SWV5S5_D3MakeZeroHistoryRestart(x)) return false;
+   if(!SWV5S5_ReferenceDeriveFenceToken(lease.fence,lease.fence.fencing_token_digest)) return false;
+   SWV5S5_ReferenceRestartResult out; const bool evaluated=SWV5S5_D1Restart(c,x,r,g,lease,out);
+   return expected_safe ? (evaluated && out.disposition==SWV5_RESTART_SAFE_TO_RESUME) :
+      (!evaluated && out.disposition!=SWV5_RESTART_SAFE_TO_RESUME);
+}
+
+bool SWV5S5_D4PositiveZeroHistoryAcquired(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_ACQUIRED,true,true); }
+bool SWV5S5_D4PositiveZeroHistoryRenewed(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_RENEWED,true,true); }
+bool SWV5S5_D4PositiveOrdinaryAcquired(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_ACQUIRED,false,true); }
+bool SWV5S5_D4PositiveOrdinaryRenewed(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_RENEWED,false,true); }
+bool SWV5S5_D4NegativeRestartUnclaimedLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_UNCLAIMED,false,false); }
+bool SWV5S5_D4NegativeRestartExpiredLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_EXPIRED,false,false); }
+bool SWV5S5_D4NegativeRestartReleasedLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_RELEASED,false,false); }
+bool SWV5S5_D4NegativeRestartCorruptLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_CORRUPT,false,false); }
+bool SWV5S5_D4NegativeZeroHistoryUnclaimedLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_UNCLAIMED,true,false); }
+bool SWV5S5_D4NegativeZeroHistoryExpiredLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_EXPIRED,true,false); }
+bool SWV5S5_D4NegativeZeroHistoryReleasedLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_RELEASED,true,false); }
+bool SWV5S5_D4NegativeZeroHistoryCorruptLease(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return ArraySize(r)==0 && SWV5S5_D4RestartWithLeaseStatus(c,v,r,g,l,SWV5_LOCK_CORRUPT,true,false); }
+
+bool SWV5S5_D4NegativeRestartInvalidBasketState(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.basket.lifecycle.state=(SWV5_BasketState)999; x.persisted.reconciliation_vector.basket_state=x.persisted.basket.lifecycle.state; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeRestartZeroBasketVersion(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.basket.lifecycle.state_version=0; x.persisted.reconciliation_vector.basket_state_version=0; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeRestartNetVolumeEquation(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.reconciliation_vector.symbol_net_volume+=1.0; x.broker.symbol_net_volume=x.persisted.reconciliation_vector.symbol_net_volume; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeRestartBrokerTickets(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.broker.latest_broker_event_identity.order_ticket++; x.persisted.reconciliation_vector.latest_broker_event_identity=x.broker.latest_broker_event_identity; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeRestartTransactionHwmIdentity(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.broker.transaction_high_watermark++; x.persisted.reconciliation_vector.transaction_high_watermark=x.broker.transaction_high_watermark; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&SWV5S5_D2SealBrokerSummary(x.broker)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeRestartInvalidHardKillState(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.state=(SWV5_HardKillLatchState)999; SWV5S5_ReferenceRestartResult o; return SWV5S5_D3ResealCheckpoint(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+
+bool SWV5S5_D4ResealReleaseParity(SWV5_RestartReconciliationInput &x)
+{
+   x.persisted.hard_kill_state.release_evidence.release_record_digest=
+      SWV5_TestHardKillReleaseDigest(x.persisted.hard_kill_state.release_evidence);
+   return SWV5S5_D1SealMutatedReleaseAuthority(x) && SWV5S5_D3ResealCheckpoint(x);
+}
+bool SWV5S5_D4NegativeReleasePolicy(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.approval_policy_id="WRONG-NONEMPTY"; x.release_authority_record.approval_policy_id="WRONG-NONEMPTY"; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeReleaseObservedExposure(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.exposure_evidence.observed_exposure_volume=-1.0; x.release_authority_record.exposure_evidence_reference.observed_exposure_volume=-1.0; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeReleasePriorExposure(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.exposure_evidence.prior_exposure_volume=-1.0; x.release_authority_record.exposure_evidence_reference.prior_exposure_volume=-1.0; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4NegativeReleaseIncreasingExposure(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.release_evidence.exposure_evidence.observed_exposure_volume=x.persisted.hard_kill_state.release_evidence.exposure_evidence.prior_exposure_volume+c.volume_tolerance+1.0; x.release_authority_record.exposure_evidence_reference=x.persisted.hard_kill_state.release_evidence.exposure_evidence; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+bool SWV5S5_D4RejectReleaseEvidenceBeforeAuthentication(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l,const int evidence_kind)
+{
+   if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false;
+   SWV5_RestartReconciliationInput x=v; const datetime before=(datetime)(x.release_authority_record.operator_identity.authenticated_at-1);
+   if(evidence_kind==0){ x.persisted.hard_kill_state.release_evidence.broker_evidence.observed_at=before; x.release_authority_record.broker_evidence_reference.observed_at=before; }
+   else if(evidence_kind==1){ x.persisted.hard_kill_state.release_evidence.persistence_evidence.observed_at=before; x.release_authority_record.persistence_evidence_reference.observed_at=before; }
+   else { x.persisted.hard_kill_state.release_evidence.exposure_evidence.observed_at=before; x.release_authority_record.exposure_evidence_reference.observed_at=before; }
+   SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o);
+}
+bool SWV5S5_D4NegativeReleaseBrokerBeforeAuthentication(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectReleaseEvidenceBeforeAuthentication(c,v,r,g,l,0); }
+bool SWV5S5_D4NegativeReleasePersistenceBeforeAuthentication(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectReleaseEvidenceBeforeAuthentication(c,v,r,g,l,1); }
+bool SWV5S5_D4NegativeReleaseExposureBeforeAuthentication(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectReleaseEvidenceBeforeAuthentication(c,v,r,g,l,2); }
+bool SWV5S5_D4NegativeReleaseIncompleteAccount(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.account_namespace.account_login=0; x.release_authority_record.account_namespace=x.persisted.hard_kill_state.account_namespace; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+
+bool SWV5S5_D4NegativeReleaseForeignAccount(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l)) return false; SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.account_namespace.account_login++; x.release_authority_record.account_namespace=x.persisted.hard_kill_state.account_namespace; SWV5S5_ReferenceRestartResult o; return SWV5S5_D4ResealReleaseParity(x)&&!SWV5S5_D1Restart(c,x,r,g,l,o); }
+
+bool SWV5S5_D4RejectInconsistentLatch(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l,const SWV5_HardKillLatchState state)
+{
+   if(!SWV5S5_D1PositiveRestartSafeToResume(c,v,r,g,l) || v.persisted.hard_kill_state.state!=SWV5_HARD_KILL_RELEASED) return false;
+   SWV5_RestartReconciliationInput x=v; x.persisted.hard_kill_state.state=state;
+   if(state==SWV5_HARD_KILL_RELEASED) x.persisted.hard_kill_state.release_generation++;
+   SWV5S5_ReferenceRestartResult out;
+   return SWV5S5_D3ResealCheckpoint(x) && !SWV5S5_D1Restart(c,x,r,g,l,out) && !out.increasing_execution_eligible;
+}
+bool SWV5S5_D4NegativeInactiveReleaseEnvelope(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectInconsistentLatch(c,v,r,g,l,SWV5_HARD_KILL_INACTIVE); }
+bool SWV5S5_D4NegativeActiveReleaseEnvelope(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectInconsistentLatch(c,v,r,g,l,SWV5_HARD_KILL_ACTIVE); }
+bool SWV5S5_D4NegativePendingReleaseEnvelope(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectInconsistentLatch(c,v,r,g,l,SWV5_HARD_KILL_RELEASE_PENDING); }
+bool SWV5S5_D4NegativeReleasedGeneration(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectInconsistentLatch(c,v,r,g,l,SWV5_HARD_KILL_RELEASED); }
+
+bool SWV5S5_D4RejectZeroHistoryLeaseMutation(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l,const bool owner_mutation)
+{
+   if(!SWV5S5_D4PositiveZeroHistoryAcquired(c,v,r,g,l)) return false;
+   SWV5_RestartReconciliationInput x=v; SWV5_InstanceLease lease=l;
+   if(!SWV5S5_D3MakeZeroHistoryRestart(x)) return false;
+   if(owner_mutation)
+   {
+      lease.fence.owner.key.account_login=0;
+      if(!SWV5S5_ReferenceDeriveFenceToken(lease.fence,lease.fence.fencing_token_digest)) return false;
+      x.claimant_fence=lease.fence; x.persisted.header.ownership_fence=lease.fence;
+      x.persisted.basket.lifecycle.ownership_fence=lease.fence;
+      x.persisted.reconciliation_vector.ownership_fence=lease.fence;
+      if(!SWV5S5_D3ResealCheckpoint(x)) return false;
+   }
+   else lease.clock_id+="-WRONG";
+   SWV5S5_ReferenceRestartResult out;
+   return !SWV5S5_D1Restart(c,x,r,g,lease,out) && !out.increasing_execution_eligible;
+}
+bool SWV5S5_D4NegativeZeroHistoryIncompleteOwner(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectZeroHistoryLeaseMutation(c,v,r,g,l,true); }
+bool SWV5S5_D4NegativeZeroHistoryWrongClock(const SWV5_ContractValidationContext &c,const SWV5_RestartReconciliationInput &v,const SWV5_PersistedRequestEvidence &r[],const SWV5S5_ReferenceGenesisRecord &g,const SWV5_InstanceLease &l)
+{ return SWV5S5_D4RejectZeroHistoryLeaseMutation(c,v,r,g,l,false); }
 
 void SWV5S5_RunPhaseDCompileOnlyAssertions(void)
 {

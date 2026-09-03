@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 5 Phase D.3 — Final Takeover / Restart / Publication Correction
+Sprint 5 Phase D.4 — Final Takeover / Restart / Hard-Kill Conformance Correction
 
 ### Date
 
-2026-09-02
+2026-09-03
 
 ### Status
 
-**PHASE D.2 FINAL INDEPENDENT RE-AUDIT FAIL — D.3 SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
+**PHASE D.3 FINAL INDEPENDENT RE-AUDIT FAIL — D.4 SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
 
-Sprint 4 remains the authorized architecture baseline. The Architecture Review and Phase B, Phase C, and Phase D0 gates remain closed/pass. The Phase D.2 final independent re-audit returned **FAIL — Critical 3 / Major 4 / Minor 0** and classified Phase D as **INCOMPLETE**. Phase D.3 is limited to the enumerated takeover/restart/publication corrections in the fake-store/fake-clock reference implementation and awaits a new independent re-audit.
+Sprint 4 remains the authorized architecture baseline. The Architecture Review and Phase B, Phase C, and Phase D0 gates remain closed/pass. The Phase D.3 final independent re-audit returned **FAIL — Critical 3 / Major 3 / Minor 0** and classified Phase D as **INCOMPLETE**. Phase D.4 is limited to the enumerated takeover/restart/Hard-Kill corrections in the fake-store/fake-clock reference implementation and awaits a new independent re-audit.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -25,14 +25,14 @@ Sprint 4 remains the authorized architecture baseline. The Architecture Review a
 - Phase D0 ADR review: **CLOSED / PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
 - ADR-021 physical store/CAS/lease clock: **APPROVED**
 - ADR-022 genesis provisioning: **APPROVED**
-- Phase D.2 final independent re-audit: **FAIL — CRITICAL 3 / MAJOR 4 / MINOR 0**
+- Phase D.3 final independent re-audit: **FAIL — CRITICAL 3 / MAJOR 3 / MINOR 0**
 - Phase D completeness: **INCOMPLETE**
-- Phase D.3 final correction: **SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
+- Phase D.4 final correction: **SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
 - Real database/SQLite/clock/platform implementation and Phase E/F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase D.3 — Final Takeover / Restart / Publication Correction
+Sprint 5 Phase D.4 — Final Takeover / Restart / Hard-Kill Conformance Correction
 
 - Status: **SELF-VERIFIED CANDIDATE / INDEPENDENT REVIEW PENDING**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
@@ -43,7 +43,7 @@ Sprint 5 Phase D.3 — Final Takeover / Restart / Publication Correction
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
 - Independent D0 review: **PASS — Critical NONE / Major NONE / Minor NONE**
 - D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
-- Next gate after D.3 self-pass: **New Independent Sprint 5 Phase D.3 Final Persistence / Restart Re-Audit**
+- Next gate after D.4 self-pass: **New Independent Sprint 5 Phase D.4 Final Persistence / Restart Re-Audit**
 - Phase E/F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
@@ -121,6 +121,6 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Submit the Sprint 5 Phase D.3 fake transactional store/clock/query reference correction to a **NEW INDEPENDENT SPRINT 5 PHASE D.3 FINAL PERSISTENCE / RESTART RE-AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
+Submit the Sprint 5 Phase D.4 fake transactional store/clock/query reference correction to a **NEW INDEPENDENT SPRINT 5 PHASE D.4 FINAL PERSISTENCE / RESTART RE-AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
 
 Do not implement a real database/SQLite adapter, real platform clock, broker/runtime integration, Phase E/F/G, basket execution, or Signal-to-Execution wiring. Phase D authorization is reference-only and does not grant production or live-trading authority.

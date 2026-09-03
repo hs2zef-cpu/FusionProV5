@@ -1,6 +1,6 @@
 # Fusion Pro V5 Sprint 5 Phase D — Persistence / Restart Reference Implementation
 
-> **Phase D.2 final independent re-audit status: FAIL — Critical 3 / Major 4 / Minor 0.** Sprint 5 Phase D.3 is a narrow corrective self-verification candidate and remains subject to a new independent final re-audit; Phase E is not authorized.
+> **Phase D.3 final independent re-audit status: FAIL — Critical 3 / Major 3 / Minor 0.** Sprint 5 Phase D.4 is a narrow corrective self-verification candidate and remains subject to a new independent final re-audit; Phase E is not authorized.
 
 ## Scope and status
 
@@ -40,10 +40,10 @@ There is no global transaction. A partial cross-domain combination remains dirty
 
 | Gate | Result |
 |---|---|
-| Phase D.3 executable reference | **248 / 248 PASS**, 0 failed, 0 skipped, 248 unique IDs |
+| Phase D.4 executable reference | **294 / 294 PASS**, 0 failed, 0 skipped, 294 unique IDs |
 | Repeated deterministic runs | **2 — identical** |
-| Final durable-state digest | `7071f39e85ebea680f8359678f349ce3f92fca4553ae24078d8955982bd2061d` |
-| Reference result digest | `4536625d1183eb3204766b54f3ca3c2e742d427a5d9ed1fa7b23129c9aa45b85` |
+| Final durable-state digest | `a67f5a9f3e451f20a3203121df73a98f5ffa7b32678de1fb9c78d2fdfc6cd023` |
+| Reference result digest | `861e930ea77b05e3f207351971429c127c15336c6659f6bf1b45da684b3d1f3e` |
 | Frozen Phase B verifier | **139 / 139 PASS**, MQL production executed false |
 | Phase C reference regression | **22 scenarios PASS**, 2 identical runs |
 | Phase D umbrella compile | **0 errors / 0 warnings**, X64 Regular |
@@ -53,4 +53,10 @@ There is no global transaction. A partial cross-domain combination remains dirty
 | MQL assertions executed | **NO** |
 | Forbidden executable API scan | **PASS — 0 matches** |
 
-The Python result is an independent executable adversarial oracle aligned with the corrected boundaries, not MQL conformance proof. The MQL source defines 13 positive and 119 negative named assertion functions; they compile but are not executed. The previous independent audit credited 19 complete re-sealed semantic probes and identified 34 non-creditable legacy probes; D.3 adds direct typed and fully re-sealed probes for each current headline finding without claiming that compile-only presence is runtime proof. The next gate is a **New Independent Sprint 5 Phase D.3 Final Persistence / Restart Re-Audit**. Phase E remains unauthorized.
+The Python result is an independent executable adversarial oracle aligned with the corrected boundaries, not MQL conformance proof. The MQL source defines 17 positive and 157 negative named assertion functions; they compile but are not executed. The previous independent audit credited 19 complete re-sealed semantic probes and identified 34 non-creditable legacy probes; D.4 adds 38 direct negative closure probes: 26 re-sealed paths and 12 direct typed/status paths, plus four positive active-Lease controls without claiming that compile-only presence is runtime proof. The next gate is a **New Independent Sprint 5 Phase D.4 Final Persistence / Restart Re-Audit**. Phase E remains unauthorized.
+
+## D.4 conformance closure
+
+The reference reuses the frozen complete ownership-key/owner, active-heartbeat Lease, Basket, reconciliation-vector, Hard-Kill state, account-namespace, and historical release predicates. Takeover additionally binds the current Lease clock and expiry sequence. Ordinary and zero-history restart share one active Lease gate and both accept valid ACQUIRED and RENEWED states. Release evidence and independent authority require exact `HARD-KILL-RELEASE-V5`, complete account identity, nonnegative non-increasing exposure, and authentication/evidence chronology.
+
+Takeover probe setup now uses an explicit TEST ONLY observed-expired-row seed: ordinary initialization remains UNCLAIMED-only, and no seed grants authority. D.4 negatives first establish a valid positive control. This removes setup-failure false positives without changing central CAS or the independently closed Publication, Claim, Ledger, Genesis, or Sequence semantics. See `../Tests/Sprint5PhaseD/D4_SEMANTIC_EVIDENCE.md`.

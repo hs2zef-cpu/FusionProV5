@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.8 |
-| Date | 2026-09-02 |
+| Version | 5.9 |
+| Date | 2026-09-03 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -57,6 +57,7 @@
 | 5.6 | 2026-08-31 | Recorded the Phase D.1 re-audit FAIL with 3 Critical, 5 Major, and 0 Minor findings and authorized the narrow D.2 reference correction. |
 | 5.7 | 2026-09-01 | Recorded the Phase D.2 final independent re-audit FAIL with 3 Critical, 4 Major, and 0 Minor findings and authorized only the enumerated D.3 correction. |
 | 5.8 | 2026-09-02 | Recorded Phase D.3 self-verification of frozen-version/claimant/time takeover validation, complete Production LP2 checkpoint/vector/Hard Kill validation, ADR-022 zero-history, and post-readback publication results. Phase D remains incomplete pending a new independent D.3 re-audit; Phase E remains unauthorized. |
+| 5.9 | 2026-09-03 | Recorded D.3 independent final re-audit FAIL (3 Critical / 3 Major / 0 Minor) and D.4 narrow takeover/live-Lease/Basket/Hard-Kill/RENEWED zero-history self-verification. No frozen semantics changed; independent D.4 re-audit remains required and Phase E unauthorized. |
 
 ## Purpose
 
@@ -72,7 +73,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Architecture Review and Phase B, Phase C, and Phase D0 gates are **CLOSED / PASS**. The Phase D.2 final independent re-audit returned **FAIL — Critical 3 / Major 4 / Minor 0**; Phase D is incomplete. Phase D.3 is limited to the enumerated takeover, restart, Hard Kill, zero-history, publication-result, and evidence corrections in the fake-store/fake-clock reference. A new independent D.3 re-audit is required. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Architecture Review and Phase B, Phase C, and Phase D0 gates are **CLOSED / PASS**. The Phase D.3 final independent re-audit returned **FAIL — Critical 3 / Major 3 / Minor 0**; Phase D is incomplete. Phase D.4 self-verifies only the enumerated takeover ownership/clock, restart live-Lease/Basket/vector, Hard-Kill release, RENEWED zero-history, and evidence corrections. Publication, Claim, domain-CAS, Ledger, Genesis, Sequence, Production V5, Phase B/C, and ADR semantics remain unchanged. A new independent D.4 re-audit is required. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 
@@ -532,4 +533,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Submit the Sprint 5 Phase D.3 fake-store/fake-clock correction on `sprint5-phase-d-persistence-restart-reference` to a new independent persistence/restart re-audit. Preserve frozen Phase B/C, Production V5, and ADR semantics. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."
+"Submit the Sprint 5 Phase D.4 fake-store/fake-clock correction on `sprint5-phase-d-persistence-restart-reference` to a new independent persistence/restart re-audit. Preserve frozen Phase B/C, Production V5, and ADR semantics. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."

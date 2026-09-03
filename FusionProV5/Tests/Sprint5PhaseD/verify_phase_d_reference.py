@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -155,9 +156,18 @@ def fence(namespace: str, owner: str, lease_version: int, takeover: int) -> str:
 
 def owner_identity(instance_id: str, **changes: Any) -> dict[str, Any]:
     value = {"ownership_key": "NS", "instance_id": instance_id,
+             "account_login": 10001, "magic": 550015, "broker": "BROKER-DEMO",
+             "server": "SERVER-DEMO", "symbol": "XAUUSD", "strategy": "FUSION-PRO-V5",
              "process_fingerprint": f"PROCESS-{instance_id}", "started_at": 1}
     value.update(changes)
     return value
+
+
+def complete_owner_identity(owner: dict[str, Any]) -> bool:
+    return (owner.get("ownership_key") == "NS" and owner.get("account_login", 0) > 0 and
+            owner.get("magic", 0) > 0 and all(owner.get(key) for key in
+            ("broker", "server", "symbol", "strategy", "instance_id", "process_fingerprint")) and
+            owner.get("started_at", 0) > 0)
 
 
 def persistence_namespace(basket: str = "BASKET-XAU-M15", ownership: str = "NS",
@@ -218,15 +228,27 @@ class Lease:
     heartbeat_at: int = 0
     expires_at: int = 0
     fence_digest: str = ""
+    status: str = "UNCLAIMED"
+    clock_id: str = "BROKER-CLOCK"
+    clock_authority: str = "BROKER_SERVER"
+    acquired_clock_sequence: int = 0
+    expiry_clock_sequence: int = 0
+    acquired_at: int = 0
+    governed_key: dict[str, Any] = field(default_factory=lambda: owner_identity("GOVERNED"))
 
     def acquire(self, owner: str, expected_revision: int, obs: dict[str, Any], duration: int) -> bool:
-        if self.owner or not owner or expected_revision != self.store_revision or duration <= 0:
+        if (self.owner or not owner or not complete_owner_identity(self.governed_key) or
+                expected_revision != self.store_revision or duration <= 0):
             return False
         c = Clock(); c.sequence = self.clock_sequence; c.timestamp = self.heartbeat_at
         if not c.accept(obs): return False
         self.owner, self.lease_version, self.takeover_generation = owner, 1, 1
+        self.status = "ACQUIRED"
         self.store_revision += 1; self.heartbeat_sequence = 1
         self.clock_sequence, self.heartbeat_at = obs["sequence"], obs["timestamp"]
+        self.acquired_clock_sequence, self.acquired_at = obs["sequence"], obs["timestamp"]
+        self.expiry_clock_sequence = obs["sequence"] + duration
+        self.clock_id, self.clock_authority = obs["clock_id"], obs["authority"]
         self.expires_at = obs["timestamp"] + duration
         self.fence_digest = fence(self.namespace, owner, 1, 1)
         return True
@@ -238,7 +260,9 @@ class Lease:
                 obs["sequence"] <= self.clock_sequence or obs["timestamp"] < self.heartbeat_at or duration <= 0):
             return False
         self.store_revision += 1; self.heartbeat_sequence += 1
+        self.status = "RENEWED"
         self.clock_sequence, self.heartbeat_at = obs["sequence"], obs["timestamp"]
+        self.expiry_clock_sequence = obs["sequence"] + duration
         self.expires_at = obs["timestamp"] + duration
         assert stable == (self.owner, self.lease_version, self.takeover_generation, self.fence_digest)
         return True
@@ -246,12 +270,16 @@ class Lease:
     def takeover(self, claimant: dict[str, Any], expected_revision: int, expected_fence: str,
                  proposed_generation: int, obs: dict[str, Any], evidence: dict[str, Any], duration: int) -> bool:
         new_owner = claimant.get("instance_id", "")
-        if (self.contract_version != 5 or not self.owner or claimant != evidence.get("claimant") or
-                claimant.get("ownership_key") != self.namespace or not new_owner or
-                not claimant.get("process_fingerprint") or claimant.get("started_at", 0) <= 0 or
+        if (self.contract_version != 5 or self.status != "EXPIRED" or not self.owner or
+                claimant != evidence.get("claimant") or not complete_owner_identity(claimant) or
+                not complete_owner_identity(self.governed_key) or claimant.get("ownership_key") != self.namespace or
+                any(claimant.get(key) != self.governed_key.get(key) for key in
+                    ("account_login", "magic", "broker", "server", "symbol", "strategy")) or
                 new_owner == self.owner or expected_revision != self.store_revision or
                 expected_fence != self.fence_digest or proposed_generation != self.takeover_generation + 1 or
-                obs["sequence"] <= self.clock_sequence or obs["timestamp"] < self.expires_at or duration <= 0 or
+                self.clock_id != obs.get("clock_id") or self.clock_authority != obs.get("authority") or
+                self.acquired_clock_sequence > self.clock_sequence or self.clock_sequence >= self.expiry_clock_sequence or
+                obs["sequence"] < self.expiry_clock_sequence or obs["timestamp"] < self.expires_at or duration <= 0 or
                 any(evidence.get(key) != 5 for key in ("claim_contract_version", "takeover_contract_version",
                     "expiry_contract_version", "current_lease_contract_version",
                     "expected_fence_contract_version", "proposed_fence_contract_version")) or
@@ -266,8 +294,11 @@ class Lease:
                                               self.complete_namespace, self, obs["sequence"], obs["timestamp"])):
             return False
         self.owner = new_owner; self.lease_version += 1; self.takeover_generation = proposed_generation
+        self.status = "ACQUIRED"
         self.store_revision += 1; self.heartbeat_sequence = 1
         self.clock_sequence, self.heartbeat_at = obs["sequence"], obs["timestamp"]
+        self.acquired_clock_sequence, self.acquired_at = obs["sequence"], obs["timestamp"]
+        self.expiry_clock_sequence = obs["sequence"] + duration
         self.expires_at = obs["timestamp"] + duration
         self.fence_digest = fence(self.namespace, self.owner, self.lease_version, self.takeover_generation)
         return True
@@ -587,13 +618,23 @@ class PublicationStore:
 
 
 def release_authority_record(**changes: Any) -> dict[str, Any]:
+    account_namespace = {"broker": "BROKER-DEMO", "server": "SERVER-DEMO", "account_login": 10001,
+                         "currency": "USD", "strategy": "FUSION-PRO-V5", "magic": 550015,
+                         "account_mode": "HEDGING", "source": "BROKER", "snapshot_epoch": 1,
+                         "snapshot_sequence": 10}
+    broker_evidence = {"id": "BROKER-EVIDENCE-1", "observed_at": 975}
+    persistence_evidence = {"id": "PERSISTENCE-EVIDENCE-1", "observed_at": 976}
+    exposure_evidence = {"id": "EXPOSURE-EVIDENCE-1", "observed_at": 977,
+                         "observed_exposure": 0.0, "prior_exposure": 0.1,
+                         "zero_or_reducing": True}
     value = {"contract_version": 5, "namespace": "NS", "account_mode": "HEDGING",
+             "account_namespace": account_namespace,
              "latch_id": "LATCH-1", "latch_generation": 1, "release_id": "RELEASE-1",
              "release_generation": 1, "operator_id": "OP-1", "authority_role": "RISK-APPROVER",
              "authentication_reference": "AUTH-1", "authenticated_at": 970,
-             "approving_component": "RISK_GOVERNANCE", "approval_policy_id": "HK-RELEASE-V5",
-             "approval_sequence": 50, "broker_evidence": "BROKER-EVIDENCE-1",
-             "persistence_evidence": "PERSISTENCE-EVIDENCE-1", "exposure_evidence": "EXPOSURE-EVIDENCE-1",
+             "approving_component": "RISK_GOVERNANCE", "approval_policy_id": "HARD-KILL-RELEASE-V5",
+             "approval_sequence": 50, "broker_evidence": broker_evidence,
+             "persistence_evidence": persistence_evidence, "exposure_evidence": exposure_evidence,
              "approved_at": 980, "released_at": 985, "expires_at": 1060,
              "release_record_sequence": 51, "authority_record_id": "HK-AUTHORITY-1",
              "issuing_component": "RISK_GOVERNANCE", "authority_source": "HARD_KILL_RELEASE_RECORD"}
@@ -648,7 +689,54 @@ def checkpoint_integrity_valid(checkpoint: dict[str, Any]) -> bool:
             checkpoint["header"].get("record_sequence", 0) > checkpoint["header"].get("previous_record_sequence", 0) and
             checkpoint["header"].get("store_revision", 0) > 0 and checkpoint["header"].get("written_at", 0) > 0 and
             checkpoint["header"].get("payload_size") == resealed["header"]["payload_size"] and
-            checkpoint["header"].get("payload_digest") == resealed["header"]["payload_digest"])
+             checkpoint["header"].get("payload_digest") == resealed["header"]["payload_digest"])
+
+
+def live_restart_lease_valid(x: dict[str, Any]) -> bool:
+    lease = x.get("lease_state", {}); owner = lease.get("owner", {})
+    return (lease.get("contract_version") == 5 and lease.get("status") in {"ACQUIRED", "RENEWED"} and
+            complete_owner_identity(owner) and lease.get("fence") == x.get("persisted_fence") and
+            lease.get("store_revision", 0) > 0 and lease.get("heartbeat_sequence", 0) > 0 and
+            lease.get("clock_id") == "BROKER-CLOCK" and lease.get("clock_authority") == "BROKER_SERVER" and
+            0 < lease.get("acquired_sequence", 0) <= lease.get("heartbeat_sequence_clock", 0) < lease.get("expiry_sequence", 0) and
+            0 < lease.get("acquired_at", 0) <= lease.get("heartbeat_at", 0) < lease.get("expires_at", 0) and
+            lease.get("heartbeat_sequence_clock", 0) < x.get("lease_clock_sequence", 0) < lease.get("expiry_sequence", 0) and
+            lease.get("heartbeat_at", 0) < x.get("now", 0) < lease.get("expires_at", 0))
+
+
+def basket_semantics_valid(basket: dict[str, Any]) -> bool:
+    if (basket.get("contract_version") != 5 or basket.get("state") not in {"IDLE", "OPENING", "ACTIVE", "RECOVERY", "CLOSING", "HALTED", "ERROR"} or
+            basket.get("state_version", 0) <= 0 or basket.get("reconciliation_state") != "MATCHED"):
+        return False
+    values = [basket.get(key) for key in ("initial_volume", "aggregate_closed_volume", "aggregate_open_volume", "residual_volume")]
+    if not all(isinstance(value, (int, float)) and math.isfinite(value) and value >= 0 for value in values): return False
+    if basket["aggregate_closed_volume"] > basket["initial_volume"] + 1e-7: return False
+    if basket.get("state") == "IDLE":
+        return (basket["aggregate_open_volume"] <= 1e-7 and basket["residual_volume"] <= 1e-7 and
+                basket.get("position_count") == 0 and basket.get("order_count") == 0 and
+                basket.get("pending_count") == 0 and basket.get("close_verification") == "ZERO_RESIDUAL_CONFIRMED")
+    if basket["state"] in {"ACTIVE", "RECOVERY", "CLOSING"}:
+        return basket["aggregate_open_volume"] > 1e-7 and basket.get("position_count", 0) > 0
+    return True
+
+
+def hard_kill_semantics_valid(x: dict[str, Any], hard_kill: dict[str, Any]) -> bool:
+    state = hard_kill.get("state")
+    if (hard_kill.get("contract_version") != 5 or state not in {"INACTIVE", "ACTIVE", "RELEASE_PENDING", "RELEASED"} or
+            not hard_kill.get("latch_id") or hard_kill.get("latch_generation", 0) <= 0 or
+            hard_kill.get("account_namespace") != x.get("release_record", {}).get("account_namespace")):
+        return False
+    evidence = hard_kill.get("release_evidence", {})
+    if state == "INACTIVE":
+        return not hard_kill.get("activation_reason") and hard_kill.get("release_generation") == 0 and not evidence.get("release_id")
+    if state == "ACTIVE":
+        return (bool(hard_kill.get("activation_reason")) and bool(hard_kill.get("activation_authority")) and
+                0 < hard_kill.get("activated_at", 0) <= x["now"] and not evidence.get("release_id"))
+    if state == "RELEASE_PENDING": return False
+    return (hard_kill.get("release_generation", 0) > 0 and
+            hard_kill["release_generation"] == evidence.get("release_generation") and
+            bool(hard_kill.get("release_evidence", {}).get("release_id")) and
+            hard_kill.get("release_reference", {}).get("release_id") == hard_kill["release_evidence"].get("release_id"))
 
 
 def checkpoint_semantics_valid(x: dict[str, Any], request_set_digest: str) -> tuple[bool, bool]:
@@ -661,7 +749,17 @@ def checkpoint_semantics_valid(x: dict[str, Any], request_set_digest: str) -> tu
                     broker.get("exposure") == "0.00" and not broker.get("correlation") and not broker.get("broker_identity") and
                     all(vector.get(key) == 0 for key in ("position_count", "order_count", "pending_count", "transaction_hwm")) and
                     not vector.get("correlation") and not vector.get("broker_identity"))
-    common = (checkpoint_integrity_valid(checkpoint) and vector.get("contract_version") == 5 and
+    vector_values = [vector.get(key) for key in ("symbol_long_volume", "symbol_short_volume", "symbol_net_volume",
+                                                  "aggregate_position_volume", "basket_open_volume", "residual_volume")]
+    identity = vector.get("broker_identity") if isinstance(vector.get("broker_identity"), dict) else {}
+    correlation_identity = vector.get("correlation", {}).get("broker_identity") if isinstance(vector.get("correlation"), dict) else {}
+    vector_intrinsic = (all(isinstance(value, (int, float)) and math.isfinite(value) for value in vector_values) and
+                        vector.get("symbol_long_volume", -1) >= 0 and vector.get("symbol_short_volume", -1) >= 0 and
+                        abs(vector.get("symbol_net_volume", 0) - (vector.get("symbol_long_volume", 0) - vector.get("symbol_short_volume", 0))) <= 1e-7 and
+                        all(vector.get(key, -1) >= 0 for key in ("aggregate_position_volume", "basket_open_volume", "residual_volume")) and
+                        (not identity or (identity == correlation_identity and vector.get("transaction_hwm") == identity.get("transaction_sequence"))))
+    common = (checkpoint_integrity_valid(checkpoint) and basket_semantics_valid(basket) and
+              hard_kill_semantics_valid(x, hard_kill) and vector_intrinsic and vector.get("contract_version") == 5 and
               checkpoint["header"].get("namespace") == x["namespace"] and checkpoint["header"].get("fence") == x["persisted_fence"] and
               basket.get("namespace") == x["namespace"] and basket.get("basket") == x["basket"] and
               basket.get("account_mode") == x["account_mode"] and basket.get("reconciliation_state") == "MATCHED" and
@@ -673,7 +771,11 @@ def checkpoint_semantics_valid(x: dict[str, Any], request_set_digest: str) -> tu
               vector.get("request_set_revision") == x["request_set_revision"] and
               vector.get("reconciliation_revision") == x["reconciliation_revision"] and
               vector.get("source_summary_digest") == reconciliation_source_digest(vector) and
-              vector.get("position_count") == broker.get("position_count") and vector.get("order_count") == broker.get("order_count") and
+              vector.get("position_count") == basket.get("position_count") == broker.get("position_count") and
+              vector.get("order_count") == basket.get("order_count") == broker.get("order_count") and
+              vector.get("pending_count") == basket.get("pending_count") and
+              abs(vector.get("basket_open_volume", 0)-basket.get("aggregate_open_volume", 0)) <= 1e-7 and
+              abs(vector.get("residual_volume", 0)-basket.get("residual_volume", 0)) <= 1e-7 and
               vector.get("transaction_hwm") == broker.get("transaction_hwm") and vector.get("correlation") == broker.get("correlation") and
               vector.get("broker_identity") == broker.get("broker_identity"))
     ordinary = (vector.get("transaction_hwm", 0) > 0 and bool(vector.get("correlation")) and bool(vector.get("broker_identity")))
@@ -685,15 +787,37 @@ def valid_release_authority(x: dict[str, Any]) -> bool:
     persisted = x["checkpoint"]["hard_kill"]["release_evidence"]
     body = {k: v for k, v in record.items() if k != "authority_record_digest"}
     persisted_body = {k: v for k, v in persisted.items() if k != "release_record_digest"}
+    account = record.get("account_namespace", {})
+    evidence_items = (record.get("broker_evidence", {}), record.get("persistence_evidence", {}),
+                      record.get("exposure_evidence", {}))
+    exposure = record.get("exposure_evidence", {})
+    typed_evidence = all(isinstance(item, dict) for item in evidence_items)
+    complete_account = (all(account.get(key) for key in ("broker", "server", "currency", "strategy")) and
+                        account.get("account_login", 0) > 0 and account.get("magic", 0) > 0 and
+                        account.get("account_mode") == "HEDGING" and account.get("source") == "BROKER" and
+                        account.get("snapshot_epoch", 0) > 0 and account.get("snapshot_sequence", 0) > 0 and
+                        all(account.get(key) == x.get("governed_account_namespace", {}).get(key) for key in
+                            ("broker", "server", "account_login", "strategy", "magic")))
+    chronology = (typed_evidence and record.get("authenticated_at", 0) > 0 and
+                  all(item.get("observed_at", 0) >= record["authenticated_at"] for item in evidence_items) and
+                  all(item.get("observed_at", 0) <= record.get("approved_at", 0) for item in evidence_items))
+    exposure_valid = (isinstance(exposure, dict) and bool(exposure.get("id")) and exposure.get("zero_or_reducing") is True and
+                      isinstance(exposure.get("observed_exposure"), (int, float)) and
+                      isinstance(exposure.get("prior_exposure"), (int, float)) and
+                      math.isfinite(exposure["observed_exposure"]) and math.isfinite(exposure["prior_exposure"]) and
+                      exposure["observed_exposure"] >= 0 and exposure["prior_exposure"] >= 0 and
+                      exposure["observed_exposure"] <= exposure["prior_exposure"] + 1e-7)
     return (record.get("authority_record_digest") == digest(body) and record.get("contract_version") == 5 and
             persisted.get("contract_version") == 5 and persisted.get("release_record_digest") == digest(persisted_body) and
             persisted.get("audit_reference") and persisted.get("namespace") == x["namespace"] and
             persisted.get("released_at", 0) <= x["now"] < persisted.get("expires_at", 0) and
-            record.get("namespace") == x["namespace"] and record.get("account_mode") == x["account_mode"] and
+            record.get("namespace") == x["namespace"] and record.get("account_mode") == x["account_mode"] and complete_account and
             record.get("latch_id") == x["release_latch_id"] and record.get("latch_generation") == x["release_latch_generation"] and
             record.get("release_id") == x["release_id"] and record.get("release_generation") == x["release_generation"] and
             all(record.get(key) for key in ("operator_id", "authority_role", "authentication_reference", "approval_policy_id",
-                                             "broker_evidence", "persistence_evidence", "exposure_evidence", "authority_record_id")) and
+                                              "broker_evidence", "persistence_evidence", "exposure_evidence", "authority_record_id")) and
+            record.get("approval_policy_id") == "HARD-KILL-RELEASE-V5" and chronology and exposure_valid and
+            persisted.get("approval_policy_id") == "HARD-KILL-RELEASE-V5" and
             record.get("authenticated_at", 0) > 0 and record.get("approval_sequence", 0) > 0 and
             0 < record.get("approved_at", 0) <= record.get("released_at", 0) <= x["now"] < record.get("expires_at", 0) and
             record.get("release_record_sequence", 0) > 0 and record.get("approving_component") == "RISK_GOVERNANCE" and
@@ -710,7 +834,7 @@ def valid_release_authority(x: dict[str, Any]) -> bool:
 def restart(base: dict[str, Any], **changes: Any) -> str:
     x = copy.deepcopy(base); x.update(changes)
     if not x["schema"] or not x["genesis"] or not x["persistence"]: return "HALTED"
-    if not x["lease"] or x["claimed"]: return "RETRY_FORBIDDEN"
+    if not x["lease"] or x["claimed"] or not live_restart_lease_valid(x): return "RETRY_FORBIDDEN"
     broker = x["broker_summary"]; execution = x["execution_summary"]
     if (broker.get("summary_digest") != digest({key: value for key, value in broker.items() if key != "summary_digest"}) or
             execution.get("summary_digest") != digest({key: value for key, value in execution.items() if key != "summary_digest"})):
@@ -734,7 +858,11 @@ def restart(base: dict[str, Any], **changes: Any) -> str:
             broker.get("query", {}).get("observed_at") != x["broker_time"] or
             broker.get("query", {}).get("snapshot_digest") != digest({key: value for key, value in broker["query"].items() if key != "snapshot_digest"}) or
             broker.get("transaction_hwm") != x["checkpoint_transaction_hwm"] or
-            broker.get("correlation") != x["checkpoint_correlation"]):
+            broker.get("correlation") != x["checkpoint_correlation"] or
+            abs(broker.get("symbol_net_volume", 0) - (broker.get("symbol_long_volume", 0) - broker.get("symbol_short_volume", 0))) > 1e-7 or
+            (broker.get("broker_identity") and (not isinstance(broker.get("correlation"), dict) or
+             broker.get("broker_identity") != broker.get("correlation", {}).get("broker_identity") or
+             broker.get("transaction_hwm") != broker.get("broker_identity", {}).get("transaction_sequence")))):
         return "RECONCILIATION_REQUIRED"
     request_set_digest = digest(x["requests"])
     checkpoint_valid, zero_history = checkpoint_semantics_valid(x, request_set_digest)
@@ -768,7 +896,7 @@ def restart(base: dict[str, Any], **changes: Any) -> str:
             x["execution_time"] > x["now"] or x["now"] - x["broker_time"] > 60 or x["now"] - x["execution_time"] > 60):
         return "RECONCILIATION_REQUIRED"
     if not x["clean"]: return "RECONCILIATION_REQUIRED"
-    if x["hard_kill"]: return "CLOSE_ONLY"
+    if x["hard_kill"] or x["checkpoint"]["hard_kill"]["state"] in {"ACTIVE", "RELEASE_PENDING"}: return "CLOSE_ONLY"
     if not x["release_authority"] or not valid_release_authority(x): return "HALTED"
     return "SAFE_TO_RESUME"
 
@@ -821,12 +949,17 @@ def restart_base() -> dict[str, Any]:
     source = FakePlatformQuerySource(); broker = source.broker(); execution = source.execution()
     release_record = release_authority_record()
     requests = [persisted_request()]
+    broker_identity = {"order_ticket": 7001, "deal_ticket": 8001, "position_identifier": 9001,
+                       "broker_event_id": "BROKER-EVENT-10", "transaction_sequence": 10}
+    correlation = {"id": "CHECKPOINT-CORR-1", "broker_identity": copy.deepcopy(broker_identity)}
     broker_summary = reseal_summary({"contract_version": 5, "namespace": source.namespace,
                                      "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
-                                     "fence": source.fence_digest, "correlation": "CHECKPOINT-CORR-1",
-                                     "broker_identity": "BROKER-EVENT-10",
-                                     "transaction_hwm": 10, "position_count": 0, "order_count": 0,
-                                     "deal_count": 1, "exposure": "0.00", "query": broker,
+                                     "fence": source.fence_digest, "correlation": correlation,
+                                     "broker_identity": broker_identity,
+                                     "transaction_hwm": 10, "position_count": 1, "order_count": 0,
+                                     "deal_count": 1, "exposure": "0.10", "symbol_long_volume": 0.1,
+                                     "symbol_short_volume": 0.0, "symbol_net_volume": 0.1,
+                                     "query": broker,
                                      "observed_at": broker["observed_at"], "authority": "BROKER"})
     execution_summary = reseal_summary({"contract_version": 5, "namespace": source.namespace,
                                         "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
@@ -836,10 +969,10 @@ def restart_base() -> dict[str, Any]:
                                         "observed_at": execution["observed_at"], "authority": "EXECUTION"})
     release_evidence = persisted_release_evidence(release_record)
     vector = {"contract_version": 5, "namespace": source.namespace, "basket": "BASKET-XAU-M15",
-              "account_mode": source.account_mode, "symbol_long_volume": "0.00", "symbol_short_volume": "0.00",
-              "symbol_net_volume": "0.00", "aggregate_position_volume": "0.00", "basket_open_volume": "0.00",
-              "residual_volume": "0.00", "position_count": 0, "order_count": 0, "pending_count": len(requests),
-              "correlation": "CHECKPOINT-CORR-1", "broker_identity": "BROKER-EVENT-10", "transaction_hwm": 10,
+              "account_mode": source.account_mode, "symbol_long_volume": 0.1, "symbol_short_volume": 0.0,
+              "symbol_net_volume": 0.1, "aggregate_position_volume": 0.1, "basket_open_volume": 0.1,
+              "residual_volume": 0.1, "position_count": 1, "order_count": 0, "pending_count": len(requests),
+              "correlation": correlation, "broker_identity": broker_identity, "transaction_hwm": 10,
               "broker_query_hwm": 10, "execution_query_hwm": 20, "request_set_digest": digest(requests),
               "request_set_revision": 4, "basket_state": "ACTIVE", "basket_state_version": 12,
               "hard_kill_generation": 1, "fence": source.fence_digest, "reconciliation_revision": 7}
@@ -849,18 +982,29 @@ def restart_base() -> dict[str, Any]:
                                   "previous_record_sequence": 19, "store_revision": 20, "written_at": 990},
                                   "request_set": {"contract_version": 5, "count": len(requests),
                                                   "digest": digest(requests), "revision": 4, "record_sequence": 20},
-                                  "basket": {"contract_version": 5, "namespace": source.namespace,
-                                             "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
-                                             "state": "ACTIVE", "state_version": 12,
-                                             "reconciliation_state": "MATCHED"},
-                                  "hard_kill": {"contract_version": 5, "namespace": source.namespace,
-                                                "state": "RELEASED", "latch_id": "LATCH-1",
-                                                "latch_generation": 1, "release_generation": 1,
+                                   "basket": {"contract_version": 5, "namespace": source.namespace,
+                                              "basket": "BASKET-XAU-M15", "account_mode": source.account_mode,
+                                              "state": "ACTIVE", "state_version": 12,
+                                              "reconciliation_state": "MATCHED", "initial_volume": 0.30,
+                                              "aggregate_closed_volume": 0.20, "aggregate_open_volume": 0.1,
+                                              "residual_volume": 0.1, "position_count": 1, "order_count": 0,
+                                              "pending_count": 1, "close_verification": "NOT_CONFIRMED"},
+                                   "hard_kill": {"contract_version": 5, "namespace": source.namespace,
+                                                 "state": "RELEASED", "latch_id": "LATCH-1",
+                                                 "latch_generation": 1, "release_generation": 1,
+                                                 "account_namespace": copy.deepcopy(release_record["account_namespace"]),
                                                 "release_evidence": release_evidence,
                                                 "release_reference": release_authority_reference(release_record)},
                                   "vector": vector, "clean_shutdown": True})
     return {"schema": True, "genesis": True, "genesis_lineage": "READY_FOR_RECONCILIATION",
             "persistence": True, "lease": True, "claimed": False,
+            "governed_account_namespace": copy.deepcopy(release_record["account_namespace"]),
+            "lease_state": {"contract_version": 5, "status": "ACQUIRED", "owner": owner_identity("OWNER-A"),
+                            "fence": source.fence_digest, "store_revision": 3, "heartbeat_sequence": 2,
+                            "clock_id": "BROKER-CLOCK", "clock_authority": "BROKER_SERVER",
+                            "acquired_sequence": 800, "heartbeat_sequence_clock": 900, "expiry_sequence": 1100,
+                            "acquired_at": 700, "heartbeat_at": 940, "expires_at": 1060},
+            "lease_clock_sequence": 1000,
             "broker_mask": broker["mask"], "execution_mask": execution["mask"],
             "broker_authority": broker["authority"], "execution_authority": execution["authority"], "requests_complete": True,
             "namespace": source.namespace, "broker_namespace": broker["namespace"], "execution_namespace": execution["namespace"],
@@ -869,7 +1013,7 @@ def restart_base() -> dict[str, Any]:
             "broker_sequence": 11, "execution_sequence": 21,
             "broker_hwm": 10, "execution_hwm": 20, "broker_time": broker["observed_at"], "execution_time": execution["observed_at"], "now": 1000,
             "basket": "BASKET-XAU-M15", "checkpoint_transaction_hwm": 10,
-            "checkpoint_correlation": "CHECKPOINT-CORR-1", "request_set_revision": 4,
+            "checkpoint_correlation": correlation, "request_set_revision": 4,
             "reconciliation_revision": 7, "requests": requests,
             "broker_summary": broker_summary, "execution_summary": execution_summary,
             "checkpoint": checkpoint,
@@ -991,25 +1135,27 @@ def run_suite() -> dict[str, Any]:
     r.check("LEASE-HEARTBEAT-RACE", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-A", 2, before.fence_digest, observation(3, 106), 10), lease.__dict__)
     r.check("LEASE-WRONG-OWNER", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-B", 3, lease.fence_digest, observation(3, 106), 10), lease.__dict__)
     r.check("LEASE-MISSING-CLOCK", "LEASE_TAKEOVER", not lease.heartbeat("OWNER-A", 3, lease.fence_digest, observation(2, 106), 10), lease.__dict__)
+    lease.status = "EXPIRED"
     weak = reconciliation_evidence(lease.complete_namespace, lease.owner, lease.fence_digest,
-                                   lease.store_revision, lease.takeover_generation, 3, 120)
+                                   lease.store_revision, lease.takeover_generation, 12, 120)
     weak["broker"] = {}
-    r.check("LEASE-MISSED-HEARTBEAT-INSUFFICIENT", "LEASE_TAKEOVER", not lease.takeover(owner_identity("OWNER-B"), 3, lease.fence_digest, 2, observation(3, 120), weak, 10), lease.__dict__)
+    r.check("LEASE-MISSED-HEARTBEAT-INSUFFICIENT", "LEASE_TAKEOVER", not lease.takeover(owner_identity("OWNER-B"), 3, lease.fence_digest, 2, observation(12, 120), weak, 10), lease.__dict__)
     complete = reconciliation_evidence(lease.complete_namespace, lease.owner, lease.fence_digest,
-                                       lease.store_revision, lease.takeover_generation, 3, 120)
+                                       lease.store_revision, lease.takeover_generation, 12, 120)
     stale_fence = lease.fence_digest
-    took = lease.takeover(owner_identity("OWNER-B"), 3, stale_fence, 2, observation(3, 120), complete, 10)
+    took = lease.takeover(owner_identity("OWNER-B"), 3, stale_fence, 2, observation(12, 120), complete, 10)
     r.check("LEASE-VALID-TAKEOVER", "LEASE_TAKEOVER", took and lease.owner == "OWNER-B" and lease.takeover_generation == 2 and lease.fence_digest != stale_fence, lease.__dict__)
     r.check("LEASE-TAKEOVER-RACE", "LEASE_TAKEOVER", not lease.takeover(owner_identity("OWNER-C"), 3, stale_fence, 2, observation(4, 140), complete, 10), lease.__dict__)
     r.check("LEASE-STALE-TAKEOVER-GENERATION", "LEASE_TAKEOVER", not lease.takeover(owner_identity("OWNER-C"), 4, lease.fence_digest, 2, observation(4, 140), complete, 10), lease.__dict__)
 
     def d3_takeover_reject(mutate: Any) -> bool:
         probe = Lease(); assert probe.acquire("OWNER-A", 1, observation(1, 100), 10)
+        probe.status = "EXPIRED"
         claimant = owner_identity("OWNER-B")
         evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
-                                           probe.store_revision, probe.takeover_generation, 2, 120)
+                                           probe.store_revision, probe.takeover_generation, 11, 120)
         mutate(claimant, evidence)
-        return not probe.takeover(claimant, 2, probe.fence_digest, 2, observation(2, 120), evidence, 10)
+        return not probe.takeover(claimant, 2, probe.fence_digest, 2, observation(11, 120), evidence, 10)
 
     def d3_mutate_typed_version(evidence: dict[str, Any], key: str) -> None:
         evidence[key]["contract_version"] = 4
@@ -1030,6 +1176,46 @@ def run_suite() -> dict[str, Any]:
     ]
     for test_id, mutate in d3_takeover_mutations:
         r.check(test_id, "D3_TAKEOVER", d3_takeover_reject(mutate), "complete typed takeover rejected")
+
+    d4_owner_fields = ("account_login", "magic", "broker", "server", "symbol", "strategy")
+    for field_name in d4_owner_fields:
+        def reject_incomplete(field: str = field_name) -> bool:
+            probe = Lease(); assert probe.acquire("OWNER-A", 1, observation(1, 100), 10)
+            probe.status = "EXPIRED"
+            claimant = owner_identity("OWNER-B")
+            control_evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
+                                                       probe.store_revision, probe.takeover_generation, 11, 120)
+            assert copy.deepcopy(probe).takeover(claimant, 2, probe.fence_digest, 2, observation(11, 120), control_evidence, 10)
+            claimant[field] = 0 if field in {"account_login", "magic"} else ""
+            probe.governed_key[field] = claimant[field]
+            evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
+                                               probe.store_revision, probe.takeover_generation, 11, 120,
+                                               claimant=copy.deepcopy(claimant))
+            return not probe.takeover(claimant, 2, probe.fence_digest, 2, observation(11, 120), evidence, 10)
+        r.check(f"D4-TAKEOVER-INCOMPLETE-{field_name.upper()}", "D4_TAKEOVER", reject_incomplete(),
+                {"field": field_name, "claimant_and_governed_namespace_equally_incomplete": True})
+
+    def d4_takeover_clock_reject(kind: str) -> bool:
+        probe = Lease(); assert probe.acquire("OWNER-A", 1, observation(1, 100), 10)
+        probe.status = "EXPIRED"; claimant = owner_identity("OWNER-B")
+        obs = observation(11, 120)
+        evidence = reconciliation_evidence(probe.complete_namespace, probe.owner, probe.fence_digest,
+                                           probe.store_revision, probe.takeover_generation, obs["sequence"], 120)
+        assert copy.deepcopy(probe).takeover(claimant, 2, probe.fence_digest, 2, obs, evidence, 10)
+        if kind == "clock_id": probe.clock_id = "OTHER-CLOCK"
+        elif kind == "authority": probe.clock_authority = "DURABLE_STORE"
+        else:
+            obs["sequence"] = probe.expiry_clock_sequence - 1
+            evidence["sequence"] = obs["sequence"]
+            for name in ("broker", "persistence"):
+                evidence[name]["sequence"] = obs["sequence"]
+                evidence[name]["state_digest"] = digest({k: v for k, v in evidence[name].items() if k != "state_digest"})
+        return not probe.takeover(claimant, 2, probe.fence_digest, 2, obs, evidence, 10)
+
+    for test_id, kind in (("D4-TAKEOVER-CURRENT-LEASE-CLOCK-ID", "clock_id"),
+                          ("D4-TAKEOVER-CURRENT-LEASE-CLOCK-AUTHORITY", "authority"),
+                          ("D4-TAKEOVER-INSUFFICIENT-EXPIRY-SEQUENCE", "expiry")):
+        r.check(test_id, "D4_TAKEOVER", d4_takeover_clock_reject(kind), {"binding": kind})
 
     # Ledger material behavior and corruption preservation.
     ledger = Ledger(); out = ledger.accept(1, "I1", "P1", "C1", 1, 1, 100)
@@ -1129,13 +1315,14 @@ def run_suite() -> dict[str, Any]:
     ]
     for test_id, mutate in takeover_mutations:
         probe_lease = Lease(); assert probe_lease.acquire("OWNER-A", 1, observation(1, 100), 10)
+        probe_lease.status = "EXPIRED"
         evidence = reconciliation_evidence(probe_lease.complete_namespace, probe_lease.owner, probe_lease.fence_digest,
-                                           probe_lease.store_revision, probe_lease.takeover_generation, 2, 120)
+                                           probe_lease.store_revision, probe_lease.takeover_generation, 11, 120)
         mutate(evidence)
         for name in ("broker", "persistence"):
             evidence[name]["state_digest"] = digest({key: value for key, value in evidence[name].items() if key != "state_digest"})
         r.check(test_id, "TAKEOVER_COMPLETE_AUTHORITY",
-                not probe_lease.takeover(owner_identity("OWNER-B"), 2, probe_lease.fence_digest, 2, observation(2, 120), evidence, 10),
+                not probe_lease.takeover(owner_identity("OWNER-B"), 2, probe_lease.fence_digest, 2, observation(11, 120), evidence, 10),
                 {"broker_digest_valid": evidence["broker"]["state_digest"] == digest({key: value for key, value in evidence["broker"].items() if key != "state_digest"}),
                  "persistence_digest_valid": evidence["persistence"]["state_digest"] == digest({key: value for key, value in evidence["persistence"].items() if key != "state_digest"})})
 
@@ -1191,12 +1378,13 @@ def run_suite() -> dict[str, Any]:
     r.check("D2-DOMAIN-CANONICAL-SUBMISSION", "DOMAIN_CANONICAL",
             domain_submission.claim("A1", 1, foreign_permit, "F1") == ("STALE_OR_CONFLICT", False), "digest-valid foreign Permit")
     domain_lease = Lease(); assert domain_lease.acquire("OWNER-A", 1, observation(1, 100), 10)
+    domain_lease.status = "EXPIRED"
     foreign_evidence = reconciliation_evidence(domain_lease.complete_namespace, domain_lease.owner, domain_lease.fence_digest,
-                                               domain_lease.store_revision, domain_lease.takeover_generation, 2, 120)
+                                                domain_lease.store_revision, domain_lease.takeover_generation, 11, 120)
     foreign_evidence["broker"]["namespace"]["basket"] = "FOREIGN"
     foreign_evidence["broker"]["state_digest"] = digest({key: value for key, value in foreign_evidence["broker"].items() if key != "state_digest"})
     r.check("D2-DOMAIN-CANONICAL-LEASE", "DOMAIN_CANONICAL",
-            not domain_lease.takeover(owner_identity("OWNER-B"), 2, domain_lease.fence_digest, 2, observation(2, 120), foreign_evidence, 10),
+            not domain_lease.takeover(owner_identity("OWNER-B"), 2, domain_lease.fence_digest, 2, observation(11, 120), foreign_evidence, 10),
             "digest-valid foreign Lease evidence")
     domain_set = PublicationStore(); domain_expected = copy.deepcopy(domain_set.request_set)
     foreign_set = {**domain_expected, "revision": 2, "store_revision": 2, "record_sequence": 2,
@@ -1298,6 +1486,7 @@ def run_suite() -> dict[str, Any]:
     unsafe_checkpoint = copy.deepcopy(base["checkpoint"])
     unsafe_checkpoint["request_set"].update(count=2, digest=digest(unsafe_requests))
     unsafe_checkpoint["vector"].update(pending_count=2, request_set_digest=digest(unsafe_requests))
+    unsafe_checkpoint["basket"]["pending_count"] = 2
     unsafe_checkpoint["vector"]["source_summary_digest"] = reconciliation_source_digest(unsafe_checkpoint["vector"])
     unsafe_checkpoint = seal_checkpoint(unsafe_checkpoint)
     r.check("D2-RESTART-UNSAFE-REQUEST-AT-INDEX-1", "RESTART_COMPLETE_AUTHORITY",
@@ -1310,7 +1499,7 @@ def run_suite() -> dict[str, Any]:
     split_checkpoint["vector"]["request_set_digest"] = digest([{"split": True}])
     split_checkpoint["vector"]["source_summary_digest"] = reconciliation_source_digest(split_checkpoint["vector"])
     split_checkpoint = seal_checkpoint(split_checkpoint)
-    broker_ahead_summary = copy.deepcopy(base["broker_summary"]); broker_ahead_summary["position_count"] = 1
+    broker_ahead_summary = copy.deepcopy(base["broker_summary"]); broker_ahead_summary["position_count"] = 2
     broker_ahead_summary = reseal_summary(broker_ahead_summary)
     execution_ahead_summary = copy.deepcopy(base["execution_summary"]); execution_ahead_summary["reconciliation_revision"] = 8
     execution_ahead_summary = reseal_summary(execution_ahead_summary)
@@ -1366,7 +1555,7 @@ def run_suite() -> dict[str, Any]:
             ("D3-RESTART-BASKET-STATE", lambda cp: cp["vector"].update(basket_state="RECOVERY")),
             ("D3-RESTART-BASKET-VERSION", lambda cp: cp["vector"].update(basket_state_version=13)),
             ("D3-RESTART-HARD-KILL-GENERATION", lambda cp: cp["vector"].update(hard_kill_generation=2)),
-            ("D3-RESTART-SOURCE-SEMANTIC-CONTRADICTION", lambda cp: cp["vector"].update(position_count=1))):
+            ("D3-RESTART-SOURCE-SEMANTIC-CONTRADICTION", lambda cp: cp["vector"].update(position_count=2))):
         r.check(test_id, "D3_RESTART", d3_checkpoint_mutation(mutate) != "SAFE_TO_RESUME", "fully resealed contradiction")
     bad_payload = copy.deepcopy(base["checkpoint"]); bad_payload["header"]["payload_size"] += 1
     r.check("D3-RESTART-PRODUCTION-PAYLOAD-SIZE", "D3_RESTART",
@@ -1399,7 +1588,8 @@ def run_suite() -> dict[str, Any]:
     zero["checkpoint_transaction_hwm"] = 0; zero["checkpoint_correlation"] = ""
     zero_broker = copy.deepcopy(zero["broker_summary"])
     zero_broker.update(correlation="", broker_identity="", transaction_hwm=0, position_count=0,
-                       order_count=0, deal_count=0, exposure="0.00")
+                       order_count=0, deal_count=0, exposure="0.00", symbol_long_volume=0.0,
+                       symbol_short_volume=0.0, symbol_net_volume=0.0)
     zero["broker_summary"] = reseal_summary(zero_broker)
     zero_execution = copy.deepcopy(zero["execution_summary"])
     zero_execution.update(pending_count=0, request_set_digest=digest([]))
@@ -1407,10 +1597,11 @@ def run_suite() -> dict[str, Any]:
     zero_checkpoint = copy.deepcopy(zero["checkpoint"])
     zero_checkpoint["request_set"].update(count=0, digest=digest([]))
     zero_checkpoint["basket"].update(state="IDLE", reconciliation_state="MATCHED",
-                                     initial_volume="0.30", aggregate_closed_volume="0.30",
-                                     close_verification="ZERO_RESIDUAL_CONFIRMED")
-    zero_checkpoint["vector"].update(symbol_long_volume="0.00", symbol_short_volume="0.00", symbol_net_volume="0.00",
-        aggregate_position_volume="0.00", basket_open_volume="0.00", residual_volume="0.00", position_count=0,
+                                     initial_volume=0.30, aggregate_closed_volume=0.30,
+                                     aggregate_open_volume=0.0, residual_volume=0.0, position_count=0,
+                                     order_count=0, pending_count=0, close_verification="ZERO_RESIDUAL_CONFIRMED")
+    zero_checkpoint["vector"].update(symbol_long_volume=0.0, symbol_short_volume=0.0, symbol_net_volume=0.0,
+        aggregate_position_volume=0.0, basket_open_volume=0.0, residual_volume=0.0, position_count=0,
         order_count=0, pending_count=0, correlation="", broker_identity="", transaction_hwm=0,
         request_set_digest=digest([]), basket_state="IDLE")
     zero_checkpoint["vector"]["source_summary_digest"] = reconciliation_source_digest(zero_checkpoint["vector"])
@@ -1438,6 +1629,103 @@ def run_suite() -> dict[str, Any]:
         if changed["broker_summary"] != zero["broker_summary"]:
             changed["broker_summary"] = reseal_summary(changed["broker_summary"])
         r.check(test_id, "D3_ZERO_HISTORY", restart(changed) != "SAFE_TO_RESUME", "zero-history exception remained narrow")
+
+    r.check("D4-RESTART-ACQUIRED-ORDINARY", "D4_RESTART",
+            restart(base) == "SAFE_TO_RESUME", {"status": "ACQUIRED"})
+    renewed = copy.deepcopy(base); renewed["lease_state"]["status"] = "RENEWED"
+    r.check("D4-RESTART-RENEWED-ORDINARY", "D4_RESTART",
+            restart(renewed) == "SAFE_TO_RESUME", {"status": "RENEWED"})
+    for status in ("UNCLAIMED", "EXPIRED", "RELEASED", "CORRUPT", "CONFLICT", "RECOVERY_REQUIRED"):
+        changed = copy.deepcopy(base); changed["lease_state"]["status"] = status
+        r.check(f"D4-RESTART-LEASE-{status}", "D4_RESTART",
+                restart(changed) != "SAFE_TO_RESUME", {"status": status})
+    incomplete_lease = copy.deepcopy(base); incomplete_lease["lease_state"]["owner"]["account_login"] = 0
+    r.check("D4-RESTART-LEASE-INCOMPLETE-OWNER", "D4_RESTART",
+            restart(incomplete_lease) != "SAFE_TO_RESUME", incomplete_lease["lease_state"])
+    wrong_lease_clock = copy.deepcopy(base); wrong_lease_clock["lease_state"]["clock_id"] = "OTHER-CLOCK"
+    r.check("D4-RESTART-LEASE-WRONG-CLOCK", "D4_RESTART",
+            restart(wrong_lease_clock) != "SAFE_TO_RESUME", wrong_lease_clock["lease_state"])
+
+    def d4_checkpoint_case(mutate_checkpoint: Any, mutate_broker: Any | None = None,
+                           **top_level: Any) -> str:
+        assert restart(base) == "SAFE_TO_RESUME"
+        checkpoint = copy.deepcopy(base["checkpoint"]); mutate_checkpoint(checkpoint)
+        checkpoint["vector"]["source_summary_digest"] = reconciliation_source_digest(checkpoint["vector"])
+        values: dict[str, Any] = {"checkpoint": seal_checkpoint(checkpoint), **top_level}
+        if mutate_broker is not None:
+            broker_summary = copy.deepcopy(base["broker_summary"]); mutate_broker(broker_summary)
+            values["broker_summary"] = reseal_summary(broker_summary)
+        return restart(base, **values)
+
+    for test_id, mutation in (
+            ("D4-RESTART-BASKET-INVALID-ENUM", lambda cp: (cp["basket"].update(state="INVALID"), cp["vector"].update(basket_state="INVALID"))),
+            ("D4-RESTART-BASKET-ZERO-VERSION", lambda cp: (cp["basket"].update(state_version=0), cp["vector"].update(basket_state_version=0))),
+            ("D4-RESTART-HARD-KILL-INVALID-ENUM", lambda cp: cp["hard_kill"].update(state="INVALID"))):
+        r.check(test_id, "D4_RESTART", d4_checkpoint_case(mutation) != "SAFE_TO_RESUME", "resealed intrinsic contradiction")
+
+    def mutate_net_checkpoint(cp: dict[str, Any]) -> None: cp["vector"].update(symbol_net_volume=0.2)
+    def mutate_net_broker(br: dict[str, Any]) -> None: br.update(symbol_net_volume=0.2)
+    r.check("D4-RESTART-NET-VOLUME-EQUATION", "D4_RESTART",
+            d4_checkpoint_case(mutate_net_checkpoint, mutate_net_broker) != "SAFE_TO_RESUME", "resealed net contradiction")
+
+    def mutate_ticket_checkpoint(cp: dict[str, Any]) -> None: cp["vector"]["broker_identity"]["order_ticket"] += 1
+    def mutate_ticket_broker(br: dict[str, Any]) -> None: br["broker_identity"]["order_ticket"] += 1
+    r.check("D4-RESTART-FULL-BROKER-IDENTITY", "D4_RESTART",
+            d4_checkpoint_case(mutate_ticket_checkpoint, mutate_ticket_broker) != "SAFE_TO_RESUME", "event id/sequence match; ticket differs")
+
+    def mutate_hwm_checkpoint(cp: dict[str, Any]) -> None: cp["vector"].update(transaction_hwm=11)
+    def mutate_hwm_broker(br: dict[str, Any]) -> None: br.update(transaction_hwm=11)
+    r.check("D4-RESTART-TRANSACTION-HWM-IDENTITY", "D4_RESTART",
+            d4_checkpoint_case(mutate_hwm_checkpoint, mutate_hwm_broker,
+                               checkpoint_transaction_hwm=11) != "SAFE_TO_RESUME", "HWM differs from identity sequence")
+
+    for state in ("INACTIVE", "ACTIVE", "RELEASE_PENDING", "RELEASED"):
+        def inconsistent_latch(cp: dict[str, Any], candidate: str = state) -> None:
+            cp["hard_kill"]["state"] = candidate
+            if candidate == "RELEASED": cp["hard_kill"]["release_generation"] += 1
+        r.check(f"D4-RESTART-INCONSISTENT-HARD-KILL-{state}", "D4_RESTART",
+                d4_checkpoint_case(inconsistent_latch) != "SAFE_TO_RESUME", "resealed state/envelope contradiction")
+
+    zero_acquired = copy.deepcopy(zero); zero_acquired["lease_state"]["status"] = "ACQUIRED"
+    zero_renewed = copy.deepcopy(zero); zero_renewed["lease_state"]["status"] = "RENEWED"
+    r.check("D4-ZERO-HISTORY-ACQUIRED", "D4_ZERO_HISTORY",
+            restart(zero_acquired) == "SAFE_TO_RESUME", {"status": "ACQUIRED"})
+    r.check("D4-ZERO-HISTORY-RENEWED", "D4_ZERO_HISTORY",
+            restart(zero_renewed) == "SAFE_TO_RESUME", {"status": "RENEWED"})
+    for status in ("UNCLAIMED", "EXPIRED", "RELEASED", "CORRUPT"):
+        changed = copy.deepcopy(zero); changed["lease_state"]["status"] = status
+        r.check(f"D4-ZERO-HISTORY-LEASE-{status}", "D4_ZERO_HISTORY",
+                restart(changed) != "SAFE_TO_RESUME", {"status": status})
+    for field_name, value in (("owner", {**owner_identity("OWNER-A"), "account_login": 0}),
+                              ("clock_id", "WRONG-CLOCK")):
+        changed = copy.deepcopy(zero); changed["lease_state"][field_name] = value
+        r.check(f"D4-ZERO-HISTORY-INVALID-{field_name.upper()}", "D4_ZERO_HISTORY",
+                restart(zero) == "SAFE_TO_RESUME" and restart(changed) != "SAFE_TO_RESUME", field_name)
+
+    def d4_release_case(mutate: Any) -> bool:
+        assert restart(base) == "SAFE_TO_RESUME"
+        record = copy.deepcopy(base["release_record"]); mutate(record)
+        record["authority_record_digest"] = digest({k: v for k, v in record.items() if k != "authority_record_digest"})
+        checkpoint = copy.deepcopy(base["checkpoint"])
+        checkpoint["hard_kill"]["account_namespace"] = copy.deepcopy(record["account_namespace"])
+        checkpoint["hard_kill"]["release_evidence"] = persisted_release_evidence(record)
+        checkpoint["hard_kill"]["release_reference"] = release_authority_reference(record)
+        return restart(base, checkpoint=seal_checkpoint(checkpoint), release_record=record,
+                       release_reference=release_authority_reference(record)) != "SAFE_TO_RESUME"
+
+    release_mutations: list[tuple[str, Any]] = [
+        ("D4-HARD-KILL-WRONG-NONEMPTY-POLICY", lambda rec: rec.update(approval_policy_id="WRONG-NONEMPTY")),
+        ("D4-HARD-KILL-NEGATIVE-OBSERVED-EXPOSURE", lambda rec: rec["exposure_evidence"].update(observed_exposure=-0.1)),
+        ("D4-HARD-KILL-NEGATIVE-PRIOR-EXPOSURE", lambda rec: rec["exposure_evidence"].update(prior_exposure=-0.1)),
+        ("D4-HARD-KILL-INCREASING-EXPOSURE", lambda rec: rec["exposure_evidence"].update(observed_exposure=0.2, prior_exposure=0.1, zero_or_reducing=True)),
+        ("D4-HARD-KILL-BROKER-BEFORE-AUTH", lambda rec: rec["broker_evidence"].update(observed_at=969)),
+        ("D4-HARD-KILL-PERSISTENCE-BEFORE-AUTH", lambda rec: rec["persistence_evidence"].update(observed_at=969)),
+        ("D4-HARD-KILL-EXPOSURE-BEFORE-AUTH", lambda rec: rec["exposure_evidence"].update(observed_at=969)),
+        ("D4-HARD-KILL-INCOMPLETE-ACCOUNT", lambda rec: rec["account_namespace"].update(account_login=0)),
+        ("D4-HARD-KILL-FOREIGN-ACCOUNT", lambda rec: rec["account_namespace"].update(account_login=99999)),
+    ]
+    for test_id, mutation in release_mutations:
+        r.check(test_id, "D4_HARD_KILL", d4_release_case(mutation), "record and persisted envelope resealed in parity")
 
     d3_pub = PublicationStore(); d3_expected = copy.deepcopy(d3_pub.request_set)
     d3_proposed = {**d3_expected, "revision": 2, "store_revision": 2, "record_sequence": 2,

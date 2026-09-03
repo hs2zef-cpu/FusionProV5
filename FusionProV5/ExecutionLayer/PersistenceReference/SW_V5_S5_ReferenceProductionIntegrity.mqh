@@ -2,9 +2,26 @@
 #define SW_V5_S5_REFERENCE_PRODUCTION_INTEGRITY_MQH
 
 // REFERENCE ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS
-// Reuses the frozen Production V5 LP1/LP2 canonical verification helpers.
+// Reuses the frozen Production V5 LP1/LP2 canonical verification helpers and
+// exact frozen semantic predicates. This remains a test/reference dependency.
 // This explicit reference dependency does not authorize runtime or platform use.
-#include "..\..\Tests\ContractVerification\SW_V5_TestFixtures.mqh"
+#include "..\..\Tests\ContractVerification\SW_V5_ReferenceValidators.mqh"
+
+bool SWV5S5_ReferenceOwnershipKeyComplete(const SWV5_OwnershipKey &key)
+{
+   return SWV5_TestOwnershipKeyComplete(key);
+}
+
+bool SWV5S5_ReferenceOwnerComplete(const SWV5_OwnerIdentity &owner)
+{
+   return SWV5_TestOwnerComplete(owner);
+}
+
+bool SWV5S5_ReferencePersistenceNamespaceComplete(const SWV5_PersistenceNamespace &space)
+{
+   return SWV5S5_IsV5Version(space.contract_version) && space.basket_id.value!="" &&
+      SWV5S5_ReferenceOwnershipKeyComplete(space.ownership_namespace);
+}
 
 bool SWV5S5_ReferenceZeroBrokerIdentity(const SWV5_BrokerExecutionIdentity &identity)
 {

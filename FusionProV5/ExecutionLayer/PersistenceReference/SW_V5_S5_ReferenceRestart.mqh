@@ -95,6 +95,20 @@ bool SWV5S5_ReferenceRestartBrokerIdentityEqual(const SWV5_BrokerExecutionIdenti
       SWV5S5_CanonicalCheckpointBrokerIdentity("broker",b,cb) && ca==cb;
 }
 
+bool SWV5S5_ReferenceLiveLeaseValid(const SWV5_ContractValidationContext &context,
+                                     const SWV5_InstanceLease &lease,
+                                     const SWV5_OwnershipFence &claimant_fence)
+{
+   string expected_fence_digest;
+   return SWV5_TestHeartbeatValid(context,lease,lease) && lease.store_revision!="" &&
+      SWV5S5_ReferenceOwnershipKeyComplete(lease.fence.ownership_namespace) &&
+      SWV5S5_ReferenceOwnerComplete(lease.fence.owner) &&
+      SWV5S5_ReferenceOwnershipKeyEqual(lease.fence.owner.key,lease.fence.ownership_namespace) &&
+      SWV5S5_EqualFence(lease.fence,claimant_fence) &&
+      SWV5S5_ReferenceDeriveFenceToken(lease.fence,expected_fence_digest) &&
+      lease.fence.fencing_token_digest==expected_fence_digest;
+}
+
 bool SWV5S5_ReferencePersistedRequestEqual(const SWV5_PersistedRequestEvidence &a,
                                             const SWV5_PersistedRequestEvidence &b)
 {
@@ -143,7 +157,7 @@ bool SWV5S5_ReferencePersistedReleaseEvidenceValid(const SWV5_HardKillState &sta
       evidence.release_id!="" && evidence.latch_id==state.latch_id &&
       evidence.latch_generation==state.latch_generation && evidence.latch_generation>0 &&
       evidence.release_generation==state.release_generation && evidence.release_generation>0 &&
-      evidence.approval_policy_id!="" && evidence.approval_sequence>0 &&
+      evidence.approval_policy_id=="HARD-KILL-RELEASE-V5" && evidence.approval_sequence>0 &&
       evidence.operator_identity.operator_id!="" && evidence.operator_identity.authority_role!="" &&
       evidence.operator_identity.authentication_reference!="" && evidence.operator_identity.authenticated_at>0 &&
       evidence.approving_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
@@ -161,11 +175,17 @@ bool SWV5S5_ReferencePersistedReleaseEvidenceValid(const SWV5_HardKillState &sta
       evidence.exposure_evidence.observed_at>0 && evidence.exposure_evidence.zero_or_reducing &&
       SWV5_IsFiniteNumber(evidence.exposure_evidence.observed_exposure_volume) &&
       SWV5_IsFiniteNumber(evidence.exposure_evidence.prior_exposure_volume) &&
+      evidence.exposure_evidence.observed_exposure_volume>=0.0 &&
+      evidence.exposure_evidence.prior_exposure_volume>=0.0 &&
+      evidence.exposure_evidence.observed_exposure_volume<=evidence.exposure_evidence.prior_exposure_volume+context.volume_tolerance &&
       evidence.exposure_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
       evidence.exposure_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
       evidence.approved_at>0 && evidence.released_at>=evidence.approved_at &&
       evidence.released_at<=context.clock_time && context.clock_time<evidence.expires_at &&
       evidence.operator_identity.authenticated_at<=evidence.approved_at &&
+      evidence.broker_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
+      evidence.persistence_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
+      evidence.exposure_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
       evidence.broker_evidence.observed_at<=evidence.approved_at &&
       evidence.persistence_evidence.observed_at<=evidence.approved_at &&
       evidence.exposure_evidence.observed_at<=evidence.approved_at &&
@@ -181,7 +201,7 @@ bool SWV5S5_ReferenceZeroHistoryCandidate(const SWV5_RestartReconciliationInput 
 {
    const SWV5_PersistedReconciliationVector reconciliation=restart_input.persisted.reconciliation_vector;
    return genesis.state==SWV5S5_GENESIS_READY_FOR_RECONCILIATION &&
-      lease.status==SWV5_LOCK_ACQUIRED && SWV5S5_EqualFence(lease.fence,restart_input.claimant_fence) &&
+      SWV5_TestActiveOwnedStatus(lease.status) && SWV5S5_EqualFence(lease.fence,restart_input.claimant_fence) &&
       ArraySize(pending_requests)==0 && restart_input.persisted.pending_request_set.request_count==0 &&
       restart_input.restart_requests.pending_request_count==0 && reconciliation.pending_request_count==0 &&
       restart_input.broker.position_count==0 && restart_input.broker.order_count==0 &&
@@ -217,7 +237,12 @@ bool SWV5S5_ReferenceCheckpointSemanticValid(const SWV5_ContractValidationContex
    const SWV5_PersistedReconciliationVector reconciliation=checkpoint.reconciliation_vector;
    string source_digest;
    zero_history=SWV5S5_ReferenceZeroHistoryCandidate(restart_input,pending_requests,genesis,lease);
-   if(!SWV5S5_ReferenceCheckpointProductionIntegrityValid(checkpoint,context) ||
+    if(!SWV5S5_ReferenceCheckpointProductionIntegrityValid(checkpoint,context) ||
+       !SWV5_TestCheckpointBasketSemanticValid(context,checkpoint.basket,
+          restart_input.persistence_namespace,restart_input.claimant_fence) ||
+       !SWV5_TestReconciliationVectorValid(context,checkpoint) ||
+       !SWV5_TestCheckpointHardKillSemanticValid(context,checkpoint.hard_kill_state,
+          restart_input.persistence_namespace) ||
       !SWV5S5_IsV5Version(checkpoint.basket.contract_version) ||
       !SWV5S5_IsV5Version(checkpoint.basket.lifecycle.contract_version) ||
       !SWV5S5_IsV5Version(checkpoint.pending_request_set.contract_version) ||
@@ -285,7 +310,7 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
       record.latch_generation==0 || record.latch_generation!=state.latch_generation ||
       record.release_id=="" || record.release_id!=evidence.release_id ||
       record.release_generation==0 || record.release_generation!=state.release_generation ||
-      record.release_generation!=evidence.release_generation || record.approval_policy_id=="" ||
+      record.release_generation!=evidence.release_generation || record.approval_policy_id!="HARD-KILL-RELEASE-V5" ||
       record.approval_policy_id!=evidence.approval_policy_id || record.approval_sequence==0 ||
       record.approval_sequence!=evidence.approval_sequence || record.release_record_sequence==0 ||
       record.release_record_sequence!=evidence.release_record_sequence ||
@@ -317,9 +342,16 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
       record.exposure_evidence_reference.issuing_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
       record.exposure_evidence_reference.authority_source!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
       !record.exposure_evidence_reference.zero_or_reducing ||
+      record.exposure_evidence_reference.observed_exposure_volume<0.0 ||
+      record.exposure_evidence_reference.prior_exposure_volume<0.0 ||
+      record.exposure_evidence_reference.observed_exposure_volume>
+         record.exposure_evidence_reference.prior_exposure_volume+context.volume_tolerance ||
       record.approved_at<=0 || record.released_at<record.approved_at || record.released_at>context.clock_time ||
       record.expires_at<=context.clock_time ||
       record.operator_identity.authenticated_at>record.approved_at ||
+      record.broker_evidence_reference.observed_at<record.operator_identity.authenticated_at ||
+      record.persistence_evidence_reference.observed_at<record.operator_identity.authenticated_at ||
+      record.exposure_evidence_reference.observed_at<record.operator_identity.authenticated_at ||
       record.broker_evidence_reference.observed_at>record.approved_at ||
       record.persistence_evidence_reference.observed_at>record.approved_at ||
       record.exposure_evidence_reference.observed_at>record.approved_at ||
@@ -328,7 +360,10 @@ bool SWV5S5_ReferenceReleaseAuthorityValid(const SWV5_HardKillReleaseAuthorityRe
       reference.authority_record_id!=record.authority_record_id ||
       reference.authority_record_sequence!=record.release_record_sequence ||
       reference.authority_record_digest!=record.authority_record_digest || reference.release_id!=record.release_id ||
-      reference.latch_generation!=record.latch_generation || reference.release_generation!=record.release_generation) return false;
+      reference.latch_generation!=record.latch_generation || reference.release_generation!=record.release_generation ||
+      !SWV5_TestRiskAccountNamespaceComplete(context,record.account_namespace) ||
+      !SWV5_TestRiskAccountNamespaceBelongsToPersistence(record.account_namespace,record.persistence_namespace) ||
+      !SWV5_TestHistoricalHardKillReleaseValid(context,state,evidence,record)) return false;
    return true;
 }
 
@@ -344,7 +379,8 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    SWV5_PendingRequest requests[]; ArrayResize(requests,ArraySize(pending_requests));
    for(int i=0;i<ArraySize(pending_requests);i++) requests[i]=pending_requests[i].pending_request;
    const bool schema=SWV5S5_IsV5Version(restart_input.persisted.header.contract_version) && SWV5S5_IsCandidateVersion(restart_input.contract_version);
-   const bool namespace_ok=SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.persisted.header.persistence_namespace) &&
+   const bool namespace_ok=SWV5S5_ReferencePersistenceNamespaceComplete(restart_input.persistence_namespace) &&
+      SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.persisted.header.persistence_namespace) &&
       SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.restart_requests.persistence_namespace) &&
       SWV5S5_EqualNamespace(restart_input.persistence_namespace,restart_input.broker.persistence_namespace) &&
       SWV5S5_ReferenceOwnershipKeyEqual(restart_input.persistence_namespace.ownership_namespace,restart_input.claimant_fence.ownership_namespace);
@@ -361,7 +397,8 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
    result.authoritative_sources_separated=restart_input.broker.authority==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
       restart_input.restart_requests.authority_source==SWV5_AUTHORITY_EXECUTION_REQUEST_STATE;
    if(!schema || !namespace_ok || !fence_ok || genesis.state!=SWV5S5_GENESIS_READY_FOR_RECONCILIATION ||
-      restart_input.persistence_status!=SWV5_PERSISTENCE_LOADED || lease.status==SWV5_LOCK_CONFLICT || lease.status==SWV5_LOCK_RECOVERY_REQUIRED)
+      restart_input.persistence_status!=SWV5_PERSISTENCE_LOADED ||
+      !SWV5S5_ReferenceLiveLeaseValid(context,lease,restart_input.claimant_fence))
    { result.diagnostic="SCHEMA_GENESIS_PERSISTENCE_OR_OWNER_INVALID"; return false; }
    bool zero_history=false;
    if(!SWV5S5_DeriveCheckpointProjection(restart_input.persisted,checkpoint_projection) ||
@@ -390,6 +427,8 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
       persisted_vector.basket_id.value!=restart_input.persistence_namespace.basket_id.value ||
       persisted_vector.account_mode!=restart_input.broker.account_mode ||
       !SWV5S5_EqualFence(persisted_vector.ownership_fence,restart_input.claimant_fence) ||
+      !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_net_volume,
+         restart_input.broker.symbol_long_volume-restart_input.broker.symbol_short_volume,context.volume_tolerance) ||
       !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_long_volume,persisted_vector.symbol_long_volume,context.volume_tolerance) ||
       !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_short_volume,persisted_vector.symbol_short_volume,context.volume_tolerance) ||
       !SWV5S5_ReferenceRestartNear(restart_input.broker.symbol_net_volume,persisted_vector.symbol_net_volume,context.volume_tolerance) ||
@@ -399,6 +438,11 @@ bool SWV5S5_EvaluateReferenceRestart(const SWV5_ContractValidationContext &conte
       restart_input.broker.position_count!=persisted_vector.position_count || restart_input.broker.order_count!=persisted_vector.order_count ||
       !SWV5S5_ReferenceRestartCorrelationEqual(restart_input.broker.latest_confirmed_correlation,persisted_vector.latest_confirmed_correlation) ||
       !SWV5S5_ReferenceRestartBrokerIdentityEqual(restart_input.broker.latest_broker_event_identity,persisted_vector.latest_broker_event_identity) ||
+      (!zero_history && !SWV5S5_ReferenceRestartBrokerIdentityEqual(
+         restart_input.broker.latest_broker_event_identity,
+         restart_input.broker.latest_confirmed_correlation.broker_identity)) ||
+      (!zero_history && restart_input.broker.transaction_high_watermark!=
+         restart_input.broker.latest_broker_event_identity.transaction_sequence) ||
       restart_input.broker.transaction_high_watermark!=persisted_vector.transaction_high_watermark ||
       restart_input.restart_requests.pending_request_count!=persisted_vector.pending_request_count ||
       restart_input.restart_requests.pending_request_count!=(uint)ArraySize(pending_requests) ||
