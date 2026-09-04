@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.9 |
-| Date | 2026-09-03 |
+| Version | 5.10 |
+| Date | 2026-09-04 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -58,6 +58,7 @@
 | 5.7 | 2026-09-01 | Recorded the Phase D.2 final independent re-audit FAIL with 3 Critical, 4 Major, and 0 Minor findings and authorized only the enumerated D.3 correction. |
 | 5.8 | 2026-09-02 | Recorded Phase D.3 self-verification of frozen-version/claimant/time takeover validation, complete Production LP2 checkpoint/vector/Hard Kill validation, ADR-022 zero-history, and post-readback publication results. Phase D remains incomplete pending a new independent D.3 re-audit; Phase E remains unauthorized. |
 | 5.9 | 2026-09-03 | Recorded D.3 independent final re-audit FAIL (3 Critical / 3 Major / 0 Minor) and D.4 narrow takeover/live-Lease/Basket/Hard-Kill/RENEWED zero-history self-verification. No frozen semantics changed; independent D.4 re-audit remains required and Phase E unauthorized. |
+| 5.10 | 2026-09-04 | Recorded independent Phase D.5 PASS with no Critical, Major, or Minor findings; closed Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35`; authorized Phase E integration-conformance fixtures only. Phase F/G, runtime/platform/broker, MT5, main merge, and production remain unauthorized. |
 
 ## Purpose
 
@@ -73,7 +74,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Architecture Review and Phase B/C/D0 gates are **CLOSED / PASS**. D.4 final independent re-audit returned **FAIL — Critical 1 / Major 2 / Minor 0**; Phase D is incomplete. D.5 addresses only current-fence epochs, frozen digest compatibility, the separately approved exact Production V5 restart-input gate, and affected evidence. Publication, Claim, domain-CAS, Ledger, Genesis, Sequence, Production V5, Phase B/C, and ADR semantics remain unchanged. A new independent D.5 re-audit is required; development self-verification cannot close Phase D. Real database/SQLite/clock/platform integration, Phase E/F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Architecture Review and Phase B/C/D gates are **CLOSED / PASS**. The independent Phase D.5 re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE** and closed Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35`. Phase E is authorized only for integrated V5 fixtures and reference-integration conformance. Production V5, frozen Phase B/C/D, and ADR semantics remain unchanged. Real database/SQLite/clock/platform integration, Phase F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
 
 Project:
 

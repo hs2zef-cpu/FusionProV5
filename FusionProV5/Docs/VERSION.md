@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 5 Phase D.5 — Fence Epoch / Frozen Digest / Restart Schema Correction
+Sprint 5 Phase E — Integrated V5 Fixtures / Reference Integration
 
 ### Date
 
-2026-09-03
+2026-09-04
 
 ### Status
 
-**D.4 FINAL INDEPENDENT RE-AUDIT FAIL — D.5 DEVELOPMENT SELF-VERIFICATION ONLY**
+**PHASE D CLOSED / PASS — PHASE E AUTHORIZED FOR INTEGRATION CONFORMANCE**
 
-Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D0 remain closed/pass. D.4 final independent re-audit returned **FAIL — Critical 1 / Major 2 / Minor 0**. Phase D is **INCOMPLETE**; Phase E is **NOT AUTHORIZED**. D.5 is limited to fence epochs, frozen digest compatibility, the explicitly approved restart-input schema gate, and affected MQL/Python evidence. A new independent D.5 re-audit is required. Earlier revision records below remain historical.
+Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D are closed/pass. The independent Phase D.5 audit returned **PASS — Critical NONE / Major NONE / Minor NONE** at `f0434d0e84907b1d454deec0abb899c16b35cd35`. Phase E is authorized only for integrated V5 fixtures and reference-integration conformance. Phase F/G and runtime/platform/broker work remain unauthorized. Earlier revision records below remain historical.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -26,15 +26,16 @@ Sprint 4 remains the authorized architecture baseline. Architecture Review and P
 - ADR-021 physical store/CAS/lease clock: **APPROVED**
 - ADR-022 genesis provisioning: **APPROVED**
 - Phase D.3 final independent re-audit: **FAIL — CRITICAL 3 / MAJOR 3 / MINOR 0**
-- Phase D completeness: **INCOMPLETE**
-- Phase D.4 final correction: **SELF-VERIFIED / INDEPENDENT REVIEW PENDING**
-- Real database/SQLite/clock/platform implementation and Phase E/F/G: **NOT AUTHORIZED**
+- Phase D completeness: **CLOSED / COMPLETE**
+- Phase D.5 independent re-audit: **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
+- Phase E: **AUTHORIZED — INTEGRATION CONFORMANCE ONLY**
+- Real database/SQLite/clock/platform implementation and Phase F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase D.4 — Final Takeover / Restart / Hard-Kill Conformance Correction
+Sprint 5 Phase E — Integrated V5 Fixtures / Reference Integration
 
-- Status: **SELF-VERIFIED CANDIDATE / INDEPENDENT REVIEW PENDING**
+- Status: **AUTHORIZED / DEVELOPMENT SELF-VERIFICATION PENDING**
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
 - Scope: deterministic in-memory fake transactional store, fake authoritative clock/query source, and persistence/restart reference verification
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
