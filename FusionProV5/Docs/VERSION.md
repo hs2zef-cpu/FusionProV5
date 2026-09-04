@@ -12,9 +12,9 @@ Sprint 5 Phase E — Integrated V5 Fixtures / Reference Integration
 
 ### Status
 
-**PHASE D CLOSED / PASS — PHASE E AUTHORIZED FOR INTEGRATION CONFORMANCE**
+**PHASE E CLOSED / PASS — PHASE F NOT AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D are closed/pass. The independent Phase D.5 audit returned **PASS — Critical NONE / Major NONE / Minor NONE** at `f0434d0e84907b1d454deec0abb899c16b35cd35`. Phase E is authorized only for integrated V5 fixtures and reference-integration conformance. Phase F/G and runtime/platform/broker work remain unauthorized. Earlier revision records below remain historical.
+Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D/E are closed/pass. Phase E technical source `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062`, passed AiPASS post-patch re-review with **NO CRITICAL / MAJOR FINDINGS**; M-1 is closed and Fusion's final gate is **CLOSED / PASS**. Phase F/G and runtime/platform/broker work remain unauthorized. Earlier revision records below remain historical.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -28,24 +28,29 @@ Sprint 4 remains the authorized architecture baseline. Architecture Review and P
 - Phase D.3 final independent re-audit: **FAIL — CRITICAL 3 / MAJOR 3 / MINOR 0**
 - Phase D completeness: **CLOSED / COMPLETE**
 - Phase D.5 independent re-audit: **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
-- Phase E: **AUTHORIZED — INTEGRATION CONFORMANCE ONLY**
+- Phase E: **CLOSED / PASS**
+- Phase E AiPASS post-patch re-review: **PASS — NO CRITICAL / MAJOR FINDINGS; M-1 CLOSED**
 - Real database/SQLite/clock/platform implementation and Phase F/G: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
 Sprint 5 Phase E — Integrated V5 Fixtures / Reference Integration
 
-- Status: **DEVELOPMENT SELF-VERIFIED / AIPASS POST-PATCH REVIEW PENDING**
+- Status: **CLOSED / PASS — FUSION FINAL GATE COMPLETE**
+- Technical source/tree: `75351935154c57400525e16c4dfceb3103f8c740` / `370d4dc7c0caac153efef23521c0c6f66c9be062`
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
-- Scope: deterministic in-memory fake transactional store, fake authoritative clock/query source, and persistence/restart reference verification
+- Scope: integrated V5 fixtures, independent reference/adversarial oracle,
+  Python-only mutation controls, compile-only MQL assertions, and governance
+  evidence; no runtime or production implementation
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
 - Independent Phase C.2 final re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase C deterministic orchestration gate: **CLOSED / PASS**
 - Independent D0 review: **PASS — Critical NONE / Major NONE / Minor NONE**
 - D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
-- Next gate after D.4 self-pass: **New Independent Sprint 5 Phase D.4 Final Persistence / Restart Re-Audit**
-- Phase E/F/G: **NOT AUTHORIZED**
+- AiPASS post-patch re-review: **PASS — NO CRITICAL / MAJOR FINDINGS; M-1 CLOSED**
+- Phase E: **CLOSED / PASS**
+- Phase F/G: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -122,6 +127,7 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Submit the Sprint 5 Phase D.4 fake transactional store/clock/query reference correction to a **NEW INDEPENDENT SPRINT 5 PHASE D.4 FINAL PERSISTENCE / RESTART RE-AUDIT**. Production Contract V5 remains unlocked until an explicit formal Architecture Lock decision.
-
-Do not implement a real database/SQLite adapter, real platform clock, broker/runtime integration, Phase E/F/G, basket execution, or Signal-to-Execution wiring. Phase D authorization is reference-only and does not grant production or live-trading authority.
+No Phase F work is authorized. Await a separate explicit Fusion decision before
+Phase F, main merge, Architecture Lock, production/runtime work, a real
+database/SQLite adapter, platform clock, broker integration, basket execution,
+or Signal-to-Execution wiring.

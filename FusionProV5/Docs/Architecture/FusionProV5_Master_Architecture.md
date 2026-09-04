@@ -5,7 +5,7 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.10 |
+| Version | 5.11 |
 | Date | 2026-09-04 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
@@ -59,6 +59,7 @@
 | 5.8 | 2026-09-02 | Recorded Phase D.3 self-verification of frozen-version/claimant/time takeover validation, complete Production LP2 checkpoint/vector/Hard Kill validation, ADR-022 zero-history, and post-readback publication results. Phase D remains incomplete pending a new independent D.3 re-audit; Phase E remains unauthorized. |
 | 5.9 | 2026-09-03 | Recorded D.3 independent final re-audit FAIL (3 Critical / 3 Major / 0 Minor) and D.4 narrow takeover/live-Lease/Basket/Hard-Kill/RENEWED zero-history self-verification. No frozen semantics changed; independent D.4 re-audit remains required and Phase E unauthorized. |
 | 5.10 | 2026-09-04 | Recorded independent Phase D.5 PASS with no Critical, Major, or Minor findings; closed Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35`; authorized Phase E integration-conformance fixtures only. Phase F/G, runtime/platform/broker, MT5, main merge, and production remain unauthorized. |
+| 5.11 | 2026-09-04 | Recorded Fusion's final Phase E gate **CLOSED / PASS** at technical source `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062`, after AiPASS post-patch re-review **PASS — NO CRITICAL / MAJOR FINDINGS** and closure of M-1. This is governance closure only; Phase F/G, Architecture Lock, main merge, production/runtime, physical persistence/platform clock/real broker, and MT5 behavioral evidence remain unauthorized, unimplemented, or unproven as applicable. |
 
 ## Purpose
 
@@ -74,7 +75,7 @@ The audited **Fusion Pro V5 Production Contract V5** package has been merged to 
 
 The frozen Signal Engine baseline is **Fusion Pro V5 Sprint 3.2.1**. Sprint 4 does not modify or runtime-wire it.
 
-The Sprint 5 Architecture Review and Phase B/C/D gates are **CLOSED / PASS**. The independent Phase D.5 re-audit returned **PASS — Critical NONE / Major NONE / Minor NONE** and closed Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35`. Phase E is authorized only for integrated V5 fixtures and reference-integration conformance. Production V5, frozen Phase B/C/D, and ADR semantics remain unchanged. Real database/SQLite/clock/platform integration, Phase F/G, MT5 runtime, main merge, production, and live trading remain unauthorized.
+The Sprint 5 Architecture Review and Phase B/C/D/E gates are **CLOSED / PASS**. Phase E closed at technical source `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062`, after AiPASS post-patch re-review **PASS — NO CRITICAL / MAJOR FINDINGS** and Fusion closure of M-1. Production V5, frozen Phase B/C/D/E technical semantics, and ADR semantics remain unchanged. Real database/SQLite/clock/platform integration, Phase F/G, MT5 runtime or behavioral evidence, main merge, Architecture Lock, production readiness, production, and live trading remain unauthorized.
 
 Project:
 
@@ -297,6 +298,8 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Phase B Pure-Contract Gate Closed / PASS | Sprint 5 Phase B.3 at `1366edb25238463c9a76fa78257196dbf4c64e34` |
 | Phase C Deterministic Orchestration Gate Closed / PASS | Sprint 5 Phase C.2 at `55cd230ca222c60cd42dd218efe5e175ba70acd6` |
 | Authorized — Documentation-Only ADR Resolution | Sprint 5 Phase D0 physical store/CAS/lease-clock and genesis ADRs |
+| Phase D Persistence/Restart Gate Closed / PASS | Sprint 5 Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35` |
+| Phase E Integrated Fixture Gate Closed / PASS | Sprint 5 Phase E at `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062` |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -534,4 +537,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Submit the Sprint 5 Phase D.4 fake-store/fake-clock correction on `sprint5-phase-d-persistence-restart-reference` to a new independent persistence/restart re-audit. Preserve frozen Phase B/C, Production V5, and ADR semantics. Real database/SQLite/clock/platform integration, Phase E/F/G, runtime, MT5 Terminal/Tester, main merge, production, and live trading remain unauthorized."
+"No Phase F work is authorized. Await a separate explicit Fusion decision before Phase F, main merge, Architecture Lock, production/runtime work, physical persistence/platform clock/real broker integration, MT5 Terminal/Strategy Tester behavioral verification, or production readiness."

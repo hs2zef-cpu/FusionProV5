@@ -41,10 +41,12 @@ cross-phase source probes; their `OnStart` bodies are empty. MQL assertions
 executed: **NO**. MetaEditor is used only as an X64 Regular compiler. Terminal and
 Strategy Tester are not used.
 
-Phase D is CLOSED/PASS. Phase E remains development self-verification until
-AiPASS post-patch review and any subsequently authorized independent audit.
-Phase F/G, real runtime/platform/broker, main merge, production, and live trading
-are NOT AUTHORIZED.
+Phase D is CLOSED/PASS. Fusion's final gate records Phase E as **CLOSED / PASS**
+at technical source `75351935154c57400525e16c4dfceb3103f8c740`, tree
+`370d4dc7c0caac153efef23521c0c6f66c9be062`, after AiPASS post-patch re-review
+**PASS — NO CRITICAL / MAJOR FINDINGS** and closure of M-1. Phase F/G, real
+runtime/platform/broker, main merge, production, and live trading are NOT
+AUTHORIZED.
 
 Observed correction gates: 52/52 ordinary oracle scenarios and 8/8 separate
 mutation controls, both repeated deterministically; Phase B 139/139, Phase C

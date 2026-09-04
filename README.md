@@ -1,20 +1,20 @@
 # Fusion Pro V5
 
-Current governance: the independent Phase D.5 re-audit passed with **Critical
-NONE / Major NONE / Minor NONE**. Phase D is **CLOSED / COMPLETE** at
-`f0434d0e84907b1d454deec0abb899c16b35cd35`; another Phase-D audit is required
-only if Phase-D code changes. [Phase E](FusionProV5/Docs/SPRINT5_PHASE_E_AUTHORIZATION_STATUS.md)
-is authorized for integrated V5 fixtures and reference-integration conformance
-only. Phase F/G, runtime/platform/broker work, MT5, and main merge remain
-unauthorized.
+Current governance: Phase D is **CLOSED / PASS** at
+`f0434d0e84907b1d454deec0abb899c16b35cd35`. Fusion's final gate records
+[Sprint 5 Phase E](FusionProV5/Docs/SPRINT5_PHASE_E_AUTHORIZATION_STATUS.md) as
+**CLOSED / PASS** against technical source
+`75351935154c57400525e16c4dfceb3103f8c740`, tree
+`370d4dc7c0caac153efef23521c0c6f66c9be062`. AiPASS post-patch re-review
+returned **PASS — NO CRITICAL / MAJOR FINDINGS**, and M-1 is **CLOSED**.
 
-Phase E development self-verification passed its integrated fixture gates. This
-is not the required AiPASS post-patch review or an independent final audit, and
-does not authorize Phase F.
+Phase F/G, main merge, production/runtime, physical persistence, platform clock,
+real broker integration, MT5 Terminal/Strategy Tester behavioral evidence, and
+production readiness remain unauthorized, absent, or unproven as applicable.
 
 ## Purpose
 
-Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B/C/D gates are closed/pass. Phase E integration-conformance fixtures are authorized; they grant no production authority or runtime authorization.
+Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B/C/D/E gates are closed/pass. Phase E closure grants no production authority, runtime authorization, Architecture Lock, Phase F authorization, or main-merge authorization.
 
 ## Repository Location
 
@@ -50,7 +50,7 @@ The Final Independent Merge Audit passed with no Critical or Major findings. All
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D is **CLOSED / COMPLETE** after the independent D.5 PASS. Phase E is authorized only for deterministic test fixtures, harnesses and independent reference evidence. Phase F/G, physical persistence, real SQLite/database code, real broker/platform integration, MT5 runtime, Terminal/Strategy Tester, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D is **CLOSED / PASS** after the independent D.5 review. Phase E is **CLOSED / PASS** after AiPASS post-patch re-review and Fusion final adjudication. Phase F/G, physical persistence, real SQLite/database code, real broker/platform integration, MT5 runtime, Terminal/Strategy Tester behavioral evidence, Signal-to-Execution wiring, merge to main, production, and live trading remain unauthorized.
 
 ## Repository Workflow
 
