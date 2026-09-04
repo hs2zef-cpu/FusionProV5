@@ -8,6 +8,10 @@ is authorized for integrated V5 fixtures and reference-integration conformance
 only. Phase F/G, runtime/platform/broker work, MT5, and main merge remain
 unauthorized.
 
+Phase E development self-verification passed its integrated fixture gates. This
+is not the required AiPASS post-patch review or an independent final audit, and
+does not authorize Phase F.
+
 ## Purpose
 
 Fusion Pro V5 is an MQL5 trading-system architecture project. The current repository preserves the frozen Signal Engine baseline and the isolated Sprint 4 production architecture contracts. The Architecture Review and Phase B/C/D gates are closed/pass. Phase E integration-conformance fixtures are authorized; they grant no production authority or runtime authorization.
