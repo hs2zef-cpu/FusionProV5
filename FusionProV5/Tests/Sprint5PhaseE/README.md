@@ -19,6 +19,18 @@ Run the source credibility check:
 python -B FusionProV5/Tests/Sprint5PhaseE/verify_phase_e_source.py
 ```
 
+Run the separate Python-only mutation controls:
+
+```powershell
+python -B FusionProV5/Tests/Sprint5PhaseE/verify_phase_e_mutation_controls.py
+```
+
+Run the transitive include, forbidden-API, and reverse-dependency scan:
+
+```powershell
+python -B FusionProV5/Tests/Sprint5PhaseE/verify_phase_e_isolation.py
+```
+
 The oracle is an **independent executable reference/adversarial oracle**. It is
 not MQL execution, MT5 proof, broker proof, or physical database proof. Expected
 outcomes are literal scenario declarations. The deterministic scheduler orders
@@ -34,7 +46,10 @@ AiPASS post-patch review and any subsequently authorized independent audit.
 Phase F/G, real runtime/platform/broker, main merge, production, and live trading
 are NOT AUTHORIZED.
 
-Observed development gates: 55/55 oracle scenarios, repeated deterministically;
-Phase B 139/139, Phase C 22/22, Phase D 318/318; and eight MetaEditor X64 Regular
-manifests at 0 errors / 0 warnings. See `PHASE_E_SELF_VERIFICATION.md` for exact
-digests and evidence limitations.
+Observed correction gates: 52/52 ordinary oracle scenarios and 8/8 separate
+mutation controls, both repeated deterministically; Phase B 139/139, Phase C
+22/22, Phase D 318/318; and eight MetaEditor X64 Regular manifests at 0 errors /
+0 warnings. The prior generation's three controls were insufficient for the
+required mutation classes; `NEGATIVE_CONTROL_MATRIX.md` records the expanded
+targeted controls. See `PHASE_E_SELF_VERIFICATION.md` for exact digests and
+evidence limitations.

@@ -36,13 +36,12 @@ class DumbBroker:
 
 
 class FencedStore:
-    def __init__(self, epoch: int = 7, mutation_accept_stale: bool = False) -> None:
+    def __init__(self, epoch: int = 7) -> None:
         self.epoch = epoch
         self.value = "EMPTY"
-        self.mutation_accept_stale = mutation_accept_stale
 
     def cas(self, expected_epoch: int, value: str) -> bool:
-        if expected_epoch != self.epoch and not self.mutation_accept_stale:
+        if expected_epoch != self.epoch:
             return False
         self.value = value
         return True
@@ -170,20 +169,6 @@ class IntegratedReferenceHarness:
             broker.invoke("CLAIM-1")
             outcome, restart, durable = "INVARIANT_SINGLE_WINNER", "CLAIMED_UNRESOLVED", "AUTHORITATIVE_STATE_UNAMBIGUOUS"
             trace += ["NON_AUTHORITATIVE_SCHEDULER", s.mode]
-        elif s.mode == "CONTROL_NO_CLAIM_FENCE":
-            insecure = "BROKER_INVOKED_WITH_STALE_OWNER"
-            outcome, restart, durable = ("NEGATIVE_CONTROL_DETECTED" if insecure != "STALE_OWNER_DENIED" else "CONTROL_MISSED"), "NONE", "UNCHANGED"
-            trace += [insecure]
-        elif s.mode == "CONTROL_STALE_CAS":
-            bad_store = FencedStore(mutation_accept_stale=True)
-            insecure = bad_store.cas(6, "BYTE_IDENTICAL")
-            outcome, restart, durable = ("NEGATIVE_CONTROL_DETECTED" if insecure else "CONTROL_MISSED"), "NONE", "UNCHANGED"
-            trace += ["MUTANT_ACCEPTED_STALE_CAS"]
-        elif s.mode == "CONTROL_BROKER_DEDUPE":
-            broker.invoke("CLAIM-1")
-            insecure_count = 1  # mutant suppresses the second physical call
-            outcome, restart, durable = ("NEGATIVE_CONTROL_DETECTED" if insecure_count != 2 else "CONTROL_MISSED"), "NONE", "UNCHANGED"
-            trace += ["MUTANT_SILENT_DEDUPE"]
         else:
             raise AssertionError(f"unmapped scenario mode {s.mode}")
 
@@ -218,9 +203,6 @@ def make_scenarios() -> list[Scenario]:
         add(f"E-SEMANTIC-{ident}","SEMANTIC",f"SEMANTIC_{ident}",(ident,"RESEALED_FAIL_CLOSED"),("B","D"),("REQUEST_SET","CHECKPOINT","BROKER_SUMMARY","EXECUTION_SUMMARY"),("BUILD_VALID","CROSS_COMPOSE","VALIDATE"),"FAIL_CLOSED",0,"CROSS_OBJECT_MISMATCH","UNCHANGED")
     for key in ("NORMAL","DUAL_OWNER"):
         add(f"E-SCHEDULER-{key}","SCHEDULER",f"SCHEDULER_{key}",(key,"NON_AUTHORITATIVE_SCHEDULER"),("C","D"),("CLAIM","DURABLE_CAS"),("ORDER_A","ORDER_B"),"INVARIANT_SINGLE_WINNER",1,"CLAIMED_UNRESOLVED","AUTHORITATIVE_STATE_UNAMBIGUOUS")
-    controls=[("NO-CLAIM-FENCE","CONTROL_NO_CLAIM_FENCE"),("STALE-CAS-EQUALITY","CONTROL_STALE_CAS"),("BROKER-SILENT-DEDUPE","CONTROL_BROKER_DEDUPE")]
-    for ident,mode in controls:
-        add(f"E-CONTROL-{ident}","NEGATIVE_CONTROL",mode,(ident,"DETECTION_POWER"),("C","D"),("CLAIM_FENCE","DURABLE_CAS","DUMB_BROKER"),("INJECT_MUTANT","COMPARE_LITERAL"),"NEGATIVE_CONTROL_DETECTED",0 if mode!="CONTROL_BROKER_DEDUPE" else 1,"NONE","UNCHANGED")
     return s
 
 

@@ -2,7 +2,9 @@
 
 TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
 
-The independent offline oracle contains **55 unique integrated scenarios**:
+The independent offline oracle contains **52 unique ordinary integrated
+scenarios**. Mutation controls are inventoried separately because they test
+deliberately broken behavior rather than correct-path scenario outcomes.
 
 | Group | Count |
 |---|---:|
@@ -15,8 +17,7 @@ The independent offline oracle contains **55 unique integrated scenarios**:
 | Semantic/resealed P1–P11 | 11 |
 | Exactly-once matrix | 8 mappings within Crash/Restart/Semantic/Takeover scenarios; no duplicate count |
 | Scheduler invariance | 2 |
-| Harness negative controls | 3 |
-| **Total** | **55** |
+| **Ordinary scenario total** | **52** |
 
 Every scenario crosses at least two phase boundaries and declares invariants,
 phases, authorities, ordered events, literal expected outcome, literal broker
@@ -26,3 +27,21 @@ is repeated.
 
 MQL functions are compile-only and are inventoried by
 `verify_phase_e_source.py`. MQL assertions are **NOT executed**.
+
+## Mutation controls
+
+`verify_phase_e_mutation_controls.py` contains eight Python-only controls:
+
+- `MC-P`
+- `MC-JOINT`
+- `MC-DOMAIN`
+- `MC-OWNERSHIP-LOGICAL`
+- `MC-OWNERSHIP-DURABLE`
+- `MC-GRANT`
+- `MC-BROKER-DEDUPE`
+- `MC-STALE-CAS-EQUALITY`
+
+The prior Phase-E generation counted three controls inside the 55-scenario
+total. That inventory did not cover every required mutation class. This
+correction retains all ordinary semantic negatives, separates the controls, and
+expands targeted mutation evidence to 8/8. See `NEGATIVE_CONTROL_MATRIX.md`.

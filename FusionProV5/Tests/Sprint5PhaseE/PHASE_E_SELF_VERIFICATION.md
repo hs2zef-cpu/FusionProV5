@@ -21,12 +21,36 @@ independent final audit. Phase F is NOT AUTHORIZED.
 | Field | Result |
 |---|---|
 | Classification | independent executable reference/adversarial oracle only |
-| Total / passed / failed / skipped | 55 / 55 / 0 / 0 |
-| Unique scenario IDs | 55 |
+| Total / passed / failed / skipped | 52 / 52 / 0 / 0 ordinary semantic scenarios |
+| Unique scenario IDs | 52 |
 | Repeated runs | two invocations; each performs two identical internal runs |
 | Deterministic | true |
-| Result digest | `0731bca24c7163dc27d0250f5411172d34736b755ebd9350c74a809c8bd21579` |
-| Durable/trace digest | `b87f6b2df1fc5ebc7ffe7606db209d0b3416c0c1b8d0fc24dcf6a495b9c143ff` |
+| Result digest | `69a14be7a0164f0569718259982f4a6385e064198b06f5797f292c2f6d42c79d` |
+| Durable/trace digest | `e61e3fc71f72e6259cb61fd229cc89268509546f58ba963d4d22b80f5e32d18b` |
+
+## AiPASS mutation-control correction
+
+The previous generation included three controls inside its 55-scenario total.
+AiPASS post-patch review correctly found that they did not cover every required
+mutation class. The ordinary semantic negatives remain intact and now run as a
+52-scenario corpus. A separate Python-only mutation suite executes eight
+deliberately broken test doubles and observes the unsafe result before an
+independent targeted assertion detects it.
+
+| Field | Result |
+|---|---|
+| Total / passed / failed | 8 / 8 / 0 |
+| Repeated runs | 2 |
+| Deterministic | true |
+| Mutation digest | `7273fffd9d72e5c455968979f2544eddc6abb15964b883d1ac034884c066d42f` |
+
+The controls are `MC-P`, `MC-JOINT`, `MC-DOMAIN`,
+`MC-OWNERSHIP-LOGICAL`, `MC-OWNERSHIP-DURABLE`, `MC-GRANT`,
+`MC-BROKER-DEDUPE`, and retained `MC-STALE-CAS-EQUALITY`. Exact mutants,
+fixtures, unsafe observations, detectors, reasons, and proof-source functions
+are recorded in `NEGATIVE_CONTROL_MATRIX.md`.
+
+Mutation controls are Python-only. They do not claim MQL runtime execution.
 
 MQL source inventory: 10 positive, 14 negative, 14 semantic/resealed (13
 negative paths plus the total mapping), 1 checksum-only and 3 non-proving/helper
@@ -41,6 +65,9 @@ functions. The counts are source classification, not executed MQL results.
   `8330ea23fffa852b60a7e505e4184e08a565d617350a2f7a2e052b6804348486`.
 - Phase E/D/C/B umbrella and assertion manifests: MetaEditor X64 Regular,
   0 errors / 0 warnings for all eight.
+- Transitive isolation scan: eight manifests, 59 source files, zero missing
+  includes, zero forbidden API calls, zero forbidden dependency paths, and zero
+  production reverse dependencies on Phase E.
 - No MT5 Terminal or Strategy Tester was used.
 
 The independent oracle does not prove MQL runtime behavior, physical durability,
