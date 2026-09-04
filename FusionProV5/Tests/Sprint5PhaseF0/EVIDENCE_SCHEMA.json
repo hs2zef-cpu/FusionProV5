@@ -1,0 +1,40 @@
+{
+  "schema": "SWV5-S5-F0-RAW-EVIDENCE-V1",
+  "required": [
+    "source_commit",
+    "source_tree",
+    "terminal_build",
+    "compiler_build",
+    "broker",
+    "server",
+    "login_redacted_hash",
+    "demo_attested",
+    "hedging_attested",
+    "symbol",
+    "server_time_range",
+    "test_id",
+    "safe_request_fields",
+    "sync_result",
+    "raw_retcode",
+    "external_retcode",
+    "session_local_request_id",
+    "broker_tickets",
+    "callback_trace",
+    "active_orders_snapshot",
+    "active_positions_snapshot",
+    "history_orders_snapshot",
+    "history_deals_snapshot",
+    "connection_observations",
+    "evidence_digest"
+  ],
+  "prohibited": [
+    "password",
+    "investor_password",
+    "access_token",
+    "account_secret",
+    "personally_sensitive_credential"
+  ],
+  "request_id_semantics": "SESSION_LOCAL_ONLY_NOT_DURABLE_IDENTITY",
+  "callback_semantics": "OBSERVATIONAL_NOT_AUTHORITY",
+  "timeout_semantics": "AMBIGUOUS_NOT_NEGATIVE_EVIDENCE"
+}
