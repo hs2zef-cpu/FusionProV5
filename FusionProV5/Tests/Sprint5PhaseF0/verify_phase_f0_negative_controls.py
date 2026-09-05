@@ -9,7 +9,28 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+from pathlib import Path
+import re
 import sys
+
+
+HERE = Path(__file__).resolve().parent
+RUNTIME_IDENTITY_HEADER = HERE.parents[1] / "Configuration" / "SW_V5_RuntimeIdentityProfile.mqh"
+NON_RUNTIME_FIXTURE_MAGIC_VALUES = frozenset({5042001, 5005, 550015})
+
+
+def load_runtime_strategy_magic() -> int:
+    header = RUNTIME_IDENTITY_HEADER.read_text(encoding="utf-8-sig")
+    match = re.search(r"const\s+ulong\s+SWV5_RUNTIME_STRATEGY_MAGIC\s*=\s*([0-9]+)\s*;", header)
+    if match is None:
+        raise AssertionError("canonical runtime strategy Magic definition missing")
+    value = int(match.group(1))
+    if value <= 0 or value in NON_RUNTIME_FIXTURE_MAGIC_VALUES:
+        raise AssertionError("canonical runtime strategy Magic is invalid or collides with fixture data")
+    return value
+
+
+RUNTIME_STRATEGY_MAGIC = load_runtime_strategy_magic()
 
 
 @dataclass(frozen=True)
@@ -123,12 +144,50 @@ def controls() -> list[ControlResult]:
                       evidence_origin, mutant_substitution, "transport/reconnect/broker visibility requires Demo",
                       mutant_substitution and evidence_origin != required_origin,
                       "wrong evidence origin was accepted"))
+
+    configured_magic = 0
+    mutant_zero_admitted = configured_magic >= 0
+    out.append(result("NC-16", "zero Magic accepted as governed runtime identity",
+                      f"configured_magic={configured_magic}", mutant_zero_admitted,
+                      "runtime Magic must be positive and equal the frozen SSOT value",
+                      mutant_zero_admitted and configured_magic != RUNTIME_STRATEGY_MAGIC,
+                      "zero crossed the mutant configuration boundary"))
+
+    fixture_magics = sorted(NON_RUNTIME_FIXTURE_MAGIC_VALUES)
+    mutant_fixture_admitted = all(value > 0 for value in fixture_magics)
+    out.append(result("NC-17", "test fixture Magic accepted as runtime Magic",
+                      f"fixture_magics={fixture_magics}", mutant_fixture_admitted,
+                      "fixture/reference Magic values are forbidden as deployment identity",
+                      mutant_fixture_admitted and all(value != RUNTIME_STRATEGY_MAGIC
+                                                      for value in fixture_magics),
+                      "positive-only validation admitted non-authoritative fixture values"))
+
+    bound_magics = {"ownership": RUNTIME_STRATEGY_MAGIC,
+                    "persistence": RUNTIME_STRATEGY_MAGIC,
+                    "account_risk": RUNTIME_STRATEGY_MAGIC + 1,
+                    "broker_request": RUNTIME_STRATEGY_MAGIC}
+    mutant_conflict_admitted = True
+    out.append(result("NC-18", "conflicting runtime Magic crosses namespace bindings",
+                      json.dumps(bound_magics, sort_keys=True), mutant_conflict_admitted,
+                      "ownership, persistence, account-risk, and broker-request Magic must equal the SSOT constant",
+                      mutant_conflict_admitted and len(set(bound_magics.values())) != 1,
+                      "mutant admitted conflicting Magic identities across governed domains"))
+
+    request_magics = [RUNTIME_STRATEGY_MAGIC,
+                      RUNTIME_STRATEGY_MAGIC + 1]
+    mutant_per_request_magic = len(set(request_magics)) > 1
+    out.append(result("NC-19", "Magic mutates per request",
+                      f"request_magics={request_magics}", mutant_per_request_magic,
+                      "runtime Magic is immutable across requests, attempts, retries, restarts, and takeover",
+                      mutant_per_request_magic and any(value != RUNTIME_STRATEGY_MAGIC
+                                                       for value in request_magics),
+                      "request sequence changed strategy/ownership identity"))
     return out
 
 
 def execute_once() -> dict:
     observed = controls()
-    assert len({item.test_id for item in observed}) == len(observed) == 15
+    assert len({item.test_id for item in observed}) == len(observed) == 19
     rows = [asdict(item) | {"passed": item.passed} for item in observed]
     passed = sum(item.passed for item in observed)
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")

@@ -1,6 +1,8 @@
 #property strict
 #property version "1.00"
 
+#include "../../Configuration/SW_V5_RuntimeIdentityProfile.mqh"
+
 // TEST ONLY / F0 / ATTENDED DEMO ONLY / NOT FOR PRODUCTION.
 // NO SIGNAL INPUT. NO LOOP. NO RETRY. NO PENDING ORDERS. NO AUTO-CLOSE.
 // Default configuration is disarmed and performs environment observation only.
@@ -8,7 +10,6 @@
 input bool InpOperatorAttestsAttendedDemo=false;
 input bool InpArmExactlyOneMarketSend=false;
 input string InpExpectedServer="";
-input ulong InpFrozenStrategyMagic=0;
 input string InpCorrelationComment="";
 input ENUM_ORDER_TYPE InpMarketSide=ORDER_TYPE_BUY;
 input ENUM_ORDER_TYPE_FILLING InpMeasuredFilling=ORDER_FILLING_FOK;
@@ -31,6 +32,8 @@ void SWV5S5_F0PrintEnvironment()
                (int)SymbolInfoInteger(_Symbol,SYMBOL_FILLING_MODE),(int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_STOPS_LEVEL),
                (int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_FREEZE_LEVEL),(int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_MODE),
                (int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_EXEMODE));
+   PrintFormat("F0_RUNTIME_IDENTITY|strategy_magic=%I64u|ssot=SWV5_RUNTIME_STRATEGY_MAGIC|magic_alone_not_correlation_authority=YES",
+               SWV5_RUNTIME_STRATEGY_MAGIC);
   }
 
 bool SWV5S5_F0EnvironmentPermitsSingleProbe()
@@ -65,7 +68,7 @@ int OnInit()
    MqlTradeResult result={};
    request.action=TRADE_ACTION_DEAL;
    request.symbol=_Symbol;
-   request.magic=InpFrozenStrategyMagic;
+   request.magic=SWV5_RUNTIME_STRATEGY_MAGIC;
    request.comment=InpCorrelationComment;
    request.type=InpMarketSide;
    request.volume=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);

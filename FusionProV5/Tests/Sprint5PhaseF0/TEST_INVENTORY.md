@@ -4,7 +4,7 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 
 | Test ID | Case | Classification | Current execution |
 |---|---|---|---|
-| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | NOT RUN |
+| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | PASS for build-6180 pre-send observation; no broker call |
 | F0-CORR-01 | comment preservation across active/history domains | F0 profile only / Demo required | NOT RUN |
 | F0-CORR-02 | request_id reuse across sessions | F0 profile only / Demo required | OFFLINE mutant only |
 | F0-RET-01 | success acknowledgement, not confirmation | future Phase F Demo | OFFLINE invariant only |
@@ -22,12 +22,16 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | F0-EVID-01 | non-finite evidence | future Phase F Tester | NOT RUN |
 | F0-SPEC-01 | stale symbol specification | F0 executed offline + Demo required | PASS via NC-11 |
 | F0-UNIT-01 | unit mismatch | future Phase F Tester | NOT RUN |
-| F0-MODE-01 | HEDGING enforcement / NETTING rejection | F0 executed offline + Demo attestation | PASS via NC-12; Demo NOT RUN |
+| F0-MODE-01 | HEDGING enforcement / NETTING rejection | F0 executed offline + Demo attestation | PASS via NC-12 plus build-6180 Demo/HEDGING observation; NETTING not exercised on Demo |
 | F0-MODE-02 | account-mode change | future Phase F Demo | NOT RUN |
 | F0-NEG-01 | authoritative negative side-effect proof | DEMO REQUIRED | BLOCKED pending profile |
 | F0-PEND-01 | pending-order rejection | F0 source/static | PASS; probe contains no pending action |
 | F0-PRESS-01 | callback pressure | DEMO REQUIRED / operator-controlled | NOT RUN |
 | F0-TESTER-01 | Tester substituted for Demo | F0 executed offline | PASS via NC-15 |
+| F0-MAGIC-01 | Zero runtime Magic | F0 executed offline | PASS via NC-16 |
+| F0-MAGIC-02 | Fixture/reference value used as runtime Magic | F0 executed offline | PASS via NC-17 |
+| F0-MAGIC-03 | Conflicting Magic across governed domains | F0 executed offline | PASS via NC-18 |
+| F0-MAGIC-04 | Mutable-per-request Magic | F0 executed offline | PASS via NC-19 |
 
 F0 does not claim execution of future Phase-F tests. Pending orders remain out
 of scope. Unknown or ambiguous outcomes remain no-retry unresolved evidence.

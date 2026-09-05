@@ -25,4 +25,7 @@ Known platform constraints preserved by this profile:
 
 The isolated probe can log synchronous results, `OnTrade`, and raw
 `OnTradeTransaction` arrivals. It does not derive causal policy from the trace.
+The request Magic is bound directly to `SWV5_RUNTIME_STRATEGY_MAGIC`; matching
+Magic is strategy-scope evidence only and cannot confirm request identity,
+submission outcome, order, deal, position, or Basket state by itself.
 No callback/order behavior has been empirically profiled in this run.

@@ -19,7 +19,22 @@ that no safe design can exist.
 
 Manual activity and other EAs must be tested as collision/adversarial cases.
 Comment must not be assumed preserved. Magic must not be repartitioned or
-redefined. No other immutable broker-preserved pre-send carrier has been proven
-because no attended Demo profile was executed.
+redefined. The build-6180 disarmed profile did not make a broker call, so no
+broker-preserved pre-send carrier has yet been proven.
+
+## Governed runtime Magic materialization
+
+The repository now defines `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069`
+(`0x46505635`, `FPV5`) in the sole executable SSOT
+`Configuration/SW_V5_RuntimeIdentityProfile.mqh`. It is immutable strategy and
+ownership scope, not a BasketID or per-request identity. Numeric values present
+in Contract Verification, Phase B, and Phase D remain fixture/reference data,
+not deployment authority; `0` remains invalid runtime identity.
+
+The Demo probe has no mutable Magic input and the query probe classifies runtime
+match, fixture/reference values, zero, and unrelated values without filtering
+or treating Magic alone as correlation authority. The prior build-6180 evidence
+predates materialization; a fresh disarmed gate and separate final confirmation
+are required before any broker call.
 
 Verdict: **NO SAFE CORRELATION CANDIDATE PROVEN — FUSION DECISION REQUIRED**.

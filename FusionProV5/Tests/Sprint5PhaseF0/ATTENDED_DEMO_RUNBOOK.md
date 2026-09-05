@@ -18,8 +18,13 @@ schedule an attended run. Do not use automation to start or attach the probe.
    destination conforming to `EVIDENCE_SCHEMA.json`.
 7. Run the query probe read-only first. Failure or incomplete history means no
    authoritative empty/negative claim and no armed send.
-8. Keep `magic` at its frozen strategy value. Use `comment` only as an empirical
-   candidate carrier, not approved authority.
+8. Confirm the compiled probe reports `SWV5_RUNTIME_STRATEGY_MAGIC` from
+   `Configuration/SW_V5_RuntimeIdentityProfile.mqh`. There is no operator Magic
+   input. Use `comment` only as an empirical candidate carrier, not approved
+   authority; Magic alone is not request correlation authority.
+9. Any source, binary hash, terminal build, account, server, or symbol change
+   starts a new run boundary and requires fresh read-only and default-disarmed
+   observations before separate final send confirmation.
 
 ## Single-send measurement
 
@@ -28,6 +33,7 @@ An armed run requires all runtime gates, exact server input, a non-empty test
 comment, and one market BUY or SELL at the symbol's minimum volume. The probe
 calls `OrderSend` at most once, never retries, never creates a pending order,
 never auto-closes, and never treats the synchronous result as confirmation.
+Materializing the governed Magic does not arm or authorize this step.
 
 The operator must resolve and record any resulting Demo exposure manually under
 the approved experimental procedure. An ambiguous result remains unresolved

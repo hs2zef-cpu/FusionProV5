@@ -7,10 +7,19 @@ decide whether Phase F implementation is safe. It does not implement a Broker
 Adapter and grants no execution, recovery, Risk, Basket, or production
 authority.
 
-Current empirical status: **NOT MEASURED**. No MT5 Terminal was running during
-package preparation, so Demo/HEDGING status could not be attested. No probe was
-executed and no broker call was made. Attended Demo execution requires a
-separate operator-present run after all environment gates pass.
+Current empirical status: **BUILD-6180 PRE-SEND PROFILE MEASURED; NO BROKER
+CALL.** An operator-present Demo/HEDGING run executed two read-only query
+observations and one default-disarmed environment/profile observation on
+Exness-MT5Trial6 / XAUUSD. Query completeness remains `UNPROVEN`. No probe was
+armed, and no retcode, callback, fill, position, broker correlation, reconnect,
+or negative-side-effect evidence has been produced.
+
+The build-6180 disarmed lifecycle completed with `send_attempted=0` before Magic
+materialization. Runtime strategy identity is now frozen as
+`SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` in
+`Configuration/SW_V5_RuntimeIdentityProfile.mqh`; fixture/reference values are
+not runtime authority. A fresh build-6180 read-only/default-disarmed gate and a
+separate explicit final confirmation are still required before any send.
 
 ## Offline verification
 
@@ -26,7 +35,9 @@ unattended, production VPS, or production paths.
 
 `SW_V5_S5_PHASE_F0_QUERY_PROBE.mq5` is read-only and reports positions, orders,
 history orders, history deals, window bounds, and per-row read failures. It never
-certifies completeness from row count and performs no broker mutation.
+certifies completeness from row count and performs no broker mutation. Its
+Magic classification reports runtime match, fixture/reference, zero, or
+unrelated while explicitly denying Magic-only correlation authority.
 
 `ATTENDED_DEMO_RUNBOOK.md` defines the mandatory operator-present safety gate.
 It is preparation only and does not authorize running the probe unattended.

@@ -30,4 +30,5 @@ Measured broker/profile: **NONE**
 | unknown/unmapped | R4 | Fail closed; no retry |
 
 No universal mapping is approved. No broker-specific R1 certification exists in
-this package because no attended Demo run occurred.
+this package because no attended Demo broker-call run occurred. The build-6180
+attended session was read-only/default-disarmed observation only.

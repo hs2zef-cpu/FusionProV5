@@ -35,6 +35,17 @@
     "personally_sensitive_credential"
   ],
   "request_id_semantics": "SESSION_LOCAL_ONLY_NOT_DURABLE_IDENTITY",
+  "runtime_magic_materialization": {
+    "required_for_post_materialization_runs": [
+      "runtime_strategy_magic",
+      "runtime_magic_ssot",
+      "runtime_magic_classification"
+    ],
+    "symbol": "SWV5_RUNTIME_STRATEGY_MAGIC",
+    "ssot": "FusionProV5/Configuration/SW_V5_RuntimeIdentityProfile.mqh",
+    "magic_alone_is_correlation_authority": false,
+    "historical_pre_materialization_records_are_not_backfilled": true
+  },
   "callback_semantics": "OBSERVATIONAL_NOT_AUTHORITY",
   "timeout_semantics": "AMBIGUOUS_NOT_NEGATIVE_EVIDENCE"
 }

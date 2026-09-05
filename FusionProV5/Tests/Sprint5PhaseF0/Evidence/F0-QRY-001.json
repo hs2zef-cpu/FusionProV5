@@ -1,0 +1,92 @@
+{
+  "schema": "SWV5-S5-F0-RAW-EVIDENCE-V1",
+  "source_commit": "c41378d5e067568b81ecae4bffb06891d960d11f",
+  "source_tree": "1943fc53e1b970f65528ec41f0805e5a6bf5410f",
+  "terminal_build": "6090_AT_QUERY; 6140_AFTER_AUTOMATIC_UPDATE_RESTART",
+  "compiler_build": "NOT_CAPTURED_FOR_QUERY_RUN",
+  "broker": "Exness Technologies Ltd",
+  "server": "Exness-MT5Trial6",
+  "login_redacted_hash": "sha256:4d49d071963d415ae58ef5e21a3ff06ce4c2d80d748117c69d001573f5ea1d70",
+  "demo_attested": true,
+  "hedging_attested": true,
+  "symbol": "XAUUSD",
+  "server_time_range": {
+    "from_epoch_seconds": 1788495749,
+    "to_epoch_seconds": 1788582149,
+    "window_seconds": 86400
+  },
+  "test_id": "F0-QRY-001",
+  "measurement_classification": "ATTENDED_DEMO_READ_ONLY_QUERY_PRE_UPDATE",
+  "profile_disposition": "ARCHIVAL_PRE_6180_ONLY_NOT_SEND_GATE_ELIGIBLE",
+  "run_boundary": {
+    "local_running_build": 6140,
+    "local_journal_reports_update_available": 6180,
+    "vps_build_operator_report_only": 6180,
+    "mix_with_build_6180_profile": "PROHIBITED",
+    "required_next_action": "WAIT_FOR_STABLE_LOCAL_BUILD_6180_THEN_REATTEST_AND_RERUN_READ_ONLY_QUERY_AND_PROFILE_FROM_SCRATCH"
+  },
+  "safe_request_fields": "NOT_APPLICABLE_READ_ONLY_QUERY",
+  "sync_result": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "raw_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "external_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "session_local_request_id": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "broker_tickets": [],
+  "callback_trace": [],
+  "active_orders_snapshot": {
+    "api_success": true,
+    "reported_total": 0,
+    "completeness": "UNPROVEN"
+  },
+  "active_positions_snapshot": {
+    "api_success": true,
+    "reported_total": 0,
+    "completeness": "UNPROVEN"
+  },
+  "history_orders_snapshot": {
+    "history_select_success": true,
+    "reported_total": 0,
+    "completeness": "UNPROVEN"
+  },
+  "history_deals_snapshot": {
+    "history_select_success": true,
+    "reported_total": 1,
+    "completeness": "UNPROVEN",
+    "rows": [
+      {
+        "ticket": 4353326003,
+        "order": 0,
+        "position_id": 0,
+        "symbol": "",
+        "magic": 0,
+        "type": 2,
+        "entry": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "time_msc": 1788580994996,
+        "comment": "D-trial-USD-d323c05a010a40",
+        "classification": "NON_XAUUSD_ACCOUNT_OR_BALANCE_RECORD_NOT_TRADING_EVIDENCE"
+      }
+    ]
+  },
+  "connection_observations": {
+    "connected_at_query": true,
+    "history_select_success": true,
+    "last_error": 0,
+    "local_now_epoch_seconds": 1788607349,
+    "server_to_epoch_seconds": 1788582149,
+    "local_minus_server_seconds": 25200,
+    "clock_classification": "TIMEZONE_OR_CLOCK_BASIS_OBSERVATION_NOT_SETTLEMENT_LATENCY_OR_NEGATIVE_TIMEOUT",
+    "post_query_terminal_change": "AUTOMATIC_UPDATE_AND_RESTART_TO_BUILD_6140"
+  },
+  "sanitized_raw_observations": [
+    "F0_QUERY_BEGIN|server_from=1788495749|server_to=1788582149|local_now=1788607349|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=1|completeness=UNPROVEN",
+    "F0_HISTORY_DEAL|index=0|ticket=4353326003|order=0|position_id=0|symbol=|magic=0|type=2|entry=0|volume=0.0000000000|price=0.0000000000|time_msc=1788580994996|comment=D-trial-USD-d323c05a010a40",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified"
+  ],
+  "evidence_digest": "sha256:5c6593677f424c8f67ad043a14354efc70f067e6684ae80374e9f29d62572143",
+  "evidence_digest_basis": "UTF-8 sanitized_raw_observations joined by LF without a trailing LF"
+}

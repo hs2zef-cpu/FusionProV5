@@ -1,0 +1,143 @@
+{
+  "schema": "SWV5-S5-F0-RAW-EVIDENCE-V1",
+  "source_commit": "c41378d5e067568b81ecae4bffb06891d960d11f",
+  "source_tree": "1943fc53e1b970f65528ec41f0805e5a6bf5410f",
+  "terminal_build": 6180,
+  "compiler_build": 6180,
+  "broker": "Exness Technologies Ltd",
+  "server": "Exness-MT5Trial6",
+  "login_redacted_hash": "sha256:4d49d071963d415ae58ef5e21a3ff06ce4c2d80d748117c69d001573f5ea1d70",
+  "demo_attested": true,
+  "hedging_attested": true,
+  "symbol": "XAUUSD",
+  "server_time_range": {
+    "first_query_from_epoch_seconds": 1788500498,
+    "last_profile_observation_epoch_seconds": 1788587129,
+    "query_window_seconds": 86400
+  },
+  "test_id": "F0-6180-PRESEND-001",
+  "measurement_classification": "ATTENDED_DEMO_BUILD_6180_READ_ONLY_AND_DEFAULT_DISARMED_PROFILE",
+  "safe_request_fields": "NOT_APPLICABLE_NO_SEND",
+  "sync_result": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "raw_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "external_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "session_local_request_id": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "broker_tickets": [],
+  "callback_trace": [],
+  "active_orders_snapshot": {
+    "observations": 2,
+    "reported_totals": [0, 0],
+    "api_success": true,
+    "stable_reread_seconds": 41,
+    "completeness": "UNPROVEN"
+  },
+  "active_positions_snapshot": {
+    "observations": 2,
+    "reported_totals": [0, 0],
+    "api_success": true,
+    "stable_reread_seconds": 41,
+    "completeness": "UNPROVEN"
+  },
+  "history_orders_snapshot": {
+    "observations": 2,
+    "reported_totals": [0, 0],
+    "history_select_success": true,
+    "stable_reread_seconds": 41,
+    "completeness": "UNPROVEN"
+  },
+  "history_deals_snapshot": {
+    "observations": 2,
+    "reported_totals": [1, 1],
+    "history_select_success": true,
+    "stable_reread_seconds": 41,
+    "completeness": "UNPROVEN",
+    "rows": [
+      {
+        "ticket": 4353326003,
+        "order": 0,
+        "position_id": 0,
+        "symbol": "",
+        "magic": 0,
+        "type": 2,
+        "entry": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "time_msc": 1788580994996,
+        "comment": "D-trial-USD-d323c05a010a40",
+        "classification": "NON_XAUUSD_ACCOUNT_OR_BALANCE_RECORD_NOT_TRADING_EVIDENCE"
+      }
+    ]
+  },
+  "connection_observations": {
+    "connected_in_all_probe_observations": true,
+    "query_history_select_success": true,
+    "query_last_error": 0,
+    "local_minus_server_seconds_samples": [25200, 25200, 25200],
+    "clock_classification": "TIMEZONE_OR_CLOCK_BASIS_OBSERVATION_NOT_TRANSPORT_OR_SETTLEMENT_LATENCY_OR_NEGATIVE_TIMEOUT"
+  },
+  "account_and_symbol_profile": {
+    "account_trade_mode": 0,
+    "account_margin_mode": 2,
+    "digits": 3,
+    "point": 0.001,
+    "tick_size": 0.001,
+    "tick_value": 0.1,
+    "tick_value_profit": 0.1,
+    "tick_value_loss": 0.1,
+    "contract_size": 100.0,
+    "volume_min": 0.01,
+    "volume_max": 200.0,
+    "volume_step": 0.01,
+    "filling_mode": 1,
+    "stops_level": 0,
+    "freeze_level": 0,
+    "symbol_trade_mode": 4,
+    "execution_mode": 2
+  },
+  "probe_state": {
+    "operator_attestation_input": false,
+    "arm_input": false,
+    "disarmed_marker_observed": true,
+    "deinit_marker_observed": true,
+    "deinit_reason": 1,
+    "send_attempted_at_deinit": false,
+    "manual_removal_evidence_pending": false,
+    "sync_marker_observed": false,
+    "transaction_marker_observed": false,
+    "on_trade_marker_observed": false,
+    "broker_call": false
+  },
+  "send_blocker": {
+    "code": "FUSION_DECISION_REQUIRED_EXACT_FROZEN_STRATEGY_MAGIC_UNDEFINED",
+    "repository_ssot_exact_magic_found": false,
+    "probe_default_zero_authorized": false,
+    "test_fixture_values_authorized_for_deployment": false,
+    "send_confirmation_permitted": false
+  },
+  "compiled_probe_sha256": {
+    "query_probe": "069b659aa80d55133685d71114f8ff5f07ebcb52dffbd6c5c5f1c45934ceadb1",
+    "profile_probe": "c9840ff58a111f1c565f3d0481eb12b2ec79538067c14cf4e85f3e2c3f703d23"
+  },
+  "sanitized_raw_observations": [
+    "F0_QUERY_BEGIN|server_from=1788500498|server_to=1788586898|local_now=1788612098|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=1|completeness=UNPROVEN",
+    "F0_HISTORY_DEAL|index=0|ticket=4353326003|order=0|position_id=0|symbol=|magic=0|type=2|entry=0|volume=0.0000000000|price=0.0000000000|time_msc=1788580994996|comment=D-trial-USD-d323c05a010a40",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified",
+    "F0_QUERY_BEGIN|server_from=1788500539|server_to=1788586939|local_now=1788612139|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=1|completeness=UNPROVEN",
+    "F0_HISTORY_DEAL|index=0|ticket=4353326003|order=0|position_id=0|symbol=|magic=0|type=2|entry=0|volume=0.0000000000|price=0.0000000000|time_msc=1788580994996|comment=D-trial-USD-d323c05a010a40",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified",
+    "F0_ENV|company=Exness Technologies Ltd|server=Exness-MT5Trial6|trade_mode=0|margin_mode=2|login_redacted=YES|terminal_build=6180|mql_build=6180|symbol=XAUUSD|connected=1|server_time=1788587129|local_time=1788612329",
+    "F0_SYMBOL|digits=3|point=0.0010000000|tick_size=0.0010000000|tick_value=0.1000000000|tick_value_profit=0.1000000000|tick_value_loss=0.1000000000|contract_size=100.0000000000|volume_min=0.0100000000|volume_max=200.0000000000|volume_step=0.0100000000|filling_mode=1|stops_level=0|freeze_level=0|trade_mode=4|execution_mode=2",
+    "F0_DISARMED|environment_observation_only",
+    "F0_DEINIT|reason=1|send_attempted=0"
+  ],
+  "evidence_digest": "sha256:98fe9ede975b2cbe7e878050414649f4737da19b7d58a2a6492a36a3efb3c191",
+  "evidence_digest_basis": "UTF-8 sanitized_raw_observations joined by LF without a trailing LF"
+}
