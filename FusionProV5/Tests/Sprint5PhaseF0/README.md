@@ -7,28 +7,24 @@ decide whether Phase F implementation is safe. It does not implement a Broker
 Adapter and grants no execution, recovery, Risk, Basket, or production
 authority.
 
-Current empirical status: **BUILD-6180 SINGLE-SEND ATTEMPT CONSUMED; CLIENT-LOCAL
-REJECTION; PHASE F0 BLOCKED.** From clean evidence baseline `35186ca...`, the
-operator explicitly confirmed one attended Demo/HEDGING BUY measurement. The
-probe invoked `OrderSend` exactly once, but the terminal rejected it locally
-with `last_error=4752`, `retcode=10027`, and comment `AutoTrading disabled by
-client`. No request ID, order, deal, callback, fill, position, or broker-carried
-correlation evidence was produced.
+Current empirical status: **ONE CORRECTED BUILD-6180 STRATEGY BUY CONFIRMED;
+SEPARATE MANUAL CLEANUP COMPLETE.** From corrected committed source
+`e5411a5...`, all four preflight permissions were true before exactly one
+attended Demo/HEDGING BUY. The query channel then observed position/order
+`5055862979`, deal `4360221913`, Magic `1179670069`, comment
+`F0-NR2-BUY-20260907`, volume `0.01`, and execution price `4413.493`.
 
-The armed lifecycle completed with `F0_DEINIT|reason=1|send_attempted=1`, without
-retry or reattach. A post-attempt query reported zero rows in all four domains,
-but completeness remains `UNPROVEN`; this is not authoritative proof of no side
-effect. Runtime strategy identity remains frozen as
-`SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` in
-`Configuration/SW_V5_RuntimeIdentityProfile.mqh`; fixture/reference values are
-not runtime authority. The one-send allowance for this run is consumed. A new
-send requires a new clean run boundary and explicit Fusion authorization.
+A separately authorized manual operator cleanup produced Magic-zero SELL order
+`5055880854` and exit deal `4360237506`, linked to position `5055862979` for the
+full `0.01` volume. The cleanup is not strategy identity or a second strategy
+entry. The post-cleanup query reported zero positions and active orders. Query
+completeness remains `UNPROVEN`; zero totals are not generalized into
+authoritative emptiness or negative evidence.
 
-Corrective F0 source now snapshots and checks `TERMINAL_TRADE_ALLOWED`,
-`MQL_TRADE_ALLOWED`, `ACCOUNT_TRADE_ALLOWED`, and `ACCOUNT_TRADE_EXPERT` before
-setting `send_attempted` or reaching `OrderSend`. Each failure emits a distinct
-pre-call diagnostic. This correction has offline/compile evidence only and does
-not authorize a new empirical run.
+The earlier client-local rejection remains immutable historical evidence. No
+retry, reconnect, pending order, automatic close, or second strategy entry
+occurred in the corrected run. Runtime strategy identity remains frozen as
+`SWV5_RUNTIME_STRATEGY_MAGIC=1179670069`. No further `OrderSend` is authorized.
 
 ## Offline verification
 

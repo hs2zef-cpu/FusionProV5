@@ -6,6 +6,24 @@ Incomplete and empty are distinct outcomes. A successful API call with zero rows
 is not authoritative empty unless the complete required domain and time window
 are proven covered.
 
+## Successful BUY and cleanup observations
+
+Run `F0-6180-SUCCESSFUL-BUY-CLEANUP-001` produced two post-action reads. The
+first positively observed one open runtime-Magic BUY position, its history
+order, and its history deal. The second positively observed the separately
+authorized Magic-zero operator cleanup order and exit deal linked to the same
+position, while reporting zero positions and active orders.
+
+| Read | Positions | Active orders | History orders | History deals | Completeness |
+|---|---:|---:|---:|---:|---|
+| Post-fill | 1 | 0 | 1 | 1 | `UNPROVEN` |
+| Post-cleanup | 0 | 0 | 2 | 2 | `UNPROVEN` |
+
+Positive returned records prove that those specific records were visible. The
+post-cleanup full-volume exit deal plus shared position ID positively supports
+closure of the observed position. Zero totals still do not prove global
+authoritative emptiness because completeness remains `UNPROVEN`.
+
 | Broker-owned domain | Candidate MQL5 API | Required enumeration/window evidence | Post-attempt build-6180 observation |
 |---|---|---|---|
 | Active positions | `PositionsTotal`, indexed selection and complete field reads | Exact account/server/symbol filters, count stability, per-row read success | API success; 0 rows; `UNPROVEN` |

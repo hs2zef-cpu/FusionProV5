@@ -33,8 +33,24 @@ not deployment authority; `0` remains invalid runtime identity.
 
 The Demo probe has no mutable Magic input and the query probe classifies runtime
 match, fixture/reference values, zero, and unrelated values without filtering
-or treating Magic alone as correlation authority. The prior build-6180 evidence
-predates materialization; a fresh disarmed gate and separate final confirmation
-are required before any broker call.
+or treating Magic alone as correlation authority. At the materialization
+boundary, the prior build-6180 evidence required a fresh disarmed gate and
+separate final confirmation before another broker call; those prerequisites
+were later completed for the successful run recorded below.
 
-Verdict: **NO SAFE CORRELATION CANDIDATE PROVEN — FUSION DECISION REQUIRED**.
+## Successful-run observation
+
+`F0-6180-SUCCESSFUL-BUY-CLEANUP-001` observed the exact comment
+`F0-NR2-BUY-20260907` and runtime Magic `1179670069` on the resulting position,
+history order, and history deal. Broker-assigned order, deal, and position IDs
+also linked consistently for this one request. The Magic-zero manual cleanup
+retained the original position ID but correctly did not inherit strategy
+identity.
+
+This is positive run-scoped preservation evidence. It does not prove that the
+comment is immutable, collision-safe, durable across restart/reconnect, or an
+authoritative request identity. Magic remains strategy scope and is never sole
+correlation authority.
+
+Verdict: **RUN-SCOPED MULTI-FIELD LINKAGE OBSERVED; DURABLE AUTHORITATIVE
+CORRELATION CARRIER REMAINS UNPROVEN.**

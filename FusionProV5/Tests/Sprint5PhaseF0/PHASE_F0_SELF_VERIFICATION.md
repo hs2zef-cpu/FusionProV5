@@ -7,10 +7,10 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 - Offline Python negative controls: executable deterministic model evidence.
 - MQL compile: compile evidence only.
 - Static/source scan: source and isolation evidence only.
-- MQL runtime: **EXECUTED FOR READ-ONLY QUERY, DEFAULT-DISARMED PROFILE, AND ONE ARMED API INVOCATION**.
+- MQL runtime: **EXECUTED FOR READ-ONLY QUERY, DEFAULT-DISARMED PROFILE, ONE HISTORICAL CLIENT-LOCAL REJECTION, AND ONE CORRECTED SUCCESSFUL BUY**.
 - Strategy Tester: **NOT EXECUTED**.
-- Attended Demo: **ONE BUILD-6180 API INVOCATION; CLIENT-LOCAL REJECTION**.
-- Broker/server observation: **NO BROKER ACKNOWLEDGEMENT OR BROKER SIDE EFFECT PROVEN**.
+- Attended Demo: **ONE HISTORICAL CLIENT-LOCAL REJECTION AND ONE CORRECTED SUCCESSFUL BUILD-6180 BUY; SEPARATE MANUAL CLEANUP COMPLETE**.
+- Broker/server observation: **ONE MARKET BUY/FILL AND LINKED MANUAL EXIT POSITIVELY OBSERVED; GENERAL PROFILE NOT PROVEN**.
 
 ## Current results
 
@@ -28,6 +28,13 @@ through `F0_DEINIT|reason=1|send_attempted=0`. No broker-visible pre-send
 carrier, complete query profile, broker visibility watermark, callback/retcode
 profile, or authoritative no-side-effect rule has been proven. These are not
 converted into timeout or callback-absence claims.
+
+The corrected attended run used source `e5411a5...`, observed all four trading
+permissions true, invoked `OrderSend` exactly once, and positively reconstructed
+the resulting BUY across position, history order, and history deal. A separate
+manual Magic-zero cleanup closed the full observed volume and is not strategy
+identity or a second strategy entry. Every query remains `UNPROVEN` for
+completeness.
 
 Phase F implementation is NOT AUTHORIZED. Phase F0 is not closed by this
 self-verification document.
@@ -61,10 +68,20 @@ query reported zero rows but remained `UNPROVEN`.
 No durable correlation carrier, authoritative no-side-effect rule, broker
 retcode profile, visibility watermark, or reconnect behavior was proven. The
 run also exposed a missing terminal/MQL/account trading-permission preflight.
-Phase F0 is blocked pending Fusion review; Phase F remains unauthorized.
+At that historical boundary Phase F0 was blocked pending Fusion review; Phase F
+remained unauthorized.
 
-Corrective preflight result: **SOURCE / COMPILE / OFFLINE GATES PASS; NOT
-EMPIRICALLY ARMED.** All four permission properties are captured once at
-initialization, printed in `F0_PERMISSIONS`, and required before
-`g_send_attempted=true`. A failed property returns `INIT_FAILED` with an explicit
-pre-call diagnostic, leaving `send_attempted=0`. No second run is authorized.
+That client-local rejection remains immutable historical evidence and is not
+rewritten by the later run.
+
+Corrected empirical result: **ONE STRATEGY BUY CONFIRMED; SEPARATE MANUAL
+CLEANUP COMPLETE.** All permission properties were true before the call. Sync
+retcode `10009` was not treated as confirmation by itself; the later query
+observed position/order `5055862979` and deal `4360221913`. Manual cleanup order
+`5055880854` and exit deal `4360237506` linked to the same position and closed
+the full `0.01` observed volume. No retry, second strategy entry, pending order,
+automatic close, or reconnect occurred. No further `OrderSend` is authorized.
+
+General broker behavior, a durable authoritative correlation carrier,
+authoritative negative-evidence rules, a visibility watermark, and reconnect
+behavior remain unproven.

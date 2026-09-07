@@ -2,7 +2,21 @@
 
 TEST ONLY / F0 / NO CREDENTIALS.
 
-## Current empirical run F0-6180-CLIENT-LOCAL-REJECT-001
+## Successful run F0-6180-SUCCESSFUL-BUY-CLEANUP-001
+
+Corrected source `e5411a522247d48889701353f89bdf13968f7ab8` was compiled with
+MetaEditor 6180. Installed query/profile EX5 hashes matched the fresh artifacts.
+The pre-send and armed observations both reported build 6180, Demo, Retail
+HEDGING, Exness Technologies Ltd / Exness-MT5Trial6, XAUUSD, connected, and all
+four trading permissions equal to `1`.
+
+Exactly one strategy BUY at minimum volume `0.01` was observed and positively
+reconstructed. The separately authorized manual cleanup was not a strategy
+retry or second strategy entry. Post-cleanup positions and active orders were
+reported as zero; query completeness remains `UNPROVEN`. No reconnect occurred,
+and no further `OrderSend` is authorized.
+
+## Historical empirical run F0-6180-CLIENT-LOCAL-REJECT-001
 
 | Field | Result |
 |---|---|

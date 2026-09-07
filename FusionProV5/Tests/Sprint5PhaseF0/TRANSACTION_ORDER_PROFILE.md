@@ -16,7 +16,7 @@ Known platform constraints preserved by this profile:
 
 | Required profile case | Current raw runs | Status |
 |---|---:|---|
-| Normal submission | 0 | NOT REACHED; one client-local rejection before broker acknowledgement |
+| Normal submission | 1 | OBSERVED ONCE; accepted BUY, full-volume deal, order-to-deal-to-position linkage |
 | Partial fill | 0 | DEMO REQUIRED / profile-dependent reproducibility |
 | Delayed processing | 0 | DEMO REQUIRED |
 | Reconnect | 0 | DEMO REQUIRED |
@@ -32,3 +32,11 @@ The one build-6180 API invocation emitted no `F0_TX` or `F0_ONTRADE`. That
 absence is retained as raw observation only and proves neither delivery nor
 non-delivery to the broker. No callback ordering, order lifecycle, or position
 behavior has been empirically profiled.
+
+The later corrected run emitted five `F0_TX` observations and seven `F0_ONTRADE`
+observations for one successful request. The request callback exposed runtime
+Magic, comment, retcode, and the session-local request ID; the query channel
+later exposed the linked position, history order, and history deal. Arrival
+order remains observational and is not promoted to authority. This single run
+does not establish a general callback-order guarantee, duplicate-handling rule,
+partial-fill model, or reconnect behavior.

@@ -3,7 +3,8 @@
 TEST ONLY / F0 / PROFILE CANDIDATE / NOT FOR PRODUCTION.
 
 Version: `SWV5-S5-F0-RETCODE-PROFILE-V1`
-Measured broker/profile: **CLIENT-LOCAL REJECTION ONLY; BROKER PROFILE NONE**
+Measured broker/profile: **ONE CLIENT-LOCAL REJECTION PLUS ONE SUCCESSFUL MARKET
+BUY; NARROW OBSERVATIONS ONLY**
 
 | Class | Meaning | Side-effect statement |
 |---|---|---|
@@ -29,11 +30,10 @@ Measured broker/profile: **CLIENT-LOCAL REJECTION ONLY; BROKER PROFILE NONE**
 | external retcode | R4 until mapped empirically | Record raw value and broker profile |
 | unknown/unmapped | R4 | Fail closed; no retry |
 
-No universal mapping is approved. No broker-specific R1 certification exists in
-this package because the sole attended Demo API invocation was rejected by the
-local terminal before broker acknowledgement.
+No universal mapping is approved. No broker-specific R1 rejection certification
+exists in this package.
 
-## Observed build-6180 result
+## Historical client-local build-6180 result
 
 `F0-6180-CLIENT-LOCAL-REJECT-001` returned `transport_result=0`,
 `last_error=4752`, `retcode=10027`, `request_id=0`, `order=0`, `deal=0`, and
@@ -43,3 +43,13 @@ it is not a certified R1 broker rejection. The run is held fail-closed as R4
 pending a Fusion decision on an explicit post-invocation client-local class.
 Zero callback/query rows do not upgrade this classification to authoritative
 no-side-effect evidence.
+
+## Observed successful build-6180 result
+
+`F0-6180-SUCCESSFUL-BUY-CLEANUP-001` returned `transport_result=1`,
+`last_error=0`, retcode `10009`, request ID `378977341`, order `5055862979`, and
+deal `4360221913`. This synchronous result is classified as R2 submission with
+R3 provisional fields, not final confirmation by itself. The subsequent query
+positively observed the matching BUY position, history order, and history deal,
+which independently confirmed the side effect for this request. The observation
+does not create a universal retcode mapping.

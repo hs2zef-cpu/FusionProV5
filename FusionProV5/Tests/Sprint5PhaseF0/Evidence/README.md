@@ -2,6 +2,16 @@
 
 Measured evidence inventory:
 
+- `F0-6180-SUCCESSFUL-BUY-CLEANUP-001.json`: attended Demo build-6180
+  evidence from corrected source `e5411a5...`. Exactly one strategy BUY was
+  submitted with runtime Magic `1179670069`, filled at `4413.493`, and
+  positively reconstructed as position/order `5055862979` and deal
+  `4360221913`. A separately authorized manual operator cleanup produced SELL
+  order `5055880854` and exit deal `4360237506`, both linked to the same
+  position. The post-cleanup query reported zero positions and active orders.
+  All query domains remain `UNPROVEN`; the Magic-zero cleanup is operator
+  activity, not strategy identity. No retry, second strategy entry, or
+  reconnect occurred.
 - `F0-6180-CLIENT-LOCAL-REJECT-001.json`: attended Demo build-6180 evidence
   from clean repository baseline `35186ca...`. One authorized BUY API invocation
   was rejected by the local client with error `4752` / retcode `10027` because
