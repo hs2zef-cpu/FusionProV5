@@ -6,14 +6,23 @@ Incomplete and empty are distinct outcomes. A successful API call with zero rows
 is not authoritative empty unless the complete required domain and time window
 are proven covered.
 
-| Broker-owned domain | Candidate MQL5 API | Required enumeration/window evidence | Post-materialization build-6180 observation |
+| Broker-owned domain | Candidate MQL5 API | Required enumeration/window evidence | Post-attempt build-6180 observation |
 |---|---|---|---|
 | Active positions | `PositionsTotal`, indexed selection and complete field reads | Exact account/server/symbol filters, count stability, per-row read success | API success; 0 rows; `UNPROVEN` |
 | Active orders | `OrdersTotal`, indexed selection and complete field reads | Exact filters, count stability, per-row read success | API success; 0 rows; `UNPROVEN` |
 | History orders | `HistorySelect`, `HistoryOrdersTotal`, indexed reads | Server-time window, selection success, truncation/latency/re-read evidence | `HistorySelect` success; 0 rows; `UNPROVEN` |
-| History deals | `HistorySelect`, `HistoryDealsTotal`, indexed reads | Server-time window, selection success, truncation/latency/re-read evidence | `HistorySelect` success; 1 row; `UNPROVEN` |
+| History deals | `HistorySelect`, `HistoryDealsTotal`, indexed reads | Server-time window, selection success, truncation/latency/re-read evidence | `HistorySelect` success; 0 rows; `UNPROVEN` |
 
-One fresh read was captured for `F0-6180-POST-MAGIC-PRESEND-001`. Its history
+The post-attempt query for `F0-6180-CLIENT-LOCAL-REJECT-001` covered
+`1788708834..1788795234`, exactly 86,400 server-time seconds. It reported API
+success, zero rows in all four domains, and `UNPROVEN` completeness. Runtime
+strategy rows and unrelated rows were both zero in this separate query.
+
+Those zero counts do not prove that the failed API invocation had no broker side
+effect. They also do not erase or contradict the separate 2026-09-05 baseline,
+whose earlier window contained one Magic-zero account/balance row.
+
+The prior read captured for `F0-6180-POST-MAGIC-PRESEND-001` had history
 window was `1788527700..1788614100`, exactly 86,400 server-time seconds. It
 reported `connected=1`, `history_select_success=1`, and `last_error=0`.
 

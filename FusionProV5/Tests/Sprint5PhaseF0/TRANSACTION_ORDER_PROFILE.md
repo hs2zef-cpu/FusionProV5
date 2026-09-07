@@ -16,7 +16,7 @@ Known platform constraints preserved by this profile:
 
 | Required profile case | Current raw runs | Status |
 |---|---:|---|
-| Normal submission | 0 | DEMO REQUIRED |
+| Normal submission | 0 | NOT REACHED; one client-local rejection before broker acknowledgement |
 | Partial fill | 0 | DEMO REQUIRED / profile-dependent reproducibility |
 | Delayed processing | 0 | DEMO REQUIRED |
 | Reconnect | 0 | DEMO REQUIRED |
@@ -28,4 +28,7 @@ The isolated probe can log synchronous results, `OnTrade`, and raw
 The request Magic is bound directly to `SWV5_RUNTIME_STRATEGY_MAGIC`; matching
 Magic is strategy-scope evidence only and cannot confirm request identity,
 submission outcome, order, deal, position, or Basket state by itself.
-No callback/order behavior has been empirically profiled in this run.
+The one build-6180 API invocation emitted no `F0_TX` or `F0_ONTRADE`. That
+absence is retained as raw observation only and proves neither delivery nor
+non-delivery to the broker. No callback ordering, order lifecycle, or position
+behavior has been empirically profiled.

@@ -1,0 +1,249 @@
+{
+  "schema": "SWV5-S5-F0-RAW-EVIDENCE-V1",
+  "source_commit": "35186ca036f9222cd85e6309ff33966b1bd9242f",
+  "source_tree": "56cbfb310bb930e213b353c5d0466a400e083a02",
+  "binary_source_commit": "dc7b5e293894e9c6233b975f4d820efa2291eb55",
+  "binary_source_tree": "38bc1d3577ce22955bf9ec59f1f757e6d29d4414",
+  "compiled_from_clean_commit": true,
+  "terminal_build": 6180,
+  "compiler_build": 6180,
+  "broker": "Exness Technologies Ltd",
+  "server": "Exness-MT5Trial6",
+  "login_redacted_hash": "sha256:4d49d071963d415ae58ef5e21a3ff06ce4c2d80d748117c69d001573f5ea1d70",
+  "demo_attested": true,
+  "hedging_attested": true,
+  "symbol": "XAUUSD",
+  "server_time_range": {
+    "pre_send_query_from_epoch_seconds": 1788705813,
+    "pre_send_query_to_epoch_seconds": 1788792213,
+    "pre_send_profile_epoch_seconds": 1788792285,
+    "attempt_epoch_seconds": 1788794548,
+    "query_from_epoch_seconds": 1788708834,
+    "query_to_epoch_seconds": 1788795234,
+    "query_window_seconds": 86400,
+    "local_minus_server_seconds_samples": [25200, 25200]
+  },
+  "test_id": "F0-6180-CLIENT-LOCAL-REJECT-001",
+  "measurement_classification": "ATTENDED_DEMO_BUILD_6180_ONE_API_INVOCATION_CLIENT_LOCAL_REJECTION",
+  "operator_confirmation": {
+    "confirmed": true,
+    "market_side": "BUY",
+    "exact_operator_timestamp": "NOT_CAPTURED",
+    "codex_boundary_check_timestamp": "2026-09-07T22:18:26+07:00"
+  },
+  "operator_reported_pre_send_quote": {
+    "bid": 4413.201,
+    "ask": 4413.383,
+    "server_observation_time": "2026-09-07T15:10:28",
+    "local_observation_time": "2026-09-07T22:10:00+07:00_APPROXIMATE",
+    "classification": "ATTENDED_OBSERVATION_NOT_EXACT_API_INVOCATION_PRICE"
+  },
+  "pre_send_attestation": {
+    "query_positions_total": 0,
+    "query_active_orders_total": 0,
+    "query_history_orders_total": 0,
+    "query_history_deals_total": 0,
+    "query_completeness": "UNPROVEN",
+    "default_disarmed_observed": true,
+    "deinit_send_attempted": false,
+    "terminal_build": 6180,
+    "mql_build": 6180,
+    "connected": true
+  },
+  "runtime_strategy_magic": 1179670069,
+  "runtime_magic_ssot": "FusionProV5/Configuration/SW_V5_RuntimeIdentityProfile.mqh",
+  "runtime_magic_classification": {
+    "profile_identity_observed": true,
+    "post_attempt_query_identity_observed": true,
+    "magic_alone_is_correlation_authority": false,
+    "runtime_match_rows": 0,
+    "fixture_reference_rows": 0,
+    "zero_account_balance_or_non_strategy_rows": 0,
+    "unrelated_magic_rows": 0
+  },
+  "safe_request_fields": {
+    "evidence_basis": "OPERATOR_CONFIRMED_INPUT_AND_COMMITTED_SOURCE_REQUEST_FIELDS_NOT_EMITTED",
+    "action": "TRADE_ACTION_DEAL",
+    "symbol": "XAUUSD",
+    "magic": 1179670069,
+    "comment": "F0R-0907-151028",
+    "type": "ORDER_TYPE_BUY",
+    "volume": 0.01,
+    "price_source": "SYMBOL_ASK_AT_API_INVOCATION",
+    "exact_request_price": "NOT_EMITTED",
+    "type_filling": "ORDER_FILLING_FOK",
+    "type_time": "ORDER_TIME_GTC"
+  },
+  "sync_result": {
+    "transport_result": false,
+    "last_error": 4752,
+    "retcode": 10027,
+    "retcode_external": 0,
+    "request_id_session_local": 0,
+    "order": 0,
+    "deal": 0,
+    "volume": 0.0,
+    "price": 0.0,
+    "bid": 0.0,
+    "ask": 0.0,
+    "comment": "AutoTrading disabled by client"
+  },
+  "raw_retcode": 10027,
+  "external_retcode": 0,
+  "session_local_request_id": 0,
+  "broker_tickets": [],
+  "callback_trace": [],
+  "retcode_classification": {
+    "candidate": "R4_AMBIGUOUS",
+    "detail": "CLIENT_LOCAL_POST_INVOCATION_REJECTION_PENDING_FUSION_CLASSIFICATION",
+    "not_r0_reason": "ORDER_SEND_API_WAS_INVOKED",
+    "not_certified_r1_reason": "NO_BROKER_ACKNOWLEDGEMENT_PROVEN",
+    "authoritative_no_side_effect": false
+  },
+  "active_orders_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "api_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "active_positions_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "api_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "history_orders_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "history_select_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "history_deals_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "history_select_success": true,
+    "completeness": "UNPROVEN",
+    "rows": []
+  },
+  "connection_observations": {
+    "connected_at_attempt": true,
+    "connected_at_query": true,
+    "history_select_success": true,
+    "query_last_error": 0,
+    "clock_classification": "TIMEZONE_OR_CLOCK_BASIS_OBSERVATION_NOT_TRANSPORT_OR_SETTLEMENT_LATENCY_OR_NEGATIVE_TIMEOUT"
+  },
+  "account_and_symbol_profile": {
+    "account_trade_mode": 0,
+    "account_margin_mode": 2,
+    "digits": 3,
+    "point": 0.001,
+    "tick_size": 0.001,
+    "tick_value": 0.1,
+    "tick_value_profit": 0.1,
+    "tick_value_loss": 0.1,
+    "contract_size": 100.0,
+    "volume_min": 0.01,
+    "volume_max": 200.0,
+    "volume_step": 0.01,
+    "filling_mode": 1,
+    "stops_level": 0,
+    "freeze_level": 0,
+    "symbol_trade_mode": 4,
+    "execution_mode": 2
+  },
+  "probe_state": {
+    "operator_manual_run": true,
+    "operator_attestation_input": true,
+    "arm_input": true,
+    "mutable_magic_input_present": false,
+    "order_send_api_invocation_count": 1,
+    "send_attempted_at_deinit": true,
+    "deinit_marker_observed": true,
+    "deinit_reason": 1,
+    "retry_marker_count": 0,
+    "reattach_count": 0,
+    "pending_order_path": false,
+    "auto_close_path": false,
+    "sync_marker_count": 1,
+    "transaction_marker_count": 0,
+    "on_trade_marker_count": 0,
+    "broker_acknowledgement_observed": false
+  },
+  "environment_transition": {
+    "automated_trading_at_api_invocation": "DISABLED_BY_CLIENT",
+    "automated_trading_enabled_after_rejection_local_time": "2026-09-07T22:26:19.643+07:00",
+    "classification": "POST_ATTEMPT_STATE_CHANGE_NEW_BOUNDARY_NOT_RETRY_AUTHORITY"
+  },
+  "visibility_observations": {
+    "attempt_to_query_seconds": 685.92,
+    "active_order": "NOT_OBSERVED",
+    "position": "NOT_OBSERVED",
+    "history_order": "NOT_OBSERVED",
+    "history_deal": "NOT_OBSERVED",
+    "latency_guarantee": "NOT_PROVEN"
+  },
+  "correlation_observations": {
+    "candidate_comment": "F0R-0907-151028",
+    "broker_carrier_preservation": "NOT_PROVEN",
+    "callback_request_fields": "NOT_OBSERVED",
+    "query_rows": 0,
+    "verdict": "NO SAFE CORRELATION CANDIDATE PROVEN — FUSION DECISION REQUIRED"
+  },
+  "manual_cleanup": {
+    "performed": false,
+    "reason": "NO_EXPOSURE_OBSERVED_IN_UNPROVEN_POST_ATTEMPT_QUERY"
+  },
+  "reconnect_observation": {
+    "performed": false,
+    "reason": "NO_BROKER_ACKNOWLEDGEMENT_OR_DURABLE_ROW_TO_REOBSERVE"
+  },
+  "negative_evidence_verdict": "AUTHORITATIVE NEGATIVE EVIDENCE NOT PROVABLE WITH CURRENT PROFILE",
+  "remaining_blockers": [
+    "ONE_SEND_ALLOWANCE_CONSUMED",
+    "TERMINAL_MQL_ACCOUNT_TRADING_PERMISSION_PREFLIGHT_NOT_COMPLETE_BEFORE_ARM",
+    "NO_BROKER_BEHAVIOR_PROFILE",
+    "NO_DURABLE_CORRELATION_CARRIER_PROVEN",
+    "NO_AUTHORITATIVE_NEGATIVE_EVIDENCE",
+    "EXACT_OPERATOR_CONFIRMATION_TIMESTAMP_NOT_CAPTURED",
+    "EXACT_REQUEST_PRICE_NOT_EMITTED"
+  ],
+  "compiled_ex5_sha256": {
+    "query_probe": "333af4ba0862029a9339749284730bd54b4398f964a0da6fe8228c076722704b",
+    "profile_probe": "aebed0186dfd2ccf7c9c3a1ce1f349b857e34564e022240ce9eb48b7a238eb82",
+    "contract_manifest": "f9e5b86c03c04c993463cc52b216b7103a06088eab3186d3222fd74a5b540c42"
+  },
+  "installed_ex5_sha256": {
+    "query_probe": "333af4ba0862029a9339749284730bd54b4398f964a0da6fe8228c076722704b",
+    "profile_probe": "aebed0186dfd2ccf7c9c3a1ce1f349b857e34564e022240ce9eb48b7a238eb82"
+  },
+  "sanitized_raw_observations": [
+    "F0_QUERY_BEGIN|server_from=1788705813|server_to=1788792213|local_now=1788817413|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_IDENTITY|runtime_strategy_magic=1179670069|magic_alone_not_correlation_authority=YES",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified",
+    "F0_ENV|company=Exness Technologies Ltd|server=Exness-MT5Trial6|trade_mode=0|margin_mode=2|login_redacted=YES|terminal_build=6180|mql_build=6180|symbol=XAUUSD|connected=1|server_time=1788792285|local_time=1788817485",
+    "F0_SYMBOL|digits=3|point=0.0010000000|tick_size=0.0010000000|tick_value=0.1000000000|tick_value_profit=0.1000000000|tick_value_loss=0.1000000000|contract_size=100.0000000000|volume_min=0.0100000000|volume_max=200.0000000000|volume_step=0.0100000000|filling_mode=1|stops_level=0|freeze_level=0|trade_mode=4|execution_mode=2",
+    "F0_RUNTIME_IDENTITY|strategy_magic=1179670069|ssot=SWV5_RUNTIME_STRATEGY_MAGIC|magic_alone_not_correlation_authority=YES",
+    "F0_DISARMED|environment_observation_only",
+    "F0_DEINIT|reason=1|send_attempted=0",
+    "F0_ENV|company=Exness Technologies Ltd|server=Exness-MT5Trial6|trade_mode=0|margin_mode=2|login_redacted=YES|terminal_build=6180|mql_build=6180|symbol=XAUUSD|connected=1|server_time=1788794548|local_time=1788819748",
+    "F0_SYMBOL|digits=3|point=0.0010000000|tick_size=0.0010000000|tick_value=0.1000000000|tick_value_profit=0.1000000000|tick_value_loss=0.1000000000|contract_size=100.0000000000|volume_min=0.0100000000|volume_max=200.0000000000|volume_step=0.0100000000|filling_mode=1|stops_level=0|freeze_level=0|trade_mode=4|execution_mode=2",
+    "F0_RUNTIME_IDENTITY|strategy_magic=1179670069|ssot=SWV5_RUNTIME_STRATEGY_MAGIC|magic_alone_not_correlation_authority=YES",
+    "F0_SYNC|transport_result=0|last_error=4752|retcode=10027|retcode_external=0|request_id_session_local=0|order=0|deal=0|volume=0.0000000000|price=0.0000000000|bid=0.0000000000|ask=0.0000000000|comment=AutoTrading disabled by client",
+    "F0_NO_RETRY|sync_result_is_not_confirmation|timeout_is_not_negative_evidence",
+    "automated trading is enabled",
+    "F0_DEINIT|reason=1|send_attempted=1",
+    "F0_QUERY_BEGIN|server_from=1788708834|server_to=1788795234|local_now=1788820434|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_IDENTITY|runtime_strategy_magic=1179670069|magic_alone_not_correlation_authority=YES",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified"
+  ],
+  "evidence_digest": "sha256:eaeeac57eba1dcaf9a5c990dff37c72e3605b03b0b3f03c3565deac800627e1e",
+  "evidence_digest_basis": "UTF-8 sanitized_raw_observations joined by LF without a trailing LF"
+}

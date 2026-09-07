@@ -2,6 +2,34 @@
 
 TEST ONLY / F0 / NO CREDENTIALS.
 
+## Current empirical run F0-6180-CLIENT-LOCAL-REJECT-001
+
+| Field | Result |
+|---|---|
+| Observation date | 2026-09-07 |
+| Repository baseline commit/tree | `35186ca036f9222cd85e6309ff33966b1bd9242f` / `56cbfb310bb930e213b353c5d0466a400e083a02` |
+| Executable-source commit/tree | `dc7b5e293894e9c6233b975f4d820efa2291eb55` / `38bc1d3577ce22955bf9ec59f1f757e6d29d4414` |
+| Broker/server | Exness Technologies Ltd / Exness-MT5Trial6 |
+| Account trade/margin mode | `0` Demo / `2` Retail HEDGING |
+| Symbol/chart | XAUUSD, M15 |
+| Terminal/MQL build | 6180 / 6180 |
+| Runtime identity | `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` |
+| Intended measurement | One market BUY, minimum volume `0.01`, FOK, comment `F0R-0907-151028` |
+| API invocation | Exactly one `OrderSend` call; no retry or reattach |
+| Synchronous result | `transport_result=0`, `last_error=4752`, `retcode=10027`, `request_id=0`, `order=0`, `deal=0` |
+| Result classification | Client-local post-invocation rejection; fail-closed R4 pending Fusion classification decision |
+| Callback trace | No `F0_TX` or `F0_ONTRADE`; absence is not negative evidence |
+| Lifecycle close | `F0_DEINIT|reason=1|send_attempted=1` |
+| Post-attempt query | API success; positions/orders/history orders/history deals all reported 0; every domain `UNPROVEN` |
+| Manual cleanup | NOT REQUIRED by observed query; no exposure was observed, but authoritative absence was not proven |
+| Reconnect | NOT PERFORMED |
+| Strategy Tester | NOT USED |
+
+The terminal recorded `automated trading is enabled` only after the rejected
+attempt. That state change is a new environment boundary and does not transform
+the prior rejection into acceptance or authorize a retry. The attached armed EA
+was removed before the post-attempt query.
+
 ## Current post-materialization run F0-6180-POST-MAGIC-PRESEND-001
 
 | Field | Result |
@@ -79,7 +107,7 @@ as current-build query-completeness proof.
 No login, password, token, or account secret is stored. The evidence record
 contains only a one-way account-identity hash.
 
-## Pre-send disposition
+## Pre-send disposition (historical)
 
 **FRESH BUILD-6180 POST-MATERIALIZATION PRE-SEND GATE PASS; READY FOR SEPARATE
 EXPLICIT SEND CONFIRMATION.** Demo, HEDGING, broker, server, symbol, build,
@@ -120,3 +148,8 @@ Before an armed probe, the operator must attest presence and verify at runtime:
 - evidence destination contains no credentials.
 
 Failure of any item is a local R0 reject and no broker call may occur.
+
+The empirical run proved that terminal/MQL/account trading-permission state must
+also be positively attested before any future arm. The current probe does not
+perform all of those checks before its single API invocation. Corrective source
+behavior and any second send require separate Fusion authorization.

@@ -7,19 +7,22 @@ decide whether Phase F implementation is safe. It does not implement a Broker
 Adapter and grants no execution, recovery, Risk, Basket, or production
 authority.
 
-Current empirical status: **BUILD-6180 POST-MAGIC PRE-SEND GATE PASS; NO BROKER
-CALL.** An operator-present Demo/HEDGING run executed one fresh read-only query
-and one default-disarmed environment/profile observation on Exness-MT5Trial6 /
-XAUUSD from accepted source `dc7b5e2...`. Query completeness remains `UNPROVEN`.
-No probe was armed, and no retcode, callback, fill, position, broker correlation,
-reconnect, or negative-side-effect evidence has been produced.
+Current empirical status: **BUILD-6180 SINGLE-SEND ATTEMPT CONSUMED; CLIENT-LOCAL
+REJECTION; PHASE F0 BLOCKED.** From clean evidence baseline `35186ca...`, the
+operator explicitly confirmed one attended Demo/HEDGING BUY measurement. The
+probe invoked `OrderSend` exactly once, but the terminal rejected it locally
+with `last_error=4752`, `retcode=10027`, and comment `AutoTrading disabled by
+client`. No request ID, order, deal, callback, fill, position, or broker-carried
+correlation evidence was produced.
 
-The post-materialization lifecycle completed with `send_attempted=0`. Runtime
-strategy identity is frozen as
+The armed lifecycle completed with `F0_DEINIT|reason=1|send_attempted=1`, without
+retry or reattach. A post-attempt query reported zero rows in all four domains,
+but completeness remains `UNPROVEN`; this is not authoritative proof of no side
+effect. Runtime strategy identity remains frozen as
 `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` in
 `Configuration/SW_V5_RuntimeIdentityProfile.mqh`; fixture/reference values are
-not runtime authority. The fresh gate permits requesting a separate explicit
-final confirmation; it does not authorize or perform a send itself.
+not runtime authority. The one-send allowance for this run is consumed. A new
+send requires a new clean run boundary and explicit Fusion authorization.
 
 ## Offline verification
 

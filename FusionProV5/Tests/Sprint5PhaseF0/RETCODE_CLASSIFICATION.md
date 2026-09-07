@@ -3,7 +3,7 @@
 TEST ONLY / F0 / PROFILE CANDIDATE / NOT FOR PRODUCTION.
 
 Version: `SWV5-S5-F0-RETCODE-PROFILE-V1`
-Measured broker/profile: **NONE**
+Measured broker/profile: **CLIENT-LOCAL REJECTION ONLY; BROKER PROFILE NONE**
 
 | Class | Meaning | Side-effect statement |
 |---|---|---|
@@ -30,5 +30,16 @@ Measured broker/profile: **NONE**
 | unknown/unmapped | R4 | Fail closed; no retry |
 
 No universal mapping is approved. No broker-specific R1 certification exists in
-this package because no attended Demo broker-call run occurred. The build-6180
-attended session was read-only/default-disarmed observation only.
+this package because the sole attended Demo API invocation was rejected by the
+local terminal before broker acknowledgement.
+
+## Observed build-6180 result
+
+`F0-6180-CLIENT-LOCAL-REJECT-001` returned `transport_result=0`,
+`last_error=4752`, `retcode=10027`, `request_id=0`, `order=0`, `deal=0`, and
+`AutoTrading disabled by client`. Because `OrderSend` was invoked, this is not
+the intrinsic pre-call R0 class. Because no broker acknowledgement is proven,
+it is not a certified R1 broker rejection. The run is held fail-closed as R4
+pending a Fusion decision on an explicit post-invocation client-local class.
+Zero callback/query rows do not upgrade this classification to authoritative
+no-side-effect evidence.

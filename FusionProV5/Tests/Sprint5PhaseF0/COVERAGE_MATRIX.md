@@ -9,10 +9,10 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | request_id session-local only | correlation study, NC-14 | COVERED OFFLINE |
 | Magic semantics unchanged | correlation study, source scan | MATERIALIZED FROM ONE SSOT; ownership/admission/claim semantics preserved |
 | Magic governance controls | NC-16–NC-19, `F0_MAGIC_GOVERNANCE_PROPOSAL.md` | F0 MATERIALIZED / OFFLINE CONTROLS; no send authority |
-| Retcode classes R0–R5 | `RETCODE_CLASSIFICATION.md`, NC-02/03 | CANDIDATE ONLY |
+| Retcode classes R0–R5 | `RETCODE_CLASSIFICATION.md`, NC-02/03 | CLIENT-LOCAL POST-INVOCATION GAP OBSERVED; R4 FAIL-CLOSED PENDING FUSION |
 | Sync acceptance not confirmation | NC-02 | COVERED OFFLINE |
-| Callback order/absence non-authoritative | transaction profile, NC-04/06/07 | COVERED OFFLINE; Demo pending |
-| Query incomplete differs from empty | query profile, NC-05/13 | OBSERVED ON DEMO; two stable reads remain `UNPROVEN` |
+| Callback order/absence non-authoritative | transaction profile, NC-04/06/07 | COVERED OFFLINE; zero callbacks observed after local rejection, still non-authoritative |
+| Query incomplete differs from empty | query profile, NC-05/13 | OBSERVED ON DEMO; pre-send and post-attempt zero-row reads remain `UNPROVEN` |
 | Clock/watermark profile | clock measurement | CLOCK BASIS OBSERVED; visibility/watermarks pending send evidence |
 | Timeout is not negative evidence | negative-evidence policy, NC-03 | COVERED OFFLINE |
 | Reconnect preserves unresolved | NC-10 | COVERED OFFLINE; Demo pending |
@@ -21,5 +21,6 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | Broker double remains dumb | NC-08 | COVERED OFFLINE |
 | Pending orders excluded | source verifier | COVERED STATICALLY |
 | Tester cannot replace Demo | divergence matrix, NC-15 | COVERED OFFLINE |
-| Physical broker behavior | raw attended-Demo evidence | POST-MAGIC PRE-SEND PROFILE ONLY; no broker call |
-| Frozen contract sufficiency | correlation/query/negative-evidence gates | UNRESOLVED — Fusion decision required |
+| Physical broker behavior | raw attended-Demo evidence | NOT REACHED; one API invocation rejected locally before broker acknowledgement |
+| Trading-permission preflight | runbook and empirical evidence | GAP OBSERVED; terminal/MQL/account permission attestation required before future arm |
+| Frozen contract sufficiency | correlation/query/negative-evidence gates | INSUFFICIENT FOR RETRY OR PHASE F — Fusion decision required |

@@ -2,6 +2,13 @@
 
 Measured evidence inventory:
 
+- `F0-6180-CLIENT-LOCAL-REJECT-001.json`: attended Demo build-6180 evidence
+  from clean repository baseline `35186ca...`. One authorized BUY API invocation
+  was rejected by the local client with error `4752` / retcode `10027` because
+  AutoTrading was disabled. The one-send allowance was consumed; no retry,
+  broker acknowledgement, callback, ticket, fill, or exposure was observed.
+  The post-attempt zero-row query remains `UNPROVEN` and is not authoritative
+  negative evidence.
 - `F0-6180-POST-MAGIC-PRESEND-001.json`: fresh attended Demo build-6180
   post-materialization evidence from committed source `dc7b5e2...`; one
   read-only query followed by one default-disarmed environment/profile

@@ -7,10 +7,10 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 - Offline Python negative controls: executable deterministic model evidence.
 - MQL compile: compile evidence only.
 - Static/source scan: source and isolation evidence only.
-- MQL runtime: **EXECUTED FOR READ-ONLY QUERY AND DEFAULT-DISARMED PROFILE ONLY**.
+- MQL runtime: **EXECUTED FOR READ-ONLY QUERY, DEFAULT-DISARMED PROFILE, AND ONE ARMED API INVOCATION**.
 - Strategy Tester: **NOT EXECUTED**.
-- Attended Demo: **EXECUTED FOR BUILD-6180 PRE-SEND OBSERVATION ONLY**.
-- Broker/server observation: **ENVIRONMENT AND READ-ONLY QUERY ONLY; NO BROKER CALL**.
+- Attended Demo: **ONE BUILD-6180 API INVOCATION; CLIENT-LOCAL REJECTION**.
+- Broker/server observation: **NO BROKER ACKNOWLEDGEMENT OR BROKER SIDE EFFECT PROVEN**.
 
 ## Current results
 
@@ -51,13 +51,13 @@ self-verification document.
 - Phase E mutation controls: **8/8 PASS**.
 - `git diff --check`: **PASS** at the pre-commit gate.
 
-Post-materialization pre-send result: **READY FOR SEPARATE EXPLICIT SEND
-CONFIRMATION; NO BROKER CALL.** `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` is
-defined only in `Configuration/SW_V5_RuntimeIdentityProfile.mqh`; the Demo probe
-has no Magic input, and NC-16 through NC-19 fail closed. The fresh lifecycle
-ended with `F0_DEINIT|reason=1|send_attempted=0`, with no sync, transaction,
-OnTrade, retry, pending-order, or broker-submission marker.
+Empirical result: **CLIENT-LOCAL REJECTION; ONE-SEND BUDGET CONSUMED.** The
+operator-authorized BUY attempt invoked `OrderSend` once and returned
+`last_error=4752` / `retcode=10027` with no request ID, order, deal, or callback.
+The EA was removed with `send_attempted=1`; no retry occurred. The post-attempt
+query reported zero rows but remained `UNPROVEN`.
 
-This gate does not arm or authorize a send. Fusion/operator must separately
-review it and provide explicit final confirmation at a new action boundary.
-Phase F0 remains open; Phase F remains unauthorized.
+No durable correlation carrier, authoritative no-side-effect rule, broker
+retcode profile, visibility watermark, or reconnect behavior was proven. The
+run also exposed a missing terminal/MQL/account trading-permission preflight.
+Phase F0 is blocked pending Fusion review; Phase F remains unauthorized.
