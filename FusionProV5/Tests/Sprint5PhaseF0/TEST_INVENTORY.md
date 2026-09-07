@@ -4,7 +4,7 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 
 | Test ID | Case | Classification | Current execution |
 |---|---|---|---|
-| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | PASS for build-6180 pre-send observation; no broker call |
+| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | PASS for fresh post-Magic build-6180 pre-send observation; no broker call |
 | F0-CORR-01 | comment preservation across active/history domains | F0 profile only / Demo required | NOT RUN |
 | F0-CORR-02 | request_id reuse across sessions | F0 profile only / Demo required | OFFLINE mutant only |
 | F0-RET-01 | success acknowledgement, not confirmation | future Phase F Demo | OFFLINE invariant only |
@@ -18,7 +18,7 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | F0-FILL-01 | partial/delayed fill | BOTH REQUIRED / maybe manual-only | NOT RUN |
 | F0-CONN-01 | reconnect | DEMO REQUIRED | NOT RUN |
 | F0-OWN-01 | lease loss/takeover/stale owner | future Phase F Tester + Demo | PASS offline NC-09 only |
-| F0-QUERY-01 | incomplete/conflicting query | F0 executed offline + Demo required | PASS via NC-05/NC-13 |
+| F0-QUERY-01 | incomplete/conflicting query | F0 executed offline + Demo required | PASS via NC-05/NC-13; fresh Demo query remained correctly `UNPROVEN` |
 | F0-EVID-01 | non-finite evidence | future Phase F Tester | NOT RUN |
 | F0-SPEC-01 | stale symbol specification | F0 executed offline + Demo required | PASS via NC-11 |
 | F0-UNIT-01 | unit mismatch | future Phase F Tester | NOT RUN |

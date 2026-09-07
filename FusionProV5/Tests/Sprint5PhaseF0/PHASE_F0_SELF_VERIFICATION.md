@@ -20,12 +20,14 @@ R0–R5 candidate classification, query/completeness and negative-evidence
 contracts, correlation candidate matrix, Tester/Demo classification, 19 offline
 mutation controls, and explicit evidence schema.
 
-The build-6180 Demo/HEDGING pre-send environment is now profiled. Two read-only
-queries 41 seconds apart retained `UNPROVEN` completeness, and the environment
-probe remained default-disarmed. No broker-visible pre-send carrier, complete
-query profile, broker visibility watermark, callback/retcode profile, or
-authoritative no-side-effect rule has been proven. These are not converted into
-timeout or callback-absence claims.
+The fresh post-materialization build-6180 Demo/HEDGING pre-send environment is
+profiled from accepted source `dc7b5e2...`. One read-only query retained
+`UNPROVEN` completeness, runtime Magic matched the sole SSOT, installed binaries
+matched the fresh compile, and the environment probe remained default-disarmed
+through `F0_DEINIT|reason=1|send_attempted=0`. No broker-visible pre-send
+carrier, complete query profile, broker visibility watermark, callback/retcode
+profile, or authoritative no-side-effect rule has been proven. These are not
+converted into timeout or callback-absence claims.
 
 Phase F implementation is NOT AUTHORIZED. Phase F0 is not closed by this
 self-verification document.
@@ -49,13 +51,13 @@ self-verification document.
 - Phase E mutation controls: **8/8 PASS**.
 - `git diff --check`: **PASS** at the pre-commit gate.
 
-Runtime-Magic materialization result: **PASS FOR SOURCE/COMPILE/OFFLINE GATES;
-NO BROKER CALL.** `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` is defined only in
-`Configuration/SW_V5_RuntimeIdentityProfile.mqh`; the Demo probe has no Magic
-input, and NC-16 through NC-19 fail closed. The prior lifecycle ended with
-`F0_DEINIT|reason=1|send_attempted=0` and remains historical evidence.
+Post-materialization pre-send result: **READY FOR SEPARATE EXPLICIT SEND
+CONFIRMATION; NO BROKER CALL.** `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` is
+defined only in `Configuration/SW_V5_RuntimeIdentityProfile.mqh`; the Demo probe
+has no Magic input, and NC-16 through NC-19 fail closed. The fresh lifecycle
+ended with `F0_DEINIT|reason=1|send_attempted=0`, with no sync, transaction,
+OnTrade, retry, pending-order, or broker-submission marker.
 
-No final send confirmation may be requested from this source-only gate. The new
-probe binaries require a fresh build-6180 read-only/default-disarmed attended
-observation, followed by separate explicit confirmation. Phase F0 remains open;
-Phase F remains unauthorized.
+This gate does not arm or authorize a send. Fusion/operator must separately
+review it and provide explicit final confirmation at a new action boundary.
+Phase F0 remains open; Phase F remains unauthorized.

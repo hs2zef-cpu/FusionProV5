@@ -213,8 +213,9 @@ prove broker behavior.
 ## Materialization verdict
 
 The approved constant instantiates existing semantics without redefining them.
-All F0 construction boundaries consume the one SSOT fail-closed. A fresh
-post-materialization disarmed/query gate and separate explicit final send
-confirmation remain required.
+All F0 construction boundaries consume the one SSOT fail-closed. The fresh
+post-materialization disarmed/query gate is now recorded by
+`F0-6180-POST-MAGIC-PRESEND-001`; separate explicit final send confirmation
+remains required.
 
 `F0 RUNTIME MAGIC MATERIALIZATION READY FOR FUSION REVIEW`

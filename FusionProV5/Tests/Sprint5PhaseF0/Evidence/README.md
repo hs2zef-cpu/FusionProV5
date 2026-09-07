@@ -2,6 +2,12 @@
 
 Measured evidence inventory:
 
+- `F0-6180-POST-MAGIC-PRESEND-001.json`: fresh attended Demo build-6180
+  post-materialization evidence from committed source `dc7b5e2...`; one
+  read-only query followed by one default-disarmed environment/profile
+  observation and explicit `F0_DEINIT|reason=1|send_attempted=0`. Runtime Magic
+  matches the SSOT, installed EX5 hashes match the fresh compile, and no broker
+  call or trade callback marker occurred.
 - `F0-6180-PRESEND-001.json`: standalone attended Demo build-6180 evidence;
   two read-only query observations followed by one default-disarmed environment
   and symbol-profile observation, ending with `send_attempted=0`. No broker

@@ -1,0 +1,150 @@
+{
+  "schema": "SWV5-S5-F0-RAW-EVIDENCE-V1",
+  "source_commit": "dc7b5e293894e9c6233b975f4d820efa2291eb55",
+  "source_tree": "38bc1d3577ce22955bf9ec59f1f757e6d29d4414",
+  "compiled_from_clean_commit": true,
+  "terminal_build": 6180,
+  "compiler_build": 6180,
+  "broker": "Exness Technologies Ltd",
+  "server": "Exness-MT5Trial6",
+  "login_redacted_hash": "sha256:4d49d071963d415ae58ef5e21a3ff06ce4c2d80d748117c69d001573f5ea1d70",
+  "demo_attested": true,
+  "hedging_attested": true,
+  "symbol": "XAUUSD",
+  "server_time_range": {
+    "query_from_epoch_seconds": 1788527700,
+    "query_to_epoch_seconds": 1788614100,
+    "profile_observation_epoch_seconds": 1788614144,
+    "query_window_seconds": 86400
+  },
+  "test_id": "F0-6180-POST-MAGIC-PRESEND-001",
+  "measurement_classification": "ATTENDED_DEMO_BUILD_6180_POST_MATERIALIZATION_READ_ONLY_AND_DEFAULT_DISARMED_PROFILE",
+  "runtime_strategy_magic": 1179670069,
+  "runtime_magic_ssot": "FusionProV5/Configuration/SW_V5_RuntimeIdentityProfile.mqh",
+  "runtime_magic_classification": {
+    "query_identity_observed": true,
+    "profile_identity_observed": true,
+    "magic_alone_is_correlation_authority": false,
+    "runtime_match_rows": 0,
+    "fixture_reference_rows": 0,
+    "zero_account_balance_or_non_strategy_rows": 1,
+    "unrelated_magic_rows": 0
+  },
+  "safe_request_fields": "NOT_APPLICABLE_DEFAULT_DISARMED_NO_SEND",
+  "sync_result": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "raw_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "external_retcode": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "session_local_request_id": "NOT_APPLICABLE_NO_BROKER_CALL",
+  "broker_tickets": [],
+  "callback_trace": [],
+  "active_orders_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "api_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "active_positions_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "api_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "history_orders_snapshot": {
+    "observations": 1,
+    "reported_total": 0,
+    "history_select_success": true,
+    "completeness": "UNPROVEN"
+  },
+  "history_deals_snapshot": {
+    "observations": 1,
+    "reported_total": 1,
+    "history_select_success": true,
+    "completeness": "UNPROVEN",
+    "rows": [
+      {
+        "ticket": 4353326003,
+        "order": 0,
+        "position_id": 0,
+        "symbol": "",
+        "magic": 0,
+        "magic_class": "MAGIC_ZERO_ACCOUNT_BALANCE_OR_NON_STRATEGY",
+        "type": 2,
+        "entry": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "time_msc": 1788580994996,
+        "comment": "D-trial-USD-d323c05a010a40",
+        "classification": "NON_XAUUSD_ACCOUNT_OR_BALANCE_RECORD_NOT_TRADING_OR_CORRELATION_EVIDENCE"
+      }
+    ]
+  },
+  "connection_observations": {
+    "connected": true,
+    "history_select_success": true,
+    "query_last_error": 0,
+    "local_minus_server_seconds_samples": [25200, 25200],
+    "clock_classification": "TIMEZONE_OR_CLOCK_BASIS_OBSERVATION_NOT_TRANSPORT_OR_SETTLEMENT_LATENCY_OR_NEGATIVE_TIMEOUT"
+  },
+  "account_and_symbol_profile": {
+    "account_trade_mode": 0,
+    "account_margin_mode": 2,
+    "digits": 3,
+    "point": 0.001,
+    "tick_size": 0.001,
+    "tick_value": 0.1,
+    "tick_value_profit": 0.1,
+    "tick_value_loss": 0.1,
+    "contract_size": 100.0,
+    "volume_min": 0.01,
+    "volume_max": 200.0,
+    "volume_step": 0.01,
+    "filling_mode": 1,
+    "stops_level": 0,
+    "freeze_level": 0,
+    "symbol_trade_mode": 4,
+    "execution_mode": 2
+  },
+  "probe_state": {
+    "operator_manual_run": true,
+    "operator_attestation_input": false,
+    "arm_input": false,
+    "mutable_magic_input_present": false,
+    "disarmed_marker_observed": true,
+    "deinit_marker_observed": true,
+    "deinit_reason": 1,
+    "send_attempted_at_deinit": false,
+    "sync_marker_count": 0,
+    "transaction_marker_count": 0,
+    "on_trade_marker_count": 0,
+    "retry_marker_count": 0,
+    "pending_order_path": false,
+    "broker_submission": false,
+    "order_send_executed": false
+  },
+  "compiled_ex5_sha256": {
+    "query_probe": "333af4ba0862029a9339749284730bd54b4398f964a0da6fe8228c076722704b",
+    "profile_probe": "aebed0186dfd2ccf7c9c3a1ce1f349b857e34564e022240ce9eb48b7a238eb82",
+    "contract_manifest": "f9e5b86c03c04c993463cc52b216b7103a06088eab3186d3222fd74a5b540c42"
+  },
+  "installed_ex5_sha256": {
+    "query_probe": "333af4ba0862029a9339749284730bd54b4398f964a0da6fe8228c076722704b",
+    "profile_probe": "aebed0186dfd2ccf7c9c3a1ce1f349b857e34564e022240ce9eb48b7a238eb82"
+  },
+  "sanitized_raw_observations": [
+    "F0_QUERY_BEGIN|server_from=1788527700|server_to=1788614100|local_now=1788639300|connected=1|history_select_success=1|last_error=0",
+    "F0_QUERY_IDENTITY|runtime_strategy_magic=1179670069|magic_alone_not_correlation_authority=YES",
+    "F0_QUERY_DOMAIN|positions|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|orders|api_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_orders|history_select_success=1|reported_total=0|completeness=UNPROVEN",
+    "F0_QUERY_DOMAIN|history_deals|history_select_success=1|reported_total=1|completeness=UNPROVEN",
+    "F0_HISTORY_DEAL|index=0|ticket=4353326003|order=0|position_id=0|symbol=|magic=0|magic_class=MAGIC_ZERO_ACCOUNT_BALANCE_OR_NON_STRATEGY|type=2|entry=0|volume=0.0000000000|price=0.0000000000|time_msc=1788580994996|comment=D-trial-USD-d323c05a010a40",
+    "F0_QUERY_END|raw_observation_only|completeness_not_certified",
+    "F0_ENV|company=Exness Technologies Ltd|server=Exness-MT5Trial6|trade_mode=0|margin_mode=2|login_redacted=YES|terminal_build=6180|mql_build=6180|symbol=XAUUSD|connected=1|server_time=1788614144|local_time=1788639344",
+    "F0_SYMBOL|digits=3|point=0.0010000000|tick_size=0.0010000000|tick_value=0.1000000000|tick_value_profit=0.1000000000|tick_value_loss=0.1000000000|contract_size=100.0000000000|volume_min=0.0100000000|volume_max=200.0000000000|volume_step=0.0100000000|filling_mode=1|stops_level=0|freeze_level=0|trade_mode=4|execution_mode=2",
+    "F0_RUNTIME_IDENTITY|strategy_magic=1179670069|ssot=SWV5_RUNTIME_STRATEGY_MAGIC|magic_alone_not_correlation_authority=YES",
+    "F0_DISARMED|environment_observation_only",
+    "F0_DEINIT|reason=1|send_attempted=0"
+  ],
+  "evidence_digest": "sha256:5e8e5b34568f42805892fd77a7cc37bf090b53c3c3803b15ef0d52b40f69ae7c",
+  "evidence_digest_basis": "UTF-8 sanitized_raw_observations joined by LF without a trailing LF"
+}

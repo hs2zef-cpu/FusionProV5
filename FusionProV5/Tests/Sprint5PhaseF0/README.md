@@ -7,19 +7,19 @@ decide whether Phase F implementation is safe. It does not implement a Broker
 Adapter and grants no execution, recovery, Risk, Basket, or production
 authority.
 
-Current empirical status: **BUILD-6180 PRE-SEND PROFILE MEASURED; NO BROKER
-CALL.** An operator-present Demo/HEDGING run executed two read-only query
-observations and one default-disarmed environment/profile observation on
-Exness-MT5Trial6 / XAUUSD. Query completeness remains `UNPROVEN`. No probe was
-armed, and no retcode, callback, fill, position, broker correlation, reconnect,
-or negative-side-effect evidence has been produced.
+Current empirical status: **BUILD-6180 POST-MAGIC PRE-SEND GATE PASS; NO BROKER
+CALL.** An operator-present Demo/HEDGING run executed one fresh read-only query
+and one default-disarmed environment/profile observation on Exness-MT5Trial6 /
+XAUUSD from accepted source `dc7b5e2...`. Query completeness remains `UNPROVEN`.
+No probe was armed, and no retcode, callback, fill, position, broker correlation,
+reconnect, or negative-side-effect evidence has been produced.
 
-The build-6180 disarmed lifecycle completed with `send_attempted=0` before Magic
-materialization. Runtime strategy identity is now frozen as
+The post-materialization lifecycle completed with `send_attempted=0`. Runtime
+strategy identity is frozen as
 `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069` in
 `Configuration/SW_V5_RuntimeIdentityProfile.mqh`; fixture/reference values are
-not runtime authority. A fresh build-6180 read-only/default-disarmed gate and a
-separate explicit final confirmation are still required before any send.
+not runtime authority. The fresh gate permits requesting a separate explicit
+final confirmation; it does not authorize or perform a send itself.
 
 ## Offline verification
 

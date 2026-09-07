@@ -2,7 +2,31 @@
 
 TEST ONLY / F0 / NO CREDENTIALS.
 
-## Current standalone build-6180 run F0-6180-PRESEND-001
+## Current post-materialization run F0-6180-POST-MAGIC-PRESEND-001
+
+| Field | Result |
+|---|---|
+| Observation date | 2026-09-05 |
+| Source commit/tree | `dc7b5e293894e9c6233b975f4d820efa2291eb55` / `38bc1d3577ce22955bf9ec59f1f757e6d29d4414` |
+| Broker/server | Exness Technologies Ltd / Exness-MT5Trial6 |
+| Account trade/margin mode | `0` Demo / `2` Retail HEDGING |
+| Symbol/chart | XAUUSD, M15 |
+| Terminal/MQL/MetaEditor build | 6180 / 6180 / 6180 |
+| Compile result | Query, profile, and contract manifest: X64 Regular, 0 errors / 0 warnings |
+| Installed binary identity | Query and profile EX5 SHA-256 exactly match fresh compiled artifacts |
+| Connection/history selection | `connected=1`; `history_select_success=1`; `last_error=0` |
+| Query window | 86,400 server-time seconds |
+| Runtime identity | `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069`; SSOT marker observed in both probes |
+| Query disposition | All domains `UNPROVEN`; 1 total history-deal row, 0 runtime-strategy-matching rows, and 1 Magic-zero non-XAUUSD account/balance row |
+| Profile disposition | `F0_DISARMED|environment_observation_only` |
+| Lifecycle close | `F0_DEINIT|reason=1|send_attempted=0` |
+| Broker/trade markers | No `F0_SYNC`, `F0_TX`, `F0_ONTRADE`, retry, pending-order, or broker submission |
+| Strategy Tester | NOT USED |
+
+The account identity hash was derived afresh from the current terminal log and
+matched the prior stable redacted value; no raw login or credential is stored.
+
+## Historical pre-materialization build-6180 run F0-6180-PRESEND-001
 
 | Field | Result |
 |---|---|
@@ -57,11 +81,12 @@ contains only a one-way account-identity hash.
 
 ## Pre-send disposition
 
-**HISTORICAL BUILD-6180 DISARMED OBSERVATION GATE PASS; SEND REMAINS BLOCKED
-PENDING A FRESH POST-MATERIALIZATION GATE.** Demo, HEDGING, broker, server, symbol, build, connection,
-minimum volume, market-only symbol capability, query-before-profile order, and
-default-disarmed state were observed. The build-6180 query results remain
-`UNPROVEN`, not authoritative empty or negative evidence.
+**FRESH BUILD-6180 POST-MATERIALIZATION PRE-SEND GATE PASS; READY FOR SEPARATE
+EXPLICIT SEND CONFIRMATION.** Demo, HEDGING, broker, server, symbol, build,
+connection, minimum volume, filling capability, query-before-profile order,
+governed Magic, and default-disarmed state were observed from the accepted
+source. Query results remain `UNPROVEN`, not authoritative empty or negative
+evidence.
 
 The terminal journal records explicit EA removal and
 `F0_DEINIT|reason=1|send_attempted=0`. The disarmed observation lifecycle is
@@ -73,14 +98,13 @@ The runtime source now freezes `SWV5_RUNTIME_STRATEGY_MAGIC=1179670069`
 `550015` remain test fixtures or reference data and are not runtime authority;
 `0` remains invalid. The Demo probe has no mutable Magic input.
 
-Because the recorded observation used the pre-materialization probe binary, it
-is not a send gate for the new source. Compile identity and build, connection,
-Demo/HEDGING mode, server, symbol, fresh price, query state, and default-disarmed
-behavior must be re-attested before a separate final send confirmation is
-requested.
+The installed runnable EX5 hashes matched their fresh build-6180 compiled
+artifacts. The accepted source and all observation identities matched. This gate
+does not arm or send; Fusion/operator must separately review the evidence and
+provide explicit final confirmation at a new action boundary.
 
-`F0-QRY-001` remains archival pre-6180 evidence and is not combined with
-`F0-6180-PRESEND-001`.
+`F0-QRY-001` and `F0-6180-PRESEND-001` remain archival evidence and are not
+combined or backfilled into `F0-6180-POST-MAGIC-PRESEND-001`.
 
 ## Mandatory attended-run attestation
 

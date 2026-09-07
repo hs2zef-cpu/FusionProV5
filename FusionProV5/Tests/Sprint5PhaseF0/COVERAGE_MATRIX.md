@@ -4,7 +4,7 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 
 | Required invariant/profile question | Artifact or test | Status |
 |---|---|---|
-| Exact supported environment | `BROKER_PROFILE.md`, `ENVIRONMENT_ATTESTATION.md` | PROFILED PRE-SEND — build 6180 / Exness-MT5Trial6 / Demo / HEDGING / XAUUSD |
+| Exact supported environment | `BROKER_PROFILE.md`, `ENVIRONMENT_ATTESTATION.md` | POST-MAGIC PRE-SEND PROFILED — build 6180 / Exness-MT5Trial6 / Demo / HEDGING / XAUUSD |
 | Durable pre-send correlation | `CORRELATION_IDENTITY_DESIGN.md`, NC-14 | BLOCKED — no carrier proven |
 | request_id session-local only | correlation study, NC-14 | COVERED OFFLINE |
 | Magic semantics unchanged | correlation study, source scan | MATERIALIZED FROM ONE SSOT; ownership/admission/claim semantics preserved |
@@ -21,5 +21,5 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | Broker double remains dumb | NC-08 | COVERED OFFLINE |
 | Pending orders excluded | source verifier | COVERED STATICALLY |
 | Tester cannot replace Demo | divergence matrix, NC-15 | COVERED OFFLINE |
-| Physical broker behavior | raw attended-Demo evidence | PRE-SEND PROFILE ONLY; no broker call |
+| Physical broker behavior | raw attended-Demo evidence | POST-MAGIC PRE-SEND PROFILE ONLY; no broker call |
 | Frozen contract sufficiency | correlation/query/negative-evidence gates | UNRESOLVED — Fusion decision required |
