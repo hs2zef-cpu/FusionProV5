@@ -32,6 +32,11 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | F0-MAGIC-02 | Fixture/reference value used as runtime Magic | F0 executed offline | PASS via NC-17 |
 | F0-MAGIC-03 | Conflicting Magic across governed domains | F0 executed offline | PASS via NC-18 |
 | F0-MAGIC-04 | Mutable-per-request Magic | F0 executed offline | PASS via NC-19 |
+| F0-PERM-01 | Terminal trading permission false | F0 executed offline/source | PASS via NC-20 plus source-order verification |
+| F0-PERM-02 | MQL program trading permission false | F0 executed offline/source | PASS via NC-21 plus source-order verification |
+| F0-PERM-03 | Account trading permission false | F0 executed offline/source | PASS via NC-22 plus source-order verification |
+| F0-PERM-04 | Account EA trading permission false | F0 executed offline/source | PASS via NC-23 plus source-order verification |
+| F0-PERM-05 | Permission enabled after rejected init resumes same run | F0 executed offline/source | PASS via NC-24; new run boundary required |
 
 F0 does not claim execution of future Phase-F tests. Pending orders remain out
 of scope. Unknown or ambiguous outcomes remain no-retry unresolved evidence.

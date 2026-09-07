@@ -33,10 +33,34 @@ void SWV5S5_F0PrintEnvironment()
                (int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_FREEZE_LEVEL),(int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_MODE),
                (int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_EXEMODE));
    PrintFormat("F0_RUNTIME_IDENTITY|strategy_magic=%I64u|ssot=SWV5_RUNTIME_STRATEGY_MAGIC|magic_alone_not_correlation_authority=YES",
-               SWV5_RUNTIME_STRATEGY_MAGIC);
+                SWV5_RUNTIME_STRATEGY_MAGIC);
   }
 
-bool SWV5S5_F0EnvironmentPermitsSingleProbe()
+void SWV5S5_F0ReadTradingPermissions(bool &terminal_trade_allowed,
+                                     bool &mql_trade_allowed,
+                                     bool &account_trade_allowed,
+                                     bool &account_trade_expert)
+  {
+   terminal_trade_allowed=(bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
+   mql_trade_allowed=(bool)MQLInfoInteger(MQL_TRADE_ALLOWED);
+   account_trade_allowed=(bool)AccountInfoInteger(ACCOUNT_TRADE_ALLOWED);
+   account_trade_expert=(bool)AccountInfoInteger(ACCOUNT_TRADE_EXPERT);
+  }
+
+void SWV5S5_F0PrintTradingPermissions(const bool terminal_trade_allowed,
+                                      const bool mql_trade_allowed,
+                                      const bool account_trade_allowed,
+                                      const bool account_trade_expert)
+  {
+   PrintFormat("F0_PERMISSIONS|terminal_trade_allowed=%d|mql_trade_allowed=%d|account_trade_allowed=%d|account_trade_expert=%d|snapshot_at_init=YES",
+               (int)terminal_trade_allowed,(int)mql_trade_allowed,
+               (int)account_trade_allowed,(int)account_trade_expert);
+  }
+
+bool SWV5S5_F0EnvironmentPermitsSingleProbe(const bool terminal_trade_allowed,
+                                            const bool mql_trade_allowed,
+                                            const bool account_trade_allowed,
+                                            const bool account_trade_expert)
   {
    if(!InpOperatorAttestsAttendedDemo)
      { Print("F0_LOCAL_REJECT|operator_attestation_missing"); return false; }
@@ -52,16 +76,35 @@ bool SWV5S5_F0EnvironmentPermitsSingleProbe()
      { Print("F0_LOCAL_REJECT|correlation_comment_empty"); return false; }
    if(InpMarketSide!=ORDER_TYPE_BUY && InpMarketSide!=ORDER_TYPE_SELL)
      { Print("F0_LOCAL_REJECT|pending_or_non_market_order_forbidden"); return false; }
+   if(!terminal_trade_allowed)
+     { Print("F0_LOCAL_REJECT|terminal_trade_not_allowed|pre_call=YES"); return false; }
+   if(!mql_trade_allowed)
+     { Print("F0_LOCAL_REJECT|mql_program_trade_not_allowed|pre_call=YES"); return false; }
+   if(!account_trade_allowed)
+     { Print("F0_LOCAL_REJECT|account_trade_not_allowed|pre_call=YES"); return false; }
+   if(!account_trade_expert)
+     { Print("F0_LOCAL_REJECT|account_expert_trade_not_allowed|pre_call=YES"); return false; }
    return true;
   }
 
 int OnInit()
   {
    SWV5S5_F0PrintEnvironment();
+   bool terminal_trade_allowed=false;
+   bool mql_trade_allowed=false;
+   bool account_trade_allowed=false;
+   bool account_trade_expert=false;
+   SWV5S5_F0ReadTradingPermissions(terminal_trade_allowed,mql_trade_allowed,
+                                   account_trade_allowed,account_trade_expert);
+   SWV5S5_F0PrintTradingPermissions(terminal_trade_allowed,mql_trade_allowed,
+                                    account_trade_allowed,account_trade_expert);
    if(!InpArmExactlyOneMarketSend)
      { Print("F0_DISARMED|environment_observation_only"); return INIT_SUCCEEDED; }
-   if(g_send_attempted || !SWV5S5_F0EnvironmentPermitsSingleProbe())
-      return INIT_FAILED;
+   if(g_send_attempted || !SWV5S5_F0EnvironmentPermitsSingleProbe(terminal_trade_allowed,
+                                                                  mql_trade_allowed,
+                                                                  account_trade_allowed,
+                                                                  account_trade_expert))
+       return INIT_FAILED;
 
    g_send_attempted=true;
    MqlTradeRequest request={};

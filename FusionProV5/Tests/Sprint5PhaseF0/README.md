@@ -24,6 +24,12 @@ effect. Runtime strategy identity remains frozen as
 not runtime authority. The one-send allowance for this run is consumed. A new
 send requires a new clean run boundary and explicit Fusion authorization.
 
+Corrective F0 source now snapshots and checks `TERMINAL_TRADE_ALLOWED`,
+`MQL_TRADE_ALLOWED`, `ACCOUNT_TRADE_ALLOWED`, and `ACCOUNT_TRADE_EXPERT` before
+setting `send_attempted` or reaching `OrderSend`. Each failure emits a distinct
+pre-call diagnostic. This correction has offline/compile evidence only and does
+not authorize a new empirical run.
+
 ## Offline verification
 
 ```powershell

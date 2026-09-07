@@ -56,3 +56,7 @@ The historical disarmed lifecycle completed with `send_attempted=0`. The later
 armed lifecycle completed with `send_attempted=1`, exactly one failed API
 invocation, and no retry. Its post-attempt zero-row query remains `UNPROVEN` and
 cannot certify absence of a side effect. No additional send is authorized.
+
+The subsequent F0 corrective candidate adds a four-property permission snapshot
+and fail-closed pre-call checks. It has not been armed or empirically exercised;
+the accepted client-local rejection evidence above is unchanged.

@@ -150,6 +150,8 @@ Before an armed probe, the operator must attest presence and verify at runtime:
 Failure of any item is a local R0 reject and no broker call may occur.
 
 The empirical run proved that terminal/MQL/account trading-permission state must
-also be positively attested before any future arm. The current probe does not
-perform all of those checks before its single API invocation. Corrective source
-behavior and any second send require separate Fusion authorization.
+also be positively attested before any future arm. The F0 corrective candidate
+now checks `TERMINAL_TRADE_ALLOWED`, `MQL_TRADE_ALLOWED`,
+`ACCOUNT_TRADE_ALLOWED`, and `ACCOUNT_TRADE_EXPERT` before setting
+`send_attempted`. This is source/compile/offline evidence only. A second send
+still requires separate Fusion authorization and a completely new run boundary.

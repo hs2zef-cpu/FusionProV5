@@ -32,6 +32,29 @@ def verify() -> dict:
     assert '#include "../../Configuration/SW_V5_RuntimeIdentityProfile.mqh"' in probe
     assert "request.magic=SWV5_RUNTIME_STRATEGY_MAGIC;" in probe
     assert "ACCOUNT_TRADE_MODE_DEMO" in probe and "ACCOUNT_MARGIN_MODE_RETAIL_HEDGING" in probe
+    preserved_profile_tokens = ("ACCOUNT_COMPANY", "ACCOUNT_SERVER", "InpExpectedServer",
+                                "TERMINAL_CONNECTED", "TERMINAL_BUILD", "__MQLBUILD__", "_Symbol",
+                                "SYMBOL_VOLUME_MIN", "SYMBOL_FILLING_MODE",
+                                "InpMeasuredFilling=ORDER_FILLING_FOK",
+                                "request.volume=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);",
+                                "request.type_filling=InpMeasuredFilling;")
+    assert all(token in probe for token in preserved_profile_tokens)
+    permission_properties = ("TERMINAL_TRADE_ALLOWED", "MQL_TRADE_ALLOWED",
+                             "ACCOUNT_TRADE_ALLOWED", "ACCOUNT_TRADE_EXPERT")
+    permission_diagnostics = ("terminal_trade_not_allowed", "mql_program_trade_not_allowed",
+                              "account_trade_not_allowed", "account_expert_trade_not_allowed")
+    assert all(token in probe for token in permission_properties)
+    assert all(probe.count(token) == 1 for token in permission_properties)
+    assert all(token in probe for token in permission_diagnostics)
+    assert "F0_PERMISSIONS|" in probe and "snapshot_at_init=YES" in probe
+    assert all(f"bool              {field};" in contracts for field in
+               ("terminal_trade_allowed", "mql_trade_allowed",
+                "account_trade_allowed", "account_trade_expert"))
+    assert probe.count("g_send_attempted=true;") == 1
+    guard_call = probe.index("if(g_send_attempted || !SWV5S5_F0EnvironmentPermitsSingleProbe(")
+    send_attempt_assignment = probe.index("g_send_attempted=true;")
+    order_send_call = probe.index("OrderSend(")
+    assert guard_call < send_attempt_assignment < order_send_call
     assert probe.count("OrderSend(") == 1
     assert "OrderSend(" not in query_probe and "HistorySelect(" in query_probe
     assert '#include "../../Configuration/SW_V5_RuntimeIdentityProfile.mqh"' in query_probe
@@ -40,9 +63,9 @@ def verify() -> dict:
                 "FIXTURE_REFERENCE_MAGIC_NON_RUNTIME",
                 "MAGIC_ZERO_ACCOUNT_BALANCE_OR_NON_STRATEGY", "UNRELATED_MAGIC"))
     assert all(token in query_probe for token in ("PositionsTotal(","OrdersTotal(","HistoryOrdersTotal(","HistoryDealsTotal("))
-    assert not re.search(r"\b(?:OnTick|OnTimer|OrderSendAsync|CTrade)\s*\(", probe)
+    assert not re.search(r"\b(?:OnTick|OnTimer|OnChartEvent|OnBookEvent|OrderSendAsync|CTrade)\s*\(", probe)
     assert not re.search(r"\b(?:ORDER_TYPE_BUY_LIMIT|ORDER_TYPE_SELL_LIMIT|ORDER_TYPE_BUY_STOP|ORDER_TYPE_SELL_STOP|TRADE_ACTION_PENDING|TRADE_ACTION_MODIFY|TRADE_ACTION_REMOVE)\b", probe)
-    assert all(f'"NC-{index:02d}"' in controls for index in range(1, 20))
+    assert all(f'"NC-{index:02d}"' in controls for index in range(1, 25))
     assert "#error" in contracts and "SWV5S5_F0_TEST_ONLY_BUILD" in contracts
     assert "#define SWV5S5_F0_TEST_ONLY_BUILD" in compile_manifest
     executable_literal_paths = []
@@ -68,7 +91,12 @@ def verify() -> dict:
             "read_only_query_probe": True,
             "runtime_strategy_magic": runtime_magic,
             "runtime_magic_executable_literal_paths": executable_literal_paths,
-            "negative_control_definitions": 19, "production_reverse_dependencies": production_reverse,
+            "permission_properties": list(permission_properties),
+            "permission_diagnostics": list(permission_diagnostics),
+            "permission_properties_read_once": True,
+            "precall_guard_order_verified": True,
+            "preserved_profile_tokens": list(preserved_profile_tokens),
+            "negative_control_definitions": 24, "production_reverse_dependencies": production_reverse,
             "forbidden_scope_paths": forbidden_paths}
 
 

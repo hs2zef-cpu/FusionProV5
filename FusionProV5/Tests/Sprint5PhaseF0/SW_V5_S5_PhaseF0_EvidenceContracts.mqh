@@ -39,6 +39,10 @@ struct SWV5S5_F0EnvironmentEvidence
    datetime          server_time;
    datetime          local_time;
    bool              connected;
+   bool              terminal_trade_allowed;
+   bool              mql_trade_allowed;
+   bool              account_trade_allowed;
+   bool              account_trade_expert;
   };
 
 struct SWV5S5_F0QueryEvidence

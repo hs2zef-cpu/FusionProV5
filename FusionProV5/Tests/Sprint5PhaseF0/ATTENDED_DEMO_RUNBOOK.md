@@ -12,9 +12,12 @@ schedule an attended run. Do not use automation to start or attach the probe.
    `ACCOUNT_TRADE_MODE_DEMO`.
 3. Confirm `ACCOUNT_MARGIN_MODE_RETAIL_HEDGING`; NETTING means STOP.
 4. Confirm exact broker, server, symbol, build, connection, and minimal volume.
-5. Positively confirm terminal, MQL program, account, and account-EA trading
-   permissions before arming. A later permission change starts a new run
-   boundary and never authorizes retry of a consumed single-send run.
+5. Positively confirm `TERMINAL_TRADE_ALLOWED`, `MQL_TRADE_ALLOWED`,
+   `ACCOUNT_TRADE_ALLOWED`, and `ACCOUNT_TRADE_EXPERT` before arming. Require an
+   `F0_PERMISSIONS` snapshot with all four fields equal to `1`. Any zero must
+   emit its explicit `F0_LOCAL_REJECT|...|pre_call=YES`, unload with
+   `send_attempted=0`, and produce no `F0_SYNC`. A later permission change
+   starts a new run boundary and never authorizes retry of a consumed run.
 6. Confirm no live/real-money account, production VPS, signal input, recurring
    loop, pending-order path, or unresolved prior experiment.
 7. Compile from an immutable source commit and open a sanitized raw-evidence
@@ -42,6 +45,10 @@ An `OrderSend` API invocation consumes the run's one-send allowance even when
 the local client rejects it before broker acknowledgement. Enabling AutoTrading
 after such a rejection must not be followed by reattach, reinitialization, or
 retry under the same authorization.
+
+The corrected probe reads the four permission properties once during `OnInit`
+and uses that immutable observation for the armed pre-call decision. It has no
+timer, tick, reconnect, or permission-change handler that can trigger a send.
 
 The operator must resolve and record any resulting Demo exposure manually under
 the approved experimental procedure. An ambiguous result remains unresolved

@@ -31,6 +31,22 @@ def load_runtime_strategy_magic() -> int:
 
 
 RUNTIME_STRATEGY_MAGIC = load_runtime_strategy_magic()
+PERMISSION_DIAGNOSTICS = {
+    "terminal_trade_allowed": "terminal_trade_not_allowed",
+    "mql_trade_allowed": "mql_program_trade_not_allowed",
+    "account_trade_allowed": "account_trade_not_allowed",
+    "account_trade_expert": "account_expert_trade_not_allowed",
+}
+
+
+def evaluate_permission_preflight(permissions: dict[str, bool]) -> dict[str, object]:
+    """Reference-only fail-closed evaluator; it never invokes a broker API."""
+    for field, diagnostic in PERMISSION_DIAGNOSTICS.items():
+        if not permissions[field]:
+            return {"permitted": False, "send_attempted": False,
+                    "diagnostic": diagnostic, "pre_call": True}
+    return {"permitted": True, "send_attempted": False,
+            "diagnostic": "permissions_complete", "pre_call": True}
 
 
 @dataclass(frozen=True)
@@ -182,12 +198,43 @@ def controls() -> list[ControlResult]:
                       mutant_per_request_magic and any(value != RUNTIME_STRATEGY_MAGIC
                                                        for value in request_magics),
                       "request sequence changed strategy/ownership identity"))
+
+    all_permissions = {field: True for field in PERMISSION_DIAGNOSTICS}
+    permission_cases = (
+        ("NC-20", "terminal_trade_allowed"),
+        ("NC-21", "mql_trade_allowed"),
+        ("NC-22", "account_trade_allowed"),
+        ("NC-23", "account_trade_expert"),
+    )
+    for test_id, field in permission_cases:
+        permissions = dict(all_permissions)
+        permissions[field] = False
+        mutant_order_send = True
+        evaluated = evaluate_permission_preflight(permissions)
+        out.append(result(test_id, f"{field} false still invokes OrderSend",
+                          json.dumps(permissions, sort_keys=True), mutant_order_send,
+                          f"pre-call {PERMISSION_DIAGNOSTICS[field]} rejection with send_attempted=0",
+                          (not evaluated["permitted"] and not evaluated["send_attempted"] and
+                           evaluated["pre_call"] and
+                           evaluated["diagnostic"] == PERMISSION_DIAGNOSTICS[field]),
+                          f"{field} failure was fenced before the broker API boundary"))
+
+    initial = evaluate_permission_preflight({**all_permissions, "terminal_trade_allowed": False})
+    later_permissions = evaluate_permission_preflight(all_permissions)
+    mutant_same_run_resume = (not initial["permitted"] and later_permissions["permitted"])
+    new_run_boundary_present = False
+    out.append(result("NC-24", "permission enabled after rejected initialization resumes same run",
+                      "terminal permission false at init, true later", mutant_same_run_resume,
+                      "permission-state change requires fresh attestation and a new run boundary",
+                      mutant_same_run_resume and not new_run_boundary_present and
+                      not initial["send_attempted"],
+                      "later permission availability cannot revive the rejected initialization"))
     return out
 
 
 def execute_once() -> dict:
     observed = controls()
-    assert len({item.test_id for item in observed}) == len(observed) == 19
+    assert len({item.test_id for item in observed}) == len(observed) == 24
     rows = [asdict(item) | {"passed": item.passed} for item in observed]
     passed = sum(item.passed for item in observed)
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")

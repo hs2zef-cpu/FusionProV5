@@ -22,5 +22,5 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | Pending orders excluded | source verifier | COVERED STATICALLY |
 | Tester cannot replace Demo | divergence matrix, NC-15 | COVERED OFFLINE |
 | Physical broker behavior | raw attended-Demo evidence | NOT REACHED; one API invocation rejected locally before broker acknowledgement |
-| Trading-permission preflight | runbook and empirical evidence | GAP OBSERVED; terminal/MQL/account permission attestation required before future arm |
+| Trading-permission preflight | corrected probe, NC-20–NC-24, source scan | CORRECTED OFFLINE; four runtime properties fail closed before `OrderSend`; Demo rerun not authorized |
 | Frozen contract sufficiency | correlation/query/negative-evidence gates | INSUFFICIENT FOR RETRY OR PHASE F — Fusion decision required |

@@ -46,6 +46,21 @@
     "magic_alone_is_correlation_authority": false,
     "historical_pre_materialization_records_are_not_backfilled": true
   },
+  "permission_preflight_correction": {
+    "required_for_post_correction_runs": [
+      "permission_preflight"
+    ],
+    "runtime_properties": [
+      "TERMINAL_TRADE_ALLOWED",
+      "MQL_TRADE_ALLOWED",
+      "ACCOUNT_TRADE_ALLOWED",
+      "ACCOUNT_TRADE_EXPERT"
+    ],
+    "all_must_be_true_before_order_send": true,
+    "failed_check_requires_send_attempted_zero": true,
+    "permission_change_requires_new_run_boundary": true,
+    "historical_evidence_is_not_backfilled": true
+  },
   "callback_semantics": "OBSERVATIONAL_NOT_AUTHORITY",
   "timeout_semantics": "AMBIGUOUS_NOT_NEGATIVE_EVIDENCE"
 }

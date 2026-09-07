@@ -17,7 +17,7 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 The package provides a default-disarmed, single-market-send measurement probe,
 an independent read-only active/history query probe,
 R0–R5 candidate classification, query/completeness and negative-evidence
-contracts, correlation candidate matrix, Tester/Demo classification, 19 offline
+contracts, correlation candidate matrix, Tester/Demo classification, 24 offline
 mutation controls, and explicit evidence schema.
 
 The fresh post-materialization build-6180 Demo/HEDGING pre-send environment is
@@ -34,8 +34,9 @@ self-verification document.
 
 ## Executed offline/compiler gates
 
-- F0 deliberate mutants: **19/19 PASS**, 0 failed, two deterministic runs;
-  digest `8605dd2aa8b054d71f8e9e4b49b91639cf8ca0a4ef3fdc7cd80e1e2c356b101`.
+- F0 deliberate mutants: **24/24 PASS**, 0 failed, two deterministic runs;
+  digest `7a0cd0816d66f86dd73283c4e44f734922b5fbdbb22d30ebfe9fa06b4f44f8f5`;
+  including four permission failures and one same-run permission-change mutant.
 - F0 source/isolation scan: **PASS**; one `OrderSend` occurrence exists only in
   the isolated default-disarmed Demo probe; production reverse dependencies 0;
   forbidden scope paths 0.
@@ -61,3 +62,9 @@ No durable correlation carrier, authoritative no-side-effect rule, broker
 retcode profile, visibility watermark, or reconnect behavior was proven. The
 run also exposed a missing terminal/MQL/account trading-permission preflight.
 Phase F0 is blocked pending Fusion review; Phase F remains unauthorized.
+
+Corrective preflight result: **SOURCE / COMPILE / OFFLINE GATES PASS; NOT
+EMPIRICALLY ARMED.** All four permission properties are captured once at
+initialization, printed in `F0_PERMISSIONS`, and required before
+`g_send_attempted=true`. A failed property returns `INIT_FAILED` with an explicit
+pre-call diagnostic, leaving `send_attempted=0`. No second run is authorized.

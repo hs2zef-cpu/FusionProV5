@@ -34,3 +34,8 @@ as authoritative proof of no side effect.
 Post-materialization evidence must record `SWV5_RUNTIME_STRATEGY_MAGIC`, its
 canonical SSOT path, and per-row Magic classification. Magic match alone is not
 correlation authority. Existing evidence files remain immutable observations.
+
+Evidence produced from the corrective preflight source must additionally record
+the `F0_PERMISSIONS` snapshot for `TERMINAL_TRADE_ALLOWED`,
+`MQL_TRADE_ALLOWED`, `ACCOUNT_TRADE_ALLOWED`, and `ACCOUNT_TRADE_EXPERT`.
+Historical evidence is never backfilled with those fields.
