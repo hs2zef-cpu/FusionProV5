@@ -19,7 +19,7 @@ Known platform constraints preserved by this profile:
 | Normal submission | 1 | OBSERVED ONCE; accepted BUY, full-volume deal, order-to-deal-to-position linkage |
 | Partial fill | 0 | DEMO REQUIRED / profile-dependent reproducibility |
 | Delayed processing | 0 | DEMO REQUIRED |
-| Reconnect | 0 | DEMO REQUIRED |
+| Read-only historical query across reconnect | 1 | Known entry and cleanup order/deal remained visible; open-position reconnect remains unproven |
 | Duplicate-looking transactions | 0 | DEMO REQUIRED |
 | Safe pressure/load observation | 0 | DEMO REQUIRED; operator-controlled |
 
@@ -40,3 +40,10 @@ later exposed the linked position, history order, and history deal. Arrival
 order remains observational and is not promoted to authority. This single run
 does not establish a general callback-order guarantee, duplicate-handling rule,
 partial-fill model, or reconnect behavior.
+
+Named empirical asymmetry `F0-EMP-MANUAL-CLEANUP-MAGIC-ZERO-ASYMMETRY`:
+the separately authorized manual cleanup exit used Magic `0` while its order
+and deal retained position ID `5055862979`. This is limited to the observed
+manual-cleanup path and must not be generalized to SL, TP, stop-out, or other
+broker-generated exits. The build-6182 reconnect check was query-only and did
+not test callbacks, unresolved submission, or open exposure.

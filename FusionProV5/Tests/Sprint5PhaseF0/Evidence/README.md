@@ -2,6 +2,15 @@
 
 Measured evidence inventory:
 
+- `F0-6182-POSITIVE-CONTROL-RECONNECT-001.json`: read-only build-6182
+  positive-control evidence. Ten fixed window/filter/depth cases produced the
+  expected inclusion, exclusion, enumeration, and explicit-error behavior both
+  before and after an attended same-terminal reconnect/restart boundary. The
+  unknown-position filter failed explicitly with `4753`. Ordinary queries
+  reported 0 positions, 0 active orders, 2 history orders, and 2 history deals;
+  all completeness remains `UNPROVEN`. Correlation is RUN-SCOPED /
+  NON-AUTHORITATIVE with cardinality-1 confounding. No broker mutation or
+  `OrderSend` occurred.
 - `F0-6180-SUCCESSFUL-BUY-CLEANUP-001.json`: attended Demo build-6180
   evidence from corrected source `e5411a5...`. Exactly one strategy BUY was
   submitted with runtime Magic `1179670069`, filled at `4413.493`, and

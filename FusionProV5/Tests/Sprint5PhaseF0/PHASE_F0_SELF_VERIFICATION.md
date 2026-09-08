@@ -52,6 +52,12 @@ self-verification document.
   **0 errors / 0 warnings**.
 - Read-only query probe: MetaEditor 6180 X64 Regular,
   **0 errors / 0 warnings**.
+- Build-6182 ordinary read-only query probe: MetaEditor 6182 X64 Regular,
+  **0 errors / 0 warnings**; compiled and installed EX5 SHA-256
+  `f2c9eb62309ae95f59cdbc334f510b05f40aa22657aa834ab7ade70db9fad1f7`.
+- Build-6182 positive-control probe: MetaEditor 6182 X64 Regular,
+  **0 errors / 0 warnings**; compiled and installed EX5 SHA-256
+  `1586dfb6e5a333a5bba80f41d9a3076d9723e23f62dc302ce06011c6943cda0a`.
 - Phase B regression: **139/139 PASS**.
 - Phase C regression: **22/22 PASS**.
 - Phase D regression: **318/318 PASS**.
@@ -83,5 +89,25 @@ the full `0.01` observed volume. No retry, second strategy entry, pending order,
 automatic close, or reconnect occurred. No further `OrderSend` is authorized.
 
 General broker behavior, a durable authoritative correlation carrier,
-authoritative negative-evidence rules, a visibility watermark, and reconnect
-behavior remain unproven.
+authoritative negative-evidence rules, a visibility watermark, and
+open-position/unresolved-submission reconnect behavior remain unproven. A later
+section records only the narrower read-only historical-query reconnect result.
+
+## Build-6182 non-mutating follow-up
+
+The ordinary query probe and the new positive-control probe were freshly
+compiled under MetaEditor build 6182; installed binaries matched the recorded
+SHA-256 hashes. The ten-case matrix produced identical outcomes before and
+after an attended same-terminal reconnect/restart. Known entry and cleanup
+orders/deals remained visible, include/exclude windows behaved as specified,
+depth 1/2/FULL enumerated the expected prefixes, the known-position filter
+returned both linked records, and the unknown-position filter failed explicitly
+with error `4753`.
+
+Classification: **POSITIVE-CONTROL BEHAVIOR PASS FOR TESTED
+WINDOWS/FILTERS/DEPTHS AND SURVIVES READ-ONLY RECONNECT.** This does not prove
+universal query completeness, authoritative global emptiness, a visibility
+watermark, open-position reconnect behavior, or durable correlation authority.
+The successful run's Magic/comment/ticket linkage is **RUN-SCOPED /
+NON-AUTHORITATIVE** and cardinality-1 confounded. No `OrderSend` or broker
+mutation occurred in the follow-up.

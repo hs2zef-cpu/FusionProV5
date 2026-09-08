@@ -15,6 +15,7 @@ def verify() -> dict:
     identity = identity_path.read_text(encoding="utf-8-sig")
     probe = (HERE / "SW_V5_S5_PHASE_F0_DEMO_PROFILE_PROBE.mq5").read_text(encoding="utf-8-sig")
     query_probe = (HERE / "SW_V5_S5_PHASE_F0_QUERY_PROBE.mq5").read_text(encoding="utf-8-sig")
+    positive_control_probe = (HERE / "SW_V5_S5_PHASE_F0_QUERY_POSITIVE_CONTROL.mq5").read_text(encoding="utf-8-sig")
     compile_manifest = (HERE / "SW_V5_S5_PHASE_F0_COMPILE.mq5").read_text(encoding="utf-8-sig")
     contracts = (HERE / "SW_V5_S5_PhaseF0_EvidenceContracts.mqh").read_text(encoding="utf-8-sig")
     controls = (HERE / "verify_phase_f0_negative_controls.py").read_text(encoding="utf-8-sig")
@@ -57,6 +58,21 @@ def verify() -> dict:
     assert guard_call < send_attempt_assignment < order_send_call
     assert probe.count("OrderSend(") == 1
     assert "OrderSend(" not in query_probe and "HistorySelect(" in query_probe
+    assert "OrderSend(" not in positive_control_probe
+    assert "HistorySelect(" in positive_control_probe
+    assert "HistorySelectByPosition(" in positive_control_probe
+    assert all(token in positive_control_probe for token in
+               ("WIDE_INCLUDE_FULL", "WIDE_INCLUDE_REPEAT_FULL",
+                "ENTRY_SECOND_INCLUDE_FULL", "BEFORE_ENTRY_EXCLUDE_FULL",
+                "AFTER_ENTRY_EXCLUDE_FULL", "CLEANUP_SECOND_INCLUDE_FULL",
+                "WIDE_INCLUDE_DEPTH_1", "WIDE_INCLUDE_DEPTH_2",
+                "POSITION_FILTER_KNOWN", "POSITION_FILTER_UNKNOWN",
+                "pagination_api=NONE_EXPOSED", "completeness=UNPROVEN",
+                "F0_PC_ATTEST", "ACCOUNT_COMPANY", "ACCOUNT_SERVER",
+                "ACCOUNT_TRADE_MODE", "ACCOUNT_MARGIN_MODE", "TERMINAL_BUILD",
+                "__MQLBUILD__", "TERMINAL_CONNECTED"))
+    assert not re.search(r"\b(?:OrderSend|OrderSendAsync|CTrade|PositionOpen|FileOpen|WebRequest)\s*\(",
+                         positive_control_probe)
     assert '#include "../../Configuration/SW_V5_RuntimeIdentityProfile.mqh"' in query_probe
     assert all(token in query_probe for token in
                ("RUNTIME_MAGIC_MATCH_NOT_SOLE_CORRELATION_AUTHORITY",
@@ -89,6 +105,7 @@ def verify() -> dict:
             "attended_demo_executed": False, "broker_invoking_probe_default_armed": False,
             "ordersend_occurrences_in_isolated_probe": probe.count("OrderSend("),
             "read_only_query_probe": True,
+            "read_only_positive_control_probe": True,
             "runtime_strategy_magic": runtime_magic,
             "runtime_magic_executable_literal_paths": executable_literal_paths,
             "permission_properties": list(permission_properties),

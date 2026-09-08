@@ -44,6 +44,12 @@ certifies completeness from row count and performs no broker mutation. Its
 Magic classification reports runtime match, fixture/reference, zero, or
 unrelated while explicitly denying Magic-only correlation authority.
 
+`SW_V5_S5_PHASE_F0_QUERY_POSITIVE_CONTROL.mq5` is a read-only build/run-boundary
+probe for the known F0 entry and cleanup records. Build-6182 PRE/POST reconnect
+evidence passed the fixed inclusion/exclusion/filter/depth matrix. Its result is
+limited to the tested controls; completeness remains `UNPROVEN`, and the
+observed linkage is RUN-SCOPED / NON-AUTHORITATIVE.
+
 `ATTENDED_DEMO_RUNBOOK.md` defines the mandatory operator-present safety gate.
 It is preparation only and does not authorize running the probe unattended.
 

@@ -76,3 +76,14 @@ The corrective four-property permission snapshot and fail-closed pre-call
 checks were empirically exercised by the successful run. No retry, second
 strategy entry, reconnect, pending order, or automatic close occurred. No
 additional `OrderSend` is authorized.
+
+## Build-6182 read-only follow-up
+
+Build 6180 remains the immutable successful send/cleanup profile. A separate
+build-6182 run boundary recompiled the ordinary query and new positive-control
+probes and performed no broker mutation. PRE/POST attestations matched this same
+Demo/HEDGING broker, server, account, and symbol profile. Both known entry and
+cleanup order/deal pairs remained visible across an attended same-terminal
+reconnect/restart, and the tested window/filter/depth controls behaved as
+specified. This profiles read-only historical visibility only. It does not
+extend the build-6180 send profile or authorize any new `OrderSend`.

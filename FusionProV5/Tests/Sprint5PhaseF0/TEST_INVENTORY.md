@@ -4,8 +4,8 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 
 | Test ID | Case | Classification | Current execution |
 |---|---|---|---|
-| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | PASS for build-6180 pre-send and armed-attempt observations; client-local rejection only |
-| F0-CORR-01 | comment preservation across active/history domains | F0 profile only / Demo required | NOT PROVEN; client-local rejection produced no broker-carried comment |
+| F0-ENV-01 | Demo/HEDGING/environment attestation | F0 profile only / Demo required | PASS for build-6180 successful BUY and historical local rejection; build-6182 read-only PRE/POST matched |
+| F0-CORR-01 | comment preservation across active/history domains | F0 profile only / Demo required | RUN-SCOPED / NON-AUTHORITATIVE observation; cardinality-1 prevents selectivity proof |
 | F0-CORR-02 | request_id reuse across sessions | F0 profile only / Demo required | OFFLINE mutant only |
 | F0-RET-01 | success acknowledgement, not confirmation | future Phase F Demo | OFFLINE invariant only |
 | F0-RET-02 | explicit rejection | F0 profile only / Demo required | CLIENT-LOCAL rejection observed; broker explicit rejection NOT PROVEN |
@@ -16,9 +16,11 @@ TEST ONLY / F0 / NOT FOR PRODUCTION.
 | F0-CB-01 | duplicate callback | F0 executed offline + future Demo | PASS via NC-06 |
 | F0-CB-02 | out-of-order callback | F0 executed offline + future Demo | PASS via NC-07 |
 | F0-FILL-01 | partial/delayed fill | BOTH REQUIRED / maybe manual-only | NOT RUN |
-| F0-CONN-01 | reconnect | DEMO REQUIRED | NOT RUN |
+| F0-CONN-01 | read-only historical visibility across reconnect | F0 profile only / Demo required | PASS for known entry/cleanup order/deal on build 6182; open-position/unresolved reconnect NOT PROVEN |
 | F0-OWN-01 | lease loss/takeover/stale owner | future Phase F Tester + Demo | PASS offline NC-09 only |
-| F0-QUERY-01 | incomplete/conflicting query | F0 executed offline + Demo required | PASS via NC-05/NC-13; post-attempt zero-row query remained correctly `UNPROVEN` |
+| F0-QUERY-01 | incomplete/conflicting query | F0 executed offline + Demo required | PASS via NC-05/NC-13; build-6182 positive controls PASS for tested matrix; completeness remains `UNPROVEN` |
+| F0-QUERY-02 | fixed include/exclude windows and client depth 1/2/FULL | F0 read-only Demo | PASS before and after build-6182 reconnect |
+| F0-QUERY-03 | known and unknown position filters | F0 read-only Demo | Known filter returned linked records; unknown filter failed explicitly with `4753` |
 | F0-EVID-01 | non-finite evidence | future Phase F Tester | NOT RUN |
 | F0-SPEC-01 | stale symbol specification | F0 executed offline + Demo required | PASS via NC-11 |
 | F0-UNIT-01 | unit mismatch | future Phase F Tester | NOT RUN |

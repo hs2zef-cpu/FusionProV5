@@ -16,6 +16,15 @@ retry or second strategy entry. Post-cleanup positions and active orders were
 reported as zero; query completeness remains `UNPROVEN`. No reconnect occurred,
 and no further `OrderSend` is authorized.
 
+## Read-only follow-up F0-6182-POSITIVE-CONTROL-RECONNECT-001
+
+This is a separate build/run boundary. Both PRE_RECONNECT and POST_RECONNECT
+reported terminal/MQL build 6182, Demo, Retail HEDGING, Exness Technologies Ltd
+/ Exness-MT5Trial6, XAUUSD, and `connected=1`. The ordinary and positive-control
+sources and freshly compiled/installed EX5 artifacts are identified by SHA-256
+in the evidence file. No build-6180 binary or current-build attestation was
+reused as build-6182 evidence. The run was read-only and made no `OrderSend`.
+
 ## Historical empirical run F0-6180-CLIENT-LOCAL-REJECT-001
 
 | Field | Result |

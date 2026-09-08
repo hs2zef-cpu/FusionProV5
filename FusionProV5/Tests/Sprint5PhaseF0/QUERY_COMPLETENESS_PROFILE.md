@@ -74,3 +74,37 @@ prior 41-second re-read, is archival and is not combined with this observation.
 Verdict: complete broker query evidence **has not been obtained**. Zero-row
 domains remain `UNPROVEN`, and empty-result and authoritative-no-side-effect
 claims are prohibited.
+
+## Build-6182 positive-control and reconnect follow-up
+
+The read-only follow-up used source-pinned probes compiled with MetaEditor 6182
+and the known entry order/deal `5055862979` / `4360221913` plus cleanup
+order/deal `5055880854` / `4360237506`. PRE_RECONNECT and POST_RECONNECT
+attestations matched: Demo, Retail HEDGING, Exness Technologies Ltd,
+Exness-MT5Trial6, XAUUSD, connected, terminal/MQL build 6182.
+
+| Control | Orders/deals exposed | Entry | Cleanup | Result |
+|---|---:|---:|---:|---|
+| wide include, full | 2 / 2 | yes | yes | PASS |
+| repeated wide include, full | 2 / 2 | yes | yes | PASS |
+| exact entry second | 1 / 1 | yes | no | PASS |
+| before-entry exclusion | 0 / 0 | no | no | PASS |
+| after-entry exclusion | 1 / 1 | no | yes | PASS |
+| exact cleanup second | 1 / 1 | no | yes | PASS |
+| wide, client depth 1 | first 1 / 1 | yes | no | PASS |
+| wide, client depth 2 | 2 / 2 | yes | yes | PASS |
+| known-position filter | 2 / 2 | yes | yes | PASS |
+| unknown-position filter | explicit failure `4753` | no | no | PASS (fail-closed observation) |
+
+Every outcome above was identical before and after the attended same-terminal
+reconnect/restart boundary. Ordinary 86,400-second queries immediately before
+and after reported positions `0`, active orders `0`, history orders `2`, and
+history deals `2`. The known full-volume exit linked by the same position ID
+continues to positively support closure of that one position. It does not make
+the current zero counts authoritative global emptiness.
+
+Classification: **POSITIVE-CONTROL BEHAVIOR PASS FOR TESTED
+WINDOWS/FILTERS/DEPTHS AND SURVIVES READ-ONLY RECONNECT.** Server pagination
+tokens are not exposed by these MQL APIs; depth 1/2/FULL are client enumeration
+controls. Universal broker query completeness, a visibility watermark, and
+authoritative global emptiness remain `UNPROVEN`.

@@ -47,10 +47,17 @@ also linked consistently for this one request. The Magic-zero manual cleanup
 retained the original position ID but correctly did not inherit strategy
 identity.
 
-This is positive run-scoped preservation evidence. It does not prove that the
-comment is immutable, collision-safe, durable across restart/reconnect, or an
-authoritative request identity. Magic remains strategy scope and is never sole
-correlation authority.
+This linkage is classified **RUN-SCOPED / NON-AUTHORITATIVE**. Because exactly
+one strategy position existed, cardinality-1 confounding prevents the run from
+proving carrier selectivity or durable correlation authority. The comment may
+still be rewritten, truncated, or collide in other runs. Magic remains strategy
+scope and is never sole correlation authority.
 
-Verdict: **RUN-SCOPED MULTI-FIELD LINKAGE OBSERVED; DURABLE AUTHORITATIVE
-CORRELATION CARRIER REMAINS UNPROVEN.**
+Named finding `F0-EMP-MANUAL-CLEANUP-MAGIC-ZERO-ASYMMETRY`: the separately
+authorized manual cleanup order/deal carried Magic `0` while retaining the
+original position ID. This finding is limited to the observed manual-cleanup
+path. It is not evidence about SL, TP, stop-out, or another broker-initiated
+exit path.
+
+Verdict: **RUN-SCOPED / NON-AUTHORITATIVE; DURABLE AUTHORITATIVE CORRELATION
+CARRIER AND SELECTIVITY REMAIN UNPROVEN.**
