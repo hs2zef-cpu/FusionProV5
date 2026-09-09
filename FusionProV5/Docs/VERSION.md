@@ -4,17 +4,17 @@
 
 ### Current Version
 
-Sprint 5 Phase F0 — Broker Profile / Evidence Gate
+Sprint 5 Phase F — Entry Contract Candidate
 
 ### Date
 
-2026-09-04
+2026-09-08
 
 ### Status
 
-**PHASE F0 AUTHORIZED FOR PROFILE/EVIDENCE WORK ONLY — PHASE F IMPLEMENTATION NOT AUTHORIZED**
+**CANDIDATE / IN REVIEW — BROKER ADAPTER IMPLEMENTATION NOT AUTHORIZED**
 
-Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D/E are closed/pass. Fusion authorizes Phase F0 only for broker-profile, evidence-contract, measurement, and isolated test-harness work. Attended Demo probes may be used solely for empirical F0 profiling. Phase F implementation, a production Broker Adapter, general execution, unattended Demo, live/real-money trading, production VPS, Phase G, Architecture Lock, and main merge remain unauthorized or prohibited. Earlier revision records below remain historical.
+Sprint 4 remains the authorized architecture baseline. Architecture Review and Phase B/C/D/E/F0 are closed/pass. Fusion authorizes Phase F only for entry-contract, ADR, verifier, and test-fixture work. Broker Adapter implementation or invocation, unattended Demo, live/real-money trading, production VPS, Phase G, Architecture Lock, and main merge remain unauthorized or prohibited. Earlier revision records below remain historical.
 
 - Architecture Lock: **NOT YET GRANTED**
 - Runtime authorization: **NOT GRANTED**
@@ -30,21 +30,22 @@ Sprint 4 remains the authorized architecture baseline. Architecture Review and P
 - Phase D.5 independent re-audit: **PASS — CRITICAL NONE / MAJOR NONE / MINOR NONE**
 - Phase E: **CLOSED / PASS**
 - Phase E AiPASS post-patch re-review: **PASS — NO CRITICAL / MAJOR FINDINGS; M-1 CLOSED**
-- Phase F0: **AUTHORIZED — PROFILE/EVIDENCE WORK ONLY**
-- Phase F implementation and Phase G: **NOT AUTHORIZED**
+- Phase F0: **CLOSED / PASS** at `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26`
+- Phase F entry contract: **CANDIDATE / IN REVIEW**
+- Phase F Broker Adapter implementation and Phase G: **NOT AUTHORIZED**
 - Production/live trading: **PROHIBITED**
 - Unattended Demo: **NOT AUTHORIZED**
 
 ## Current Sprint 5 Work
 
-Sprint 5 Phase F0 — Broker Profile / Evidence Gate
+Sprint 5 Phase F — Entry Contract Candidate
 
-- Status: **AUTHORIZED FOR PROFILE/EVIDENCE WORK ONLY**
-- Branch base: Phase E governance closure `36f6017e17fac75aad1b1b92dc90065fed0cf9b1`
+- Status: **CANDIDATE / IN REVIEW — CONTRACT/ADR/VERIFIER ONLY**
+- Branch base: Phase F0 closure `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26`
 - Architecture authority: `31e76411829e2f2e6acb24740ddca32b886969e0`
-- Scope: exact attended-Demo broker/platform profile, evidence contracts,
-  isolated measurement probes, deterministic offline adversarial harnesses, and
-  Phase-F entry sufficiency assessment; no production Broker Adapter
+- Scope: pure authoritative reconciliation-evidence contract, ADR, deterministic
+  offline oracle, negative controls, traceability, and compatibility analysis;
+  no production Broker Adapter or broker invocation
 - Independent Phase B.3 re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
 - Phase B gate: **CLOSED / PASS**
 - Independent Phase C.2 final re-audit: **PASS — Critical NONE / Major NONE / Minor NONE**
@@ -53,8 +54,9 @@ Sprint 5 Phase F0 — Broker Profile / Evidence Gate
 - D0 decisions: **SQLite/MQL5 common-folder candidate with exact CAS and `TimeCurrent()` observation policy; separate fail-closed genesis authority**
 - AiPASS post-patch re-review: **PASS — NO CRITICAL / MAJOR FINDINGS; M-1 CLOSED**
 - Phase E: **CLOSED / PASS**
-- Phase F0: **AUTHORIZED FOR PROFILE/EVIDENCE WORK ONLY**
-- Phase F/G implementation: **NOT AUTHORIZED**
+- Phase F0: **CLOSED / PASS**
+- Phase F entry contract: **CANDIDATE / IN REVIEW**
+- Phase F Broker Adapter / Phase G implementation: **NOT AUTHORIZED**
 - Runtime implementation: **NOT AUTHORIZED**
 
 ## Current Authorized Baseline
@@ -131,8 +133,7 @@ Define production Basket, Persistence, Execution, Risk, Statistics, Duplicate In
 
 ## Next Authorized Action
 
-Complete only the Phase F0 broker-profile/evidence gate. Attended Demo probes
-must remain isolated, operator-triggered, minimal, and test-only. Do not begin
-Phase F implementation, create a production Broker Adapter, use unattended Demo
-or live accounts, merge main, or authorize Phase G, Architecture Lock, runtime,
-or production readiness.
+Complete only the Phase F entry-contract candidate for authoritative positive,
+negative, and ambiguous reconciliation evidence. Do not implement or invoke a
+Broker Adapter, use Demo/live trading, merge main, or authorize Phase G,
+Architecture Lock, runtime, or production readiness.

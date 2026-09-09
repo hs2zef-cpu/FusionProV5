@@ -5,8 +5,8 @@
 
 | Metadata | Value |
 |---|---|
-| Version | 5.12 |
-| Date | 2026-09-04 |
+| Version | 5.13 |
+| Date | 2026-09-08 |
 | Status | **MERGED / AUDITED / UNLOCKED — FORMAL APPROVAL PENDING** |
 | Authorized Baseline | **Sprint 4 Architecture** |
 | Merged Contract Package | **Production Contract V5 at `87f77c8b0b9253c2a851540085f8b7ce14cf2e52`** |
@@ -61,6 +61,7 @@
 | 5.10 | 2026-09-04 | Recorded independent Phase D.5 PASS with no Critical, Major, or Minor findings; closed Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35`; authorized Phase E integration-conformance fixtures only. Phase F/G, runtime/platform/broker, MT5, main merge, and production remain unauthorized. |
 | 5.11 | 2026-09-04 | Recorded Fusion's final Phase E gate **CLOSED / PASS** at technical source `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062`, after AiPASS post-patch re-review **PASS — NO CRITICAL / MAJOR FINDINGS** and closure of M-1. This is governance closure only; Phase F/G, Architecture Lock, main merge, production/runtime, physical persistence/platform clock/real broker, and MT5 behavioral evidence remain unauthorized, unimplemented, or unproven as applicable. |
 | 5.12 | 2026-09-04 | Authorized Sprint 5 Phase F0 for broker-profile, evidence-contract, measurement, and isolated test-harness work only. Attended Demo probes may be used solely for empirical profiling. Phase F implementation, production Broker Adapter/general execution, unattended Demo, live/real-money accounts, production VPS, Phase G, Architecture Lock, and main merge remain unauthorized or prohibited. |
+| 5.13 | 2026-09-08 | Recorded Phase F0 **CLOSED / PASS** at `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26` and opened Phase F entry-contract work as **CANDIDATE / IN REVIEW** for authoritative reconciliation evidence semantics only. Broker Adapter implementation/invocation, Phase G, Architecture Lock, main merge, production, and live trading remain unauthorized. |
 
 ## Purpose
 
@@ -301,7 +302,8 @@ A limitation becomes a defect only when it violates an approved Sprint specifica
 | Authorized — Documentation-Only ADR Resolution | Sprint 5 Phase D0 physical store/CAS/lease-clock and genesis ADRs |
 | Phase D Persistence/Restart Gate Closed / PASS | Sprint 5 Phase D at `f0434d0e84907b1d454deec0abb899c16b35cd35` |
 | Phase E Integrated Fixture Gate Closed / PASS | Sprint 5 Phase E at `75351935154c57400525e16c4dfceb3103f8c740`, tree `370d4dc7c0caac153efef23521c0c6f66c9be062` |
-| Authorized — Profile/Evidence Work Only | Sprint 5 Phase F0 broker/platform profiling and isolated attended-Demo measurement |
+| Closed / PASS | Sprint 5 Phase F0 at `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26` |
+| Candidate / In Review — Contract Work Only | Sprint 5 Phase F authoritative reconciliation-evidence entry contract |
 | Unauthorized / Experimental | `SPRINT4_SAFETY_FOUNDATION` |
 
 The `SPRINT4_SAFETY_FOUNDATION` folder:
@@ -539,4 +541,4 @@ Before performing any future work, every AI agent must:
 
 ## Next Authorized Action
 
-"Complete only Sprint 5 Phase F0 broker-profile/evidence work. Attended Demo probes must remain isolated, operator-triggered, minimal, and test-only. Phase F implementation, a production Broker Adapter, unattended Demo, live/real-money accounts, production VPS, Phase G, Architecture Lock, main merge, production/runtime, and production readiness remain unauthorized or prohibited."
+"Complete only Sprint 5 Phase F entry-contract, ADR, verifier, and test-fixture work for authoritative reconciliation evidence. Broker Adapter implementation or invocation, Demo/live trading, Phase G, Architecture Lock, main merge, production/runtime, and production readiness remain unauthorized or prohibited."

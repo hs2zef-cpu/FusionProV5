@@ -1,22 +1,27 @@
 # Sprint 5 Phase F0 Authorization Status
 
-Date: 2026-09-04
+Date: 2026-09-08
 
 ## Decision
 
-**PHASE F0 — AUTHORIZED FOR PROFILE/EVIDENCE WORK ONLY**
+**PHASE F0 — CLOSED / PASS**
 
-**PHASE F — IMPLEMENTATION NOT AUTHORIZED**
+Closure evidence commit: `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26`.
+
+**PHASE F ENTRY CONTRACT — CANDIDATE / IN REVIEW**
+
+**PHASE F BROKER ADAPTER IMPLEMENTATION — NOT AUTHORIZED**
 
 Phase E remains **CLOSED / PASS** at governance closure
-`36f6017e17fac75aad1b1b92dc90065fed0cf9b1`. Phase F0 is limited to an exact
-broker/platform profile, evidence-contract design, measurement, isolated
-test-only probes, deterministic offline adversarial harnesses, and assessment of
-whether frozen contracts are sufficient for a later Phase F decision.
+`36f6017e17fac75aad1b1b92dc90065fed0cf9b1`. Phase F0 completed its exact
+broker/platform profile, evidence-contract measurement, isolated test-only
+probes, deterministic offline adversarial harnesses, and Phase-F entry
+sufficiency assessment. Its evidence remains bounded by the recorded profile
+and run limitations.
 
-Attended Demo measurement/probe scripts may be used solely for empirical F0
-profiling after the environment is positively attested as Demo and HEDGING. This
-does not authorize a Phase-F Broker Adapter or general trade execution path.
+No further F0 mutation is authorized by this closure record. Phase F authority
+is limited to the separately recorded entry-contract/ADR/verifier candidate and
+does not authorize a Broker Adapter or general trade execution path.
 
 ## Explicit prohibitions
 
@@ -30,8 +35,7 @@ does not authorize a Phase-F Broker Adapter or general trade execution path.
 - Merge into `main`: **NOT AUTHORIZED**
 - Production/runtime readiness: **NOT GRANTED**
 
-Every broker-invoking probe must be clearly marked F0 / TEST / DEMO ONLY,
-operator-triggered, minimal volume, isolated from production dependencies, and
-incapable of recurring or signal-driven trading. If Demo/HEDGING status,
-isolation, query completeness, safe correlation, or authoritative negative
-evidence cannot be proven, F0 must stop for Fusion adjudication.
+Historical broker-invoking F0 evidence remains classified TEST / DEMO ONLY and
+does not establish universal query completeness, a visibility watermark,
+durable correlation authority, production behavior, or permission for another
+broker invocation.

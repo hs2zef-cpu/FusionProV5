@@ -9,12 +9,11 @@ Current governance: Phase D is **CLOSED / PASS** at
 returned **PASS — NO CRITICAL / MAJOR FINDINGS**, and M-1 is **CLOSED**.
 
 [Sprint 5 Phase F0](FusionProV5/Docs/SPRINT5_PHASE_F0_AUTHORIZATION_STATUS.md)
-is authorized only for broker-profile, evidence-contract, measurement, and
-isolated test-harness work. Attended Demo measurement probes are allowed solely
-for F0 empirical profiling. Phase F implementation, a production Broker Adapter,
-general execution, unattended Demo, live/real-money accounts, production VPS,
-Phase G, Architecture Lock, main merge, and production readiness remain
-unauthorized or prohibited.
+is **CLOSED / PASS** at `9ef04d4be9d6a2ffcd1369dd71b5e14dcebd8d26`.
+[Sprint 5 Phase F entry-contract work](FusionProV5/Docs/SPRINT5_PHASE_F_ENTRY_CONTRACT_STATUS.md)
+is authorized only as a **CANDIDATE / IN REVIEW** contract, ADR, verifier, and
+test-fixture package. A production Broker Adapter, broker invocation, Phase G,
+Architecture Lock, main merge, and production readiness remain unauthorized.
 
 ## Purpose
 
@@ -54,7 +53,7 @@ The Final Independent Merge Audit passed with no Critical or Major findings. All
 
 The audited evidence commit `87f77c8b0b9253c2a851540085f8b7ce14cf2e52` was fast-forwarded from old main `ed8b2b61ff83982faece7b7babd5ae6fd993e5f4` into local and remote `main`; no merge commit was created, and the candidate branch was retained. Its frozen technical source remains `ef556a94636e977e35e961be28ae03c9838615d4` with tree `19db1538ab3ddfc982006ba89d43cf01c5e51f18`; the merged evidence tree is `c088ae72ee66e1896d7a6ed0ad62d1fec190f6b3`, and the D5 verification digest is `fe46965aa392df1a1dcc1cd919b77581445a589a1c694217ddb4a5b489617778`. Earlier V4 and Sprint 4.8 source/evidence generations remain superseded historical records.
 
-Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D and Phase E are **CLOSED / PASS**. Phase F0 is **AUTHORIZED FOR PROFILE/EVIDENCE WORK ONLY**; it is not Phase F implementation authorization. Physical persistence, production Broker Adapter/runtime, Signal-to-Execution wiring, unattended Demo, live trading, Phase G, Architecture Lock, and merge to main remain unauthorized.
+Sprint 3.2.1 remains the frozen Signal Engine baseline. Phase D, Phase E, and Phase F0 are **CLOSED / PASS**. Phase F entry-contract work is **CANDIDATE / IN REVIEW** and does not authorize Broker Adapter implementation. Physical persistence, production runtime, Signal-to-Execution wiring, unattended Demo, live trading, Phase G, Architecture Lock, and merge to main remain unauthorized.
 
 ## Repository Workflow
 
