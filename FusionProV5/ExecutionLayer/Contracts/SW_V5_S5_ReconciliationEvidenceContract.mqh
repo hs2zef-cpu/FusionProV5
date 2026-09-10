@@ -13,9 +13,15 @@
 #define SWV5S5_F_POLICY_ID "SWV5-SPRINT5-PHASE-F-ENTRY-V1"
 #define SWV5S5_F_CORRELATION_POLICY_ID "SWV5-SPRINT5-BROKER-CORRELATION-PROOF-V1"
 #define SWV5S5_F_NEGATIVE_POLICY_ID "SWV5-SPRINT5-AUTHORITATIVE-NEGATIVE-EVIDENCE-V1"
+#define SWV5S5_F_CAPABILITY_PROOF_ID "SWV5-SPRINT5-INDEPENDENT-QUERY-CAPABILITY-PROOF-V1"
 #define SWV5S5_F_DOMAIN_PROFILE "SWV5-SPRINT5-PHASE-F-P-BROKER-PROFILE-V1"
+#define SWV5S5_F_DOMAIN_NO_CALL_PROOF "SWV5-SPRINT5-PHASE-F-NO-CALL-PROOF-V1"
+#define SWV5S5_F_DOMAIN_CAPABILITY_PROOF "SWV5-SPRINT5-PHASE-F-CAPABILITY-PROOF-V1"
+#define SWV5S5_F_DOMAIN_CORRELATION_POLICY "SWV5-SPRINT5-PHASE-F-CORRELATION-POLICY-V1"
+#define SWV5S5_F_DOMAIN_NEGATIVE_POLICY "SWV5-SPRINT5-PHASE-F-NEGATIVE-POLICY-V1"
 #define SWV5S5_F_DOMAIN_POSITIVE_EVIDENCE "SWV5-SPRINT5-PHASE-F-POSITIVE-EVIDENCE-V1"
-#define SWV5S5_F_DOMAIN_QUERY_OBSERVATION "SWV5-SPRINT5-PHASE-F-QUERY-OBSERVATION-V1"
+#define SWV5S5_F_DOMAIN_NEGATIVE_OBSERVATION "SWV5-SPRINT5-PHASE-F-NEGATIVE-OBSERVATION-V1"
+#define SWV5S5_F_DOMAIN_RECONCILIATION_RESULT "SWV5-SPRINT5-PHASE-F-RECONCILIATION-RESULT-V1"
 
 enum SWV5S5_F_ReconciliationState
 {
@@ -86,6 +92,15 @@ struct SWV5S5_F_ReconciliationBinding
    string invocation_claim_id;
    string admission_snapshot_digest;
    string claim_record_digest;
+   string pinned_correlation_policy_id;
+   uint pinned_correlation_policy_version;
+   string pinned_correlation_policy_digest;
+   string pinned_negative_policy_id;
+   uint pinned_negative_policy_version;
+   string pinned_negative_policy_digest;
+   string pinned_capability_proof_id;
+   uint pinned_capability_proof_version;
+   string pinned_capability_proof_digest;
    datetime claimed_at;
    ulong claim_clock_sequence;
    SWV5_OwnershipFence claim_ownership_fence;
@@ -106,6 +121,48 @@ struct SWV5S5_F_ReconciliationBinding
    double requested_volume;
    double persisted_confirmed_volume;
    double persisted_residual_volume;
+   string persisted_terminal_evidence_digest;
+};
+
+// Digest-bound proof from the authoritative local execution store. Broker
+// observations can never create this proof or manufacture NO_CALL.
+struct SWV5S5_F_NoCallProof
+{
+   SWV5_ContractVersion contract_version;
+   SWV5S5_F_ProfileScope profile;
+   SWV5_ExecutionRequestIdentity request_identity;
+   SWV5S5_SubmissionAuthorityState submission_state;
+   bool claim_record_absent;
+   bool invocation_record_absent;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+   string store_revision;
+   ulong observation_sequence;
+   datetime observed_at;
+   string proof_digest;
+};
+
+// This proof is governed independently from the adapter/read paths whose
+// behavior it qualifies. The adapter cannot approve or author its own proof.
+struct SWV5S5_F_CapabilityProof
+{
+   SWV5_ContractVersion contract_version;
+   string artifact_id;
+   uint artifact_version;
+   string broker_profile_id;
+   string broker_profile_digest;
+   SWV5_ComponentAuthority issuing_component;
+   SWV5_AuthoritySource authority_source;
+   string proof_source_reference;
+   string approval_reference;
+   datetime approved_at;
+   datetime valid_from;
+   datetime valid_until;
+   bool correlation_capability_proven;
+   bool query_completeness_capability_proven;
+   bool visibility_watermark_proven;
+   uint proven_visibility_lag_seconds;
+   string proof_digest;
 };
 
 struct SWV5S5_F_CorrelationPolicy
@@ -138,7 +195,9 @@ struct SWV5S5_F_TargetedPositiveEvidence
    string correlation_policy_id;
    uint correlation_policy_version;
    string correlation_policy_digest;
-   bool correlation_capability_proven;
+   string capability_proof_id;
+   uint capability_proof_version;
+   string capability_proof_digest;
    bool independently_query_confirmed;
    bool magic_used_as_sole_authority;
    bool comment_used_as_sole_authority;
@@ -177,7 +236,9 @@ struct SWV5S5_F_NegativeQueryObservation
    string correlation_policy_id;
    uint correlation_policy_version;
    string correlation_policy_digest;
-   bool correlation_capability_proven;
+   string capability_proof_id;
+   uint capability_proof_version;
+   string capability_proof_digest;
    bool magic_used_as_sole_authority;
    bool comment_used_as_sole_authority;
    SWV5_AuthoritativeQuerySet broker_query_set;
@@ -192,6 +253,10 @@ struct SWV5S5_F_NegativeQueryObservation
    datetime history_to;
    ulong connection_generation;
    ulong restart_generation;
+   string broker_read_path_id;
+   string execution_read_path_id;
+   string broker_authority_instance_id;
+   string execution_authority_instance_id;
    uint matching_positions;
    uint matching_orders;
    uint matching_deals;
@@ -212,8 +277,9 @@ struct SWV5S5_F_NegativeEvidencePolicy
    SWV5_AuthoritySource authority_source;
    string approval_reference;
    datetime approved_at;
-   bool query_completeness_capability_proven;
-   bool visibility_watermark_proven;
+   string capability_proof_id;
+   uint capability_proof_version;
+   string capability_proof_digest;
    ulong required_broker_flags;
    ulong required_execution_flags;
    uint minimum_stable_observations;
@@ -231,6 +297,9 @@ struct SWV5S5_F_ReconciliationInput
    SWV5S5_F_SubmissionObservationKind observation_kind;
    SWV5S5_F_ReconciliationBinding binding;
    SWV5S5_F_CorrelationPolicy correlation_policy;
+   SWV5S5_F_CapabilityProof capability_proof;
+   bool no_call_proof_present;
+   SWV5S5_F_NoCallProof no_call_proof;
    bool after_restart_or_takeover;
    bool positive_evidence_present;
    SWV5S5_F_TargetedPositiveEvidence positive_evidence;
@@ -252,6 +321,10 @@ struct SWV5S5_F_ReconciliationResult
    bool requires_new_admission_for_any_future_attempt;
    double cumulative_confirmed_volume;
    double residual_volume;
+   bool residual_is_submission_authority;
+   bool requires_new_request_identity_for_residual;
+   string authoritative_evidence_digest;
+   string result_digest;
    string reason_code;
 };
 
@@ -376,6 +449,84 @@ bool SWV5S5_F_IsQuerySetExact(const SWV5_AuthoritativeQuerySet &query,
       SWV5S5_IsDigest64Lower(query.snapshot_digest);
 }
 
+bool SWV5S5_F_DeriveNoCallProofDigest(const SWV5S5_F_NoCallProof &proof,string &digest)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalString("profile_digest",proof.profile.profile_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalRequestIdentity("request",proof.request_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("submission_state",proof.submission_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("claim_record_absent",proof.claim_record_absent,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("invocation_record_absent",proof.invocation_record_absent,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("issuing_component",proof.issuing_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("authority_source",proof.authority_source,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("store_revision",proof.store_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("observation_sequence",proof.observation_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("observed_at",proof.observed_at,f)) return false; body+=f;
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_NO_CALL_PROOF,body,digest);
+}
+
+bool SWV5S5_F_IsNoCallProofValid(const SWV5S5_F_ReconciliationBinding &binding,
+                                  const SWV5S5_F_NoCallProof &proof)
+{
+   string digest;
+   return SWV5S5_F_IsVersion(proof.contract_version) &&
+      SWV5S5_F_EqualProfile(binding.profile,proof.profile) &&
+      SWV5S5_EqualRequestIdentity(binding.request_identity,proof.request_identity) &&
+      proof.submission_state==binding.submission_state &&
+      (proof.submission_state==SWV5S5_COMMITTED_NOT_INVOKED ||
+       proof.submission_state==SWV5S5_INVALIDATED_BEFORE_CLAIM) &&
+      proof.claim_record_absent && proof.invocation_record_absent &&
+      proof.issuing_component==SWV5_COMPONENT_AUTHORITY_EXECUTION &&
+      proof.authority_source==SWV5_AUTHORITY_EXECUTION_REQUEST_STATE &&
+      proof.store_revision==binding.expected_store_revision &&
+      proof.observation_sequence>binding.expected_execution_query_high_watermark &&
+      proof.observed_at>0 && SWV5S5_F_DeriveNoCallProofDigest(proof,digest) &&
+      proof.proof_digest==digest;
+}
+
+bool SWV5S5_F_DeriveCapabilityProofDigest(const SWV5S5_F_CapabilityProof &proof,string &digest)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalString("artifact_id",proof.artifact_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("artifact_version",proof.artifact_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("profile_id",proof.broker_profile_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("profile_digest",proof.broker_profile_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("issuing_component",proof.issuing_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("authority_source",proof.authority_source,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("proof_source_reference",proof.proof_source_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("approval_reference",proof.approval_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("approved_at",proof.approved_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("valid_from",proof.valid_from,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("valid_until",proof.valid_until,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("correlation_capability",proof.correlation_capability_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("query_completeness",proof.query_completeness_capability_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("visibility_watermark",proof.visibility_watermark_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("visibility_lag_seconds",proof.proven_visibility_lag_seconds,f)) return false; body+=f;
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_CAPABILITY_PROOF,body,digest);
+}
+
+bool SWV5S5_F_IsCapabilityProofValid(const SWV5S5_F_ReconciliationBinding &binding,
+                                      const SWV5S5_F_CapabilityProof &proof)
+{
+   string digest;
+   return SWV5S5_F_IsVersion(proof.contract_version) &&
+      proof.artifact_id==SWV5S5_F_CAPABILITY_PROOF_ID && proof.artifact_version>0 &&
+      proof.artifact_id==binding.pinned_capability_proof_id &&
+      proof.artifact_version==binding.pinned_capability_proof_version &&
+      proof.broker_profile_id==binding.profile.profile_id &&
+      proof.broker_profile_digest==binding.profile.profile_digest &&
+      proof.issuing_component==SWV5_COMPONENT_AUTHORITY_OPERATOR &&
+      proof.authority_source==SWV5_AUTHORITY_OPERATOR &&
+      proof.issuing_component!=SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER &&
+      proof.proof_source_reference!="" && proof.approval_reference!="" &&
+      proof.approved_at>0 && proof.approved_at<=binding.claimed_at &&
+      proof.valid_from>0 && proof.valid_from<=binding.claimed_at &&
+      (proof.valid_until==0 || proof.valid_until>=binding.claimed_at) &&
+      proof.correlation_capability_proven &&
+      SWV5S5_F_DeriveCapabilityProofDigest(proof,digest) &&
+      proof.proof_digest==digest && proof.proof_digest==binding.pinned_capability_proof_digest;
+}
+
 bool SWV5S5_F_DeriveCorrelationPolicyDigest(const SWV5S5_F_CorrelationPolicy &policy,
                                              string &digest)
 {
@@ -394,7 +545,7 @@ bool SWV5S5_F_DeriveCorrelationPolicyDigest(const SWV5S5_F_CorrelationPolicy &po
    if(!SWV5S5_CanonicalBool("ordered_deal_set_required",policy.ordered_deal_set_required,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("magic_is_strategy_scope_only",policy.magic_is_strategy_scope_only,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("comment_is_non_authoritative",policy.comment_is_non_authoritative,f)) return false; body+=f;
-   return SWV5S5_DomainDigest(SWV5S5_F_CORRELATION_POLICY_ID,body,digest);
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_CORRELATION_POLICY,body,digest);
 }
 
 bool SWV5S5_F_IsCorrelationPolicyValid(const SWV5S5_F_ReconciliationBinding &binding,
@@ -403,6 +554,8 @@ bool SWV5S5_F_IsCorrelationPolicyValid(const SWV5S5_F_ReconciliationBinding &bin
    string digest;
    return SWV5S5_F_IsVersion(policy.contract_version) &&
       policy.policy_id==SWV5S5_F_CORRELATION_POLICY_ID && policy.policy_version==1 &&
+      policy.policy_id==binding.pinned_correlation_policy_id &&
+      policy.policy_version==binding.pinned_correlation_policy_version &&
       policy.broker_profile_id==binding.profile.profile_id &&
       policy.broker_profile_digest==binding.profile.profile_digest &&
       policy.issuing_component==SWV5_COMPONENT_AUTHORITY_OPERATOR &&
@@ -411,7 +564,8 @@ bool SWV5S5_F_IsCorrelationPolicyValid(const SWV5S5_F_ReconciliationBinding &bin
       policy.broker_order_identity_required && policy.deal_order_link_required &&
       policy.position_identifier_link_required && policy.ordered_deal_set_required &&
       policy.magic_is_strategy_scope_only && policy.comment_is_non_authoritative &&
-      SWV5S5_F_DeriveCorrelationPolicyDigest(policy,digest) && policy.policy_digest==digest;
+      SWV5S5_F_DeriveCorrelationPolicyDigest(policy,digest) && policy.policy_digest==digest &&
+      policy.policy_digest==binding.pinned_correlation_policy_digest;
 }
 
 bool SWV5S5_F_DerivePositiveEvidenceDigest(const SWV5S5_F_TargetedPositiveEvidence &evidence,string &digest)
@@ -424,7 +578,9 @@ bool SWV5S5_F_DerivePositiveEvidenceDigest(const SWV5S5_F_TargetedPositiveEviden
    if(!SWV5S5_CanonicalString("correlation_policy",evidence.correlation_policy_id,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("correlation_policy_version",evidence.correlation_policy_version,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("correlation_policy_digest",evidence.correlation_policy_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalBool("correlation_capability_proven",evidence.correlation_capability_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_id",evidence.capability_proof_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("capability_proof_version",evidence.capability_proof_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_digest",evidence.capability_proof_digest,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("independently_query_confirmed",evidence.independently_query_confirmed,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("magic_used_as_sole_authority",evidence.magic_used_as_sole_authority,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("comment_used_as_sole_authority",evidence.comment_used_as_sole_authority,f)) return false; body+=f;
@@ -451,9 +607,10 @@ bool SWV5S5_F_DerivePositiveEvidenceDigest(const SWV5S5_F_TargetedPositiveEviden
 }
 
 bool SWV5S5_F_IsPositiveEvidenceValid(const SWV5_ContractValidationContext &context,
-                                      const SWV5S5_F_ReconciliationBinding &binding,
-                                      const SWV5S5_F_CorrelationPolicy &policy,
-                                      const SWV5S5_F_TargetedPositiveEvidence &evidence)
+                                       const SWV5S5_F_ReconciliationBinding &binding,
+                                       const SWV5S5_F_CorrelationPolicy &policy,
+                                       const SWV5S5_F_CapabilityProof &capability_proof,
+                                       const SWV5S5_F_TargetedPositiveEvidence &evidence)
 {
    string digest;
    const ulong required=SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS;
@@ -466,7 +623,10 @@ bool SWV5S5_F_IsPositiveEvidenceValid(const SWV5_ContractValidationContext &cont
       evidence.correlation_policy_id==SWV5S5_F_CORRELATION_POLICY_ID &&
       evidence.correlation_policy_version==policy.policy_version &&
       evidence.correlation_policy_digest==policy.policy_digest &&
-      evidence.correlation_capability_proven &&
+      SWV5S5_F_IsCapabilityProofValid(binding,capability_proof) &&
+      evidence.capability_proof_id==capability_proof.artifact_id &&
+      evidence.capability_proof_version==capability_proof.artifact_version &&
+      evidence.capability_proof_digest==capability_proof.proof_digest &&
       evidence.independently_query_confirmed && !evidence.magic_used_as_sole_authority &&
       !evidence.comment_used_as_sole_authority &&
       SWV5S5_F_IsQuerySetExact(evidence.query_set,required,
@@ -500,7 +660,9 @@ bool SWV5S5_F_DeriveNegativeObservationDigest(const SWV5S5_F_NegativeQueryObserv
    if(!SWV5S5_CanonicalString("correlation_policy",observation.correlation_policy_id,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("correlation_policy_version",observation.correlation_policy_version,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("correlation_policy_digest",observation.correlation_policy_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalBool("correlation_capability_proven",observation.correlation_capability_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_id",observation.capability_proof_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("capability_proof_version",observation.capability_proof_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_digest",observation.capability_proof_digest,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("magic_used_as_sole_authority",observation.magic_used_as_sole_authority,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("comment_used_as_sole_authority",observation.comment_used_as_sole_authority,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("broker_query_digest",observation.broker_query_set.snapshot_digest,f)) return false; body+=f;
@@ -515,13 +677,17 @@ bool SWV5S5_F_DeriveNegativeObservationDigest(const SWV5S5_F_NegativeQueryObserv
    if(!SWV5S5_CanonicalDatetime("history_to",observation.history_to,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("connection_generation",observation.connection_generation,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("restart_generation",observation.restart_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("broker_read_path_id",observation.broker_read_path_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("execution_read_path_id",observation.execution_read_path_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("broker_authority_instance_id",observation.broker_authority_instance_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("execution_authority_instance_id",observation.execution_authority_instance_id,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("matching_positions",observation.matching_positions,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("matching_orders",observation.matching_orders,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("matching_deals",observation.matching_deals,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("matching_transactions",observation.matching_transactions,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("matching_pending",observation.matching_pending_requests,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("unrelated_rows",observation.unrelated_rows,f)) return false; body+=f;
-   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_QUERY_OBSERVATION,body,digest);
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_NEGATIVE_OBSERVATION,body,digest);
 }
 
 bool SWV5S5_F_DeriveNegativePolicyDigest(const SWV5S5_F_NegativeEvidencePolicy &policy,string &digest)
@@ -535,8 +701,9 @@ bool SWV5S5_F_DeriveNegativePolicyDigest(const SWV5S5_F_NegativeEvidencePolicy &
    if(!SWV5S5_CanonicalInt("authority_source",policy.authority_source,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("approval_reference",policy.approval_reference,f)) return false; body+=f;
    if(!SWV5S5_CanonicalDatetime("approved_at",policy.approved_at,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalBool("query_completeness",policy.query_completeness_capability_proven,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalBool("visibility_watermark",policy.visibility_watermark_proven,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_id",policy.capability_proof_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("capability_proof_version",policy.capability_proof_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("capability_proof_digest",policy.capability_proof_digest,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("broker_flags",policy.required_broker_flags,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("execution_flags",policy.required_execution_flags,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("stable_observations",policy.minimum_stable_observations,f)) return false; body+=f;
@@ -544,12 +711,13 @@ bool SWV5S5_F_DeriveNegativePolicyDigest(const SWV5S5_F_NegativeEvidencePolicy &
    if(!SWV5S5_CanonicalUInt("visibility_lag_seconds",policy.proven_visibility_lag_seconds,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("connection_generation",policy.required_connection_generation,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("restart_generation",policy.required_restart_generation,f)) return false; body+=f;
-   return SWV5S5_DomainDigest(SWV5S5_F_NEGATIVE_POLICY_ID,body,digest);
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_NEGATIVE_POLICY,body,digest);
 }
 
 bool SWV5S5_F_IsNegativeObservationValid(const SWV5S5_F_ReconciliationBinding &binding,
-                                         const SWV5S5_F_CorrelationPolicy &correlation_policy,
-                                         const SWV5S5_F_NegativeEvidencePolicy &policy,
+                                          const SWV5S5_F_CorrelationPolicy &correlation_policy,
+                                          const SWV5S5_F_CapabilityProof &capability_proof,
+                                          const SWV5S5_F_NegativeEvidencePolicy &policy,
                                          const SWV5S5_F_NegativeQueryObservation &observation)
 {
    string digest;
@@ -562,7 +730,10 @@ bool SWV5S5_F_IsNegativeObservationValid(const SWV5S5_F_ReconciliationBinding &b
       observation.correlation_policy_id==SWV5S5_F_CORRELATION_POLICY_ID &&
       observation.correlation_policy_version==correlation_policy.policy_version &&
       observation.correlation_policy_digest==correlation_policy.policy_digest &&
-      observation.correlation_capability_proven &&
+      SWV5S5_F_IsCapabilityProofValid(binding,capability_proof) &&
+      observation.capability_proof_id==capability_proof.artifact_id &&
+      observation.capability_proof_version==capability_proof.artifact_version &&
+      observation.capability_proof_digest==capability_proof.proof_digest &&
       !observation.magic_used_as_sole_authority && !observation.comment_used_as_sole_authority &&
       observation.broker_operation_success && observation.execution_operation_success &&
       observation.broker_enumeration_complete && observation.execution_enumeration_complete &&
@@ -578,6 +749,12 @@ bool SWV5S5_F_IsNegativeObservationValid(const SWV5S5_F_ReconciliationBinding &b
       observation.history_to>=observation.execution_query_set.observed_at &&
       observation.connection_generation==policy.required_connection_generation &&
       observation.restart_generation==policy.required_restart_generation &&
+      observation.broker_read_path_id!="" && observation.execution_read_path_id!="" &&
+      observation.broker_read_path_id!=observation.execution_read_path_id &&
+      observation.broker_authority_instance_id!="" && observation.execution_authority_instance_id!="" &&
+      observation.broker_authority_instance_id!=observation.execution_authority_instance_id &&
+      observation.broker_query_set.snapshot_id!=observation.execution_query_set.snapshot_id &&
+      observation.broker_query_set.snapshot_digest!=observation.execution_query_set.snapshot_digest &&
       observation.matching_positions==0 && observation.matching_orders==0 &&
       observation.matching_deals==0 && observation.matching_transactions==0 &&
       observation.matching_pending_requests==0 &&
@@ -588,6 +765,7 @@ bool SWV5S5_F_IsNegativeObservationValid(const SWV5S5_F_ReconciliationBinding &b
 bool SWV5S5_F_HasAuthoritativeNegative(const SWV5_ContractValidationContext &context,
                                        const SWV5S5_F_ReconciliationBinding &binding,
                                        const SWV5S5_F_CorrelationPolicy &correlation_policy,
+                                       const SWV5S5_F_CapabilityProof &capability_proof,
                                        const SWV5S5_F_NegativeEvidencePolicy &policy,
                                        const SWV5S5_F_NegativeQueryObservation &first,
                                        const SWV5S5_F_NegativeQueryObservation &second)
@@ -595,26 +773,41 @@ bool SWV5S5_F_HasAuthoritativeNegative(const SWV5_ContractValidationContext &con
    string policy_digest;
    return SWV5S5_F_IsVersion(policy.contract_version) &&
       policy.policy_id==SWV5S5_F_NEGATIVE_POLICY_ID && policy.policy_version==1 &&
+      policy.policy_id==binding.pinned_negative_policy_id &&
+      policy.policy_version==binding.pinned_negative_policy_version &&
       policy.broker_profile_id==binding.profile.profile_id &&
       policy.broker_profile_digest==binding.profile.profile_digest &&
       policy.issuing_component==SWV5_COMPONENT_AUTHORITY_OPERATOR &&
       policy.authority_source==SWV5_AUTHORITY_OPERATOR &&
       policy.approval_reference!="" && policy.approved_at>0 && policy.approved_at<=binding.claimed_at &&
-      policy.query_completeness_capability_proven && policy.visibility_watermark_proven &&
+      SWV5S5_F_IsCapabilityProofValid(binding,capability_proof) &&
+      capability_proof.query_completeness_capability_proven &&
+      capability_proof.visibility_watermark_proven &&
+      policy.capability_proof_id==capability_proof.artifact_id &&
+      policy.capability_proof_version==capability_proof.artifact_version &&
+      policy.capability_proof_digest==capability_proof.proof_digest &&
       policy.required_broker_flags==(SWV5_QUERY_POSITIONS|SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS|SWV5_QUERY_TRANSACTIONS) &&
       policy.required_execution_flags==SWV5_QUERY_PENDING_REQUESTS &&
       policy.minimum_stable_observations==2 && policy.minimum_stability_seconds>0 &&
       policy.proven_visibility_lag_seconds>0 &&
+      policy.proven_visibility_lag_seconds==capability_proof.proven_visibility_lag_seconds &&
       SWV5S5_F_DeriveNegativePolicyDigest(policy,policy_digest) && policy.policy_digest==policy_digest &&
+      policy.policy_digest==binding.pinned_negative_policy_digest &&
       SWV5S5_F_IsCorrelationPolicyValid(binding,correlation_policy) &&
-      SWV5S5_F_IsNegativeObservationValid(binding,correlation_policy,policy,first) &&
-      SWV5S5_F_IsNegativeObservationValid(binding,correlation_policy,policy,second) &&
+      SWV5S5_F_IsNegativeObservationValid(binding,correlation_policy,capability_proof,policy,first) &&
+      SWV5S5_F_IsNegativeObservationValid(binding,correlation_policy,capability_proof,policy,second) &&
+      first.connection_generation==second.connection_generation &&
+      first.restart_generation==second.restart_generation &&
+      first.broker_read_path_id==second.broker_read_path_id &&
+      first.execution_read_path_id==second.execution_read_path_id &&
+      first.broker_authority_instance_id==second.broker_authority_instance_id &&
+      first.execution_authority_instance_id==second.execution_authority_instance_id &&
       second.broker_query_set.observation_sequence>first.broker_query_set.observation_sequence &&
       second.execution_query_set.observation_sequence>first.execution_query_set.observation_sequence &&
       second.broker_query_set.observed_at>=first.broker_query_set.observed_at+(int)policy.minimum_stability_seconds &&
       second.execution_query_set.observed_at>=first.execution_query_set.observed_at+(int)policy.minimum_stability_seconds &&
-      second.broker_query_set.observed_at>=binding.claimed_at+(int)policy.proven_visibility_lag_seconds &&
-      second.execution_query_set.observed_at>=binding.claimed_at+(int)policy.proven_visibility_lag_seconds &&
+      first.broker_query_set.observed_at>=binding.claimed_at+(int)policy.proven_visibility_lag_seconds &&
+      first.execution_query_set.observed_at>=binding.claimed_at+(int)policy.proven_visibility_lag_seconds &&
       context.clock_time>=second.broker_query_set.observed_at && context.clock_time>=second.execution_query_set.observed_at;
 }
 
@@ -654,9 +847,42 @@ bool SWV5S5_F_IsBindingValid(const SWV5_ContractValidationContext &context,
          binding.claimed_at>0 && binding.claim_clock_sequence>0 &&
          SWV5S5_IsDigest64Lower(binding.admission_snapshot_digest) &&
          SWV5S5_IsDigest64Lower(binding.claim_record_digest) &&
+         binding.pinned_correlation_policy_id==SWV5S5_F_CORRELATION_POLICY_ID &&
+         binding.pinned_correlation_policy_version==1 &&
+         SWV5S5_IsDigest64Lower(binding.pinned_correlation_policy_digest) &&
+         binding.pinned_negative_policy_id==SWV5S5_F_NEGATIVE_POLICY_ID &&
+         binding.pinned_negative_policy_version==1 &&
+         SWV5S5_IsDigest64Lower(binding.pinned_negative_policy_digest) &&
+         binding.pinned_capability_proof_id==SWV5S5_F_CAPABILITY_PROOF_ID &&
+         binding.pinned_capability_proof_version>0 &&
+         SWV5S5_IsDigest64Lower(binding.pinned_capability_proof_digest) &&
          SWV5S5_F_IsFenceStructurallyValid(binding.claim_ownership_fence) &&
          SWV5S5_EqualOwnershipKey(binding.claim_ownership_fence.ownership_namespace,
-            binding.profile.persistence_namespace.ownership_namespace)));
+             binding.profile.persistence_namespace.ownership_namespace))) &&
+      ((binding.submission_state!=SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED &&
+        binding.submission_state!=SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED &&
+        binding.submission_state!=SWV5S5_AUTHORITATIVE_REJECTED &&
+        binding.submission_state!=SWV5S5_CONFLICT_MANUAL_REQUIRED) ||
+       SWV5S5_IsDigest64Lower(binding.persisted_terminal_evidence_digest));
+}
+
+bool SWV5S5_F_DeriveResultDigest(const SWV5S5_F_ReconciliationResult &result,string &digest)
+{
+   string body="",f;
+   if(!SWV5S5_CanonicalInt("state",result.state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("disposition",result.disposition,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("submission_state",result.proposed_submission_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("authoritative_positive",result.authoritative_positive,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("authoritative_negative",result.authoritative_negative,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("retry_allowed",result.retry_allowed,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("requires_new_admission",result.requires_new_admission_for_any_future_attempt,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("confirmed_volume",result.cumulative_confirmed_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("residual_volume",result.residual_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("residual_is_submission_authority",result.residual_is_submission_authority,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("requires_new_request_identity_for_residual",result.requires_new_request_identity_for_residual,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authoritative_evidence_digest",result.authoritative_evidence_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("reason_code",result.reason_code,f)) return false; body+=f;
+   return SWV5S5_DomainDigest(SWV5S5_F_DOMAIN_RECONCILIATION_RESULT,body,digest);
 }
 
 void SWV5S5_F_SetResult(const SWV5S5_F_ReconciliationState state,
@@ -665,7 +891,8 @@ void SWV5S5_F_SetResult(const SWV5S5_F_ReconciliationState state,
                         const bool positive,const bool negative,
                         const bool future_new_admission,
                         const double confirmed,const double residual,
-                        const string reason,SWV5S5_F_ReconciliationResult &result)
+                        const string evidence_digest,const string reason,
+                        SWV5S5_F_ReconciliationResult &result)
 {
    ZeroMemory(result); SWV5S5_F_InitVersion(result.contract_version);
    result.state=state; result.disposition=disposition;
@@ -674,18 +901,66 @@ void SWV5S5_F_SetResult(const SWV5S5_F_ReconciliationState state,
    result.retry_allowed=false;
    result.requires_new_admission_for_any_future_attempt=future_new_admission;
    result.cumulative_confirmed_volume=confirmed; result.residual_volume=residual;
+   result.residual_is_submission_authority=false;
+   result.requires_new_request_identity_for_residual=(state==SWV5S5_F_PARTIAL_EFFECT_CONFIRMED);
+   result.authoritative_evidence_digest=evidence_digest;
    result.reason_code=reason;
+   SWV5S5_F_DeriveResultDigest(result,result.result_digest);
+}
+
+bool SWV5S5_F_HasDurableBrokerSideEffectShape(const SWV5_ContractValidationContext &context,
+                                               const SWV5S5_F_TargetedPositiveEvidence &evidence)
+{
+   string digest;
+   const ulong required=SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS;
+   return SWV5S5_F_IsVersion(evidence.contract_version) &&
+      SWV5S5_F_IsProfileValid(evidence.profile) && evidence.independently_query_confirmed &&
+      SWV5S5_F_IsQuerySetExact(evidence.query_set,required,
+         SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER,SWV5_AUTHORITY_DEAL_HISTORY) &&
+      evidence.order_ticket>0 && evidence.deal_ticket>0 &&
+      evidence.deal_order_ticket==evidence.order_ticket && evidence.position_identifier>0 &&
+      evidence.deal_count>0 && SWV5S5_IsDigest64Lower(evidence.ordered_deal_set_digest) &&
+      evidence.all_deals_linked_to_order_and_position && evidence.all_rows_read_successfully &&
+      evidence.order_position_identifier==evidence.position_identifier &&
+      evidence.deal_position_identifier==evidence.position_identifier && evidence.symbol!="" &&
+      (evidence.direction==1 || evidence.direction==-1) &&
+      SWV5_IsFiniteNumber(evidence.execution_price) && evidence.execution_price>0.0 &&
+      SWV5_IsFiniteNumber(evidence.cumulative_confirmed_volume) &&
+      SWV5_IsFiniteNumber(evidence.requested_volume) &&
+      evidence.cumulative_confirmed_volume>0.0 && evidence.requested_volume>0.0 &&
+      evidence.cumulative_confirmed_volume<=evidence.requested_volume+context.volume_tolerance &&
+      SWV5S5_F_DerivePositiveEvidenceDigest(evidence,digest) && evidence.evidence_digest==digest;
 }
 
 bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &context,
                                      const SWV5S5_F_ReconciliationInput &candidate,
                                      SWV5S5_F_ReconciliationResult &result)
 {
-   if(!SWV5S5_IsValidationContextUsable(context) || !SWV5S5_F_IsVersion(candidate.contract_version) ||
-      !SWV5S5_F_IsBindingValid(context,candidate.binding))
+   if(!SWV5S5_IsValidationContextUsable(context) || !SWV5S5_F_IsVersion(candidate.contract_version))
    {
       SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
-         SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,
+         SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,0.0,"",
+         "INVALID_VALIDATION_CONTEXT_OR_CONTRACT_VERSION",result); return false;
+   }
+
+   // BLOCKED is sticky. Only a separately governed operator/recovery path,
+   // outside this evaluator, may clear it.
+   if(candidate.prior_state==SWV5S5_F_RECONCILIATION_BLOCKED)
+   {
+      SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
+         SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,
+         candidate.binding.persisted_confirmed_volume,candidate.binding.persisted_residual_volume,
+         candidate.binding.persisted_terminal_evidence_digest,
+         "RECONCILIATION_BLOCKED_STICKY_REQUIRES_EXTERNAL_RECOVERY_AUTHORITY",result); return false;
+   }
+
+   const bool durable_broker_shape=candidate.positive_evidence_present &&
+      SWV5S5_F_HasDurableBrokerSideEffectShape(context,candidate.positive_evidence);
+   if(!SWV5S5_F_IsBindingValid(context,candidate.binding))
+   {
+      SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
+         SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,"",
+         durable_broker_shape ? "ORPHAN_OR_UNAUTHORIZED_POSITIVE_SIDE_EFFECT" :
          "INVALID_OR_STALE_JOINT_BINDING",result); return false;
    }
 
@@ -695,7 +970,9 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
          candidate.binding.submission_state==SWV5S5_INVALIDATED_BEFORE_CLAIM) &&
          candidate.binding.invocation_claim_id=="" && candidate.binding.claimed_at==0 &&
          candidate.binding.claim_clock_sequence==0;
-      if(unclaimed && !candidate.positive_evidence_present && !candidate.negative_evidence_present &&
+       if(unclaimed && candidate.no_call_proof_present &&
+          SWV5S5_F_IsNoCallProofValid(candidate.binding,candidate.no_call_proof) &&
+          !candidate.positive_evidence_present && !candidate.negative_evidence_present &&
          candidate.binding.persisted_confirmed_volume<=context.volume_tolerance &&
          MathAbs(candidate.binding.persisted_residual_volume-candidate.binding.requested_volume)<=
             context.volume_tolerance &&
@@ -704,11 +981,11 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
       {
          SWV5S5_F_SetResult(SWV5S5_F_NO_CALL,SWV5S5_F_DISPOSITION_NO_CALL,
             candidate.binding.submission_state,false,false,true,0.0,candidate.binding.requested_volume,
-            "NO_SUCCESSFUL_CLAIM_OR_BROKER_CALL",result); return true;
+            candidate.no_call_proof.proof_digest,"AUTHORITATIVE_LOCAL_NO_CALL_PROOF",result); return true;
       }
       SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
          SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,
-         "NO_CALL_CONTRADICTED_BY_CLAIM_OR_EVIDENCE",result); return false;
+         "","NO_CALL_CONTRADICTED_BY_CLAIM_OR_EVIDENCE",result); return false;
    }
 
    if(candidate.prior_state==SWV5S5_F_SIDE_EFFECT_POSITIVELY_CONFIRMED ||
@@ -734,21 +1011,23 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
          SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
             SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,
             candidate.binding.persisted_confirmed_volume,candidate.binding.persisted_residual_volume,
-            "TERMINAL_STATE_BINDING_MISMATCH",result);
+            candidate.binding.persisted_terminal_evidence_digest,
+            "TERMINAL_STATE_BINDING_OR_PARTITION_MISMATCH",result);
          return false;
       }
       if(!candidate.positive_evidence_present && !candidate.negative_evidence_present)
       {
-         SWV5S5_SubmissionAuthorityState state=(candidate.prior_state==SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED ?
-            SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED : SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED);
+         SWV5S5_SubmissionAuthorityState state=candidate.binding.submission_state;
          SWV5S5_F_SetResult(candidate.prior_state,SWV5S5_F_DISPOSITION_IDEMPOTENT_TERMINAL,state,
             candidate.prior_state!=SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED,
             candidate.prior_state==SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED,false,
             candidate.binding.persisted_confirmed_volume,candidate.binding.persisted_residual_volume,
+            candidate.binding.persisted_terminal_evidence_digest,
             "TERMINAL_REPLAY_IDEMPOTENT",result); return true;
       }
       SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
          SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,
+         candidate.binding.persisted_terminal_evidence_digest,
          "TERMINAL_EVIDENCE_CONFLICT",result); return false;
    }
 
@@ -760,21 +1039,41 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
    {
       SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
          SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,
-         "CLAIMED_UNRESOLVED_STATE_REQUIRED",result); return false;
+         "","CLAIMED_UNRESOLVED_STATE_REQUIRED",result); return false;
    }
 
    const bool positive=candidate.positive_evidence_present &&
       SWV5S5_F_IsPositiveEvidenceValid(context,candidate.binding,candidate.correlation_policy,
-         candidate.positive_evidence);
+         candidate.capability_proof,candidate.positive_evidence);
    const bool negative=candidate.negative_evidence_present &&
       SWV5S5_F_HasAuthoritativeNegative(context,candidate.binding,candidate.correlation_policy,
-         candidate.negative_policy,candidate.negative_first,candidate.negative_second);
+         candidate.capability_proof,candidate.negative_policy,
+         candidate.negative_first,candidate.negative_second);
+   const bool evidence_policy_drift=(candidate.positive_evidence_present || candidate.negative_evidence_present) &&
+      (candidate.correlation_policy.policy_id!=candidate.binding.pinned_correlation_policy_id ||
+       candidate.correlation_policy.policy_version!=candidate.binding.pinned_correlation_policy_version ||
+       candidate.correlation_policy.policy_digest!=candidate.binding.pinned_correlation_policy_digest ||
+       candidate.capability_proof.artifact_id!=candidate.binding.pinned_capability_proof_id ||
+       candidate.capability_proof.artifact_version!=candidate.binding.pinned_capability_proof_version ||
+       candidate.capability_proof.proof_digest!=candidate.binding.pinned_capability_proof_digest);
+   const bool pinned_policy_drift=evidence_policy_drift ||
+      (candidate.negative_evidence_present &&
+       (candidate.negative_policy.policy_id!=candidate.binding.pinned_negative_policy_id ||
+        candidate.negative_policy.policy_version!=candidate.binding.pinned_negative_policy_version ||
+        candidate.negative_policy.policy_digest!=candidate.binding.pinned_negative_policy_digest));
+   if(pinned_policy_drift)
+   {
+      SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
+         SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,"",
+         "PINNED_POLICY_DRIFT_OR_CAPABILITY_PROOF_INVALID",result); return false;
+   }
    if((candidate.positive_evidence_present && !positive) ||
       (positive && candidate.negative_evidence_present))
    {
       SWV5S5_F_SetResult(SWV5S5_F_RECONCILIATION_BLOCKED,SWV5S5_F_DISPOSITION_BLOCK_MANUAL,
          SWV5S5_CONFLICT_MANUAL_REQUIRED,false,false,false,0.0,candidate.binding.requested_volume,
-      "EVIDENCE_INVALID_STALE_OR_CONFLICTING",result); return false;
+         "",durable_broker_shape ? "ORPHAN_OR_UNAUTHORIZED_POSITIVE_SIDE_EFFECT" :
+         "EVIDENCE_INVALID_STALE_OR_CONFLICTING",result); return false;
    }
 
    // An incomplete/unsupported zero-row observation is not authoritative
@@ -785,7 +1084,7 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
       SWV5S5_F_SetResult(SWV5S5_F_SUBMISSION_UNRESOLVED,
          SWV5S5_F_DISPOSITION_PRESERVE_UNRESOLVED,SWV5S5_INVOCATION_CLAIMED_UNRESOLVED,
          false,false,false,0.0,candidate.binding.requested_volume,
-         "NON_AUTHORITATIVE_NEGATIVE_CANDIDATE_PRESERVES_UNRESOLVED",result);
+         "","NON_AUTHORITATIVE_NEGATIVE_CANDIDATE_PRESERVES_UNRESOLVED",result);
       return true;
    }
 
@@ -797,12 +1096,14 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
       if(residual>context.volume_tolerance)
       {
          SWV5S5_F_SetResult(SWV5S5_F_PARTIAL_EFFECT_CONFIRMED,SWV5S5_F_DISPOSITION_PARTIAL_CONFIRMED,
-            SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED,true,false,false,confirmed,residual,
-            "PARTIAL_DURABLE_SIDE_EFFECT_RESIDUAL_UNRESOLVED",result); return true;
+            SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED,true,false,true,confirmed,residual,
+            candidate.positive_evidence.evidence_digest,
+            "PARTIAL_DURABLE_SIDE_EFFECT_RESIDUAL_NON_AUTHORITY_NEW_REQUEST_REQUIRED",result); return true;
       }
       SWV5S5_F_SetResult(SWV5S5_F_SIDE_EFFECT_POSITIVELY_CONFIRMED,
          SWV5S5_F_DISPOSITION_POSITIVE_CONFIRMED,SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED,
-         true,false,false,confirmed,0.0,"DURABLE_BROKER_SIDE_EFFECT_CONFIRMED",result); return true;
+         true,false,false,confirmed,0.0,candidate.positive_evidence.evidence_digest,
+         "DURABLE_BROKER_SIDE_EFFECT_CONFIRMED",result); return true;
    }
 
    if(negative)
@@ -812,13 +1113,14 @@ bool SWV5S5_F_EvaluateReconciliation(const SWV5_ContractValidationContext &conte
           SWV5S5_AUTHORITATIVE_REJECTED : SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED);
       SWV5S5_F_SetResult(SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED,
          SWV5S5_F_DISPOSITION_NEGATIVE_CONFIRMED,next_state,false,true,true,0.0,
-         candidate.binding.requested_volume,"FULLY_QUALIFIED_NEGATIVE_EVIDENCE_CONFIRMED",result); return true;
+         candidate.binding.requested_volume,candidate.negative_second.observation_digest,
+         "FULLY_QUALIFIED_NEGATIVE_EVIDENCE_CONFIRMED",result); return true;
    }
 
    SWV5S5_F_SetResult(SWV5S5_F_SUBMISSION_UNRESOLVED,
       SWV5S5_F_DISPOSITION_PRESERVE_UNRESOLVED,SWV5S5_INVOCATION_CLAIMED_UNRESOLVED,
       false,false,false,0.0,candidate.binding.requested_volume,
-      candidate.after_restart_or_takeover ? "RESTART_OR_TAKEOVER_PRESERVES_UNRESOLVED" :
+      "",candidate.after_restart_or_takeover ? "RESTART_OR_TAKEOVER_PRESERVES_UNRESOLVED" :
       "AMBIGUOUS_OR_SUPPLEMENTAL_EVIDENCE_NO_BLIND_RETRY",result);
    return true;
 }

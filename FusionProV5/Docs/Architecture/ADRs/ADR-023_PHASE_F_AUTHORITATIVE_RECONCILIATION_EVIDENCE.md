@@ -14,7 +14,7 @@ Phase F introduces a standalone reconciliation-evidence overlay. It consumes imm
 
 The explicit state model is:
 
-- `NO_CALL`: no successful Claim and no broker invocation/evidence.
+- `NO_CALL`: a digest-bound authoritative Execution-store proof establishes no successful Claim and no invocation; broker evidence can never create this state.
 - `SUBMISSION_UNRESOLVED`: successful Claim exists but neither authoritative positive nor authoritative negative evidence exists.
 - `SIDE_EFFECT_POSITIVELY_CONFIRMED`: durable broker order/deal evidence proves full requested effect.
 - `PARTIAL_EFFECT_CONFIRMED`: durable evidence proves some effect while residual volume remains unresolved/exposed.
@@ -23,19 +23,22 @@ The explicit state model is:
 
 All reconciliation outcomes set `retry_allowed=false`. A negative terminal outcome may permit only a distinct future attempt through the existing admission, permit and Claim workflow.
 
-Terminal replay is idempotent only when the persisted confirmed/residual volume partition and the frozen Submission Authority state agree with the terminal reconciliation state. A mismatch fails closed to `RECONCILIATION_BLOCKED`; replay never reconstructs confirmed volume as zero.
+`RECONCILIATION_BLOCKED` is sticky inside this evaluator. Evidence cannot clear it; only a separately governed operator/recovery authority outside this contract may do so. Otherwise-valid durable broker evidence with a missing, stale, foreign or invalid Claim/request/fence binding is an orphan side effect and transitions to `RECONCILIATION_BLOCKED`.
+
+Terminal replay is idempotent only when the persisted confirmed/residual volume partition, authoritative evidence digest and frozen Submission Authority state agree with the terminal reconciliation state. A mismatch fails closed to `RECONCILIATION_BLOCKED`; replay never reconstructs confirmed volume as zero. Residual volume is reporting state only and is never submission authority. Submitting any remainder requires a new request identity, coherent admission snapshot, permit and successful Claim.
 
 ## Positive evidence
 
 Authoritative positive evidence requires all of the following:
 
 1. Exact profile, request identity, invocation Claim identity and Claim-record digest binding.
-2. A canonically digested, Operator-authority correlation policy approved before Claim; Magic or comment cannot be sole authority.
-3. Independent durable query confirmation owned by the Broker Adapter authority.
-4. Non-zero broker order/deal identifiers, a canonically digested ordered deal set, successful reading of every row, deal-to-order linkage and a shared non-zero position identifier.
-5. Symbol, direction, finite execution price and finite volume consistency with the bound request.
-6. Query sequence later than the persisted broker-query high-watermark and observation time no earlier than Claim.
-7. A canonical evidence digest.
+2. The exact correlation policy identity/version/digest pinned to the coherent admission/Claim boundary; current-latest policy lookup is forbidden. Magic or comment cannot be sole authority.
+3. A separately governed, digest-bound capability-proof artifact approved and valid at the request boundary. It is profile-bound and cannot be authored or approved by the Broker Adapter it qualifies.
+4. Independent durable query confirmation owned by the Broker Adapter authority.
+5. Non-zero broker order/deal identifiers, a canonically digested ordered deal set, successful reading of every enumerated row, deal-to-order linkage and a shared non-zero position identifier.
+6. Symbol, direction, finite execution price and finite volume consistency with the bound request.
+7. Query sequence later than the persisted broker-query high-watermark and observation time no earlier than Claim.
+8. A canonical evidence digest.
 
 A synchronous success/retcode or callback remains provisional until these conditions are met.
 
@@ -43,17 +46,20 @@ A synchronous success/retcode or callback remains provisional until these condit
 
 Authoritative negative evidence is an explicitly profile-scoped capability, not an inference from empty arrays. It requires:
 
-1. A canonically digested Operator-authority policy approved before Claim and bound to the exact broker profile and digest.
-2. Independently proven query-completeness capability and visibility watermark.
+1. The exact correlation, negative-evidence and capability-proof identities/versions/digests pinned before Claim to the coherent request/admission boundary. Policy drift is a blocking conflict.
+2. A domain-separated, independently governed capability-proof artifact establishing query-completeness and visibility-watermark capability for the exact broker profile. Bare booleans are not authority.
 3. Exact authoritative Broker flags for positions, orders, deals and transactions, plus the separately owned Execution pending-request flag.
 4. Successful, complete enumeration with zero row-read failures and history coverage beginning at or before Claim.
-5. Two stable joint observations with strictly advancing Broker and Execution sequences beyond their persisted high-watermarks.
-6. The current connection/restart generation, a duration meeting the policy stability interval, and observation after the proven visibility lag.
-7. Zero request-matching rows in every required domain and canonical observation digests.
+5. Separately owned Broker and Execution read paths, distinct authority instances and independently advancing owner-specific sequences. A shared cache/snapshot cannot satisfy the joint proof.
+6. Two stable joint observations: the first is no earlier than `claimed_at + proven_visibility_lag`; the second is no earlier than the first plus the required stability interval; both sequences first exceed their persisted high-watermarks and then advance strictly.
+7. Identical connection and restart generations across both observations, equal to the required current generations. Any generation change invalidates the pair.
+8. Zero request-matching rows in every required domain and canonical observation digests.
 
 Unrelated rows do not invalidate an observation. Query failure, partial enumeration, unsupported completeness, stale generation, a missing watermark, or merely zero returned rows preserves `SUBMISSION_UNRESOLVED`.
 
 The current F0 Exness Demo profile evidence explicitly remains `UNPROVEN`; therefore it cannot satisfy this negative-evidence contract.
+
+Capability proof, correlation policy, negative policy, positive evidence, negative observation and terminal reconciliation result use distinct canonical digest domains. Cross-domain digest substitution fails validation.
 
 ## Retcode and callback semantics
 

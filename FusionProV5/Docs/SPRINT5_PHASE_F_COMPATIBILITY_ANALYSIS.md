@@ -14,3 +14,5 @@ The Phase F overlay consumes frozen records and does not change them:
 The contract creates a derived reconciliation disposition, not a new authoritative broker-state store. Broker Adapter owns broker queries; Execution owns pending-request queries. Only a complete joint observation can support a bounded negative conclusion.
 
 Deferred and still unproven: real adapter behavior, broker correlation selectivity, universal history/query completeness, visibility watermark, open-exposure reconnect, platform clock, physical persistence, production runtime and live trading.
+
+The patch retains Phase F schema/policy version 1 as an explicit pre-approval candidate correction. The Phase F contract has never been Architecture Locked, runtime-authorized, emitted by production or accepted as a durable compatibility baseline. Equivalent required-field, interface or authority changes after approval require a schema increment and migration review under the repository contract-versioning policy.
