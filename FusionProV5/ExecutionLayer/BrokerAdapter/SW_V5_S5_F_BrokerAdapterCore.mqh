@@ -59,15 +59,164 @@ bool SWV5S5_F_DeriveAdapterEnvironmentDigest(const SWV5S5_F_AdapterEnvironment &
    return SWV5S5_DomainDigest(SWV5S5_F_ADAPTER_DOMAIN_SUBMISSION,body,digest);
 }
 
+// Convert a broker-symbol numeric value to exact integer grid units. The
+// tolerance is derived from the supplied symbol quantum; no raw binary-double
+// equality is used for price, stop, limit, or volume authority comparisons.
+bool SWV5S5_F_AdapterCanonicalGridUnits(const double value,const double quantum,
+                                        const bool allow_zero,long &units)
+{
+   units=0;
+   if(!MathIsValidNumber(value) || !MathIsValidNumber(quantum) || quantum<=0.0 || value<0.0)
+      return false;
+   if(value==0.0) return allow_zero;
+   const double scaled=value/quantum;
+   if(!MathIsValidNumber(scaled) || MathAbs(scaled)>9000000000000000.0) return false;
+   const double rounded=MathRound(scaled);
+   const double reconstructed=rounded*quantum;
+   const double tolerance=MathMax(MathAbs(quantum)*1e-8,1e-12);
+   if(!MathIsValidNumber(reconstructed) || MathAbs(value-reconstructed)>tolerance) return false;
+   units=(long)rounded;
+   return units>0;
+}
+
+bool SWV5S5_F_AdapterCanonicalGridEqual(const double left,const double right,
+                                        const double quantum,const bool allow_zero)
+{
+   long left_units=0,right_units=0;
+   return SWV5S5_F_AdapterCanonicalGridUnits(left,quantum,allow_zero,left_units) &&
+      SWV5S5_F_AdapterCanonicalGridUnits(right,quantum,allow_zero,right_units) &&
+      left_units==right_units;
+}
+
 bool SWV5S5_F_AdapterVolumeAligned(const double volume,const double minimum_volume,
                                    const double maximum_volume,const double volume_step)
 {
-   if(!MathIsValidNumber(volume) || !MathIsValidNumber(minimum_volume) ||
-      !MathIsValidNumber(maximum_volume) || !MathIsValidNumber(volume_step) ||
-      volume<=0.0 || minimum_volume<=0.0 || maximum_volume<minimum_volume || volume_step<=0.0 ||
-      volume<minimum_volume-1e-10 || volume>maximum_volume+1e-10) return false;
-   const double steps=(volume-minimum_volume)/volume_step;
-   return MathAbs(steps-MathRound(steps))<=1e-8;
+   long volume_units=0,minimum_units=0,maximum_units=0;
+   return SWV5S5_F_AdapterCanonicalGridUnits(volume,volume_step,false,volume_units) &&
+      SWV5S5_F_AdapterCanonicalGridUnits(minimum_volume,volume_step,false,minimum_units) &&
+      SWV5S5_F_AdapterCanonicalGridUnits(maximum_volume,volume_step,false,maximum_units) &&
+      volume_units>=minimum_units && volume_units<=maximum_units;
+}
+
+// The command carries one capability flag, never a bit-mask. Combined and
+// unknown values are rejected instead of being coerced to a platform default.
+bool SWV5S5_F_AdapterResolveFilling(const ulong capability_flag,const ulong symbol_filling_mask,
+                                   ENUM_ORDER_TYPE_FILLING &platform_filling)
+{
+   if(capability_flag==1 && (symbol_filling_mask & 1)==1)
+   { platform_filling=ORDER_FILLING_FOK; return true; }
+   if(capability_flag==2 && (symbol_filling_mask & 2)==2)
+   { platform_filling=ORDER_FILLING_IOC; return true; }
+   return false;
+}
+
+// For a market deal, price is an indicative request price; the broker-reported
+// fill remains authoritative. stop_price and limit_price map explicitly to SL
+// and TP and may be zero (absent). Nonzero protection must be tick-aligned and
+// directionally coherent with the indicative price.
+bool SWV5S5_F_AdapterMarketProtectionValid(const int direction,const double price,
+                                           const double stop_price,const double limit_price,
+                                           const double tick_size)
+{
+   long price_units=0,stop_units=0,limit_units=0;
+   if((direction!=1 && direction!=-1) ||
+      !SWV5S5_F_AdapterCanonicalGridUnits(price,tick_size,false,price_units) ||
+      !SWV5S5_F_AdapterCanonicalGridUnits(stop_price,tick_size,true,stop_units) ||
+      !SWV5S5_F_AdapterCanonicalGridUnits(limit_price,tick_size,true,limit_units)) return false;
+   if(direction==1)
+      return (stop_units==0 || stop_units<price_units) &&
+         (limit_units==0 || limit_units>price_units);
+   return (stop_units==0 || stop_units>price_units) &&
+      (limit_units==0 || limit_units<price_units);
+}
+
+bool SWV5S5_F_AdapterEnvironmentStable(const SWV5S5_F_AdapterEnvironment &first,
+                                       const SWV5S5_F_AdapterEnvironment &second)
+{
+   string first_digest,second_digest;
+   return SWV5S5_F_DeriveAdapterEnvironmentDigest(first,first_digest) &&
+      SWV5S5_F_DeriveAdapterEnvironmentDigest(second,second_digest) &&
+      first_digest==second_digest;
+}
+
+bool SWV5S5_F_AdapterValidateFinalEnvironment(const SWV5S5_F_ProfileScope &profile,
+                                              const SWV5S5_F_AdapterEnvironment &preflight,
+                                              const SWV5S5_F_AdapterEnvironment &final_sample,
+                                              string &reason_code)
+{
+   reason_code="FINAL_ENVIRONMENT_REATTESTATION_FAILED";
+   if(!SWV5S5_F_AdapterEnvironmentMatchesProfile(profile,final_sample))
+   { reason_code="FINAL_PROFILE_RESAMPLE_MISMATCH"; return false; }
+   if(!SWV5S5_F_AdapterPermissionsAllowMutation(final_sample))
+   { reason_code="FINAL_PERMISSION_RESAMPLE_DENIED"; return false; }
+   if(!SWV5S5_F_AdapterEnvironmentStable(preflight,final_sample))
+   { reason_code="FINAL_ENVIRONMENT_RESAMPLE_CHANGED"; return false; }
+   reason_code="FINAL_ENVIRONMENT_REATTESTED";
+   return true;
+}
+
+bool SWV5S5_F_DeriveAdapterWirePayloadDigest(const SWV5S5_F_AdapterWireRequest &wire,
+                                             string &digest)
+{
+   string body="",f;
+#define SWV5S5_F_WIRE_I(n,v) if(!SWV5S5_CanonicalInt(n,v,f)) return false; else body+=f
+#define SWV5S5_F_WIRE_U(n,v) if(!SWV5S5_CanonicalUInt(n,v,f)) return false; else body+=f
+#define SWV5S5_F_WIRE_D(n,v) if(!SWV5S5_CanonicalDouble(n,v,f)) return false; else body+=f
+#define SWV5S5_F_WIRE_S(n,v) if(!SWV5S5_CanonicalString(n,v,f)) return false; else body+=f
+   SWV5S5_F_WIRE_I("action",wire.action); SWV5S5_F_WIRE_U("magic",wire.magic);
+   SWV5S5_F_WIRE_U("order",wire.order_ticket); SWV5S5_F_WIRE_S("symbol",wire.symbol);
+   SWV5S5_F_WIRE_D("volume",wire.volume); SWV5S5_F_WIRE_D("price",wire.price);
+   SWV5S5_F_WIRE_D("stoplimit",wire.stop_limit_price); SWV5S5_F_WIRE_D("sl",wire.stop_loss_price);
+   SWV5S5_F_WIRE_D("tp",wire.take_profit_price); SWV5S5_F_WIRE_U("deviation",wire.deviation_points);
+   SWV5S5_F_WIRE_I("type",wire.order_type); SWV5S5_F_WIRE_I("type_filling",wire.filling_type);
+   SWV5S5_F_WIRE_I("type_time",wire.time_type); SWV5S5_F_WIRE_I("expiration",(long)wire.expiration);
+   SWV5S5_F_WIRE_S("comment",wire.comment); SWV5S5_F_WIRE_U("position",wire.position_ticket);
+   SWV5S5_F_WIRE_U("position_by",wire.position_by_ticket);
+   SWV5S5_F_WIRE_S("price_semantics",SWV5S5_F_MARKET_PRICE_SEMANTICS);
+#undef SWV5S5_F_WIRE_I
+#undef SWV5S5_F_WIRE_U
+#undef SWV5S5_F_WIRE_D
+#undef SWV5S5_F_WIRE_S
+   return SWV5S5_DomainDigest(SWV5S5_F_ADAPTER_DOMAIN_WIRE,body,digest);
+}
+
+bool SWV5S5_F_AdapterBrokerQueryShapeComplete(const SWV5S5_F_BrokerQuerySnapshot &snapshot)
+{
+   if(snapshot.positions_reported_total!=(uint)ArraySize(snapshot.positions) ||
+      snapshot.orders_reported_total!=(uint)ArraySize(snapshot.orders) ||
+      snapshot.history_orders_reported_total!=(uint)ArraySize(snapshot.history_orders) ||
+      snapshot.history_deals_reported_total!=(uint)ArraySize(snapshot.history_deals) ||
+      snapshot.callback_transactions_reported_total!=(uint)ArraySize(snapshot.callback_transactions) ||
+      snapshot.row_read_failures!=0 || !snapshot.positions_enumeration_complete ||
+      !snapshot.orders_enumeration_complete || !snapshot.history_orders_enumeration_complete ||
+      !snapshot.history_deals_enumeration_complete ||
+      !snapshot.callback_transactions_enumeration_complete) return false;
+   for(int i=0;i<ArraySize(snapshot.positions);i++) if(!snapshot.positions[i].read_success) return false;
+   for(int i=0;i<ArraySize(snapshot.orders);i++) if(!snapshot.orders[i].read_success) return false;
+   for(int i=0;i<ArraySize(snapshot.history_orders);i++) if(!snapshot.history_orders[i].read_success) return false;
+   for(int i=0;i<ArraySize(snapshot.history_deals);i++) if(!snapshot.history_deals[i].read_success) return false;
+   return true;
+}
+
+bool SWV5S5_F_AdapterEvidenceSourcesIndependent(const SWV5S5_F_BrokerQuerySnapshot &broker,
+                                                const SWV5S5_F_ExecutionPendingSnapshot &execution)
+{
+   return broker.broker_read_path_id!="" && execution.execution_read_path_id!="" &&
+      broker.broker_authority_instance_id!="" && execution.execution_authority_instance_id!="" &&
+      broker.broker_sequence_authority_id!="" && execution.execution_sequence_authority_id!="" &&
+      broker.broker_read_path_id!=execution.execution_read_path_id &&
+      broker.broker_authority_instance_id!=execution.execution_authority_instance_id &&
+      broker.broker_sequence_authority_id!=execution.execution_sequence_authority_id &&
+      broker.query_set.snapshot_id!=execution.query_set.snapshot_id &&
+      broker.query_set.snapshot_digest!=execution.query_set.snapshot_digest;
+}
+
+bool SWV5S5_F_AdapterExecutionQueryShapeComplete(
+   const SWV5S5_F_ExecutionPendingSnapshot &snapshot)
+{
+   return snapshot.operation_success && snapshot.enumeration_complete &&
+      snapshot.reported_total==snapshot.matching_pending_requests+snapshot.unrelated_rows &&
+      snapshot.row_read_failures==0;
 }
 
 bool SWV5S5_F_DeriveAdapterSubmissionDigest(const SWV5S5_F_AdapterSubmissionCommand &command,
@@ -86,6 +235,10 @@ bool SWV5S5_F_DeriveAdapterSubmissionDigest(const SWV5S5_F_AdapterSubmissionComm
    if(!SWV5S5_CanonicalUInt("filling_mode",command.filling_mode,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("runtime_magic",SWV5_RUNTIME_STRATEGY_MAGIC,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("comment_metadata",command.comment_metadata,f)) return false; body+=f;
+   string environment_digest;
+   if(!SWV5S5_F_DeriveAdapterEnvironmentDigest(command.observed_environment,environment_digest) ||
+      !SWV5S5_CanonicalString("environment_digest",environment_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("wire_payload_digest",command.wire_payload_digest,f)) return false; body+=f;
    return SWV5S5_DomainDigest(SWV5S5_F_ADAPTER_DOMAIN_SUBMISSION,body,digest);
 }
 
@@ -112,19 +265,29 @@ SWV5S5_F_AdapterPreflightDisposition SWV5S5_F_AdapterValidatePreflight(
       candidate.observed_environment.point<=0.0 || candidate.observed_environment.tick_size<=0.0)
    { reason_code="SYMBOL_NOT_TRADABLE_OR_SPECIFICATION_INVALID"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }
    if(candidate.direction!=record.permit.risk_authorization.authorized_direction ||
-      candidate.volume!=record.permit.normalized_payload.volume ||
-      candidate.volume!=record.permit.risk_authorization.authorized_volume ||
-      candidate.price!=record.permit.normalized_payload.price ||
-      candidate.stop_price!=record.permit.normalized_payload.stop_price ||
-      candidate.limit_price!=record.permit.normalized_payload.limit_price)
+      !SWV5S5_F_AdapterCanonicalGridEqual(candidate.volume,record.permit.normalized_payload.volume,
+         candidate.observed_environment.volume_step,false) ||
+      !SWV5S5_F_AdapterCanonicalGridEqual(candidate.volume,record.permit.risk_authorization.authorized_volume,
+         candidate.observed_environment.volume_step,false) ||
+      !SWV5S5_F_AdapterCanonicalGridEqual(candidate.price,record.permit.normalized_payload.price,
+         candidate.observed_environment.tick_size,false) ||
+      !SWV5S5_F_AdapterCanonicalGridEqual(candidate.stop_price,record.permit.normalized_payload.stop_price,
+         candidate.observed_environment.tick_size,true) ||
+      !SWV5S5_F_AdapterCanonicalGridEqual(candidate.limit_price,record.permit.normalized_payload.limit_price,
+         candidate.observed_environment.tick_size,true))
    { reason_code="COMMAND_NOT_EXACTLY_BOUND_TO_PERMIT"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }
-   if((candidate.direction!=1 && candidate.direction!=-1) || !MathIsValidNumber(candidate.price) ||
-      candidate.price<=0.0 || !SWV5S5_F_AdapterVolumeAligned(candidate.volume,
-         candidate.observed_environment.volume_min,candidate.observed_environment.volume_max,
-         candidate.observed_environment.volume_step))
+   if(!SWV5S5_F_AdapterMarketProtectionValid(candidate.direction,candidate.price,
+         candidate.stop_price,candidate.limit_price,candidate.observed_environment.tick_size) ||
+      !SWV5S5_F_AdapterVolumeAligned(candidate.volume,
+          candidate.observed_environment.volume_min,candidate.observed_environment.volume_max,
+          candidate.observed_environment.volume_step))
    { reason_code="NORMALIZED_ORDER_PARAMETERS_INVALID"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }
-   if((candidate.filling_mode & candidate.observed_environment.symbol_filling_mask)==0)
+   ENUM_ORDER_TYPE_FILLING exact_filling;
+   if(!SWV5S5_F_AdapterResolveFilling(candidate.filling_mode,
+                                      candidate.observed_environment.symbol_filling_mask,exact_filling))
    { reason_code="FILLING_MODE_NOT_SUPPORTED"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }
+   if(!SWV5S5_IsDigest64Lower(candidate.wire_payload_digest))
+   { reason_code="WIRE_PAYLOAD_DIGEST_INVALID"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }
    string digest;
    if(!SWV5S5_F_DeriveAdapterSubmissionDigest(candidate,digest) || candidate.submission_digest!=digest)
    { reason_code="SUBMISSION_DIGEST_INVALID"; return SWV5S5_F_ADAPTER_PREFLIGHT_LOCAL_REJECT; }

@@ -20,6 +20,13 @@ def mutations():
     partial = Scenario("partial", positive_volume=.4)
     carrier = Scenario("carrier", positive_volume=1.0, magic_comment_only=True)
     terminal = Scenario("terminal", prior=State.POSITIVE, later_conflict=True)
+    toctou = Scenario("toctou", final_environment_stable=False)
+    postdigest = Scenario("postdigest", wire_payload_exact=False)
+    selfattest = Scenario("selfattest", query_complete=True, governed_capability=True,
+                          adapter_authors_capability=True)
+    filling = Scenario("filling", filling_exact_single=False)
+    omission = Scenario("omission", query_complete=True, governed_capability=True,
+                        query_row_counts_exact=False)
     return (
         ("MC-CLAIM-FABRICATION", claim, Outcome(State.UNRESOLVED, 1)),
         ("MC-PREFLIGHT-BYPASS", permission, Outcome(State.UNRESOLVED, 1)),
@@ -33,6 +40,11 @@ def mutations():
         ("MC-RESIDUAL-AUTHORITY", partial, Outcome(State.PARTIAL, 1, residual_authority=True)),
         ("MC-MAGIC-COMMENT-SOLE", carrier, Outcome(State.POSITIVE, 1)),
         ("MC-TERMINAL-REGRESSION", terminal, Outcome(State.UNRESOLVED, 0)),
+        ("MC-TOCTOU-WINDOW", toctou, Outcome(State.UNRESOLVED, 1)),
+        ("MC-POSTDIGEST-NORMALIZE", postdigest, Outcome(State.UNRESOLVED, 1)),
+        ("MC-ADAPTER-SELFATTEST", selfattest, Outcome(State.NEGATIVE, 1)),
+        ("MC-FILLING-COERCION", filling, Outcome(State.UNRESOLVED, 1)),
+        ("MC-QUERY-ROW-OMISSION", omission, Outcome(State.NEGATIVE, 1)),
     )
 
 
@@ -53,7 +65,8 @@ def main() -> int:
     passed = sum(r["pass"] for r in rows)
     print(json.dumps({"suite": "Sprint5PhaseFBrokerAdapterMutations", "total": len(rows), "passed": passed,
                       "failed": len(rows)-passed, "skipped": 0, "signature": signature,
-                      "ordinary_negative_tests_counted_as_mutation_power": False}, sort_keys=True))
+                      "ordinary_negative_tests_counted_as_mutation_power": False,
+                      "rows": rows}, sort_keys=True))
     return 0 if passed == len(rows) else 1
 
 

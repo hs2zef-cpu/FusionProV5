@@ -30,10 +30,15 @@ class Scenario:
     expert_permission: bool = True
     normalized_payload_bound: bool = True
     filling_supported: bool = True
+    filling_exact_single: bool = True
+    final_environment_stable: bool = True
+    wire_payload_exact: bool = True
     broker_outcome: str = "none"
     callback: bool = False
     query_complete: bool = False
     governed_capability: bool = False
+    adapter_authors_capability: bool = False
+    query_row_counts_exact: bool = True
     policy_pinned: bool = True
     broker_execution_independent: bool = True
     timing_valid: bool = True
@@ -73,7 +78,9 @@ def evaluate(s: Scenario) -> Outcome:
 
     preflight = all((s.claim_granted_now, s.exact_profile, s.terminal_permission,
                      s.mql_permission, s.account_permission, s.expert_permission,
-                     s.normalized_payload_bound, s.filling_supported))
+                     s.normalized_payload_bound, s.filling_supported,
+                     s.filling_exact_single, s.final_environment_stable,
+                     s.wire_payload_exact))
     if not preflight:
         return Outcome(State.UNRESOLVED, 0)
     send_calls = 1
@@ -83,7 +90,8 @@ def evaluate(s: Scenario) -> Outcome:
         if not s.positive_binding or s.magic_comment_only or not s.policy_pinned:
             return Outcome(State.BLOCKED, send_calls)
         state = State.POSITIVE if s.positive_volume >= s.requested_volume else State.PARTIAL
-    elif s.query_complete and s.governed_capability and s.policy_pinned and \
+    elif s.query_complete and s.query_row_counts_exact and s.governed_capability and \
+            not s.adapter_authors_capability and s.policy_pinned and \
             s.broker_execution_independent and s.timing_valid and s.generation_valid:
         state = State.NEGATIVE
     else:
@@ -150,6 +158,13 @@ CASES = [
     case("BA-032-BLOCKED-STICKY", State.BLOCKED, 0, prior=State.BLOCKED),
     case("BA-033-MAGIC-COMMENT-ONLY", State.BLOCKED, positive_volume=1.0, magic_comment_only=True),
     case("BA-034-F0-UNPROVEN", State.UNRESOLVED, query_complete=True, governed_capability=False),
+    case("BA-041-FINAL-ENVIRONMENT-CHANGED", State.UNRESOLVED, 0, final_environment_stable=False),
+    case("BA-042-WIRE-DIGEST-MISMATCH", State.UNRESOLVED, 0, wire_payload_exact=False),
+    case("BA-043-COMBINED-FILLING", State.UNRESOLVED, 0, filling_exact_single=False),
+    case("BA-044-ADAPTER-SELF-ATTEST", State.UNRESOLVED, query_complete=True,
+         governed_capability=True, adapter_authors_capability=True),
+    case("BA-045-BROKER-ROW-OMISSION", State.UNRESOLVED, query_complete=True,
+         governed_capability=True, query_row_counts_exact=False),
 ]
 
 SYNC_CASES = (

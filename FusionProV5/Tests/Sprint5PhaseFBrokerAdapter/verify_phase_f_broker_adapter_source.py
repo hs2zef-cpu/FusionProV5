@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS."""
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -28,6 +29,10 @@ REQUIRED_CORE = (
     "SWV5S5_F_DeriveAdapterEnvironmentDigest", "m_send_consumed=true",
     "SWV5S5_F_AdapterValidatePublication", "expected_store_revision",
     "proposed_reconciliation_revision==publication.expected_reconciliation_revision+1",
+    "SWV5S5_F_AdapterCanonicalGridEqual", "SWV5S5_F_AdapterMarketProtectionValid",
+    "SWV5S5_F_AdapterResolveFilling", "SWV5S5_F_DeriveAdapterWirePayloadDigest",
+    "SWV5S5_F_AdapterValidateFinalEnvironment", "SWV5S5_F_AdapterBrokerQueryShapeComplete",
+    "SWV5S5_F_AdapterExecutionQueryShapeComplete", "SWV5S5_F_AdapterEvidenceSourcesIndependent",
 )
 REQUIRED_INTEGRATION = (
     "SWV5S5_F_AdapterBuildPositiveEvidence", "SWV5S5_F_AdapterBuildNegativeObservation",
@@ -35,6 +40,7 @@ REQUIRED_INTEGRATION = (
     "comment_used_as_sole_authority=false", "SWV5S5_F_EvaluateReconciliation",
     "ISWV5S5FReconciliationPublicationAuthority", "TryPublishReconciliation",
     "ResolveCallbackBinding", "AdapterBuildExecutionPendingSnapshot",
+    "capability_proof_digest_consumed", "execution_sequence_authority_id", "reported_total",
 )
 
 
@@ -57,6 +63,22 @@ def main() -> int:
     send = platform_text.index("OrderSend(", submit)
     if not submit < preflight < send:
         failures.append("claim-preflight-before-send")
+    submit_end = platform_text.index("bool CaptureCallback", submit)
+    submit_body = platform_text[submit:submit_end]
+    final_sample = submit_body.find("CaptureEnvironment(command.expected_profile.symbol,final_environment)")
+    final_attest = submit_body.find("SWV5S5_F_AdapterValidateFinalEnvironment")
+    wire_digest = submit_body.find("SWV5S5_F_DeriveAdapterWirePayloadDigest")
+    sole_send = submit_body.find("OrderSend(")
+    if not 0 < final_sample < final_attest < wire_digest < sole_send:
+        failures.append("final-resample-wire-digest-send-order")
+    post_digest = submit_body[wire_digest:sole_send]
+    if "request." in post_digest or "Normalize" in post_digest or "NormalizeDouble" in post_digest:
+        failures.append("post-digest-request-mutation-or-normalization")
+    if submit_body.count("OrderSend(") != 1 or all_text.count("SubmitExactlyOnce(") != 1 or \
+            "for(" in submit_body or "while(" in submit_body:
+        failures.append("send-retry-or-reentry-shape")
+    if all_text.count("m_send_consumed=false") != 1 or submit_body.find("m_send_consumed=true") > preflight-submit:
+        failures.append("send-fuse-not-consumed-before-preflight")
     for path in files:
         if path == PLATFORM:
             continue
@@ -79,6 +101,21 @@ def main() -> int:
         failures.append("runtime-magic-literal-duplicated")
     if "OnTradeTransaction(" in all_text:
         failures.append("event-handler-wired")
+    if "capability_flag==1" not in core_text or "capability_flag==2" not in core_text or \
+            "capability_flag==3" in core_text:
+        failures.append("filling-not-exact-one-to-one")
+    if "candidate.volume==" in core_text or "candidate.price==" in core_text:
+        failures.append("raw-double-authority-comparison")
+    if re.search(r"capability_proof\.[A-Za-z0-9_]+\s*=(?!=)",platform_text) or \
+            re.search(r"(?<!const )SWV5S5_F_CapabilityProof\s*&",all_text):
+        failures.append("adapter-capability-proof-authorship")
+    if "broker_sequence_authority_id!=execution.execution_sequence_authority_id" not in core_text:
+        failures.append("broker-execution-sequence-authority-not-independent")
+    if "reported_total!=(uint)ArraySize" not in core_text or "row_read_failures!=0" not in core_text:
+        failures.append("query-row-omission-not-fail-closed")
+    if "LoadCallbackEvidence(const SWV5S5_F_ReconciliationBinding &binding" not in TYPES.read_text(encoding="utf-8") or \
+            "uint &reported_total" not in TYPES.read_text(encoding="utf-8"):
+        failures.append("callback-store-total-not-observable")
 
     frozen = (
         "FusionProV5/ProductionArchitecture/", "FusionProV5/SignalEngine/",
@@ -93,7 +130,11 @@ def main() -> int:
         if path.startswith(frozen):
             failures.append(f"frozen-change:{path}")
 
-    checks = 4 + len(DIRECT_PLATFORM_CALLS)*(len(files)-1) + len(FORBIDDEN) + len(REQUIRED_CORE) + len(REQUIRED_INTEGRATION)
+    contract_path = "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_ReconciliationEvidenceContract.mqh"
+    if git("diff", "--name-only", BASE, "--", contract_path):
+        failures.append("accepted-contract-mutated")
+
+    checks = 14 + len(DIRECT_PLATFORM_CALLS)*(len(files)-1) + len(FORBIDDEN) + len(REQUIRED_CORE) + len(REQUIRED_INTEGRATION)
     print(f"PHASE_F_BROKER_ADAPTER_SOURCE|checks={checks}|failures={len(failures)}|platform_files=1|ordersend_sites={platform_text.count('OrderSend(')}")
     for failure in failures:
         print(f"FAIL|{failure}")

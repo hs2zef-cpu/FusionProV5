@@ -13,6 +13,7 @@ private:
    bool m_send_consumed;
    string m_broker_read_path_id;
    string m_broker_authority_instance_id;
+   string m_broker_sequence_authority_id;
    ulong m_connection_generation;
    ulong m_restart_generation;
 
@@ -48,10 +49,28 @@ private:
          environment.symbol!="" && environment.terminal_build>0 && environment.mql_build>0;
    }
 
-   ENUM_ORDER_TYPE_FILLING PlatformFilling(const ulong capability_flag) const
+   bool CaptureWireRequest(const MqlTradeRequest &request,
+                           SWV5S5_F_AdapterWireRequest &wire) const
    {
-      if(capability_flag==2) return ORDER_FILLING_IOC;
-      return ORDER_FILLING_FOK;
+      ZeroMemory(wire);
+      wire.action=(int)request.action;
+      wire.magic=request.magic;
+      wire.order_ticket=request.order;
+      wire.symbol=request.symbol;
+      wire.volume=request.volume;
+      wire.price=request.price;
+      wire.stop_limit_price=request.stoplimit;
+      wire.stop_loss_price=request.sl;
+      wire.take_profit_price=request.tp;
+      wire.deviation_points=request.deviation;
+      wire.order_type=(int)request.type;
+      wire.filling_type=(int)request.type_filling;
+      wire.time_type=(int)request.type_time;
+      wire.expiration=request.expiration;
+      wire.comment=request.comment;
+      wire.position_ticket=request.position;
+      wire.position_by_ticket=request.position_by;
+      return true;
    }
 
    bool CanonicalQuerySnapshot(SWV5S5_F_BrokerQuerySnapshot &snapshot,string &digest) const
@@ -60,6 +79,7 @@ private:
       if(!SWV5S5_CanonicalString("profile_digest",snapshot.profile.profile_digest,f)) return false; body+=f;
       if(!SWV5S5_CanonicalString("broker_read_path_id",snapshot.broker_read_path_id,f)) return false; body+=f;
       if(!SWV5S5_CanonicalString("broker_authority_instance_id",snapshot.broker_authority_instance_id,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalString("broker_sequence_authority_id",snapshot.broker_sequence_authority_id,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("owner_query_sequence",snapshot.owner_query_sequence,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("connection_generation",snapshot.connection_generation,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("restart_generation",snapshot.restart_generation,f)) return false; body+=f;
@@ -76,6 +96,11 @@ private:
       if(!SWV5S5_CanonicalUInt("history_orders_total",snapshot.history_orders_reported_total,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("history_deals_total",snapshot.history_deals_reported_total,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("callbacks_total",snapshot.callback_transactions_reported_total,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("positions_array_size",(uint)ArraySize(snapshot.positions),f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("orders_array_size",(uint)ArraySize(snapshot.orders),f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("history_orders_array_size",(uint)ArraySize(snapshot.history_orders),f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("history_deals_array_size",(uint)ArraySize(snapshot.history_deals),f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("callbacks_array_size",(uint)ArraySize(snapshot.callback_transactions),f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("row_read_failures",snapshot.row_read_failures,f)) return false; body+=f;
       for(int i=0;i<ArraySize(snapshot.positions);i++)
       {
@@ -152,18 +177,21 @@ private:
       }
       if(!SWV5S5_CanonicalBool("completeness_claimed",snapshot.completeness_claimed,f)) return false; body+=f;
       if(!SWV5S5_CanonicalBool("visibility_watermark_claimed",snapshot.visibility_watermark_claimed,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalString("capability_proof_digest_consumed",snapshot.capability_proof_digest_consumed,f)) return false; body+=f;
       return SWV5S5_DomainDigest(SWV5S5_F_ADAPTER_DOMAIN_QUERY,body,digest);
    }
 
 public:
    SWV5S5_F_BrokerPlatformAdapter(const string broker_read_path_id,
-                                  const string broker_authority_instance_id,
-                                  const ulong connection_generation,
+                                   const string broker_authority_instance_id,
+                                   const string broker_sequence_authority_id,
+                                   const ulong connection_generation,
                                   const ulong restart_generation)
    {
       m_send_consumed=false;
       m_broker_read_path_id=broker_read_path_id;
       m_broker_authority_instance_id=broker_authority_instance_id;
+      m_broker_sequence_authority_id=broker_sequence_authority_id;
       m_connection_generation=connection_generation;
       m_restart_generation=restart_generation;
    }
@@ -189,8 +217,13 @@ public:
       if(SWV5S5_F_AdapterValidatePreflight(command,preflight_reason)!=SWV5S5_F_ADAPTER_PREFLIGHT_READY_CURRENT_CLAIM)
       { captured.classification=SWV5S5_F_ADAPTER_SYNC_PRE_CALL_REJECTED; captured.reason_code=preflight_reason; return false; }
 
-      // Consumed immediately before the only broker mutation boundary. No code
-      // path resets this latch and no reconnect callback invokes this method.
+      ENUM_ORDER_TYPE_FILLING exact_filling;
+      if(!SWV5S5_F_AdapterResolveFilling(command.filling_mode,
+         command.observed_environment.symbol_filling_mask,exact_filling))
+      { captured.classification=SWV5S5_F_ADAPTER_SYNC_PRE_CALL_REJECTED; captured.reason_code="FILLING_MODE_NOT_EXACT"; return false; }
+
+      // Construct the exact wire representation once. No field is normalized,
+      // coerced, defaulted, or otherwise changed after its digest is verified.
       MqlTradeRequest request={};
       MqlTradeResult result={};
       request.action=TRADE_ACTION_DEAL;
@@ -202,9 +235,28 @@ public:
       request.price=command.price;
       request.sl=command.stop_price;
       request.tp=command.limit_price;
-      request.type_filling=PlatformFilling(command.filling_mode);
+      request.type_filling=exact_filling;
       request.type_time=ORDER_TIME_GTC;
 
+      // Final profile, permission and symbol-specification re-sample. A platform
+      // mutation after this sample and before OrderSend is irreducible TOCTOU;
+      // it is documented and reconciled as unresolved, never retried here.
+      SWV5S5_F_AdapterEnvironment final_environment;
+      string final_reason;
+      if(!CaptureEnvironment(command.expected_profile.symbol,final_environment) ||
+         !SWV5S5_F_AdapterValidateFinalEnvironment(command.expected_profile,
+            command.observed_environment,final_environment,final_reason))
+      { captured.classification=SWV5S5_F_ADAPTER_SYNC_PRE_CALL_REJECTED; captured.reason_code=final_reason; return false; }
+
+      SWV5S5_F_AdapterWireRequest final_wire;
+      string final_wire_digest;
+      if(!CaptureWireRequest(request,final_wire) ||
+         !SWV5S5_F_DeriveAdapterWirePayloadDigest(final_wire,final_wire_digest) ||
+         final_wire_digest!=command.wire_payload_digest)
+      { captured.classification=SWV5S5_F_ADAPTER_SYNC_PRE_CALL_REJECTED; captured.reason_code="FINAL_WIRE_PAYLOAD_DIGEST_MISMATCH"; return false; }
+
+      // Consumed immediately before the only broker mutation boundary. No code
+      // path resets this latch and no reconnect callback invokes this method.
       ResetLastError();
       captured.invocation_attempted=true;
       captured.transport_result=OrderSend(request,result);
@@ -293,10 +345,12 @@ public:
       snapshot.profile=binding.profile;
       snapshot.broker_read_path_id=m_broker_read_path_id;
       snapshot.broker_authority_instance_id=m_broker_authority_instance_id;
+      snapshot.broker_sequence_authority_id=m_broker_sequence_authority_id;
       snapshot.connection_generation=m_connection_generation;
       snapshot.restart_generation=m_restart_generation;
       snapshot.history_from=history_from; snapshot.history_to=history_to;
       if(m_broker_read_path_id=="" || m_broker_authority_instance_id=="" ||
+         m_broker_sequence_authority_id=="" ||
          m_connection_generation==0 || m_restart_generation==0 ||
          history_from<=0 || history_to<history_from ||
          !evidence_store.ReserveBrokerQuerySequence(binding.profile,snapshot.owner_query_sequence)) return false;
@@ -307,9 +361,9 @@ public:
       for(int i=0;i<(int)snapshot.positions_reported_total;i++)
       {
          ZeroMemory(snapshot.positions[i]);
+         ResetLastError();
          const ulong ticket=PositionGetTicket(i);
-         snapshot.positions[i].read_success=(ticket>0);
-         if(!snapshot.positions[i].read_success){ snapshot.row_read_failures++; snapshot.positions_enumeration_complete=false; continue; }
+         if(ticket==0){ snapshot.row_read_failures++; snapshot.positions_enumeration_complete=false; continue; }
          snapshot.positions[i].ticket=ticket;
          snapshot.positions[i].position_identifier=(ulong)PositionGetInteger(POSITION_IDENTIFIER);
          snapshot.positions[i].symbol=PositionGetString(POSITION_SYMBOL);
@@ -318,6 +372,9 @@ public:
          snapshot.positions[i].volume=PositionGetDouble(POSITION_VOLUME);
          snapshot.positions[i].time_msc=(datetime)PositionGetInteger(POSITION_TIME_MSC);
          snapshot.positions[i].comment=PositionGetString(POSITION_COMMENT);
+         snapshot.positions[i].read_success=(GetLastError()==0);
+         if(!snapshot.positions[i].read_success)
+         { snapshot.row_read_failures++; snapshot.positions_enumeration_complete=false; }
       }
 
       snapshot.orders_reported_total=(uint)OrdersTotal();
@@ -326,9 +383,9 @@ public:
       for(int i=0;i<(int)snapshot.orders_reported_total;i++)
       {
          ZeroMemory(snapshot.orders[i]);
+         ResetLastError();
          const ulong ticket=OrderGetTicket(i);
-         snapshot.orders[i].read_success=(ticket>0);
-         if(!snapshot.orders[i].read_success){ snapshot.row_read_failures++; snapshot.orders_enumeration_complete=false; continue; }
+         if(ticket==0){ snapshot.row_read_failures++; snapshot.orders_enumeration_complete=false; continue; }
          snapshot.orders[i].ticket=ticket;
          snapshot.orders[i].position_identifier=(ulong)OrderGetInteger(ORDER_POSITION_ID);
          snapshot.orders[i].symbol=OrderGetString(ORDER_SYMBOL);
@@ -339,6 +396,9 @@ public:
          snapshot.orders[i].volume_current=OrderGetDouble(ORDER_VOLUME_CURRENT);
          snapshot.orders[i].setup_time_msc=(datetime)OrderGetInteger(ORDER_TIME_SETUP_MSC);
          snapshot.orders[i].comment=OrderGetString(ORDER_COMMENT);
+         snapshot.orders[i].read_success=(GetLastError()==0);
+         if(!snapshot.orders[i].read_success)
+         { snapshot.row_read_failures++; snapshot.orders_enumeration_complete=false; }
       }
 
       const bool history_selected=HistorySelect(history_from,history_to);
@@ -351,9 +411,9 @@ public:
          for(int i=0;i<(int)snapshot.history_orders_reported_total;i++)
          {
             ZeroMemory(snapshot.history_orders[i]);
+            ResetLastError();
             const ulong ticket=HistoryOrderGetTicket(i);
-            snapshot.history_orders[i].read_success=(ticket>0);
-            if(!snapshot.history_orders[i].read_success){ snapshot.row_read_failures++; snapshot.history_orders_enumeration_complete=false; continue; }
+            if(ticket==0){ snapshot.row_read_failures++; snapshot.history_orders_enumeration_complete=false; continue; }
             snapshot.history_orders[i].ticket=ticket;
             snapshot.history_orders[i].position_identifier=(ulong)HistoryOrderGetInteger(ticket,ORDER_POSITION_ID);
             snapshot.history_orders[i].symbol=HistoryOrderGetString(ticket,ORDER_SYMBOL);
@@ -365,15 +425,18 @@ public:
             snapshot.history_orders[i].setup_time_msc=(datetime)HistoryOrderGetInteger(ticket,ORDER_TIME_SETUP_MSC);
             snapshot.history_orders[i].done_time_msc=(datetime)HistoryOrderGetInteger(ticket,ORDER_TIME_DONE_MSC);
             snapshot.history_orders[i].comment=HistoryOrderGetString(ticket,ORDER_COMMENT);
+            snapshot.history_orders[i].read_success=(GetLastError()==0);
+            if(!snapshot.history_orders[i].read_success)
+            { snapshot.row_read_failures++; snapshot.history_orders_enumeration_complete=false; }
          }
          snapshot.history_deals_reported_total=(uint)HistoryDealsTotal();
          ArrayResize(snapshot.history_deals,(int)snapshot.history_deals_reported_total);
          for(int i=0;i<(int)snapshot.history_deals_reported_total;i++)
          {
             ZeroMemory(snapshot.history_deals[i]);
+            ResetLastError();
             const ulong ticket=HistoryDealGetTicket(i);
-            snapshot.history_deals[i].read_success=(ticket>0);
-            if(!snapshot.history_deals[i].read_success){ snapshot.row_read_failures++; snapshot.history_deals_enumeration_complete=false; continue; }
+            if(ticket==0){ snapshot.row_read_failures++; snapshot.history_deals_enumeration_complete=false; continue; }
             snapshot.history_deals[i].ticket=ticket;
             snapshot.history_deals[i].order_ticket=(ulong)HistoryDealGetInteger(ticket,DEAL_ORDER);
             snapshot.history_deals[i].position_identifier=(ulong)HistoryDealGetInteger(ticket,DEAL_POSITION_ID);
@@ -385,23 +448,32 @@ public:
             snapshot.history_deals[i].price=HistoryDealGetDouble(ticket,DEAL_PRICE);
             snapshot.history_deals[i].time_msc=(datetime)HistoryDealGetInteger(ticket,DEAL_TIME_MSC);
             snapshot.history_deals[i].comment=HistoryDealGetString(ticket,DEAL_COMMENT);
+            snapshot.history_deals[i].read_success=(GetLastError()==0);
+            if(!snapshot.history_deals[i].read_success)
+            { snapshot.row_read_failures++; snapshot.history_deals_enumeration_complete=false; }
          }
       }
       else snapshot.row_read_failures++;
 
       uint callback_read_failures=0;
       if(!evidence_store.LoadCallbackEvidence(binding,snapshot.callback_transactions,
+         snapshot.callback_transactions_reported_total,
          snapshot.callback_transactions_enumeration_complete,callback_read_failures)) return false;
-      snapshot.callback_transactions_reported_total=(uint)ArraySize(snapshot.callback_transactions);
+      if(snapshot.callback_transactions_reported_total!=(uint)ArraySize(snapshot.callback_transactions))
+      {
+         snapshot.callback_transactions_enumeration_complete=false;
+         callback_read_failures++;
+      }
       snapshot.row_read_failures+=callback_read_failures;
       snapshot.observed_at=TimeTradeServer();
+      if(snapshot.observed_at<=0) return false;
 
       const bool governed_capability=SWV5S5_F_IsCapabilityProofValid(binding,capability_proof);
+      snapshot.capability_proof_digest_consumed=(governed_capability ? capability_proof.proof_digest : "");
       snapshot.completeness_claimed=governed_capability && capability_proof.query_completeness_capability_proven &&
-         snapshot.positions_enumeration_complete && snapshot.orders_enumeration_complete &&
-         snapshot.history_orders_enumeration_complete && snapshot.history_deals_enumeration_complete &&
-         snapshot.callback_transactions_enumeration_complete && snapshot.row_read_failures==0;
-      snapshot.visibility_watermark_claimed=governed_capability && capability_proof.visibility_watermark_proven;
+         SWV5S5_F_AdapterBrokerQueryShapeComplete(snapshot);
+      snapshot.visibility_watermark_claimed=snapshot.completeness_claimed &&
+         capability_proof.visibility_watermark_proven;
 
       SWV5S5_InitContractVersion(snapshot.query_set.contract_version);
       snapshot.query_set.required_flags=SWV5_QUERY_POSITIONS|SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS|SWV5_QUERY_TRANSACTIONS;
@@ -415,7 +487,8 @@ public:
       snapshot.query_set.observed_at=snapshot.observed_at;
       snapshot.query_set.issuing_component=SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER;
       snapshot.query_set.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
-      snapshot.query_set.snapshot_id=m_broker_authority_instance_id+":"+IntegerToString((long)snapshot.owner_query_sequence);
+      snapshot.query_set.snapshot_id=m_broker_authority_instance_id+":"+
+         m_broker_sequence_authority_id+":"+IntegerToString((long)snapshot.owner_query_sequence);
       if(!CanonicalQuerySnapshot(snapshot,snapshot.snapshot_digest)) return false;
       snapshot.query_set.snapshot_digest=snapshot.snapshot_digest;
       return true;

@@ -9,10 +9,12 @@
 
 #define SWV5S5_F_ADAPTER_PROFILE_ID "SWV5-SPRINT5-PHASE-F-BROKER-ADAPTER-PROFILE-V1"
 #define SWV5S5_F_ADAPTER_DOMAIN_SUBMISSION "SWV5-SPRINT5-PHASE-F-BROKER-SUBMISSION-V1"
+#define SWV5S5_F_ADAPTER_DOMAIN_WIRE "SWV5-SPRINT5-PHASE-F-BROKER-WIRE-PAYLOAD-V1"
 #define SWV5S5_F_ADAPTER_DOMAIN_CALLBACK "SWV5-SPRINT5-PHASE-F-BROKER-CALLBACK-V1"
 #define SWV5S5_F_ADAPTER_DOMAIN_QUERY "SWV5-SPRINT5-PHASE-F-BROKER-QUERY-SNAPSHOT-V1"
 #define SWV5S5_F_ADAPTER_DOMAIN_EXECUTION_QUERY "SWV5-SPRINT5-PHASE-F-EXECUTION-PENDING-SNAPSHOT-V1"
 #define SWV5S5_F_ADAPTER_DOMAIN_PUBLICATION "SWV5-SPRINT5-PHASE-F-RECONCILIATION-PUBLICATION-V1"
+#define SWV5S5_F_MARKET_PRICE_SEMANTICS "INDICATIVE_REQUEST_PRICE_BROKER_FILL_DETERMINED"
 
 enum SWV5S5_F_AdapterPreflightDisposition
 {
@@ -77,6 +79,34 @@ struct SWV5S5_F_AdapterSubmissionCommand
    ulong filling_mode;
    string comment_metadata;
    string submission_digest;
+   // Digest supplied by the authoritative caller for the exact, final wire
+   // representation. The adapter verifies it after constructing the request
+   // and before the sole platform invocation.
+   string wire_payload_digest;
+};
+
+// Platform-neutral, field-for-field projection of the final MqlTradeRequest.
+// It is populated from the constructed platform request, never used to mutate
+// it, and digest-bound immediately before the sole OrderSend invocation.
+struct SWV5S5_F_AdapterWireRequest
+{
+   int action;
+   ulong magic;
+   ulong order_ticket;
+   string symbol;
+   double volume;
+   double price;
+   double stop_limit_price;
+   double stop_loss_price;
+   double take_profit_price;
+   ulong deviation_points;
+   int order_type;
+   int filling_type;
+   int time_type;
+   datetime expiration;
+   string comment;
+   ulong position_ticket;
+   ulong position_by_ticket;
 };
 
 // Complete neutral copy of every MqlTradeResult field. Synchronous fields are
@@ -194,6 +224,7 @@ struct SWV5S5_F_BrokerQuerySnapshot
    SWV5S5_F_ProfileScope profile;
    string broker_read_path_id;
    string broker_authority_instance_id;
+   string broker_sequence_authority_id;
    ulong owner_query_sequence;
    ulong connection_generation;
    ulong restart_generation;
@@ -217,8 +248,11 @@ struct SWV5S5_F_BrokerQuerySnapshot
    SWV5S5_F_BrokerDealRow history_deals[];
    SWV5S5_F_AdapterCallbackEvidence callback_transactions[];
    SWV5_AuthoritativeQuerySet query_set;
+   // These fields report consumption of a separately governed proof. The
+   // adapter has no interface that can create, approve, or persist that proof.
    bool completeness_claimed;
    bool visibility_watermark_claimed;
+   string capability_proof_digest_consumed;
    string snapshot_digest;
 };
 
@@ -228,12 +262,14 @@ struct SWV5S5_F_ExecutionPendingSnapshot
    SWV5S5_F_ProfileScope profile;
    string execution_read_path_id;
    string execution_authority_instance_id;
+   string execution_sequence_authority_id;
    ulong owner_query_sequence;
    ulong connection_generation;
    ulong restart_generation;
    datetime observed_at;
    bool operation_success;
    bool enumeration_complete;
+   uint reported_total;
    uint row_read_failures;
    uint matching_pending_requests;
    uint unrelated_rows;
@@ -266,7 +302,8 @@ public:
                                        SWV5S5_F_ReconciliationBinding &binding)=0;
    virtual bool LoadCallbackEvidence(const SWV5S5_F_ReconciliationBinding &binding,
                                      SWV5S5_F_AdapterCallbackEvidence &evidence[],
-                                     bool &enumeration_complete,uint &row_read_failures)=0;
+                                     uint &reported_total,bool &enumeration_complete,
+                                     uint &row_read_failures)=0;
    virtual bool ReserveBrokerQuerySequence(const SWV5S5_F_ProfileScope &profile,
                                            ulong &owner_query_sequence)=0;
 };

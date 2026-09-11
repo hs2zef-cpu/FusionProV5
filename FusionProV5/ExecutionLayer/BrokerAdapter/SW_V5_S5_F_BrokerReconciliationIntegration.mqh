@@ -70,6 +70,7 @@ bool SWV5S5_F_AdapterBuildPositiveEvidence(const SWV5_ContractValidationContext 
    ZeroMemory(evidence); SWV5S5_F_InitVersion(evidence.contract_version);
    runtime_side_effect_shape_found=false;
    if(!SWV5S5_F_EqualProfile(binding.profile,snapshot.profile) ||
+      snapshot.capability_proof_digest_consumed!=capability_proof.proof_digest ||
       snapshot.snapshot_digest=="" || snapshot.query_set.snapshot_digest!=snapshot.snapshot_digest) return false;
    ulong selected_order=sync_result.order_ticket;
    if(selected_order==0) return false;
@@ -177,6 +178,11 @@ bool SWV5S5_F_AdapterBuildNegativeObservation(const SWV5S5_F_ReconciliationBindi
    ZeroMemory(observation); SWV5S5_F_InitVersion(observation.contract_version);
    if(!SWV5S5_F_EqualProfile(binding.profile,broker.profile) ||
       !SWV5S5_F_EqualProfile(binding.profile,execution.profile) ||
+      !SWV5S5_F_AdapterEvidenceSourcesIndependent(broker,execution) ||
+      broker.capability_proof_digest_consumed!=capability_proof.proof_digest ||
+      !broker.completeness_claimed || !broker.visibility_watermark_claimed ||
+      !SWV5S5_F_AdapterBrokerQueryShapeComplete(broker) ||
+      !SWV5S5_F_AdapterExecutionQueryShapeComplete(execution) ||
       broker.snapshot_digest=="" || execution.snapshot_digest=="" ||
       broker.query_set.snapshot_digest!=broker.snapshot_digest ||
       execution.query_set.snapshot_digest!=execution.snapshot_digest) return false;
@@ -221,6 +227,7 @@ bool SWV5S5_F_AdapterBuildExecutionPendingSnapshot(
    const SWV5S5_F_ReconciliationBinding &binding,const SWV5_PendingRequest &requests[],
    const bool &row_read_success[],const bool operation_success,const bool enumeration_complete,
    const string execution_read_path_id,const string execution_authority_instance_id,
+   const string execution_sequence_authority_id,const uint reported_total,
    const ulong owner_query_sequence,const ulong connection_generation,
    const ulong restart_generation,const datetime observed_at,
    SWV5S5_F_ExecutionPendingSnapshot &snapshot)
@@ -229,24 +236,31 @@ bool SWV5S5_F_AdapterBuildExecutionPendingSnapshot(
    snapshot.profile=binding.profile;
    snapshot.execution_read_path_id=execution_read_path_id;
    snapshot.execution_authority_instance_id=execution_authority_instance_id;
+   snapshot.execution_sequence_authority_id=execution_sequence_authority_id;
    snapshot.owner_query_sequence=owner_query_sequence;
    snapshot.connection_generation=connection_generation;
    snapshot.restart_generation=restart_generation;
    snapshot.observed_at=observed_at;
    snapshot.operation_success=operation_success;
    snapshot.enumeration_complete=enumeration_complete;
+   snapshot.reported_total=reported_total;
    if(ArraySize(requests)!=ArraySize(row_read_success) || execution_read_path_id=="" ||
-      execution_authority_instance_id=="" || owner_query_sequence==0 ||
+      execution_authority_instance_id=="" || execution_sequence_authority_id=="" ||
+      owner_query_sequence==0 ||
       connection_generation==0 || restart_generation==0 || observed_at<=0) return false;
+   if(reported_total!=(uint)ArraySize(requests))
+   { snapshot.enumeration_complete=false; snapshot.row_read_failures++; }
    string body="",f,row;
    if(!SWV5S5_CanonicalString("profile_digest",binding.profile.profile_digest,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("read_path",execution_read_path_id,f)) return false; body+=f;
    if(!SWV5S5_CanonicalString("authority_instance",execution_authority_instance_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("sequence_authority",execution_sequence_authority_id,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("sequence",owner_query_sequence,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("connection_generation",connection_generation,f)) return false; body+=f;
    if(!SWV5S5_CanonicalUInt("restart_generation",restart_generation,f)) return false; body+=f;
    if(!SWV5S5_CanonicalDatetime("observed_at",observed_at,f)) return false; body+=f;
    if(!SWV5S5_CanonicalBool("operation_success",operation_success,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("reported_total",reported_total,f)) return false; body+=f;
    for(int i=0;i<ArraySize(requests);i++)
    {
       if(!row_read_success[i]){ snapshot.row_read_failures++; snapshot.enumeration_complete=false; continue; }
@@ -264,13 +278,14 @@ bool SWV5S5_F_AdapterBuildExecutionPendingSnapshot(
    if(!SWV5S5_DomainDigest(SWV5S5_F_ADAPTER_DOMAIN_EXECUTION_QUERY,body,snapshot.snapshot_digest)) return false;
    SWV5S5_InitContractVersion(snapshot.query_set.contract_version);
    snapshot.query_set.required_flags=SWV5_QUERY_PENDING_REQUESTS;
-   snapshot.query_set.completed_flags=(snapshot.operation_success && snapshot.enumeration_complete ? SWV5_QUERY_PENDING_REQUESTS : 0);
-   snapshot.query_set.authoritative_flags=(snapshot.row_read_failures==0 ? snapshot.query_set.completed_flags : 0);
+   snapshot.query_set.completed_flags=(SWV5S5_F_AdapterExecutionQueryShapeComplete(snapshot) ? SWV5_QUERY_PENDING_REQUESTS : 0);
+   snapshot.query_set.authoritative_flags=snapshot.query_set.completed_flags;
    snapshot.query_set.observation_sequence=owner_query_sequence;
    snapshot.query_set.observed_at=observed_at;
    snapshot.query_set.issuing_component=SWV5_COMPONENT_AUTHORITY_EXECUTION;
    snapshot.query_set.authority_source=SWV5_AUTHORITY_EXECUTION_REQUEST_STATE;
-   snapshot.query_set.snapshot_id=execution_authority_instance_id+":"+IntegerToString((long)owner_query_sequence);
+   snapshot.query_set.snapshot_id=execution_authority_instance_id+":"+
+      execution_sequence_authority_id+":"+IntegerToString((long)owner_query_sequence);
    snapshot.query_set.snapshot_digest=snapshot.snapshot_digest;
    return true;
 }

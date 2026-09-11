@@ -5,9 +5,12 @@ TEST ONLY / NOT FOR PRODUCTION. No Demo or live broker mutation is authorized.
 This directory verifies the Phase F Broker Adapter implementation against the
 accepted entry contract at commit `4e5a785f77d291c2e43499da9da9c5fb7572f5cb`.
 The compile manifest includes the production adapter boundary but executes no
-adapter method. Deterministic integration tests use an independent broker-double
-oracle; source controls verify that the only direct MT5 API calls are inside the
-platform boundary.
+adapter method. A separate Strategy-Tester-only MQL harness executes pure adapter
+assertions and reports `broker_calls=0`. Deterministic integration tests use an
+independent Python broker-double oracle; a separate Python mutation suite proves
+the named unsafe models are detected; static source controls verify boundary
+shape and isolation. These four evidence classes are reported separately and
+none substitutes for another.
 
 The adapter has four layers:
 
@@ -20,3 +23,8 @@ The adapter has four layers:
 No capability proof is created here. Until an independently governed proof is
 present and valid, query completeness and visibility-watermark claims remain
 false and authoritative negative reconciliation remains naturally unreachable.
+
+The final environment re-sample reduces the permission/profile/specification
+TOCTOU window but cannot eliminate a platform change between the last read and
+`OrderSend`. That irreducible window is explicitly non-authoritative: any
+uncertain synchronous outcome remains unresolved and is never retried.
