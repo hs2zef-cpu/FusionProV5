@@ -288,6 +288,47 @@ public:
       return true;
    }
 
+   bool CompareAndSetWithGuard(const string domain_key,const string record_key,
+                      const ulong expected_revision,const string expected_store_revision,
+                      const string expected_payload_digest,const int expected_state,
+                      const ulong proposed_revision,const int proposed_state,
+                      const string proposed_payload_digest,const string proposed_payload,
+                      const datetime updated_at,
+                      const string guard_domain_key,const string guard_record_key,
+                      const ulong guard_revision,const string guard_store_revision,
+                      const string guard_payload_digest,const int guard_state,
+                      SWV5S5_MvpAuthorityRow &committed)
+   {
+      ZeroMemory(committed);
+      if(!VerifyMetadata() || domain_key=="" || record_key=="" || guard_domain_key=="" ||
+         guard_record_key=="" || proposed_revision!=expected_revision+1 || proposed_revision==0 ||
+         !SWV5S5_IsDigest64Lower(proposed_payload_digest) || !SWV5S5_IsDigest64Lower(guard_payload_digest) ||
+         proposed_payload=="" || updated_at<=0 || !DatabaseTransactionBegin(m_database)) return false;
+      SWV5S5_MvpAuthorityRow current,guard,proposed,inside;
+      bool found=false,guard_found=false,inside_found=false;
+      bool ok=ReadRowInternal(domain_key,record_key,current,found) && found &&
+         ReadRowInternal(guard_domain_key,guard_record_key,guard,guard_found) && guard_found;
+      if(ok) ok=current.logical_revision==expected_revision && current.store_revision==expected_store_revision &&
+         current.payload_digest==expected_payload_digest && current.state==expected_state &&
+         guard.logical_revision==guard_revision && guard.store_revision==guard_store_revision &&
+         guard.payload_digest==guard_payload_digest && guard.state==guard_state;
+      proposed.domain_key=domain_key; proposed.record_key=record_key; proposed.logical_revision=proposed_revision;
+      proposed.state=proposed_state; proposed.payload_digest=proposed_payload_digest;
+      proposed.payload=proposed_payload; proposed.updated_at=updated_at;
+      if(ok) ok=DeriveStoreRevision(domain_key,record_key,proposed_revision,proposed_payload_digest,
+                                    proposed.store_revision) &&
+         UpdateRow(proposed,expected_revision,expected_store_revision,expected_payload_digest,expected_state);
+      if(ok) ok=ReadRowInternal(domain_key,record_key,inside,inside_found) && inside_found && RowEqual(inside,proposed);
+      if(!ok)
+      { DatabaseTransactionRollback(m_database); return false; }
+      if(!DatabaseTransactionCommit(m_database))
+      { DatabaseTransactionRollback(m_database); return false; }
+      SWV5S5_MvpAuthorityRow after; bool after_found=false;
+      if(!ReadRowInternal(domain_key,record_key,after,after_found) || !after_found || !RowEqual(after,proposed)) return false;
+      committed=after;
+      return true;
+   }
+
    bool TestRollbackWrite(const string domain_key,const string record_key,
                           const string payload_digest,const string payload,const datetime updated_at)
    {
