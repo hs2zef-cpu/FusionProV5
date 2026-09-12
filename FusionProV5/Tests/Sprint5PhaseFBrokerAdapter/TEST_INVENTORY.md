@@ -22,11 +22,20 @@ passes only when both `unsafe_result_observed` and
 `target_assertion_detected` are true. Ordinary negative tests are not counted as
 mutation power.
 
-The real MQL assertion harness contains 24 pure assertions covering canonical
-grid arithmetic, exact filling mapping, market/SL/TP semantics, wire digest
-determinism and mutation sensitivity, environment re-sampling, row omission,
-and Broker/Execution source independence. It is run only in Strategy Tester and
-reports an explicit zero broker-call count.
+The real MQL assertion harness contains 48 pure production-function assertions.
+The original 24 cover canonical grid arithmetic, exact filling mapping,
+market/SL/TP semantics, wire digest determinism and mutation sensitivity,
+environment re-sampling, row omission, and Broker/Execution source independence.
+The added 24 cover current authoritative Claim/preflight validation, every
+permission flag, direction/volume/price/submission-digest binding, combined
+filling rejection, final-environment drift, all non-retrying synchronous
+classifications, partial residual non-authority, terminal conflict to BLOCKED,
+and BLOCKED stickiness. The harness runs only in Strategy Tester and reports an
+explicit zero broker-call count.
+
+The mutation credibility matrix records all 17 unsafe predicates and detector
+provenance. Its five audit-specific controls use target-specific predicates,
+not generic outcome inequality.
 
 The five audit-hardening controls are `MC-TOCTOU-WINDOW`,
 `MC-POSTDIGEST-NORMALIZE`, `MC-ADAPTER-SELFATTEST`,

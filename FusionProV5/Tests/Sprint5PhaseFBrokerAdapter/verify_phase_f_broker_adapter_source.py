@@ -13,6 +13,10 @@ PLATFORM = ADAPTER / "SW_V5_S5_F_BrokerPlatformBoundary.mqh"
 CORE = ADAPTER / "SW_V5_S5_F_BrokerAdapterCore.mqh"
 INTEGRATION = ADAPTER / "SW_V5_S5_F_BrokerReconciliationIntegration.mqh"
 TYPES = ADAPTER / "SW_V5_S5_F_BrokerAdapterTypes.mqh"
+TEST_ROOT = ROOT / "FusionProV5/Tests/Sprint5PhaseFBrokerAdapter"
+MQL_ASSERTIONS = TEST_ROOT / "SW_V5_S5_PhaseF_BrokerAdapterAssertions.mqh"
+MUTATION_MATRIX = TEST_ROOT / "MUTATION_CREDIBILITY_MATRIX.md"
+CLEARING_PACKAGE = TEST_ROOT / "AUDITOR_CLEARING_PACKAGE.md"
 
 DIRECT_PLATFORM_CALLS = (
     "OrderSend(", "AccountInfoInteger(", "AccountInfoString(", "TerminalInfoInteger(",
@@ -55,6 +59,9 @@ def main() -> int:
     core_text = CORE.read_text(encoding="utf-8")
     integration_text = INTEGRATION.read_text(encoding="utf-8")
     all_text = "\n".join(p.read_text(encoding="utf-8") for p in files)
+    mql_text = MQL_ASSERTIONS.read_text(encoding="utf-8")
+    mutation_matrix_text = MUTATION_MATRIX.read_text(encoding="utf-8")
+    clearing_text = CLEARING_PACKAGE.read_text(encoding="utf-8")
 
     if platform_text.count("OrderSend(") != 1:
         failures.append("exactly-one-platform-ordersend-source-site")
@@ -117,6 +124,37 @@ def main() -> int:
             "uint &reported_total" not in TYPES.read_text(encoding="utf-8"):
         failures.append("callback-store-total-not-observable")
 
+    required_mql_calls = (
+        "SWV5S5_F_AdapterValidatePreflight", "SWV5S5_ValidateAuthoritativeClaimResult",
+        "SWV5S5_F_AdapterValidateFinalEnvironment", "SWV5S5_F_AdapterClassifySync",
+        "SWV5S5_F_AdapterObservationKind", "SWV5S5_F_EvaluateReconciliation",
+        "SWV5S5_F_AdapterResolveFilling", "SWV5S5_F_DeriveAdapterWirePayloadDigest",
+        "SWV5S5_F_AdapterBrokerQueryShapeComplete", "SWV5S5_F_AdapterExecutionQueryShapeComplete",
+        "SWV5S5_F_AdapterEvidenceSourcesIndependent",
+    )
+    mql_ids = set(re.findall(r'"(MQL-[A-Z0-9-]+)"', mql_text))
+    if len(mql_ids) != 48:
+        failures.append("expanded-real-mql-assertion-count-not-48")
+    for token in required_mql_calls:
+        if token not in mql_text:
+            failures.append(f"missing-real-mql-call:{token}")
+    if "OrderSend(" in mql_text:
+        failures.append("mql-assertion-harness-broker-call")
+
+    mutation_ids = re.findall(r"\| (MC-[A-Z0-9-]+) \|", mutation_matrix_text)
+    if len(mutation_ids) != 17 or len(set(mutation_ids)) != 17:
+        failures.append("mutation-credibility-matrix-not-17-unique-rows")
+    for marker in ("unsafe_result_observed", "Detector provenance", "Target path reached",
+                   "unrelated earlier guard", "MC-TOCTOU-WINDOW", "MC-POSTDIGEST-NORMALIZE",
+                   "MC-ADAPTER-SELFATTEST", "MC-FILLING-COERCION", "MC-QUERY-ROW-OMISSION"):
+        if marker not in mutation_matrix_text:
+            failures.append(f"mutation-mapping-marker-missing:{marker}")
+    for marker in ("F-1 NO_CALL", "F-10 read-path independence", "exactly one `OrderSend(`",
+                   "REAL_MQL_EXECUTED", "PYTHON_ORACLE", "PYTHON_MUTATION", "STATIC_SOURCE",
+                   "NOT_EXECUTABLE_WITHOUT_BROKER", "broker_calls=0"):
+        if marker not in clearing_text:
+            failures.append(f"auditor-clearing-marker-missing:{marker}")
+
     frozen = (
         "FusionProV5/ProductionArchitecture/", "FusionProV5/SignalEngine/",
         "FusionProV5/DecisionEngine/", "FusionProV5/Engines/", "FusionProV5/Dashboard/",
@@ -134,7 +172,8 @@ def main() -> int:
     if git("diff", "--name-only", BASE, "--", contract_path):
         failures.append("accepted-contract-mutated")
 
-    checks = 14 + len(DIRECT_PLATFORM_CALLS)*(len(files)-1) + len(FORBIDDEN) + len(REQUIRED_CORE) + len(REQUIRED_INTEGRATION)
+    checks = (14 + len(DIRECT_PLATFORM_CALLS)*(len(files)-1) + len(FORBIDDEN) +
+              len(REQUIRED_CORE) + len(REQUIRED_INTEGRATION) + len(required_mql_calls) + 18)
     print(f"PHASE_F_BROKER_ADAPTER_SOURCE|checks={checks}|failures={len(failures)}|platform_files=1|ordersend_sites={platform_text.count('OrderSend(')}")
     for failure in failures:
         print(f"FAIL|{failure}")

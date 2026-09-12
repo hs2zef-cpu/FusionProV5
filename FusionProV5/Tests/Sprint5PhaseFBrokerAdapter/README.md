@@ -12,6 +12,13 @@ the named unsafe models are detected; static source controls verify boundary
 shape and isolation. These four evidence classes are reported separately and
 none substitutes for another.
 
+The expanded MQL harness executes 48 pure production-function assertions,
+including authoritative Claim/preflight guards, all permission flags, payload
+binding, synchronous classification, partial residual non-authority, terminal
+conflict, and sticky BLOCKED behavior. `AUDITOR_CLEARING_PACKAGE.md` records the
+evidence classes and exact IDs. `MUTATION_CREDIBILITY_MATRIX.md` maps every
+mutant to its unsafe predicate, detector, provenance, and targeted guard.
+
 The adapter has four layers:
 
 1. neutral DTOs and persistence-facing interfaces;
