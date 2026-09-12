@@ -6,6 +6,8 @@
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpSqliteAuthorityStore.mqh"
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDemoAuthorityProviders.mqh"
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpPermitClaimAuthorities.mqh"
+#include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
+#include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpManualProvisioningAuthorities.mqh"
 
 void OnStart(void)
 {

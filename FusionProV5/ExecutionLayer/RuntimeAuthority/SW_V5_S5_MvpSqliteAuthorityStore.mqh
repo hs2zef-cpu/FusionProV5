@@ -306,18 +306,22 @@ public:
          proposed_payload=="" || updated_at<=0 || !DatabaseTransactionBegin(m_database)) return false;
       SWV5S5_MvpAuthorityRow current,guard,proposed,inside;
       bool found=false,guard_found=false,inside_found=false;
-      bool ok=ReadRowInternal(domain_key,record_key,current,found) && found &&
+      bool ok=ReadRowInternal(domain_key,record_key,current,found) &&
          ReadRowInternal(guard_domain_key,guard_record_key,guard,guard_found) && guard_found;
-      if(ok) ok=current.logical_revision==expected_revision && current.store_revision==expected_store_revision &&
-         current.payload_digest==expected_payload_digest && current.state==expected_state &&
-         guard.logical_revision==guard_revision && guard.store_revision==guard_store_revision &&
+      if(ok && expected_revision==0)
+         ok=!found && expected_store_revision=="" && expected_payload_digest=="";
+      else if(ok)
+         ok=found && current.logical_revision==expected_revision && current.store_revision==expected_store_revision &&
+            current.payload_digest==expected_payload_digest && current.state==expected_state;
+      if(ok) ok=guard.logical_revision==guard_revision && guard.store_revision==guard_store_revision &&
          guard.payload_digest==guard_payload_digest && guard.state==guard_state;
       proposed.domain_key=domain_key; proposed.record_key=record_key; proposed.logical_revision=proposed_revision;
       proposed.state=proposed_state; proposed.payload_digest=proposed_payload_digest;
       proposed.payload=proposed_payload; proposed.updated_at=updated_at;
       if(ok) ok=DeriveStoreRevision(domain_key,record_key,proposed_revision,proposed_payload_digest,
                                     proposed.store_revision) &&
-         UpdateRow(proposed,expected_revision,expected_store_revision,expected_payload_digest,expected_state);
+         (expected_revision==0 ? InsertRow(proposed) :
+          UpdateRow(proposed,expected_revision,expected_store_revision,expected_payload_digest,expected_state));
       if(ok) ok=ReadRowInternal(domain_key,record_key,inside,inside_found) && inside_found && RowEqual(inside,proposed);
       if(!ok)
       { DatabaseTransactionRollback(m_database); return false; }
