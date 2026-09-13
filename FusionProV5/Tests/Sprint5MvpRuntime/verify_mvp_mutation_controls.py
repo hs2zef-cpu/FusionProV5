@@ -29,6 +29,8 @@ def main() -> int:
         ("MUT-CALLBACK-CONFLICT", not callback_matches_submission(11, 99, 44, 11, 12, 44)),
         ("MUT-EXECUTION-ROW-OMISSION", execution_observation(True, True, 3, [True, True])[1] == 1),
         ("MUT-HARD-KILL-SKIP-PENDING", hard_kill_transition("ACTIVE", True, True) != "RELEASED"),
+        ("MUT-HARD-KILL-STALE-OWNER", hard_kill_transition("RELEASE_PENDING", True, True, False, True) != "RELEASED"),
+        ("MUT-HARD-KILL-NO-ZERO-STATE", hard_kill_transition("RELEASE_PENDING", True, True, True, False) != "RELEASED"),
     ]
     for test_id, passed in rows:
         print(f"MVP_MUTATION|{test_id}|{'KILLED' if passed else 'SURVIVED'}")

@@ -306,10 +306,50 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    const string hard_kill_ns="6666666666666666666666666666666666666666666666666666666666666666";
    string active_payload,active_digest; SWV5S5_CanonicalHardKillState("hard_kill",active_state,active_payload);
    SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL,active_payload,active_digest);
+   SWV5_InstanceLease release_lease; SWV5_TestMakeLease(release_lease,SWV5_LOCK_ACQUIRED);
+   release_lease.fence.ownership_namespace=active_state.persistence_namespace.ownership_namespace;
+   release_lease.fence.owner.key=active_state.persistence_namespace.ownership_namespace;
+   release_lease.clock_id=context.clock_id; release_lease.clock_authority=context.clock_authority;
+   release_lease.acquired_clock_sequence=context.clock_sequence-2;
+   release_lease.heartbeat_clock_sequence=context.clock_sequence-1;
+   release_lease.expiry_clock_sequence=context.clock_sequence+60;
+   release_lease.acquired_at=context.clock_time-2; release_lease.heartbeat_at=context.clock_time-1;
+   release_lease.expires_at=context.clock_time+60;
+   SWV5S5_LeaseLivenessAuthorityView release_lease_view; release_lease_view.lease=release_lease;
+   string release_lease_payload;
+   const bool release_lease_canonical=SWV5S5_CanonicalInstanceLease("lease",release_lease,release_lease_payload);
+   const bool release_lease_shape=SWV5S5_IsV5Version(release_lease.contract_version) &&
+      release_lease.status==SWV5_LOCK_ACQUIRED && release_lease.expires_at>release_lease.heartbeat_at;
+   const bool release_lease_derived=SWV5S5_DeriveLeaseProjection(release_lease_view);
+   const bool release_lease_valid=release_lease_shape && release_lease_canonical && release_lease_derived;
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-VERSION",SWV5S5_IsV5Version(release_lease.contract_version));
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-STATUS",release_lease.status==SWV5_LOCK_ACQUIRED);
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-TIME",release_lease.expires_at>release_lease.heartbeat_at);
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-SHAPE",release_lease_shape);
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-CANONICAL",release_lease_canonical);
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-DIGEST",release_lease_derived);
+   SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-FIXTURE",release_lease_valid);
+   SWV5S5_F_ReconciliationResult zero_reconciliation; ZeroMemory(zero_reconciliation);
+   zero_reconciliation.contract_version=context.expected_version;
+   zero_reconciliation.state=SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED;
+   zero_reconciliation.disposition=SWV5S5_F_DISPOSITION_NEGATIVE_CONFIRMED;
+   zero_reconciliation.proposed_submission_state=SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED;
+   zero_reconciliation.authoritative_positive=false; zero_reconciliation.authoritative_negative=true;
+   zero_reconciliation.retry_allowed=false; zero_reconciliation.requires_new_admission_for_any_future_attempt=true;
+   zero_reconciliation.cumulative_confirmed_volume=0.0; zero_reconciliation.residual_volume=0.0;
+   zero_reconciliation.residual_is_submission_authority=false;
+   zero_reconciliation.requires_new_request_identity_for_residual=true;
+   zero_reconciliation.authoritative_evidence_digest="cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+   zero_reconciliation.reason_code="MVP_ZERO_STATE_RECONCILED";
+   SWV5S5_F_DeriveResultDigest(zero_reconciliation,zero_reconciliation.result_digest);
    SWV5S5_MvpSqliteAuthorityStore hard_kill_seed; SWV5S5_MvpAuthorityRow hard_kill_row;
    const bool hard_kill_seeded=hard_kill_seed.Open("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
       hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",0,"","",0,1,
-         (int)SWV5_HARD_KILL_ACTIVE,active_digest,active_payload,context.clock_time,hard_kill_row);
+         (int)SWV5_HARD_KILL_ACTIVE,active_digest,active_payload,context.clock_time,hard_kill_row) &&
+      release_lease_valid && hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,
+         SWV5S5_MVP_OWNERSHIP_KEY,0,"","",0,1,(int)release_lease.status,
+         release_lease_view.projection_digest,release_lease_payload,context.clock_time,hard_kill_row);
+   SWV5S5_MvpRecord(c,"HARD-KILL-AUTHORITY-SEED",hard_kill_seeded);
    hard_kill_seed.Close();
    SWV5S5_MvpManualSafetyReleaseProvisioner release_provisioner; SWV5_HardKillState pending_state;
    SWV5S5_MvpAuthorityRow pending_row,released_row;
@@ -318,8 +358,23 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    SWV5S5_MvpRecord(c,"HARD-KILL-ACTIVE-TO-PENDING",pending_ok &&
       pending_row.state==(int)SWV5_HARD_KILL_RELEASE_PENDING);
    SWV5S5_MvpRiskContract runtime_risk;
+   SWV5_InstanceLease stale_release_lease=release_lease;
+   stale_release_lease.fence.takeover_generation++;
+   stale_release_lease.fence.fencing_token_digest="FENCE-DIGEST-STALE";
+   SWV5S5_MvpAuthorityRow stale_release_row;
+   const bool stale_release_denied=pending_ok && !release_provisioner.PersistApprovedRelease(op,context,pending_state,
+      release,authority,stale_release_lease,zero_reconciliation,runtime_risk,stale_release_row);
+   SWV5S5_MvpRecord(c,"HARD-KILL-STALE-OWNER-DENIED",stale_release_denied);
+   SWV5S5_MvpSqliteAuthorityStore stale_release_readback; SWV5S5_MvpAuthorityRow stale_release_artifact;
+   bool stale_release_artifact_found=false;
+   const bool stale_release_no_artifact=stale_release_denied &&
+      stale_release_readback.Open("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
+      stale_release_readback.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",
+         stale_release_artifact,stale_release_artifact_found) && !stale_release_artifact_found;
+   SWV5S5_MvpRecord(c,"HARD-KILL-STALE-OWNER-NO-ARTIFACT",stale_release_no_artifact);
+   stale_release_readback.Close();
    const bool released_ok=pending_ok && release_provisioner.PersistApprovedRelease(op,context,pending_state,release,
-      authority,runtime_risk,true,released_row);
+      authority,release_lease,zero_reconciliation,runtime_risk,released_row);
    SWV5S5_MvpRecord(c,"HARD-KILL-PENDING-TO-RELEASED",released_ok &&
       released_row.state==(int)SWV5_HARD_KILL_RELEASED);
    SWV5S5_MvpSqliteAuthorityStore hard_kill_restart; SWV5S5_MvpAuthorityRow persisted_release;

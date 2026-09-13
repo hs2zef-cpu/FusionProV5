@@ -207,11 +207,12 @@ def recover(claim_state: str, broker_complete: bool, execution_complete: bool,
     return "NEGATIVE", 0, False
 
 
-def hard_kill_transition(current: str, evidence_valid: bool, authority_valid: bool) -> str:
+def hard_kill_transition(current: str, evidence_valid: bool, authority_valid: bool,
+                         current_owner: bool = True, zero_state_reconciled: bool = True) -> str:
     if current == "ACTIVE":
         return "RELEASE_PENDING" if evidence_valid else "ACTIVE"
     if current == "RELEASE_PENDING":
-        return "RELEASED" if evidence_valid and authority_valid else "RELEASE_PENDING"
+        return "RELEASED" if evidence_valid and authority_valid and current_owner and zero_state_reconciled else "RELEASE_PENDING"
     return current
 
 
@@ -359,6 +360,8 @@ def main() -> int:
     r.check("HARD-KILL-RELEASE-PENDING", pending == "RELEASE_PENDING")
     r.check("HARD-KILL-RELEASED", released == "RELEASED")
     r.check("HARD-KILL-NO-AUTHORITY", hard_kill_transition(pending, True, False) == "RELEASE_PENDING")
+    r.check("HARD-KILL-STALE-OWNER", hard_kill_transition(pending, True, True, False, True) == "RELEASE_PENDING")
+    r.check("HARD-KILL-NO-ZERO-STATE", hard_kill_transition(pending, True, True, True, False) == "RELEASE_PENDING")
 
     with tempfile.TemporaryDirectory(prefix="swv5_mvp_") as temp:
         db_path = Path(temp) / "authority.sqlite"

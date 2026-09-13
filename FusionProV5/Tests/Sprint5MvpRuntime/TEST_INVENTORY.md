@@ -12,6 +12,6 @@ All tests are offline and non-submitting.
 | Store/CAS | initial CAS, stale writer, one Claim winner, non-persisted event-local grant, rollback, reopen, namespace mismatch, terminal restart |
 | Evidence/publication | callback full round trip, corruption rejection, exact synchronous identity binding, conflicting-ID rejection, BLOCKED sticky, terminal monotonicity |
 | Execution observation | operation/enumeration status, reported/materialized/failure counts, omitted-row accounting, independent read/authority/sequence identities, persisted incomplete restart metadata |
-| Hard Kill | genesis ACTIVE latch, ACTIVE→RELEASE_PENDING→RELEASED CAS sequence, independent authority binding, released-state restart persistence |
+| Hard Kill | genesis ACTIVE latch, ACTIVE→RELEASE_PENDING→RELEASED CAS sequence, typed current-lease guard, typed zero-state reconciliation binding, independent authority binding, released-state restart persistence |
 | Recovery | zero submission calls, no Claim grant reconstruction, independent evidence, incomplete-evidence preservation, stale publication denial |
 | Isolation | no runtime OrderSend/OrderSendAsync/CTrade, read-only SymbolInfo/History/OrderCalc primitives only |
