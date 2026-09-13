@@ -46,6 +46,15 @@ private:
       return DatabaseBind(statement,index,value);
    }
 
+   bool StepWrite(const int statement)
+   {
+      ResetLastError();
+      if(DatabaseRead(statement)) return true;
+      // A prepared INSERT/UPDATE has no result row. MQL reports the normal
+      // completion sentinel ERR_DATABASE_NO_MORE_DATA after executing it.
+      return GetLastError()==ERR_DATABASE_NO_MORE_DATA;
+   }
+
    bool ReadMetadata(string &schema_id,long &schema_version,long &minimum_version,
                      string &namespace_digest)
    {
@@ -79,7 +88,7 @@ private:
       bool ok=BindText(statement,0,SWV5S5_MVP_STORE_SCHEMA_ID) &&
               BindLong(statement,1,(long)SWV5S5_MVP_STORE_SCHEMA_VERSION) &&
               BindLong(statement,2,(long)SWV5S5_MVP_STORE_MINIMUM_COMPATIBLE_VERSION) &&
-              BindText(statement,3,m_namespace_digest) && DatabaseRead(statement);
+              BindText(statement,3,m_namespace_digest) && StepWrite(statement);
       DatabaseFinalize(statement);
       return ok;
    }
@@ -138,7 +147,7 @@ private:
          BindText(statement,2,row.record_key) && BindLong(statement,3,(long)row.logical_revision) &&
          BindText(statement,4,row.store_revision) && BindLong(statement,5,(long)row.state) &&
          BindText(statement,6,row.payload_digest) && BindText(statement,7,row.payload) &&
-         BindLong(statement,8,(long)row.updated_at) && DatabaseRead(statement);
+         BindLong(statement,8,(long)row.updated_at) && StepWrite(statement);
       DatabaseFinalize(statement);
       return ok;
    }
@@ -158,7 +167,7 @@ private:
          BindText(statement,6,m_namespace_digest) && BindText(statement,7,row.domain_key) &&
          BindText(statement,8,row.record_key) && BindLong(statement,9,(long)expected_revision) &&
          BindText(statement,10,expected_store_revision) && BindText(statement,11,expected_payload_digest) &&
-         BindLong(statement,12,(long)expected_state) && DatabaseRead(statement);
+         BindLong(statement,12,(long)expected_state) && StepWrite(statement);
       DatabaseFinalize(statement);
       return ok;
    }
@@ -189,7 +198,12 @@ public:
    bool Open(const string relative_path,const string namespace_digest)
    {
       Close();
-      if(relative_path=="" || !SWV5S5_IsDigest64Lower(namespace_digest)) return false;
+      // MVP databases are filename-only artifacts in Terminal Common\Files.
+      // Reject traversal, drive-qualified, and terminal-local path variants.
+      if(StringLen(relative_path)<=7 || StringFind(relative_path,"\\")>=0 || StringFind(relative_path,"/")>=0 ||
+         StringFind(relative_path,":")>=0 || StringFind(relative_path,"..")>=0 ||
+         StringSubstr(relative_path,StringLen(relative_path)-7)!=".sqlite" ||
+         !SWV5S5_IsDigest64Lower(namespace_digest)) return false;
       m_relative_path=relative_path;
       m_namespace_digest=namespace_digest;
       m_database=DatabaseOpen(relative_path,DATABASE_OPEN_READWRITE|DATABASE_OPEN_CREATE|DATABASE_OPEN_COMMON);

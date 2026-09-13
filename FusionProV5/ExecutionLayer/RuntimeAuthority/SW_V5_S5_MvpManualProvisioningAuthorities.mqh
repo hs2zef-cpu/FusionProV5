@@ -62,16 +62,34 @@ private:
 
    bool DomainSeed(const string domain,const datetime now)
    {
-      string body="",f,digest;
+      string body="",f,digest; int initial_state=0;
       if(!SWV5S5_CanonicalString("genesis_id",m_genesis_id,f)) return false; body+=f;
       if(!SWV5S5_CanonicalString("manifest_digest",m_manifest_digest,f)) return false; body+=f;
       if(!SWV5S5_CanonicalString("domain",domain,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("genesis_generation",1,f)) return false; body+=f;
+      if(domain==SWV5S5_MVP_DOMAIN_HARD_KILL)
+      {
+         initial_state=(int)SWV5_HARD_KILL_ACTIVE;
+         if(!SWV5S5_CanonicalString("latch_id","GENESIS-LATCH/"+m_genesis_id,f)) return false; body+=f;
+         if(!SWV5S5_CanonicalUInt("latch_generation",1,f)) return false; body+=f;
+         if(!SWV5S5_CanonicalUInt("release_generation",0,f)) return false; body+=f;
+         if(!SWV5S5_CanonicalString("activation_reason","NAMESPACE_GENESIS_NOT_RECONCILED",f)) return false; body+=f;
+         if(!SWV5S5_CanonicalString("activation_authority",SWV5S5_MVP_GENESIS_POLICY,f)) return false; body+=f;
+      }
+      else if(domain==SWV5S5_MVP_DOMAIN_OWNERSHIP) initial_state=(int)SWV5_LOCK_UNCLAIMED;
       if(!SWV5S5_DomainDigest(domain,body,digest)) return false;
       SWV5S5_MvpAuthorityRow row; bool found=false;
       if(!m_store.ReadRow(domain,"GENESIS",row,found)) return false;
-      if(found) return row.logical_revision==1 && row.payload_digest==digest && row.payload==body;
-      return m_store.CompareAndSet(domain,"GENESIS",0,"","",0,1,0,digest,body,now,row);
+      if(found) return row.logical_revision==1 && row.payload_digest==digest && row.payload==body && row.state==initial_state;
+      if(!m_store.CompareAndSet(domain,"GENESIS",0,"","",0,1,initial_state,digest,body,now,row)) return false;
+      if(domain==SWV5S5_MVP_DOMAIN_HARD_KILL)
+      {
+         SWV5S5_MvpAuthorityRow current; bool current_found=false;
+         if(!m_store.ReadRow(domain,"CURRENT",current,current_found) || current_found) return false;
+         return m_store.CompareAndSet(domain,"CURRENT",0,"","",0,1,(int)SWV5_HARD_KILL_ACTIVE,
+            digest,body,now,current);
+      }
+      return true;
    }
 
 public:
@@ -98,7 +116,12 @@ public:
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_GENESIS,"GENESIS",row,found) || found) return false;
       if(!m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_GENESIS,"GENESIS",0,"","",0,1,
          SWV5S5_MVP_GENESIS_PROVISIONING,digest,body,now,row)) return false;
-      return DomainSeed(SWV5S5_MVP_DOMAIN_OPERATOR,now);
+      string operator_seed=operator_payload,f2,operator_seed_digest;
+      if(!SWV5S5_CanonicalString("genesis_id",m_genesis_id,f2)) return false; operator_seed+=f2;
+      if(!SWV5S5_CanonicalString("manifest_digest",m_manifest_digest,f2)) return false; operator_seed+=f2;
+      if(!SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_OPERATOR,operator_seed,operator_seed_digest)) return false;
+      return m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_OPERATOR,"GENESIS",0,"","",0,1,0,
+         operator_seed_digest,operator_seed,now,row);
    }
 
    bool InitializeAllDomains(const datetime now)
@@ -189,9 +212,72 @@ class SWV5S5_MvpManualSafetyReleaseProvisioner
 {
 private:
    SWV5S5_MvpSqliteAuthorityStore m_store;
+
+   bool StatePayload(const SWV5_HardKillState &state,string &payload,string &digest)
+   {
+      if(!SWV5S5_CanonicalHardKillState("hard_kill",state,payload)) return false;
+      return SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL,payload,digest);
+   }
+
+   bool SameOperator(const SWV5_OperatorIdentity &left,const SWV5_OperatorIdentity &right)
+   {
+      string a,b; return SWV5S5_CanonicalOperatorIdentity("operator",left,a) &&
+         SWV5S5_CanonicalOperatorIdentity("operator",right,b) && a==b;
+   }
+
+   bool SameTypedEvidence(const SWV5_TypedReconciliationEvidence &left,
+                          const SWV5_TypedReconciliationEvidence &right)
+   {
+      string a,b; return SWV5S5_CanonicalTypedReconciliationEvidence("evidence",left,a) &&
+         SWV5S5_CanonicalTypedReconciliationEvidence("evidence",right,b) && a==b;
+   }
+
+   bool SameExposureEvidence(const SWV5_ExposureReductionEvidence &left,
+                             const SWV5_ExposureReductionEvidence &right)
+   {
+      string a,b; return SWV5S5_CanonicalExposureReductionEvidence("evidence",left,a) &&
+         SWV5S5_CanonicalExposureReductionEvidence("evidence",right,b) && a==b;
+   }
+
+   bool SameAccountNamespace(const SWV5_AccountRiskNamespace &left,
+                             const SWV5_AccountRiskNamespace &right)
+   {
+      string a,b; return SWV5S5_CanonicalAccountNamespace("account",left,a) &&
+         SWV5S5_CanonicalAccountNamespace("account",right,b) && a==b;
+   }
 public:
    bool Configure(const string relative_path,const string namespace_digest)
    { return m_store.Open(relative_path,namespace_digest); }
+
+   bool StageReleasePending(const SWV5S5_MvpOperatorInvocation &operator_invocation,
+                            const SWV5_ContractValidationContext &context,
+                            const SWV5_HardKillState &active_state,
+                            const SWV5_HardKillReleaseEvidence &evidence,
+                            SWV5_HardKillState &pending_state,
+                            SWV5S5_MvpAuthorityRow &committed)
+   {
+      ZeroMemory(pending_state);
+      if(!SWV5S5_MvpOperatorInvocationValid(operator_invocation,context.clock_time) ||
+         active_state.state!=SWV5_HARD_KILL_ACTIVE || active_state.latch_id=="" ||
+         active_state.latch_generation==0 || evidence.latch_id!=active_state.latch_id ||
+         evidence.latch_generation!=active_state.latch_generation ||
+         evidence.release_generation!=active_state.release_generation+1 ||
+         evidence.operator_identity.operator_id!=operator_invocation.operator_id ||
+         evidence.operator_identity.authority_role!=operator_invocation.authority_role ||
+         evidence.operator_identity.authentication_reference!=operator_invocation.authentication_reference ||
+         evidence.operator_identity.authenticated_at!=operator_invocation.authenticated_at) return false;
+      SWV5S5_MvpAuthorityRow latch; bool found=false;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",latch,found) || !found ||
+         latch.state!=(int)SWV5_HARD_KILL_ACTIVE || StringFind(latch.payload,active_state.latch_id)<0) return false;
+      pending_state=active_state; pending_state.state=SWV5_HARD_KILL_RELEASE_PENDING;
+      pending_state.release_evidence=evidence;
+      string payload,digest;
+      if(!StatePayload(pending_state,payload,digest)) return false;
+      return m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",
+         latch.logical_revision,latch.store_revision,latch.payload_digest,latch.state,
+         latch.logical_revision+1,(int)SWV5_HARD_KILL_RELEASE_PENDING,digest,payload,
+         context.clock_time,committed);
+   }
 
    bool PersistApprovedRelease(const SWV5S5_MvpOperatorInvocation &operator_invocation,
                                const SWV5_ContractValidationContext &context,
@@ -202,20 +288,41 @@ public:
                                SWV5S5_MvpAuthorityRow &committed)
    {
       SWV5_ContractDecision decision;
+      string evidence_digest,authority_digest,pending_payload,pending_digest;
       if(!zero_state_reconciled || !SWV5S5_MvpOperatorInvocationValid(operator_invocation,context.clock_time) ||
+         !SWV5S5_MvpVersionExact(context,authority_record.contract_version) ||
+         !SWV5S5_MvpVersionExact(context,authority_record.persistence_namespace.contract_version) ||
+         !SWV5S5_MvpVersionExact(context,authority_record.account_namespace.contract_version) ||
          evidence.operator_identity.operator_id!=operator_invocation.operator_id ||
          evidence.operator_identity.authority_role!=operator_invocation.authority_role ||
          evidence.operator_identity.authentication_reference!=operator_invocation.authentication_reference ||
          evidence.operator_identity.authenticated_at!=operator_invocation.authenticated_at ||
-         authority_record.operator_identity.operator_id!=operator_invocation.operator_id ||
-         authority_record.operator_identity.authentication_reference!=operator_invocation.authentication_reference ||
+         !SameOperator(authority_record.operator_identity,evidence.operator_identity) ||
          authority_record.release_id!=evidence.release_id ||
          authority_record.latch_id!=evidence.latch_id ||
          authority_record.latch_generation!=evidence.latch_generation ||
          authority_record.release_generation!=evidence.release_generation ||
-         authority_record.authority_record_digest=="" || evidence.release_record_digest=="" ||
+         authority_record.approving_component!=evidence.approving_component ||
+         authority_record.approval_policy_id!=evidence.approval_policy_id ||
+         authority_record.approval_sequence!=evidence.approval_sequence ||
+         !SameTypedEvidence(authority_record.broker_evidence_reference,evidence.broker_evidence) ||
+         !SameTypedEvidence(authority_record.persistence_evidence_reference,evidence.persistence_evidence) ||
+         !SameExposureEvidence(authority_record.exposure_evidence_reference,evidence.exposure_evidence) ||
+         authority_record.approved_at!=evidence.approved_at || authority_record.released_at!=evidence.released_at ||
+         authority_record.expires_at!=evidence.expires_at ||
+         authority_record.release_record_sequence!=evidence.release_record_sequence ||
+         authority_record.authority_record_id=="" ||
+         authority_record.issuing_component!=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
+         authority_record.authority_source!=SWV5_AUTHORITY_HARD_KILL_RELEASE_RECORD ||
+         !SWV5S5_EqualNamespace(authority_record.persistence_namespace,current_state.persistence_namespace) ||
+         !SameAccountNamespace(authority_record.account_namespace,current_state.account_namespace) ||
+         !SWV5S5_MvpHardKillReleaseDigest(evidence,evidence_digest) ||
+         evidence_digest!=evidence.release_record_digest ||
+         !SWV5S5_MvpHardKillAuthorityRecordDigest(authority_record,authority_digest) ||
+         authority_digest!=authority_record.authority_record_digest ||
          evidence.expires_at>context.clock_time+(datetime)SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS ||
-         !risk_contract.ValidateHardKillRelease(context,current_state,evidence,decision)) return false;
+         !risk_contract.ValidateHardKillRelease(context,current_state,evidence,decision) ||
+         !StatePayload(current_state,pending_payload,pending_digest)) return false;
       string payload="",f,digest;
       if(!SWV5S5_CanonicalString("release_record_digest",evidence.release_record_digest,f)) return false; payload+=f;
       if(!SWV5S5_CanonicalString("authority_record_digest",authority_record.authority_record_digest,f)) return false; payload+=f;
@@ -223,10 +330,36 @@ public:
       if(!SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,payload,digest)) return false;
       SWV5S5_MvpAuthorityRow current; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",current,found)) return false;
-      return m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",
-         (found ? current.logical_revision : 0),(found ? current.store_revision : ""),
-         (found ? current.payload_digest : ""),(found ? current.state : 0),
-         (found ? current.logical_revision+1 : 1),1,digest,payload,context.clock_time,committed);
+      SWV5S5_MvpAuthorityRow release_row;
+      if(found)
+      {
+         if(current.state!=1 || current.payload_digest!=digest || current.payload!=payload) return false;
+         release_row=current;
+      }
+      else if(!m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",
+         0,"","",0,1,1,digest,payload,context.clock_time,release_row)) return false;
+      SWV5S5_MvpAuthorityRow latch; bool latch_found=false;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",latch,latch_found) || !latch_found ||
+         latch.state!=(int)SWV5_HARD_KILL_RELEASE_PENDING || latch.payload_digest!=pending_digest ||
+         latch.payload!=pending_payload) return false;
+      SWV5_HardKillState released_state=current_state;
+      released_state.state=SWV5_HARD_KILL_RELEASED;
+      released_state.release_generation=evidence.release_generation;
+      released_state.release_evidence=evidence;
+      released_state.release_authority_reference.contract_version=authority_record.contract_version;
+      released_state.release_authority_reference.authority_record_id=authority_record.authority_record_id;
+      released_state.release_authority_reference.authority_record_sequence=authority_record.release_record_sequence;
+      released_state.release_authority_reference.authority_record_digest=authority_record.authority_record_digest;
+      released_state.release_authority_reference.release_id=authority_record.release_id;
+      released_state.release_authority_reference.latch_generation=authority_record.latch_generation;
+      released_state.release_authority_reference.release_generation=authority_record.release_generation;
+      string latch_payload,latch_digest;
+      if(!StatePayload(released_state,latch_payload,latch_digest)) return false;
+      return m_store.CompareAndSetWithGuard(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",
+         latch.logical_revision,latch.store_revision,latch.payload_digest,latch.state,
+         latch.logical_revision+1,(int)SWV5_HARD_KILL_RELEASED,latch_digest,latch_payload,context.clock_time,
+         SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",release_row.logical_revision,
+         release_row.store_revision,release_row.payload_digest,release_row.state,committed);
    }
 };
 

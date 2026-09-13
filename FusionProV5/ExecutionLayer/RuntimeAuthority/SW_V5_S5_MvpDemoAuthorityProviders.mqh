@@ -99,7 +99,9 @@ public:
          request.raw_price>0.0 && request.raw_stop_price>0.0 && request.raw_limit_price>=0.0 &&
          request.market_bid>0.0 && request.market_ask>=request.market_bid && request.operation_price>0.0 &&
          request.expected_specification_sequence==specification.specification_sequence &&
-         SWV5S5_EqualFence(request.ownership_fence,request.ownership_fence) &&
+         SWV5S5_EqualOwnershipKey(request.persistence_namespace.ownership_namespace,
+            request.ownership_fence.ownership_namespace) &&
+         request.persistence_namespace.basket_id.value!="" &&
          request.persistence_namespace.ownership_namespace.symbol==SWV5S5_MVP_SYMBOL;
       if(!request_shape || !SWV5S5_MvpSpecificationValid(context,specification))
       {
@@ -389,7 +391,7 @@ public:
 };
 
 bool SWV5S5_MvpRiskInputAllowed(const SWV5_ContractValidationContext &context,
-                                const SWV5_RiskEvaluationInput &candidate)
+                                 const SWV5_RiskEvaluationInput &candidate)
 {
    const bool fresh=candidate.account.observed_at>=context.clock_time-5 && candidate.account.observed_at<=context.clock_time &&
       candidate.exposure.observed_at>=context.clock_time-5 && candidate.exposure.observed_at<=context.clock_time &&
@@ -414,6 +416,121 @@ bool SWV5S5_MvpRiskInputAllowed(const SWV5_ContractValidationContext &context,
       candidate.intent.intent_type==SWV5_INTENT_OPEN && candidate.intent.normalized_volume<=0.01 &&
       candidate.intent.normalized_stop_price>0.0 && candidate.hard_kill_state.state==SWV5_HARD_KILL_INACTIVE &&
       candidate.has_margin_authority_record && candidate.has_basket_risk_authority_record && authority_digests;
+}
+
+bool SWV5S5_MvpHardKillReleaseDigest(const SWV5_HardKillReleaseEvidence &evidence,string &digest)
+{
+   string body="",f,format;
+   if(!SWV5S5_CanonicalContractVersion("contract_version",evidence.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalNamespace("persistence_namespace",evidence.persistence_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("release_id",evidence.release_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("latch_id",evidence.latch_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("latch_generation",evidence.latch_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_generation",evidence.release_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("approval_policy_id",evidence.approval_policy_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("approval_sequence",evidence.approval_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalOperatorIdentity("operator_identity",evidence.operator_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("approving_component",evidence.approving_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalTypedReconciliationEvidence("broker_evidence",evidence.broker_evidence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalTypedReconciliationEvidence("persistence_evidence",evidence.persistence_evidence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalExposureReductionEvidence("exposure_evidence",evidence.exposure_evidence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("approved_at",evidence.approved_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("released_at",evidence.released_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("expires_at",evidence.expires_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_record_sequence",evidence.release_record_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("audit_reference",evidence.audit_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("format","SWV5-HARD-KILL-RELEASE-V5-LP1",format)) return false;
+   return SWV5S5_SHA256(format+body,digest);
+}
+
+bool SWV5S5_MvpHardKillAuthorityRecordDigest(const SWV5_HardKillReleaseAuthorityRecord &record,
+                                             string &digest)
+{
+   string body="",f,format;
+   if(!SWV5S5_CanonicalContractVersion("contract_version",record.contract_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalNamespace("persistence_namespace",record.persistence_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalAccountNamespace("account_namespace",record.account_namespace,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("latch_id",record.latch_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("latch_generation",record.latch_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("release_id",record.release_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_generation",record.release_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalOperatorIdentity("operator_identity",record.operator_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("approving_component",record.approving_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("approval_policy_id",record.approval_policy_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("approval_sequence",record.approval_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalTypedReconciliationEvidence("broker_evidence_reference",record.broker_evidence_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalTypedReconciliationEvidence("persistence_evidence_reference",record.persistence_evidence_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalExposureReductionEvidence("exposure_evidence_reference",record.exposure_evidence_reference,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("approved_at",record.approved_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("released_at",record.released_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDatetime("expires_at",record.expires_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_record_sequence",record.release_record_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authority_record_id",record.authority_record_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("issuing_component",record.issuing_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("authority_source",record.authority_source,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("format","SWV5-HARD-KILL-AUTHORITY-V5-LP1",format)) return false;
+   return SWV5S5_SHA256(format+body,digest);
+}
+
+bool SWV5S5_MvpHardKillReleaseValid(const SWV5_ContractValidationContext &context,
+                                    const SWV5_HardKillState &state,
+                                    const SWV5_HardKillReleaseEvidence &evidence)
+{
+   string release_digest;
+   const SWV5_OwnershipKey key=state.persistence_namespace.ownership_namespace;
+   const bool account_scope=state.account_namespace.broker_identity==key.broker_identity &&
+      state.account_namespace.server==key.server && state.account_namespace.account_login==key.account_login &&
+      state.account_namespace.strategy_id==key.strategy_id && state.account_namespace.magic==key.magic &&
+      state.account_namespace.account_currency!="" && state.account_namespace.snapshot_epoch>0 &&
+      state.account_namespace.snapshot_sequence>0;
+   const bool approving=(evidence.approving_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE ||
+                         evidence.approving_component==SWV5_COMPONENT_AUTHORITY_OPERATOR);
+   return SWV5S5_MvpVersionExact(context,state.contract_version) &&
+      SWV5S5_MvpVersionExact(context,state.persistence_namespace.contract_version) &&
+      SWV5S5_MvpVersionExact(context,state.account_namespace.contract_version) &&
+      SWV5S5_MvpVersionExact(context,evidence.contract_version) &&
+      SWV5S5_MvpVersionExact(context,evidence.persistence_namespace.contract_version) &&
+      SWV5S5_MvpVersionExact(context,evidence.broker_evidence.contract_version) &&
+      SWV5S5_MvpVersionExact(context,evidence.persistence_evidence.contract_version) &&
+      SWV5S5_MvpVersionExact(context,evidence.exposure_evidence.contract_version) &&
+      account_scope && SWV5S5_EqualNamespace(state.persistence_namespace,evidence.persistence_namespace) &&
+      SWV5S5_EqualNamespace(state.persistence_namespace,evidence.broker_evidence.persistence_namespace) &&
+      SWV5S5_EqualNamespace(state.persistence_namespace,evidence.persistence_evidence.persistence_namespace) &&
+      state.persistence_namespace.basket_id.value!="" && state.state==SWV5_HARD_KILL_RELEASE_PENDING &&
+      state.latch_id!="" && state.latch_generation>0 && evidence.release_id!="" &&
+      evidence.latch_id==state.latch_id && evidence.latch_generation==state.latch_generation &&
+      evidence.release_generation==state.release_generation+1 &&
+      evidence.approval_policy_id=="HARD-KILL-RELEASE-V5" && evidence.approval_sequence>0 &&
+      evidence.operator_identity.operator_id!="" && evidence.operator_identity.authority_role!="" &&
+      evidence.operator_identity.authentication_reference!="" &&
+      evidence.operator_identity.authenticated_at>0 && approving &&
+      evidence.broker_evidence.evidence_id!="" && evidence.broker_evidence.state_digest!="" &&
+      evidence.broker_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER &&
+      evidence.broker_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
+      evidence.broker_evidence.evidence_sequence>0 &&
+      evidence.persistence_evidence.evidence_id!="" && evidence.persistence_evidence.state_digest!="" &&
+      evidence.persistence_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_PERSISTENCE &&
+      evidence.persistence_evidence.authority_source==SWV5_AUTHORITY_PERSISTED_CHECKPOINT &&
+      evidence.persistence_evidence.evidence_sequence>0 &&
+      evidence.exposure_evidence.evidence_id!="" && evidence.exposure_evidence.zero_or_reducing &&
+      evidence.exposure_evidence.issuing_component==SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE &&
+      evidence.exposure_evidence.authority_source==SWV5_AUTHORITY_LIVE_BROKER_STATE &&
+      evidence.exposure_evidence.evidence_sequence>0 &&
+      SWV5_IsFiniteNumber(evidence.exposure_evidence.observed_exposure_volume) &&
+      SWV5_IsFiniteNumber(evidence.exposure_evidence.prior_exposure_volume) &&
+      evidence.exposure_evidence.observed_exposure_volume>=0.0 &&
+      evidence.exposure_evidence.prior_exposure_volume>=0.0 &&
+      evidence.exposure_evidence.observed_exposure_volume<=evidence.exposure_evidence.prior_exposure_volume+context.volume_tolerance &&
+      evidence.broker_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
+      evidence.persistence_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
+      evidence.exposure_evidence.observed_at>=evidence.operator_identity.authenticated_at &&
+      evidence.broker_evidence.observed_at<=evidence.approved_at &&
+      evidence.persistence_evidence.observed_at<=evidence.approved_at &&
+      evidence.exposure_evidence.observed_at<=evidence.approved_at &&
+      evidence.approved_at>0 && evidence.approved_at<=evidence.released_at &&
+      evidence.released_at<=context.clock_time && context.clock_time<evidence.expires_at &&
+      evidence.release_record_sequence>0 && evidence.audit_reference!="" &&
+      SWV5S5_MvpHardKillReleaseDigest(evidence,release_digest) && release_digest==evidence.release_record_digest;
 }
 
 class SWV5S5_MvpRiskContract : public ISWV5RiskContract
@@ -493,10 +610,8 @@ public:
                                             const SWV5_HardKillReleaseValidationMode mode,
                                             SWV5_ContractDecision &decision)
    {
-      const bool valid=mode==SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION &&
-         current_state.state==SWV5_HARD_KILL_ACTIVE && evidence.release_id!="" &&
-         evidence.latch_id==current_state.latch_id && evidence.latch_generation==current_state.latch_generation &&
-         evidence.approved_at>0 && evidence.approved_at<=context.clock_time && context.clock_time<evidence.expires_at;
+       const bool valid=mode==SWV5_HARD_KILL_RELEASE_CURRENT_EXECUTION &&
+          SWV5S5_MvpHardKillReleaseValid(context,current_state,evidence);
       SWV5S5_MvpSetDecision(context,valid,valid ? "MVP_HARD_KILL_RELEASE_VALID" : "MVP_HARD_KILL_RELEASE_DENIED",decision);
       return valid;
    }

@@ -8,6 +8,7 @@
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpPermitClaimAuthorities.mqh"
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpManualProvisioningAuthorities.mqh"
+#include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOfflineOrchestrator.mqh"
 
 void OnStart(void)
 {

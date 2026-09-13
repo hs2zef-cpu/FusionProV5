@@ -18,6 +18,60 @@ const string SWV5S5_MVP_EXECUTION_READ_PATH="SQLITE_EXECUTION_READ_PATH_V1";
 const string SWV5S5_MVP_BROKER_SEQUENCE_AUTHORITY="BROKER_EVIDENCE_SEQUENCE_V1";
 const string SWV5S5_MVP_EXECUTION_SEQUENCE_AUTHORITY="EXECUTION_STORE_SEQUENCE_V1";
 
+bool SWV5S5_MvpCallbackMatchesSubmission(const ulong order_ticket,const ulong deal_ticket,
+                                         const ulong request_id_session_local,
+                                         const ulong sync_order_ticket,const ulong sync_deal_ticket,
+                                         const ulong sync_request_id)
+{
+   const bool exact_order=(order_ticket!=0 && sync_order_ticket!=0 && order_ticket==sync_order_ticket);
+   const bool exact_deal=(deal_ticket!=0 && sync_deal_ticket!=0 && deal_ticket==sync_deal_ticket);
+   const bool exact_request=(request_id_session_local!=0 && sync_request_id!=0 &&
+                             request_id_session_local==sync_request_id);
+   if(!exact_order && !exact_deal && !exact_request) return false;
+   return !((order_ticket!=0 && sync_order_ticket!=0 && order_ticket!=sync_order_ticket) ||
+            (deal_ticket!=0 && sync_deal_ticket!=0 && deal_ticket!=sync_deal_ticket) ||
+            (request_id_session_local!=0 && sync_request_id!=0 && request_id_session_local!=sync_request_id));
+}
+
+void SWV5S5_MvpSummarizeExecutionRows(const bool &row_success[],const bool operation_success,
+                                      const bool requested_complete,const uint reported_total,
+                                      uint &materialized_row_count,uint &row_read_failures,
+                                      bool &enumeration_complete)
+{
+   materialized_row_count=0; row_read_failures=0;
+   for(int i=0;i<ArraySize(row_success);i++)
+   { if(row_success[i]) materialized_row_count++; else row_read_failures++; }
+   if(reported_total>(uint)ArraySize(row_success))
+      row_read_failures+=reported_total-(uint)ArraySize(row_success);
+   enumeration_complete=operation_success && requested_complete && row_read_failures==0 &&
+      materialized_row_count==reported_total;
+}
+
+struct SWV5S5_MvpExecutionObservationStatus
+{
+   bool found;
+   bool operation_success;
+   bool enumeration_complete;
+   uint reported_total;
+   uint materialized_row_count;
+   uint row_read_failures;
+   ulong sequence;
+   string read_path_identity;
+   string authority_identity;
+   string sequence_authority;
+};
+
+bool SWV5S5_MvpCanonicalScalar(const string body,const string name,const string type_token,string &value)
+{
+   value=""; const string marker=name+":"+type_token+":";
+   const int at=StringFind(body,marker); if(at<0) return false;
+   const int length_start=at+StringLen(marker),separator=StringFind(body,":",length_start);
+   if(separator<0) return false;
+   const int length=(int)StringToInteger(StringSubstr(body,length_start,separator-length_start));
+   if(length<0 || separator+1+length>StringLen(body)) return false;
+   value=StringSubstr(body,separator+1,length); return true;
+}
+
 string SWV5S5_MvpEvidenceKey(const SWV5S5_F_ReconciliationBinding &binding)
 {
    return binding.request_identity.request_id.correlation_id+":"+
@@ -105,6 +159,7 @@ private:
    SWV5S5_F_ReconciliationBinding m_binding;
    bool m_has_binding;
    SWV5S5_F_AdapterCallbackEvidence m_callbacks[];
+   ulong m_sync_order_ticket,m_sync_deal_ticket,m_sync_request_id;
 
    bool BindingMatches(const SWV5S5_F_AdapterCallbackEvidence &evidence) const
    {
@@ -116,16 +171,33 @@ private:
    }
 
 public:
-   SWV5S5_MvpBrokerEvidenceStore(void) { m_has_binding=false; }
+   SWV5S5_MvpBrokerEvidenceStore(void)
+   { m_has_binding=false; m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0; }
 
    bool Configure(const string relative_path,const string namespace_digest)
-   { m_has_binding=false; ArrayResize(m_callbacks,0); return m_store.Open(relative_path,namespace_digest); }
+   { m_has_binding=false; m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0;
+     ArrayResize(m_callbacks,0); return m_store.Open(relative_path,namespace_digest); }
 
    bool BindAuthoritativeOperation(const SWV5_ContractValidationContext &context,
                                    const SWV5S5_F_ReconciliationBinding &binding)
    {
       if(!SWV5S5_F_IsBindingValid(context,binding)) return false;
-      m_binding=binding; m_has_binding=true; return true;
+      m_binding=binding; m_has_binding=true;
+      SWV5S5_MvpAuthorityRow row; bool found=false;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(binding),row,found)) return false;
+      if(found)
+      {
+         const string order_marker="|ORDER=",deal_marker="|DEAL=",request_marker="|REQUEST=";
+         int order_at=StringFind(row.payload,order_marker),deal_at=StringFind(row.payload,deal_marker),
+             request_at=StringFind(row.payload,request_marker);
+         if(order_at<0 || deal_at<0 || request_at<0) return false;
+         m_sync_order_ticket=(ulong)StringToInteger(StringSubstr(row.payload,order_at+StringLen(order_marker),
+            deal_at-order_at-StringLen(order_marker)));
+         m_sync_deal_ticket=(ulong)StringToInteger(StringSubstr(row.payload,deal_at+StringLen(deal_marker),
+            request_at-deal_at-StringLen(deal_marker)));
+         m_sync_request_id=(ulong)StringToInteger(StringSubstr(row.payload,request_at+StringLen(request_marker)));
+      }
+      return true;
    }
 
    virtual bool PersistSubmissionResult(const SWV5S5_F_AdapterSubmissionCommand &command,
@@ -141,17 +213,26 @@ public:
       if(!SWV5S5_CanonicalString("submission_digest",command.submission_digest,f)) return false; payload+=f;
       if(!SWV5S5_CanonicalString("sync_result_digest",result.result_digest,f)) return false; payload+=f;
       if(!SWV5S5_CanonicalString("claim_id",result.claim_id,f)) return false; payload+=f;
+      payload+="|ORDER="+IntegerToString((long)result.order_ticket)+
+         "|DEAL="+IntegerToString((long)result.deal_ticket)+
+         "|REQUEST="+IntegerToString((long)result.request_id_session_local);
       SWV5S5_MvpAuthorityRow current,committed; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(m_binding),current,found)) return false;
       if(found) return current.payload_digest==digest && current.payload==payload;
-      return m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(m_binding),
+      const bool persisted=m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(m_binding),
          0,"","",0,1,(int)result.classification,digest,payload,
          command.authoritative_claim.resulting_authority_record.claimed_at,committed);
+      if(persisted)
+      { m_sync_order_ticket=result.order_ticket; m_sync_deal_ticket=result.deal_ticket;
+        m_sync_request_id=result.request_id_session_local; }
+      return persisted;
    }
 
    virtual bool PersistCallbackEvidence(const SWV5S5_F_AdapterCallbackEvidence &evidence)
    {
       string digest,payload; if(!BindingMatches(evidence) || evidence.callback_sequence==0 ||
+         !SWV5S5_MvpCallbackMatchesSubmission(evidence.order_ticket,evidence.deal_ticket,
+            evidence.request_id_session_local,m_sync_order_ticket,m_sync_deal_ticket,m_sync_request_id) ||
          evidence.final_confirmation || evidence.retry_allowed ||
          !SWV5S5_F_DeriveCallbackDigest(evidence,digest) || digest!=evidence.evidence_digest ||
          !SWV5S5_MvpCallbackPayload(evidence,payload)) return false;
@@ -183,8 +264,10 @@ public:
                                        SWV5S5_F_ReconciliationBinding &binding)
    {
       ZeroMemory(binding);
-      if(!m_has_binding || request_magic!=SWV5_RUNTIME_STRATEGY_MAGIC ||
-         (order_ticket==0 && deal_ticket==0 && position_identifier==0 && request_id_session_local==0)) return false;
+      if(!m_has_binding || request_magic!=SWV5_RUNTIME_STRATEGY_MAGIC) return false;
+      // Position identity alone and Magic/comment are never correlation authority.
+      if(!SWV5S5_MvpCallbackMatchesSubmission(order_ticket,deal_ticket,request_id_session_local,
+         m_sync_order_ticket,m_sync_deal_ticket,m_sync_request_id)) return false;
       binding=m_binding; return true;
    }
 
@@ -262,20 +345,36 @@ public:
    {
       if(ArraySize(requests)!=ArraySize(row_success) || sequence==0 || connection_generation==0 ||
          restart_generation==0 || observed_at<=0) return false;
+      uint materialized_row_count=0,row_read_failures=0; bool enumeration_complete=false;
+      SWV5S5_MvpSummarizeExecutionRows(row_success,operation_success,complete,reported_total,
+                                       materialized_row_count,row_read_failures,
+                                       enumeration_complete);
+      if(reported_total<(uint)ArraySize(requests)) return false;
       ArrayResize(m_requests,ArraySize(requests)); ArrayResize(m_row_success,ArraySize(row_success));
       for(int copy_index=0;copy_index<ArraySize(requests);copy_index++)
       { m_requests[copy_index]=requests[copy_index]; m_row_success[copy_index]=row_success[copy_index]; }
-      m_operation_success=operation_success; m_complete=complete; m_reported_total=reported_total;
+      m_operation_success=operation_success; m_complete=enumeration_complete; m_reported_total=reported_total;
       m_sequence=sequence; m_connection_generation=connection_generation;
       m_restart_generation=restart_generation; m_observed_at=observed_at; m_staged=true;
       string body="",f,digest;
       if(!SWV5S5_CanonicalUInt("sequence",sequence,f)) return false; body+=f;
       if(!SWV5S5_CanonicalUInt("reported_total",reported_total,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("materialized_row_count",materialized_row_count,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalUInt("row_read_failures",row_read_failures,f)) return false; body+=f;
       if(!SWV5S5_CanonicalBool("operation_success",operation_success,f)) return false; body+=f;
-      if(!SWV5S5_CanonicalBool("complete",complete,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalBool("enumeration_complete",enumeration_complete,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalString("read_path_identity",SWV5S5_MVP_EXECUTION_READ_PATH,f)) return false; body+=f;
+      if(!SWV5S5_CanonicalString("authority_identity","SQLITE_EXECUTION_AUTHORITY:"+m_store.NamespaceDigest(),f)) return false; body+=f;
+      if(!SWV5S5_CanonicalString("sequence_authority",SWV5S5_MVP_EXECUTION_SEQUENCE_AUTHORITY,f)) return false; body+=f;
       for(int i=0;i<ArraySize(requests);i++)
-      { string row,indexed; if(!row_success[i] || !SWV5S5_CanonicalPendingRequest(requests[i],row) ||
-           !SWV5S5_CanonicalIndexed("pending",(ulong)i,row,indexed)) return false; body+=indexed; }
+      {
+         string row="",indexed,success_field;
+         if(!SWV5S5_CanonicalBool("row_read_success",row_success[i],success_field)) return false;
+         row+=success_field;
+         if(row_success[i])
+         { string canonical; if(!SWV5S5_CanonicalPendingRequest(requests[i],canonical)) return false; row+=canonical; }
+         if(!SWV5S5_CanonicalIndexed("pending",(ulong)i,row,indexed)) return false; body+=indexed;
+      }
       if(!SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,body,digest)) return false;
       SWV5S5_MvpAuthorityRow current,committed; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",current,found)) return false;
@@ -283,6 +382,35 @@ public:
          (found ? current.logical_revision : 0),(found ? current.store_revision : ""),
          (found ? current.payload_digest : ""),(found ? current.state : 0),
          (found ? current.logical_revision+1 : 1),1,digest,body,observed_at,committed);
+   }
+
+   bool LoadPersistedObservationStatus(SWV5S5_MvpExecutionObservationStatus &status)
+   {
+      ZeroMemory(status); SWV5S5_MvpAuthorityRow row; bool found=false; string value;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",row,found)) return false;
+      if(!found) return true;
+      status.found=true;
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"operation_success","b",value) ||
+         (value!="0" && value!="1")) return false;
+      status.operation_success=(value=="1");
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"enumeration_complete","b",value) ||
+         (value!="0" && value!="1")) return false;
+      status.enumeration_complete=(value=="1");
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"reported_total","u",value)) return false;
+      status.reported_total=(uint)StringToInteger(value);
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"materialized_row_count","u",value)) return false;
+      status.materialized_row_count=(uint)StringToInteger(value);
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"row_read_failures","u",value)) return false;
+      status.row_read_failures=(uint)StringToInteger(value);
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"sequence","u",value)) return false;
+      status.sequence=(ulong)StringToInteger(value);
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"read_path_identity","s",status.read_path_identity) ||
+         !SWV5S5_MvpCanonicalScalar(row.payload,"authority_identity","s",status.authority_identity) ||
+         !SWV5S5_MvpCanonicalScalar(row.payload,"sequence_authority","s",status.sequence_authority)) return false;
+      return status.sequence>0 && status.reported_total==status.materialized_row_count+
+         status.row_read_failures && (!status.enumeration_complete ||
+         (status.operation_success && status.row_read_failures==0 &&
+          status.materialized_row_count==status.reported_total));
    }
 
    virtual bool ObservePendingRequest(const SWV5S5_F_ReconciliationBinding &binding,
@@ -293,7 +421,7 @@ public:
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",source,found) || !found) return false;
       return SWV5S5_F_AdapterBuildExecutionPendingSnapshot(binding,m_requests,m_row_success,
          m_operation_success,m_complete,SWV5S5_MVP_EXECUTION_READ_PATH,
-         "SQLITE_EXECUTION_AUTHORITY:"+source.store_revision,SWV5S5_MVP_EXECUTION_SEQUENCE_AUTHORITY,
+         "SQLITE_EXECUTION_AUTHORITY:"+m_store.NamespaceDigest(),SWV5S5_MVP_EXECUTION_SEQUENCE_AUTHORITY,
          m_reported_total,m_sequence,m_connection_generation,m_restart_generation,m_observed_at,snapshot);
    }
 };
@@ -365,13 +493,22 @@ class SWV5S5_MvpRecoveryHost
 {
 public:
    bool EvaluateAndPublish(const SWV5_ContractValidationContext &context,
-                           const SWV5S5_F_ReconciliationInput &candidate_input,
+                            const SWV5S5_MvpReloadedClaim &reloaded_claim,
+                            const SWV5S5_F_ReconciliationInput &candidate_input,
                            SWV5S5_F_ReconciliationPublication &publication,
                            SWV5S5_MvpReconciliationPublicationAuthority &authority,
                            SWV5S5_MvpRecoveryResult &result)
    {
-      ZeroMemory(result); result.store_valid=true; result.claim_reloaded=true;
+      ZeroMemory(result);
+      const bool claim_valid=reloaded_claim.found && !reloaded_claim.claim_granted_now &&
+         reloaded_claim.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED &&
+         candidate_input.binding.submission_state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED &&
+         reloaded_claim.invocation_claim_id==candidate_input.binding.invocation_claim_id &&
+         reloaded_claim.durable_record_digest==candidate_input.binding.claim_record_digest &&
+         reloaded_claim.authority_revision>0;
+      result.store_valid=claim_valid; result.claim_reloaded=claim_valid;
       result.claim_grant_reconstructed=false; result.submission_calls=0;
+      if(!claim_valid) return false;
       if(!SWV5S5_F_AdapterEvaluate(context,candidate_input,result.reconciliation)) return false;
       result.evaluated=true; publication.result=result.reconciliation;
       if(!SWV5S5_F_DeriveReconciliationPublicationDigest(publication,publication.publication_digest)) return false;
