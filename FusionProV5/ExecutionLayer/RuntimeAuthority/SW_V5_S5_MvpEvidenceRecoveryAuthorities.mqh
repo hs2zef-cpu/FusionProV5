@@ -477,6 +477,91 @@ public:
    }
 };
 
+bool SWV5S5_MvpSubmissionStateTerminal(const SWV5S5_SubmissionAuthorityState state)
+{
+   return state==SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED ||
+      state==SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED ||
+      state==SWV5S5_AUTHORITATIVE_REJECTED || state==SWV5S5_CONFLICT_MANUAL_REQUIRED;
+}
+
+class SWV5S5_MvpSubmissionTerminalAuthority
+{
+private:
+   SWV5S5_MvpSqliteAuthorityStore m_store;
+public:
+   bool Configure(const string relative_path,const string namespace_digest)
+   { return m_store.Open(relative_path,namespace_digest); }
+
+   bool TryFinalizeFromPersistedReconciliation(const SWV5S5_F_ReconciliationPublication &publication,
+                                               const SWV5S5_SubmissionAuthorityRecord &expected_claimed,
+                                               SWV5S5_SubmissionAuthorityRecord &terminal_record,
+                                               SWV5S5_MvpAuthorityRow &committed_record)
+   {
+      ZeroMemory(terminal_record); ZeroMemory(committed_record);
+      string result_digest,publication_digest,correlation_id,attempt_id,record_key;
+      if(expected_claimed.state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED ||
+         expected_claimed.authority_revision==18446744073709551615 ||
+         !SWV5S5_F_DeriveResultDigest(publication.result,result_digest) ||
+         publication.result.result_digest!=result_digest ||
+         !SWV5S5_F_DeriveReconciliationPublicationDigest(publication,publication_digest) ||
+         publication.publication_digest!=publication_digest || publication.result.retry_allowed ||
+         publication.result.residual_is_submission_authority ||
+         !SWV5S5_MvpSubmissionStateTerminal(publication.result.proposed_submission_state) ||
+         publication.binding.submission_state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED ||
+         publication.binding.permit_id!=expected_claimed.permit.permit_id ||
+         publication.binding.invocation_claim_id!=expected_claimed.invocation_claim_id ||
+         publication.binding.claim_record_digest!=expected_claimed.durable_record_digest ||
+         !SWV5S5_EqualRequestIdentity(publication.binding.request_identity,
+                                      expected_claimed.permit.request_identity) ||
+         !SWV5S5_MvpSubmissionRecordIdentity(expected_claimed,correlation_id,attempt_id) ||
+         !SWV5S5_MvpSubmissionRecordKey(correlation_id,attempt_id,record_key)) return false;
+      string expected_digest,expected_payload;
+      if(!SWV5S5_DeriveDurableSubmissionAuthorityDigest(expected_claimed,expected_digest) ||
+         expected_digest!=expected_claimed.durable_record_digest ||
+         !SWV5S5_MvpSubmissionPayload(expected_claimed,expected_payload)) return false;
+      terminal_record=expected_claimed;
+      terminal_record.state=publication.result.proposed_submission_state;
+      terminal_record.authority_revision=expected_claimed.authority_revision+1;
+      if(!SWV5S5_DeriveDurableSubmissionAuthorityDigest(terminal_record,terminal_record.durable_record_digest)) return false;
+      string terminal_payload;
+      if(!SWV5S5_MvpSubmissionPayload(terminal_record,terminal_payload)) return false;
+
+      SWV5S5_SubmissionAuthorityIndexEntry current_entries[],terminal_entry;
+      SWV5S5_MvpAuthorityRow index_row,current_record,reconciliation_row,committed_index;
+      bool index_found=false,record_found=false,reconciliation_found=false;
+      if(!SWV5S5_MvpLoadSubmissionIndex(m_store,current_entries,index_row,index_found) || !index_found ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION,record_key,current_record,record_found) || !record_found ||
+         current_record.logical_revision!=expected_claimed.authority_revision ||
+         current_record.payload_digest!=expected_claimed.durable_record_digest ||
+         current_record.payload!=expected_payload || current_record.state!=(int)expected_claimed.state ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,SWV5S5_MvpEvidenceKey(publication.binding),
+                          reconciliation_row,reconciliation_found) || !reconciliation_found ||
+         reconciliation_row.logical_revision!=publication.proposed_reconciliation_revision ||
+         reconciliation_row.payload_digest!=publication.result.result_digest ||
+         reconciliation_row.state!=(int)publication.result.state ||
+         !SWV5S5_MvpSubmissionIndexEntryFromRecord(terminal_record,terminal_entry)) return false;
+      const int exact=SWV5S5_MvpFindSubmissionIndexEntry(current_entries,correlation_id,attempt_id);
+      if(exact<0 || current_entries[exact].authority_revision!=expected_claimed.authority_revision ||
+         current_entries[exact].durable_record_digest!=expected_claimed.durable_record_digest ||
+         current_entries[exact].state!=expected_claimed.state) return false;
+      SWV5S5_SubmissionAuthorityIndexEntry proposed_entries[];
+      ArrayResize(proposed_entries,ArraySize(current_entries));
+      for(int i=0;i<ArraySize(current_entries);i++) proposed_entries[i]=current_entries[i];
+      proposed_entries[exact]=terminal_entry;
+      string index_payload,index_digest;
+      if(!SWV5S5_MvpSerializeSubmissionIndex(proposed_entries,index_payload,index_digest)) return false;
+      SWV5S5_MvpAuthorityMutation record_mutation,index_mutation;
+      SWV5S5_MvpPrepareMutation(SWV5S5_MVP_DOMAIN_SUBMISSION,record_key,current_record,true,
+         terminal_record.authority_revision,(int)terminal_record.state,terminal_record.durable_record_digest,
+         terminal_payload,publication.current_publication_lease.heartbeat_at,record_mutation);
+      SWV5S5_MvpPrepareMutation(SWV5S5_MVP_DOMAIN_SUBMISSION_INDEX,SWV5S5_MVP_SUBMISSION_INDEX_KEY,index_row,true,
+         index_row.logical_revision+1,1,index_digest,index_payload,
+         publication.current_publication_lease.heartbeat_at,index_mutation);
+      return m_store.CompareAndSetPairWithGuard(record_mutation,index_mutation,reconciliation_row,
+                                                committed_record,committed_index);
+   }
+};
+
 struct SWV5S5_MvpRecoveryResult
 {
    bool store_valid;

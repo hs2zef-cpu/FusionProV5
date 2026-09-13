@@ -61,7 +61,7 @@ public:
                                               risk_input,risk_decision))
       { result.stop_reason="RISK_OR_NORMALIZED_BINDING_DENIED"; return false; }
       result.risk_valid=true; result.authorization=permit_command.proposed_permit.risk_authorization;
-      if(!SWV5S5_PreparePermitCommit(context,entries,permit_command,current_trust,trust_anchor,
+      if(!SWV5S5_MvpPreparePermitCommit(context,entries,permit_command,current_trust,trust_anchor,
          trust_scope,accepted_ingress,result.permit_result))
       { result.stop_reason="PERMIT_PREPARATION_DENIED"; return false; }
       result.permit_prepared=true;

@@ -23,6 +23,21 @@ struct SWV5S5_MvpAuthorityRow
    datetime updated_at;
 };
 
+struct SWV5S5_MvpAuthorityMutation
+{
+   string domain_key;
+   string record_key;
+   ulong expected_revision;
+   string expected_store_revision;
+   string expected_payload_digest;
+   int expected_state;
+   ulong proposed_revision;
+   int proposed_state;
+   string proposed_payload_digest;
+   string proposed_payload;
+   datetime updated_at;
+};
+
 class SWV5S5_MvpSqliteAuthorityStore
 {
 private:
@@ -178,6 +193,88 @@ private:
          left.logical_revision==right.logical_revision && left.store_revision==right.store_revision &&
          left.state==right.state && left.payload_digest==right.payload_digest &&
          left.payload==right.payload && left.updated_at==right.updated_at;
+   }
+
+   bool MutationValid(const SWV5S5_MvpAuthorityMutation &mutation) const
+   {
+      return mutation.domain_key!="" && mutation.record_key!="" &&
+         mutation.proposed_revision==mutation.expected_revision+1 && mutation.proposed_revision>0 &&
+         SWV5S5_IsDigest64Lower(mutation.proposed_payload_digest) && mutation.proposed_payload!="" &&
+         mutation.updated_at>0 &&
+         (mutation.expected_revision>0 || (mutation.expected_store_revision=="" &&
+                                           mutation.expected_payload_digest==""));
+   }
+
+   bool CurrentMatchesMutation(const SWV5S5_MvpAuthorityMutation &mutation,
+                               const SWV5S5_MvpAuthorityRow &current,const bool found) const
+   {
+      if(mutation.expected_revision==0)
+         return !found && mutation.expected_store_revision=="" && mutation.expected_payload_digest=="";
+      return found && current.logical_revision==mutation.expected_revision &&
+         current.store_revision==mutation.expected_store_revision &&
+         current.payload_digest==mutation.expected_payload_digest && current.state==mutation.expected_state;
+   }
+
+   bool ProposedMutationRow(const SWV5S5_MvpAuthorityMutation &mutation,
+                            SWV5S5_MvpAuthorityRow &proposed)
+   {
+      ZeroMemory(proposed);
+      proposed.domain_key=mutation.domain_key; proposed.record_key=mutation.record_key;
+      proposed.logical_revision=mutation.proposed_revision; proposed.state=mutation.proposed_state;
+      proposed.payload_digest=mutation.proposed_payload_digest; proposed.payload=mutation.proposed_payload;
+      proposed.updated_at=mutation.updated_at;
+      return DeriveStoreRevision(proposed.domain_key,proposed.record_key,proposed.logical_revision,
+                                 proposed.payload_digest,proposed.store_revision);
+   }
+
+   bool ApplyMutation(const SWV5S5_MvpAuthorityMutation &mutation,
+                      const SWV5S5_MvpAuthorityRow &proposed)
+   {
+      return mutation.expected_revision==0 ? InsertRow(proposed) :
+         UpdateRow(proposed,mutation.expected_revision,mutation.expected_store_revision,
+                   mutation.expected_payload_digest,mutation.expected_state);
+   }
+
+   bool CompareAndSetPairInternal(const SWV5S5_MvpAuthorityMutation &first,
+                                  const SWV5S5_MvpAuthorityMutation &second,
+                                  const bool guard_required,
+                                  const SWV5S5_MvpAuthorityRow &guard_expected,
+                                  SWV5S5_MvpAuthorityRow &first_committed,
+                                  SWV5S5_MvpAuthorityRow &second_committed)
+   {
+      ZeroMemory(first_committed); ZeroMemory(second_committed);
+      if(!VerifyMetadata() || !MutationValid(first) || !MutationValid(second) ||
+         (first.domain_key==second.domain_key && first.record_key==second.record_key) ||
+         (guard_required && (guard_expected.domain_key=="" || guard_expected.record_key=="" ||
+          guard_expected.logical_revision==0 || !SWV5S5_IsDigest64Lower(guard_expected.payload_digest))) ||
+         !DatabaseTransactionBegin(m_database)) return false;
+      SWV5S5_MvpAuthorityRow first_current,second_current,guard_current;
+      SWV5S5_MvpAuthorityRow first_proposed,second_proposed,first_inside,second_inside;
+      bool first_found=false,second_found=false,guard_found=false,first_inside_found=false,second_inside_found=false;
+      bool ok=ReadRowInternal(first.domain_key,first.record_key,first_current,first_found) &&
+         ReadRowInternal(second.domain_key,second.record_key,second_current,second_found) &&
+         CurrentMatchesMutation(first,first_current,first_found) &&
+         CurrentMatchesMutation(second,second_current,second_found) &&
+         ProposedMutationRow(first,first_proposed) && ProposedMutationRow(second,second_proposed);
+      if(ok && guard_required)
+         ok=ReadRowInternal(guard_expected.domain_key,guard_expected.record_key,guard_current,guard_found) &&
+            guard_found && RowEqual(guard_current,guard_expected);
+      if(ok) ok=ApplyMutation(first,first_proposed) && ApplyMutation(second,second_proposed);
+      if(ok) ok=ReadRowInternal(first.domain_key,first.record_key,first_inside,first_inside_found) &&
+         first_inside_found && RowEqual(first_inside,first_proposed) &&
+         ReadRowInternal(second.domain_key,second.record_key,second_inside,second_inside_found) &&
+         second_inside_found && RowEqual(second_inside,second_proposed);
+      if(!ok)
+      { DatabaseTransactionRollback(m_database); return false; }
+      if(!DatabaseTransactionCommit(m_database))
+      { DatabaseTransactionRollback(m_database); return false; }
+      SWV5S5_MvpAuthorityRow first_after,second_after; bool first_after_found=false,second_after_found=false;
+      if(!ReadRowInternal(first.domain_key,first.record_key,first_after,first_after_found) || !first_after_found ||
+         !RowEqual(first_after,first_proposed) ||
+         !ReadRowInternal(second.domain_key,second.record_key,second_after,second_after_found) ||
+         !second_after_found || !RowEqual(second_after,second_proposed)) return false;
+      first_committed=first_after; second_committed=second_after;
+      return true;
    }
 
 public:
@@ -345,6 +442,24 @@ public:
       if(!ReadRowInternal(domain_key,record_key,after,after_found) || !after_found || !RowEqual(after,proposed)) return false;
       committed=after;
       return true;
+   }
+
+   bool CompareAndSetPair(const SWV5S5_MvpAuthorityMutation &first,
+                          const SWV5S5_MvpAuthorityMutation &second,
+                          SWV5S5_MvpAuthorityRow &first_committed,
+                          SWV5S5_MvpAuthorityRow &second_committed)
+   {
+      SWV5S5_MvpAuthorityRow unused_guard; ZeroMemory(unused_guard);
+      return CompareAndSetPairInternal(first,second,false,unused_guard,first_committed,second_committed);
+   }
+
+   bool CompareAndSetPairWithGuard(const SWV5S5_MvpAuthorityMutation &first,
+                                   const SWV5S5_MvpAuthorityMutation &second,
+                                   const SWV5S5_MvpAuthorityRow &guard_expected,
+                                   SWV5S5_MvpAuthorityRow &first_committed,
+                                   SWV5S5_MvpAuthorityRow &second_committed)
+   {
+      return CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed);
    }
 
    bool TestRollbackWrite(const string domain_key,const string record_key,

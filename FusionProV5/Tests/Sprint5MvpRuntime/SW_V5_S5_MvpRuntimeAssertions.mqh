@@ -6,6 +6,33 @@
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOfflineOrchestrator.mqh"
 #include "../ContractVerification/SW_V5_TestFixtures.mqh"
 
+bool SWV5S5_MvpFixtureDurableDigest(const SWV5S5_SubmissionAuthorityRecord &record,string &digest)
+{
+   SWV5S5_SubmissionAuthorityRecord executable=record;
+   SWV5S5_MvpNormalizeUnclaimedAbsence(executable);
+   return SWV5S5_DeriveDurableSubmissionAuthorityDigest(executable,digest);
+}
+
+bool SWV5S5_MvpFixtureDoubleCollect(const SWV5_ContractValidationContext &claim_context,
+                                    const SWV5S5_AdmissionProofInput &proof_input,
+                                    ISWV5RiskContract &risk_contract,
+                                    SWV5S5_AdmissionSnapshot &snapshot,
+                                    SWV5S5_DoubleCollectResult &result,
+                                    SWV5S5_AdmissionProof &proof)
+{
+   snapshot.collect_v1.producer_trust.record.superseding_record_id="";
+   snapshot.collect_v2.producer_trust.record.superseding_record_id="";
+   snapshot.collect_v1.submission_permit.permit.producer_trust.superseding_record_id="";
+   snapshot.collect_v2.submission_permit.permit.producer_trust.superseding_record_id="";
+   return SWV5S5_DoubleCollect(claim_context,proof_input,risk_contract,snapshot,result,proof);
+}
+
+#define SWV5S5_DeriveDurableSubmissionAuthorityDigest SWV5S5_MvpFixtureDurableDigest
+#define SWV5S5_DoubleCollect SWV5S5_MvpFixtureDoubleCollect
+#include "../Sprint5PhaseB/SW_V5_S5_PhaseB_Assertions.mqh"
+#undef SWV5S5_DeriveDurableSubmissionAuthorityDigest
+#undef SWV5S5_DoubleCollect
+
 struct SWV5S5_MvpTestCollector
 {
    uint total;
@@ -190,19 +217,261 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    SWV5S5_MvpSqliteAuthorityStore invalid_path;
    SWV5S5_MvpRecord(c,"STORE-COMMON-FILENAME-ONLY",!invalid_path.Open("../mvp_runtime_escape.sqlite",ns));
 
-   SWV5S5_MvpSqliteAuthorityStore claim_seed;
-   const bool claim_open=claim_seed.Open("mvp_runtime_claim_80e9.sqlite",ns);
-   string claim_body="DURABLE|CLAIM_ID=CLAIM-RESTART",claim_digest;
-   SWV5S5_DomainDigest("CLAIM-RESTART",claim_body,claim_digest);
-   const bool claim_insert=claim_open && claim_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_SUBMISSION,
-      SWV5S5_MVP_SUBMISSION_KEY,0,"","",0,1,(int)SWV5S5_INVOCATION_CLAIMED_UNRESOLVED,
-      claim_digest,claim_body,context.clock_time,committed);
-   claim_seed.Close();
-   SWV5S5_MvpInvocationClaimAuthority claim_authority; SWV5S5_MvpReloadedClaim reloaded;
-   const bool reload_ok=claim_insert && claim_authority.Configure("mvp_runtime_claim_80e9.sqlite",ns) &&
-      claim_authority.ReloadClaim(reloaded);
-   SWV5S5_MvpRecord(c,"CLAIM-RELOAD",reload_ok && reloaded.found && reloaded.invocation_claim_id=="CLAIM-RESTART");
-   SWV5S5_MvpRecord(c,"CLAIM-GRANT-NOT-RECONSTRUCTED",reload_ok && !reloaded.claim_granted_now);
+   const string journal_file="mvp_runtime_claim_80e9.sqlite";
+   SWV5_ContractValidationContext journal_context; SWV5S5_InvocationClaimCommand first_claim_command;
+   SWV5S5_SubmissionAuthorityIndexEntry empty_index[]; ArrayResize(empty_index,0);
+   SWV5S5_PermitPreparationCommand first_permit_command; ZeroMemory(first_permit_command);
+   SWV5S5_PermitPreparationResult first_prepared,first_authoritative;
+   const bool journal_fixture=SWV5S5_BuildClaimFixture(journal_context,first_claim_command);
+   if(journal_fixture)
+   {
+      SWV5S5_InitContractVersion(first_permit_command.contract_version);
+      SWV5S5_DeriveSubmissionIndexDigest(empty_index,first_permit_command.expected_index_digest);
+      first_permit_command.expected_index_revision=0;
+      first_permit_command.proposed_permit=first_claim_command.expected_authority_record.permit;
+      SWV5S5_DerivePermitPreparationCommandDigest(first_permit_command,first_permit_command.command_digest);
+   }
+   const bool first_prepared_ok=journal_fixture && SWV5S5_MvpPreparePermitCommit(journal_context,empty_index,
+      first_permit_command,first_permit_command.proposed_permit.producer_trust,
+      first_claim_command.admission_proof.trust_anchor,first_claim_command.admission_proof.trust_scope,
+      first_claim_command.admission_proof.accepted_ingress,first_prepared);
+   SWV5S5_MvpSubmissionPermitAuthority permit_authority;
+   const bool journal_configured=first_prepared_ok && permit_authority.Configure(journal_file,ns);
+   const bool first_staged=journal_configured && permit_authority.StagePrepared(first_prepared);
+   const bool first_physical=first_staged &&
+      permit_authority.TryCommitPermit(first_permit_command,empty_index,first_authoritative);
+   const bool first_permit_committed=first_physical &&
+      first_authoritative.disposition==SWV5S5_PERMIT_COMMITTED;
+   SWV5S5_MvpRecord(c,"JOURNAL-A-FIRST-PERMIT",first_permit_committed);
+
+   SWV5S5_PermitPreparationResult identical_result;
+   const bool first_idempotent=first_permit_committed && permit_authority.StagePrepared(first_prepared) &&
+      permit_authority.TryCommitPermit(first_permit_command,empty_index,identical_result) &&
+      identical_result.disposition==SWV5S5_PERMIT_EXISTING_IDENTICAL;
+   SWV5S5_MvpRecord(c,"JOURNAL-B-IDENTICAL-IDEMPOTENT",first_idempotent);
+
+   SWV5S5_PermitPreparationResult conflicting_prepared=first_prepared,conflicting_result;
+   conflicting_prepared.proposed_record.permit.normalization_identity="CONFLICTING-NORMALIZATION";
+   SWV5S5_DerivePermitId(conflicting_prepared.proposed_record.permit,
+                         conflicting_prepared.proposed_record.permit.permit_id);
+   SWV5S5_DerivePermitDigest(conflicting_prepared.proposed_record.permit,
+                             conflicting_prepared.proposed_record.permit.permit_digest);
+   SWV5S5_DeriveDurableSubmissionAuthorityDigest(conflicting_prepared.proposed_record,
+                                                  conflicting_prepared.proposed_record.durable_record_digest);
+   conflicting_prepared.disposition=SWV5S5_PERMIT_PROPOSAL_VALID;
+   SWV5S5_PermitPreparationCommand conflicting_command=first_permit_command;
+   conflicting_command.proposed_permit=conflicting_prepared.proposed_record.permit;
+   SWV5S5_DerivePermitPreparationCommandDigest(conflicting_command,conflicting_command.command_digest);
+   const bool same_attempt_conflict=first_permit_committed && permit_authority.StagePrepared(conflicting_prepared) &&
+      !permit_authority.TryCommitPermit(conflicting_command,empty_index,conflicting_result) &&
+      conflicting_result.disposition==SWV5S5_PERMIT_CONFLICT;
+   SWV5S5_MvpRecord(c,"JOURNAL-C-SAME-ATTEMPT-CONFLICT",same_attempt_conflict);
+
+   SWV5S5_MvpSqliteAuthorityStore journal_store; SWV5S5_MvpAuthorityRow current_index_row;
+   SWV5S5_SubmissionAuthorityIndexEntry first_index[]; bool current_index_found=false;
+   const bool first_index_loaded=first_permit_committed && journal_store.Open(journal_file,ns) &&
+      SWV5S5_MvpLoadSubmissionIndex(journal_store,first_index,current_index_row,current_index_found) &&
+      current_index_found && ArraySize(first_index)==1;
+   SWV5S5_PermitPreparationResult competing_prepared=first_prepared,competing_result;
+   competing_prepared.proposed_record.permit.request_identity.request_id.attempt_id=SWV5S5_SHA256_EMPTY;
+   competing_prepared.proposed_record.permit.unique_attempt_id=SWV5S5_SHA256_EMPTY;
+   competing_prepared.proposed_record.permit.risk_authorization.request_identity=
+      competing_prepared.proposed_record.permit.request_identity;
+   competing_prepared.proposed_record.permit.margin_authority.request_identity=
+      competing_prepared.proposed_record.permit.request_identity;
+   competing_prepared.proposed_record.permit.basket_risk_authority.request_identity=
+      competing_prepared.proposed_record.permit.request_identity;
+   SWV5S5_DerivePermitId(competing_prepared.proposed_record.permit,competing_prepared.proposed_record.permit.permit_id);
+   SWV5S5_DerivePermitDigest(competing_prepared.proposed_record.permit,competing_prepared.proposed_record.permit.permit_digest);
+   SWV5S5_DeriveDurableSubmissionAuthorityDigest(competing_prepared.proposed_record,
+                                                  competing_prepared.proposed_record.durable_record_digest);
+   competing_prepared.disposition=SWV5S5_PERMIT_PROPOSAL_VALID;
+   SWV5S5_PermitPreparationCommand competing_command=first_permit_command;
+   competing_command.expected_index_revision=current_index_row.logical_revision;
+   competing_command.expected_index_digest=current_index_row.payload_digest;
+   competing_command.proposed_permit=competing_prepared.proposed_record.permit;
+   SWV5S5_DerivePermitPreparationCommandDigest(competing_command,competing_command.command_digest);
+   const bool unresolved_blocks=first_index_loaded && permit_authority.StagePrepared(competing_prepared) &&
+      !permit_authority.TryCommitPermit(competing_command,first_index,competing_result) &&
+      competing_result.disposition==SWV5S5_PERMIT_LOGICAL_REQUEST_UNRESOLVED;
+   SWV5S5_MvpRecord(c,"JOURNAL-D-UNRESOLVED-BLOCKS",unresolved_blocks);
+
+   SWV5S5_LeaseLivenessAuthorityView claim_lease_view;
+   claim_lease_view.lease=first_claim_command.current_ownership_lease;
+   string claim_lease_payload;
+   SWV5S5_MvpAuthorityRow ownership_row;
+   const bool ownership_seeded=SWV5S5_DeriveLeaseProjection(claim_lease_view) &&
+      SWV5S5_CanonicalString("lease_projection",claim_lease_view.projection_digest,claim_lease_payload) &&
+      journal_store.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,
+         0,"","",0,1,(int)first_claim_command.current_ownership_lease.status,
+         claim_lease_view.projection_digest,claim_lease_payload,journal_context.clock_time,ownership_row);
+   first_claim_command.expected_authority_record=first_authoritative.proposed_record;
+   first_claim_command.expected_authority_revision=first_authoritative.proposed_record.authority_revision;
+   first_claim_command.expected_authority_digest=first_authoritative.proposed_record.durable_record_digest;
+   SWV5S5_DeriveClaimId(first_claim_command,first_claim_command.claim_id);
+   SWV5S5_DeriveClaimCommandDigest(first_claim_command,first_claim_command.command_digest);
+   SWV5S5_InvocationClaimTransition first_claim_transition; SWV5S5_InvocationClaimResult first_claim_result;
+   const bool first_claim_prepared=ownership_seeded && SWV5S5_PrepareInvocationClaimTransition(journal_context,
+      SWV5S5_TEST_RISK,first_claim_command,first_claim_transition);
+   SWV5S5_MvpInvocationClaimAuthority claim_authority;
+   const bool first_claimed=first_claim_prepared && claim_authority.Configure(journal_file,ns) &&
+      claim_authority.StagePrepared(first_claim_transition) &&
+      claim_authority.TryClaimInvocation(first_claim_command,first_claim_result) &&
+      first_claim_result.claim_granted_now;
+
+   SWV5S5_F_ReconciliationPublication terminal_publication; ZeroMemory(terminal_publication);
+   SWV5S5_F_InitVersion(terminal_publication.contract_version);
+   SWV5S5_F_InitVersion(terminal_publication.binding.contract_version);
+   terminal_publication.binding.profile.profile_digest=SWV5S5_SHA256_ABC;
+   terminal_publication.binding.request_identity=first_claim_result.resulting_authority_record.permit.request_identity;
+   terminal_publication.binding.submission_state=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED;
+   terminal_publication.binding.permit_id=first_claim_result.resulting_authority_record.permit.permit_id;
+   terminal_publication.binding.invocation_claim_id=first_claim_result.resulting_authority_record.invocation_claim_id;
+   terminal_publication.binding.claim_record_digest=first_claim_result.resulting_authority_record.durable_record_digest;
+   terminal_publication.current_publication_lease=first_claim_command.current_ownership_lease;
+   terminal_publication.expected_store_revision=first_claim_command.current_ownership_lease.store_revision;
+   terminal_publication.expected_reconciliation_revision=0; terminal_publication.proposed_reconciliation_revision=1;
+   SWV5S5_F_SetResult(SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED,SWV5S5_F_DISPOSITION_NEGATIVE_CONFIRMED,
+      SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED,false,true,true,0.0,0.0,SWV5S5_SHA256_EMPTY,
+      "MVP_JOURNAL_TERMINAL",terminal_publication.result);
+   SWV5S5_F_DeriveReconciliationPublicationDigest(terminal_publication,terminal_publication.publication_digest);
+   SWV5S5_MvpAuthorityRow reconciliation_row;
+   const bool reconciliation_seeded=first_claimed && journal_store.CompareAndSet(SWV5S5_MVP_DOMAIN_RECONCILIATION,
+      SWV5S5_MvpEvidenceKey(terminal_publication.binding),0,"","",0,1,(int)terminal_publication.result.state,
+      terminal_publication.result.result_digest,"PERSISTED-RECONCILIATION",journal_context.clock_time,reconciliation_row);
+   SWV5S5_MvpSubmissionTerminalAuthority terminal_authority;
+   SWV5S5_SubmissionAuthorityRecord first_terminal_record; SWV5S5_MvpAuthorityRow first_terminal_row;
+   const bool first_terminal=reconciliation_seeded && terminal_authority.Configure(journal_file,ns) &&
+      terminal_authority.TryFinalizeFromPersistedReconciliation(terminal_publication,
+         first_claim_result.resulting_authority_record,first_terminal_record,first_terminal_row) &&
+      first_terminal_record.state==SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED;
+   SWV5S5_MvpRecord(c,"JOURNAL-E-FIRST-TERMINAL",first_terminal);
+
+   SWV5S5_MvpReloadedClaim first_historical;
+   const bool first_history_preserved=first_terminal && claim_authority.ReloadClaim(
+      first_terminal_record.permit.request_identity.request_id.correlation_id,
+      first_terminal_record.permit.unique_attempt_id,first_historical) && first_historical.found &&
+      first_historical.state==SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED;
+   SWV5S5_MvpRecord(c,"JOURNAL-F-TERMINAL-HISTORY-DURABLE",first_history_preserved);
+
+   SWV5S5_IngressEnvelope second_ingress=first_claim_command.admission_proof.accepted_ingress;
+   second_ingress.snapshot.sequence++; second_ingress.decision.snapshot_sequence++;
+   second_ingress.publication.publication_sequence++;
+   SWV5S5_DeriveIngressIdentityAndDigest(second_ingress,second_ingress.ingress_identity,second_ingress.payload_digest);
+   SWV5_ExecutionRequestIdentity second_request;
+   SWV5S5_TestRequest(first_terminal_record.permit.persistence_namespace,second_ingress.ingress_identity,second_request);
+   SWV5S5_SubmissionPermit second_permit=first_terminal_record.permit;
+   second_permit.request_identity=second_request; second_permit.unique_attempt_id=second_request.request_id.attempt_id;
+   second_permit.risk_authorization.request_identity=second_request;
+   second_permit.margin_authority.request_identity=second_request;
+   second_permit.basket_risk_authority.request_identity=second_request;
+   SWV5S5_DerivePermitId(second_permit,second_permit.permit_id);
+   SWV5S5_DerivePermitDigest(second_permit,second_permit.permit_digest);
+   SWV5S5_SubmissionAuthorityIndexEntry after_terminal_index[]; SWV5S5_MvpAuthorityRow after_terminal_index_row;
+   bool after_terminal_index_found=false;
+   const bool after_terminal_loaded=first_terminal && SWV5S5_MvpLoadSubmissionIndex(journal_store,
+      after_terminal_index,after_terminal_index_row,after_terminal_index_found) && after_terminal_index_found;
+   SWV5S5_PermitPreparationCommand second_permit_command; ZeroMemory(second_permit_command);
+   SWV5S5_InitContractVersion(second_permit_command.contract_version);
+   second_permit_command.expected_index_revision=after_terminal_index_row.logical_revision;
+   second_permit_command.expected_index_digest=after_terminal_index_row.payload_digest;
+   second_permit_command.proposed_permit=second_permit;
+   SWV5S5_DerivePermitPreparationCommandDigest(second_permit_command,second_permit_command.command_digest);
+   SWV5S5_ProducerTrustScope second_trust_scope=first_claim_command.admission_proof.trust_scope;
+   second_trust_scope.ingress_identity=second_ingress.ingress_identity;
+   SWV5S5_PermitPreparationResult second_prepared,second_authoritative;
+   const bool second_prepared_ok=after_terminal_loaded && SWV5S5_MvpPreparePermitCommit(journal_context,
+      after_terminal_index,second_permit_command,second_permit.producer_trust,
+      first_claim_command.admission_proof.trust_anchor,second_trust_scope,second_ingress,second_prepared);
+   const bool second_permit_committed=second_prepared_ok && permit_authority.StagePrepared(second_prepared) &&
+      permit_authority.TryCommitPermit(second_permit_command,after_terminal_index,second_authoritative) &&
+      second_authoritative.disposition==SWV5S5_PERMIT_COMMITTED;
+   SWV5S5_MvpRecord(c,"JOURNAL-G-SECOND-PERMIT-AFTER-TERMINAL",second_permit_committed);
+
+   SWV5S5_InvocationClaimCommand second_claim_command=first_claim_command;
+   second_claim_command.expected_authority_record=second_authoritative.proposed_record;
+   second_claim_command.expected_authority_revision=second_authoritative.proposed_record.authority_revision;
+   second_claim_command.expected_authority_digest=second_authoritative.proposed_record.durable_record_digest;
+   SWV5S5_DeriveClaimId(second_claim_command,second_claim_command.claim_id);
+   SWV5S5_DeriveClaimCommandDigest(second_claim_command,second_claim_command.command_digest);
+   SWV5S5_InvocationClaimTransition second_claim_transition; ZeroMemory(second_claim_transition);
+   SWV5S5_InitContractVersion(second_claim_transition.contract_version);
+   second_claim_transition.disposition=SWV5S5_CLAIM_TRANSITION_ELIGIBLE;
+   second_claim_transition.transition_eligible=true;
+   second_claim_transition.proposed_next_record=second_authoritative.proposed_record;
+   second_claim_transition.proposed_next_record.state=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED;
+   second_claim_transition.proposed_next_record.authority_revision++;
+   second_claim_transition.proposed_next_record.invocation_claim_id=second_claim_command.claim_id;
+   second_claim_transition.proposed_next_record.claim_ownership_lease=second_claim_command.current_ownership_lease;
+   second_claim_transition.proposed_next_record.claimed_at=second_claim_command.claim_clock.observed_at;
+   second_claim_transition.proposed_next_record.claim_clock_id=second_claim_command.claim_clock.clock_id;
+   second_claim_transition.proposed_next_record.claim_clock_authority=second_claim_command.claim_clock.clock_authority;
+   second_claim_transition.proposed_next_record.claim_clock_sequence=second_claim_command.claim_clock.clock_sequence;
+   second_claim_transition.proposed_next_record.admission_snapshot=second_claim_command.admission_proof.snapshot;
+   second_claim_transition.proposed_next_record.admission_snapshot_digest=
+      second_claim_command.admission_proof.snapshot.snapshot_digest;
+   second_claim_transition.proposed_next_record.claim_policy_id=second_claim_command.claim_policy_id;
+   second_claim_transition.proposed_next_record.claim_policy_version=second_claim_command.claim_policy_version;
+   SWV5S5_DeriveDurableSubmissionAuthorityDigest(second_claim_transition.proposed_next_record,
+      second_claim_transition.proposed_next_record.durable_record_digest);
+   SWV5S5_InvocationClaimResult second_claim_result;
+   const bool second_claimed=second_permit_committed && claim_authority.StagePrepared(second_claim_transition) &&
+      claim_authority.TryClaimInvocation(second_claim_command,second_claim_result) &&
+      second_claim_result.claim_granted_now &&
+      second_claim_result.resulting_authority_record.permit.permit_id==second_permit.permit_id;
+   SWV5S5_MvpRecord(c,"JOURNAL-H-SECOND-EXACT-CLAIM",second_claimed);
+
+   SWV5S5_MvpInvocationClaimAuthority restarted_claim_authority;
+   SWV5S5_MvpReloadedClaim restarted_first,restarted_second,unresolved_after_restart[];
+   const bool restart_enumerated=second_claimed && restarted_claim_authority.Configure(journal_file,ns) &&
+      restarted_claim_authority.ReloadClaim(first_terminal_record.permit.request_identity.request_id.correlation_id,
+         first_terminal_record.permit.unique_attempt_id,restarted_first) &&
+      restarted_claim_authority.ReloadClaim(second_permit.request_identity.request_id.correlation_id,
+         second_permit.unique_attempt_id,restarted_second) &&
+      restarted_claim_authority.ReloadUnresolvedClaims(unresolved_after_restart);
+   SWV5S5_MvpRecord(c,"JOURNAL-I-RESTART-BOTH-RECORDS",restart_enumerated && restarted_first.found &&
+      restarted_first.state==SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED && restarted_second.found &&
+      restarted_second.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED);
+
+   SWV5S5_SubmissionAuthorityIndexEntry restart_index[]; SWV5S5_MvpAuthorityRow restart_index_row;
+   bool restart_index_found=false;
+   const bool restart_index_loaded=restart_enumerated && SWV5S5_MvpLoadSubmissionIndex(journal_store,
+      restart_index,restart_index_row,restart_index_found) && restart_index_found && ArraySize(restart_index)==2;
+   SWV5S5_MvpAuthorityRow stale_result;
+   const bool stale_index_denied=restart_index_loaded && !journal_store.CompareAndSet(
+      SWV5S5_MVP_DOMAIN_SUBMISSION_INDEX,SWV5S5_MVP_SUBMISSION_INDEX_KEY,0,"","",0,1,1,
+      restart_index_row.payload_digest,restart_index_row.payload,journal_context.clock_time,stale_result);
+   SWV5S5_MvpRecord(c,"JOURNAL-J-STALE-INDEX-CAS",stale_index_denied);
+   string second_record_key;
+   SWV5S5_MvpSubmissionRecordKey(second_permit.request_identity.request_id.correlation_id,
+                                  second_permit.unique_attempt_id,second_record_key);
+   SWV5S5_MvpAuthorityRow current_second_row; bool current_second_found=false;
+   const bool stale_record_denied=journal_store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION,second_record_key,
+      current_second_row,current_second_found) && current_second_found &&
+      !journal_store.CompareAndSet(SWV5S5_MVP_DOMAIN_SUBMISSION,second_record_key,1,
+         current_second_row.store_revision,current_second_row.payload_digest,(int)SWV5S5_COMMITTED_NOT_INVOKED,
+         2,current_second_row.state,current_second_row.payload_digest,current_second_row.payload,
+         journal_context.clock_time,stale_result);
+   SWV5S5_MvpRecord(c,"JOURNAL-K-STALE-RECORD-CAS",stale_record_denied);
+
+   string complete_index_digest,mutated_index_digest;
+   SWV5S5_SubmissionAuthorityIndexEntry mutated_index[]; ArrayResize(mutated_index,ArraySize(restart_index));
+   for(int i=0;i<ArraySize(restart_index);i++) mutated_index[i]=restart_index[i];
+   if(ArraySize(mutated_index)>0) mutated_index[0].durable_record_digest=SWV5S5_SHA256_ABC;
+   const bool index_complete_bound=restart_index_loaded &&
+      SWV5S5_DeriveSubmissionIndexDigest(restart_index,complete_index_digest) &&
+      complete_index_digest==restart_index_row.payload_digest &&
+      SWV5S5_DeriveSubmissionIndexDigest(mutated_index,mutated_index_digest) &&
+      mutated_index_digest!=complete_index_digest;
+   SWV5S5_MvpRecord(c,"JOURNAL-L-COMPLETE-ORDERED-INDEX-DIGEST",index_complete_bound);
+   SWV5S5_MvpRecord(c,"JOURNAL-M-TERMINAL-NO-GRANT",restart_enumerated && !restarted_first.claim_granted_now);
+   SWV5S5_MvpRecord(c,"JOURNAL-N-CLAIMED-NO-GRANT",restart_enumerated && !restarted_second.claim_granted_now);
+   SWV5S5_MvpRecord(c,"JOURNAL-O-EXACT-UNRESOLVED-ENUMERATION",restart_enumerated &&
+      ArraySize(unresolved_after_restart)==1 && unresolved_after_restart[0].logical_correlation_id==
+         second_permit.request_identity.request_id.correlation_id &&
+      unresolved_after_restart[0].attempt_id==second_permit.unique_attempt_id &&
+      unresolved_after_restart[0].invocation_claim_id==second_claim_result.resulting_authority_record.invocation_claim_id);
+   journal_store.Close();
 
    SWV5_PendingRequest incomplete_requests[2]; bool incomplete_rows[2];
    ZeroMemory(incomplete_requests); incomplete_rows[0]=true; incomplete_rows[1]=false;
