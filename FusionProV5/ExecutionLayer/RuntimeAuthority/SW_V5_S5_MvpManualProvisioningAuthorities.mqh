@@ -5,6 +5,7 @@
 // The runtime host must never call these provisioning methods.
 
 #include "SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
+#include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
 
 const string SWV5S5_MVP_DOMAIN_GENESIS="MVP_NAMESPACE_GENESIS";
 const string SWV5S5_MVP_DOMAIN_OPERATOR="MVP_OPERATOR_PROVISIONING_REFERENCE";
@@ -195,16 +196,33 @@ public:
       record.valid_until=now+(datetime)SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS;
       record.superseding_record_id=""; record.superseding_generation=0;
       if(!SWV5S5_DeriveProducerTrustDigest(record,record.record_digest)) return false;
-      string payload="",f;
-      if(!SWV5S5_CanonicalString("record_digest",record.record_digest,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalString("operator_id",operator_invocation.operator_id,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalString("authentication_reference",operator_invocation.authentication_reference,f)) return false; payload+=f;
+      string payload="";
+      if(!SWV5S5_MvpEncodeProducerTrustPhysical(record,anchor,operator_invocation.operator_id,
+          operator_invocation.authentication_reference,payload)) return false;
       SWV5S5_MvpAuthorityRow current,committed; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_PRODUCER_TRUST,"CURRENT",current,found)) return false;
       return m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_PRODUCER_TRUST,"CURRENT",
          (found ? current.logical_revision : 0),(found ? current.store_revision : ""),
          (found ? current.payload_digest : ""),(found ? current.state : 0),
          (found ? current.logical_revision+1 : 1),1,record.record_digest,payload,now,committed);
+   }
+
+   bool LoadCurrent(SWV5S5_ProducerTrustRecord &record,SWV5S5_ProducerTrustAnchor &anchor,
+                    string &operator_id,string &authentication_reference,bool &found)
+   {
+      ZeroMemory(record); ZeroMemory(anchor); operator_id=""; authentication_reference=""; found=false;
+      SWV5S5_MvpAuthorityRow row; bool row_found=false; string digest,store_revision;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_PRODUCER_TRUST,"CURRENT",row,row_found)) return false;
+      if(!row_found) return true;
+      if(row.state!=1 || row.logical_revision==0 ||
+         !SWV5S5_MvpDecodeProducerTrustPhysical(row.payload,record,anchor,operator_id,
+                                                authentication_reference) ||
+         !SWV5S5_DeriveProducerTrustDigest(record,digest) || digest!=record.record_digest ||
+         !m_store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,
+                                      row.payload_digest,store_revision) || store_revision!=row.store_revision ||
+         row.payload_digest!=record.record_digest) return false;
+      found=true;
+      return true;
    }
 };
 

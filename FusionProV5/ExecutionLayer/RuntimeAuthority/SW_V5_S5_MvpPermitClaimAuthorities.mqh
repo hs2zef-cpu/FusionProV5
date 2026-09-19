@@ -5,6 +5,7 @@
 // Demo MVP. CLAIM_GRANTED_NOW is event-local and is never serialized.
 
 #include "SW_V5_S5_MvpDemoAuthorityProviders.mqh"
+#include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
 
 const string SWV5S5_MVP_DOMAIN_SUBMISSION="MVP_SUBMISSION_AUTHORITY";
 const string SWV5S5_MVP_DOMAIN_SUBMISSION_INDEX="MVP_SUBMISSION_AUTHORITY_INDEX";
@@ -16,14 +17,9 @@ const string SWV5S5_MVP_SUBMISSION_INDEX_FORMAT="SWV5-S5-MVP-SUBMISSION-INDEX-V1
 
 bool SWV5S5_MvpSubmissionPayload(const SWV5S5_SubmissionAuthorityRecord &record,string &payload)
 {
-   string permit_field,state_field,revision_field,claim_field,digest_field;
-   if(!SWV5S5_CanonicalString("permit_digest",record.permit.permit_digest,permit_field) ||
-      !SWV5S5_CanonicalInt("state",record.state,state_field) ||
-      !SWV5S5_CanonicalUInt("authority_revision",record.authority_revision,revision_field) ||
-      !SWV5S5_CanonicalString("invocation_claim_id",record.invocation_claim_id,claim_field) ||
-      !SWV5S5_CanonicalString("durable_record_digest",record.durable_record_digest,digest_field)) return false;
-   payload=permit_field+state_field+revision_field+claim_field+digest_field+"|CLAIM_ID="+record.invocation_claim_id;
-   return true;
+   // Physical V1 is a lossless implementation encoding. The accepted Permit,
+   // Admission and durable-record digest functions remain unchanged.
+   return SWV5S5_MvpEncodeSubmissionPhysical(record,payload);
 }
 
 bool SWV5S5_MvpSubmissionRecordIdentity(const SWV5S5_SubmissionAuthorityRecord &record,
@@ -138,10 +134,44 @@ bool SWV5S5_MvpLoadSubmissionIndex(SWV5S5_MvpSqliteAuthorityStore &store,
    ArrayResize(entries,0); ZeroMemory(index_row); found=false;
    if(!store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION_INDEX,SWV5S5_MVP_SUBMISSION_INDEX_KEY,index_row,found)) return false;
    if(!found) return true;
-   string digest;
+   string digest,store_revision;
    return index_row.logical_revision>0 && index_row.state==1 &&
       SWV5S5_MvpDeserializeSubmissionIndex(index_row.payload,entries,digest) &&
-      index_row.payload_digest==digest;
+      index_row.payload_digest==digest &&
+      store.DeriveStoreRevision(index_row.domain_key,index_row.record_key,index_row.logical_revision,
+                                index_row.payload_digest,store_revision) &&
+      store_revision==index_row.store_revision;
+}
+
+bool SWV5S5_MvpLoadSubmissionAuthority(SWV5S5_MvpSqliteAuthorityStore &store,
+                                       const string correlation_id,const string attempt_id,
+                                       SWV5S5_SubmissionAuthorityRecord &record,bool &found)
+{
+   ZeroMemory(record); found=false;
+   string record_key,digest,store_revision;
+   SWV5S5_SubmissionAuthorityIndexEntry entries[];
+   SWV5S5_MvpAuthorityRow index_row,row; bool index_found=false,row_found=false;
+   if(!SWV5S5_MvpSubmissionRecordKey(correlation_id,attempt_id,record_key) ||
+      !SWV5S5_MvpLoadSubmissionIndex(store,entries,index_row,index_found)) return false;
+   const int exact=SWV5S5_MvpFindSubmissionIndexEntry(entries,correlation_id,attempt_id);
+   if(exact<0)
+   {
+      SWV5S5_MvpAuthorityRow orphan; bool orphan_found=false;
+      return store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION,record_key,orphan,orphan_found) && !orphan_found;
+   }
+   if(!index_found || !store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION,record_key,row,row_found) ||
+      !row_found || !SWV5S5_MvpDecodeSubmissionPhysical(row.payload,record) ||
+      !SWV5S5_DeriveDurableSubmissionAuthorityDigest(record,digest) ||
+      digest!=record.durable_record_digest || row.payload_digest!=record.durable_record_digest ||
+      !store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,row.payload_digest,
+                                 store_revision) || store_revision!=row.store_revision ||
+      row.logical_revision!=record.authority_revision || row.state!=(int)record.state)
+      return false;
+   SWV5S5_SubmissionAuthorityIndexEntry decoded_entry;
+   if(!SWV5S5_MvpSubmissionIndexEntryFromRecord(record,decoded_entry) ||
+      !SWV5S5_MvpSubmissionIndexEntryEqual(entries[exact],decoded_entry)) return false;
+   found=true;
+   return true;
 }
 
 bool SWV5S5_MvpInsertSubmissionIndexEntry(const SWV5S5_SubmissionAuthorityIndexEntry &current[],
@@ -368,6 +398,7 @@ struct SWV5S5_MvpReloadedClaim
    string durable_record_digest;
    string invocation_claim_id;
    bool claim_granted_now;
+   SWV5S5_SubmissionAuthorityRecord authority_record;
 };
 
 class SWV5S5_MvpInvocationClaimAuthority : public ISWV5S5InvocationClaimAuthority
@@ -468,32 +499,17 @@ public:
    bool ReloadClaim(const string correlation_id,const string attempt_id,SWV5S5_MvpReloadedClaim &reloaded)
    {
       ZeroMemory(reloaded);
-      string record_key;
-      SWV5S5_SubmissionAuthorityIndexEntry entries[];
-      SWV5S5_MvpAuthorityRow index_row,row; bool index_found=false,found=false;
-      if(!SWV5S5_MvpSubmissionRecordKey(correlation_id,attempt_id,record_key) ||
-         !SWV5S5_MvpLoadSubmissionIndex(m_store,entries,index_row,index_found)) return false;
-      const int exact=SWV5S5_MvpFindSubmissionIndexEntry(entries,correlation_id,attempt_id);
-      if(exact<0) return true;
-      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_SUBMISSION,record_key,row,found) || !found ||
-         row.logical_revision!=entries[exact].authority_revision || row.state!=(int)entries[exact].state ||
-         row.payload_digest!=entries[exact].durable_record_digest) return false;
+      SWV5S5_SubmissionAuthorityRecord record; bool found=false;
+      if(!SWV5S5_MvpLoadSubmissionAuthority(m_store,correlation_id,attempt_id,record,found)) return false;
+      if(!found) return true;
       reloaded.found=true; reloaded.logical_correlation_id=correlation_id; reloaded.attempt_id=attempt_id;
-      reloaded.permit_id=entries[exact].permit_id;
-      reloaded.state=(SWV5S5_SubmissionAuthorityState)row.state;
-      reloaded.authority_revision=row.logical_revision;
-      reloaded.durable_record_digest=row.payload_digest;
+      reloaded.permit_id=record.permit.permit_id;
+      reloaded.state=record.state;
+      reloaded.authority_revision=record.authority_revision;
+      reloaded.durable_record_digest=record.durable_record_digest;
+      reloaded.invocation_claim_id=record.invocation_claim_id;
       reloaded.claim_granted_now=false;
-      if(reloaded.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED)
-      {
-         const string marker="|CLAIM_ID=";
-         const int marker_at=StringFind(row.payload,marker);
-         if(marker_at>=0)
-         {
-            const int value_at=marker_at+StringLen(marker);
-            reloaded.invocation_claim_id=StringSubstr(row.payload,value_at);
-         }
-      }
+      reloaded.authority_record=record;
       return reloaded.state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED || reloaded.invocation_claim_id!="";
    }
 

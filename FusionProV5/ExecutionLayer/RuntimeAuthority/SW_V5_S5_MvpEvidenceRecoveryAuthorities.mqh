@@ -560,6 +560,22 @@ public:
       return m_store.CompareAndSetPairWithGuard(record_mutation,index_mutation,reconciliation_row,
                                                 committed_record,committed_index);
    }
+
+   bool TryFinalizeReloadedFromPersistedReconciliation(
+      const SWV5S5_F_ReconciliationPublication &publication,
+      SWV5S5_SubmissionAuthorityRecord &terminal_record,
+      SWV5S5_MvpAuthorityRow &committed_record)
+   {
+      ZeroMemory(terminal_record); ZeroMemory(committed_record);
+      const string correlation_id=publication.binding.request_identity.request_id.correlation_id;
+      const string attempt_id=publication.binding.request_identity.request_id.attempt_id;
+      SWV5S5_SubmissionAuthorityRecord claimed; bool found=false;
+      if(!SWV5S5_MvpLoadSubmissionAuthority(m_store,correlation_id,attempt_id,claimed,found) || !found ||
+         claimed.state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED ||
+         claimed.invocation_claim_id!=publication.binding.invocation_claim_id ||
+         claimed.durable_record_digest!=publication.binding.claim_record_digest) return false;
+      return TryFinalizeFromPersistedReconciliation(publication,claimed,terminal_record,committed_record);
+   }
 };
 
 struct SWV5S5_MvpRecoveryResult
