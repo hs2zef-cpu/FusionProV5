@@ -5,7 +5,7 @@
 // This utility owns no trading intent, Permit, Claim, broker adapter, or submission path.
 // It is manually invoked to establish the already-approved durable authorities.
 
-#include "../RuntimeAuthority/SW_V5_S5_MvpManualProvisioningAuthorities.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh"
 
 struct SWV5S5_MvpManualDemoSetupInput
 {
@@ -14,6 +14,15 @@ struct SWV5S5_MvpManualDemoSetupInput
    string expected_broker_identity;
    string expected_server;
    long expected_demo_account_login;
+   string claimant_instance_id;
+   string claimant_process_fingerprint;
+   uint lease_duration_seconds;
+   string platform_observation_id;
+   string basket_id;
+   ulong producer_epoch;
+   int producer_timeframe;
+   int producer_execution_mode;
+   string ingress_identity;
    SWV5S5_MvpOperatorInvocation operator_invocation;
 };
 
@@ -21,12 +30,16 @@ struct SWV5S5_MvpManualDemoSetupResult
 {
    bool profile_matched;
    bool genesis_ready;
-   bool ownership_published;
+   bool clock_observed;
+   bool ownership_acquired_now;
+   bool ownership_readback_complete;
    bool trust_persisted;
    bool trust_reloaded_complete;
    bool zero_state_verified;
    bool safety_release_persisted;
    string stop_reason;
+   SWV5S5_MvpLeaseClockObservation accepted_clock;
+   SWV5_InstanceLease current_lease;
    SWV5S5_ProducerTrustRecord reloaded_trust;
    SWV5S5_ProducerTrustAnchor reloaded_anchor;
 };
@@ -37,30 +50,32 @@ bool SWV5S5_MvpManualDemoSetupInputValid(const SWV5S5_MvpManualDemoSetupInput &s
    return setup_input.relative_store_path!="" && setup_input.persistence_namespace_identity!="" &&
       setup_input.expected_broker_identity!="" && setup_input.expected_server!="" &&
       setup_input.expected_demo_account_login>0 &&
+      setup_input.claimant_instance_id!="" && setup_input.claimant_process_fingerprint!="" &&
+      setup_input.lease_duration_seconds>0 &&
+      setup_input.lease_duration_seconds<=SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS &&
+      setup_input.platform_observation_id!="" && setup_input.basket_id!="" &&
+      setup_input.producer_epoch>0 && setup_input.producer_timeframe>0 &&
+      setup_input.ingress_identity!="" &&
       SWV5S5_MvpOperatorInvocationValid(setup_input.operator_invocation,now);
 }
 
 class SWV5S5_MvpManualDemoSetup
 {
 public:
-   // Genesis, ownership publication, and Producer Trust are deliberately one
-   // attended setup operation. All authority semantics remain in the accepted providers.
-   bool Provision(const SWV5S5_MvpManualDemoSetupInput &setup_input,
-                  const datetime now,
+   // Called exactly once from the explicitly armed current-XAUUSD OnTick host.
+   // Genesis is completed before the accepted clock sample; the caller can no
+   // longer publish or supply an allegedly authoritative lease.
+   bool ProvisionOnCurrentSymbolTick(const SWV5S5_MvpManualDemoSetupInput &setup_input,
                   ISWV5S5MvpReadOnlyPlatform &platform,
-                  const SWV5_InstanceLease &accepted_current_lease,
                   const SWV5S5_ProducerTrustAnchor &trust_anchor,
-                  const SWV5S5_ProducerTrustScope &trust_scope,
                   SWV5S5_MvpManualDemoSetupResult &result)
    {
       ZeroMemory(result);
-      if(!SWV5S5_MvpManualDemoSetupInputValid(setup_input,now))
-      { result.stop_reason="SETUP_INPUT_INVALID"; return false; }
-
       SWV5S5_MvpRuntimeProfileObservation observed;
       datetime observed_at=0;
       if(!platform.CaptureProfile(SWV5S5_MVP_SYMBOL,observed,observed_at) ||
-         observed_at!=now || !SWV5S5_MvpProfileMatches(observed,ACCOUNT_TRADE_MODE_DEMO) ||
+         !SWV5S5_MvpManualDemoSetupInputValid(setup_input,observed_at) ||
+         !SWV5S5_MvpProfileMatches(observed,ACCOUNT_TRADE_MODE_DEMO) ||
          observed.broker_identity!=setup_input.expected_broker_identity ||
          observed.server!=setup_input.expected_server ||
          observed.account_login!=setup_input.expected_demo_account_login)
@@ -70,25 +85,58 @@ public:
       SWV5S5_MvpManualGenesisProvisioner genesis;
       bool ready=false;
       if(!genesis.Configure(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
-         !genesis.Begin(setup_input.operator_invocation,now) ||
-         !genesis.InitializeAllDomains(now) ||
-         !genesis.FinalizeReadyForReconciliation(now) ||
+         !genesis.Begin(setup_input.operator_invocation,observed_at) ||
+         !genesis.InitializeAllDomains(observed_at) ||
+         !genesis.FinalizeReadyForReconciliation(observed_at) ||
          !genesis.IsReadyForReconciliation(ready) || !ready)
       { result.stop_reason="SETUP_GENESIS_FAILED"; return false; }
       result.genesis_ready=true;
 
-      SWV5S5_MvpSqliteAuthorityStore store;
-      SWV5S5_MvpLeasePublicationAuthority lease_authority;
-      SWV5S5_MvpAuthorityRow ownership_row;
-      if(!store.Open(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
-         !lease_authority.Publish(store,accepted_current_lease,0,"","",0,now,ownership_row))
-      { result.stop_reason="SETUP_OWNERSHIP_PUBLICATION_FAILED"; return false; }
-      result.ownership_published=true;
+      SWV5S5_MvpLeaseClockAuthority clock;
+      SWV5S5_MvpAuthorityRow clock_row;
+      if(!clock.Configure(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
+         !clock.ObserveFromCurrentSymbolOnTick(SWV5S5_MVP_SYMBOL,setup_input.platform_observation_id,
+            result.accepted_clock,clock_row) || result.accepted_clock.observed_at!=observed_at)
+      { result.stop_reason="SETUP_CURRENT_SYMBOL_CLOCK_FAILED"; return false; }
+      result.clock_observed=true;
+
+      SWV5_OwnerIdentity claimant; ZeroMemory(claimant);
+      claimant.key.account_login=observed.account_login;
+      claimant.key.broker_identity=observed.broker_identity; claimant.key.server=observed.server;
+      claimant.key.symbol=SWV5S5_MVP_SYMBOL; claimant.key.strategy_id=SWV5S5_MVP_PROFILE_ID;
+      claimant.key.magic=SWV5_RUNTIME_STRATEGY_MAGIC;
+      claimant.instance_id=setup_input.claimant_instance_id;
+      claimant.process_fingerprint=setup_input.claimant_process_fingerprint;
+      claimant.started_at=result.accepted_clock.observed_at;
+      SWV5S5_MvpInitialOwnershipAuthority ownership;
+      SWV5S5_MvpInitialAcquireResult acquisition;
+      if(!ownership.Configure(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
+         !ownership.AcquireInitial(claimant,setup_input.lease_duration_seconds,clock,acquisition) ||
+         !acquisition.acquired_now)
+      { result.stop_reason="SETUP_INITIAL_OWNERSHIP_ACQUIRE_FAILED"; return false; }
+      result.ownership_acquired_now=true; result.current_lease=acquisition.authoritative_lease;
+      result.ownership_readback_complete=SWV5S5_MvpLeaseExact(acquisition.proposed_lease,
+                                                              acquisition.authoritative_lease);
+      if(!result.ownership_readback_complete)
+      { result.stop_reason="SETUP_OWNERSHIP_READBACK_FAILED"; return false; }
+
+      SWV5S5_ProducerTrustScope trust_scope; ZeroMemory(trust_scope);
+      SWV5S5_InitContractVersion(trust_scope.persistence_namespace.contract_version);
+      trust_scope.persistence_namespace.ownership_namespace=claimant.key;
+      trust_scope.persistence_namespace.basket_id.value=setup_input.basket_id;
+      trust_scope.producer_component="DECISION";
+      trust_scope.producer_instance=SWV5S5_MVP_PRODUCER_INSTANCE;
+      trust_scope.producer_epoch=setup_input.producer_epoch; trust_scope.symbol=SWV5S5_MVP_SYMBOL;
+      trust_scope.timeframe=setup_input.producer_timeframe;
+      trust_scope.execution_mode=setup_input.producer_execution_mode;
+      trust_scope.publication_clock_id=result.accepted_clock.clock_id;
+      trust_scope.publication_clock_authority=result.accepted_clock.clock_authority;
+      trust_scope.ingress_identity=setup_input.ingress_identity;
 
       SWV5S5_MvpManualProducerTrustProvisioner trust;
       SWV5S5_ProducerTrustRecord persisted;
       if(!trust.Configure(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
-         !trust.Provision(setup_input.operator_invocation,trust_anchor,trust_scope,now,persisted))
+         !trust.Provision(setup_input.operator_invocation,trust_anchor,trust_scope,observed_at,persisted))
       { result.stop_reason="SETUP_TRUST_PROVISION_FAILED"; return false; }
       result.trust_persisted=true;
 
