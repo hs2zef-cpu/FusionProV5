@@ -14,6 +14,56 @@ const string SWV5S5_MVP_SUBMISSION_INDEX_KEY="CURRENT";
 const string SWV5S5_MVP_OWNERSHIP_KEY="CURRENT_LEASE";
 const string SWV5S5_MVP_SUBMISSION_RECORD_KEY_DOMAIN="SWV5-S5-MVP-SUBMISSION-RECORD-KEY-V1";
 const string SWV5S5_MVP_SUBMISSION_INDEX_FORMAT="SWV5-S5-MVP-SUBMISSION-INDEX-V1";
+const string SWV5S5_MVP_OWNERSHIP_LEASE_PHYSICAL_FORMAT="SWV5-MVP-OWNERSHIP-LEASE-PHYSICAL-V1";
+
+bool SWV5S5_MvpEncodeOwnershipLeasePhysical(const SWV5_InstanceLease &lease,string &payload)
+{
+   payload=""; string lease_body,field;
+   if(!SWV5S5_CanonicalString("physical_format",SWV5S5_MVP_OWNERSHIP_LEASE_PHYSICAL_FORMAT,field)) return false;
+   payload+=field;
+   if(!SWV5S5_MvpCodecEncode_SWV5_InstanceLease(lease,lease_body) ||
+      !SWV5S5_CanonicalNested("lease",lease_body,field)) return false;
+   payload+=field;
+   return true;
+}
+
+bool SWV5S5_MvpDecodeOwnershipLeasePhysical(const string payload,SWV5_InstanceLease &lease)
+{
+   ZeroMemory(lease);
+   SWV5S5_MvpCodecReader reader; reader.Init(payload);
+   string format,nested;
+   if(!reader.ReadString("physical_format",format) ||
+      format!=SWV5S5_MVP_OWNERSHIP_LEASE_PHYSICAL_FORMAT ||
+      !reader.ReadNested("lease",nested) || !reader.AtEnd() ||
+      !SWV5S5_MvpCodecDecode_SWV5_InstanceLease(nested,lease))
+   { ZeroMemory(lease); return false; }
+   return true;
+}
+
+bool SWV5S5_MvpLeaseExact(const SWV5_InstanceLease &left,const SWV5_InstanceLease &right)
+{
+   string a,b;
+   return SWV5S5_MvpCodecEncode_SWV5_InstanceLease(left,a) &&
+      SWV5S5_MvpCodecEncode_SWV5_InstanceLease(right,b) && a==b;
+}
+
+bool SWV5S5_MvpLeaseCurrentForClock(const SWV5_ContractValidationContext &context,
+                                    const SWV5_OwnershipFence &expected_fence,
+                                    const SWV5_InstanceLease &lease)
+{
+   SWV5S5_LeaseLivenessAuthorityView view; view.lease=lease;
+   return SWV5S5_DeriveLeaseProjection(view) &&
+      (lease.status==SWV5_LOCK_ACQUIRED || lease.status==SWV5_LOCK_RENEWED) &&
+      SWV5S5_EqualFence(lease.fence,expected_fence) &&
+      lease.clock_id==context.clock_id && lease.clock_authority==context.clock_authority &&
+      lease.acquired_clock_sequence>0 &&
+      lease.heartbeat_sequence>0 &&
+      lease.heartbeat_clock_sequence>=lease.acquired_clock_sequence &&
+      lease.heartbeat_clock_sequence<=context.clock_sequence &&
+      lease.expiry_clock_sequence>lease.heartbeat_clock_sequence &&
+      lease.acquired_at>0 && lease.acquired_at<=lease.heartbeat_at &&
+      lease.heartbeat_at<=context.clock_time && lease.expires_at>context.clock_time;
+}
 
 bool SWV5S5_MvpSubmissionPayload(const SWV5S5_SubmissionAuthorityRecord &record,string &payload)
 {
@@ -269,10 +319,37 @@ public:
       view.lease=lease;
       if(!SWV5S5_DeriveLeaseProjection(view)) return false;
       string payload;
-      if(!SWV5S5_CanonicalString("lease_projection",view.projection_digest,payload)) return false;
+      if(!SWV5S5_MvpEncodeOwnershipLeasePhysical(lease,payload)) return false;
       return store.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,
          expected_physical_revision,expected_physical_store_revision,expected_projection_digest,expected_state,
          expected_physical_revision+1,(int)lease.status,view.projection_digest,payload,updated_at,committed);
+   }
+
+   bool LoadCurrentLease(SWV5S5_MvpSqliteAuthorityStore &store,
+                         const SWV5_OwnershipKey &expected_ownership_namespace,
+                         const SWV5_OwnershipFence &expected_fence,
+                         SWV5_InstanceLease &lease,SWV5S5_MvpAuthorityRow &physical_row)
+   {
+      ZeroMemory(lease); ZeroMemory(physical_row);
+      SWV5S5_MvpAuthorityRow row; bool found=false;
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,row,found) ||
+         !found || row.logical_revision==0 || row.store_revision=="" ||
+         row.payload_digest=="" || row.payload=="") return false;
+      SWV5_InstanceLease decoded;
+      if(!SWV5S5_MvpDecodeOwnershipLeasePhysical(row.payload,decoded)) return false;
+      SWV5S5_LeaseLivenessAuthorityView view; view.lease=decoded;
+      string expected_store_revision;
+      if(!SWV5S5_DeriveLeaseProjection(view) || view.projection_digest!=row.payload_digest ||
+         row.state!=(int)decoded.status ||
+         !store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,
+                                    row.payload_digest,expected_store_revision) ||
+         expected_store_revision!=row.store_revision ||
+         !SWV5S5_EqualOwnershipKey(decoded.fence.ownership_namespace,
+                                    expected_ownership_namespace) ||
+         !SWV5S5_EqualFence(decoded.fence,expected_fence))
+      { ZeroMemory(decoded); return false; }
+      lease=decoded; physical_row=row;
+      return true;
    }
 };
 
