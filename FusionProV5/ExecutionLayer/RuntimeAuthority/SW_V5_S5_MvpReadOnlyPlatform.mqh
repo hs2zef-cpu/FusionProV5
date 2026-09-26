@@ -126,7 +126,7 @@ public:
          tick<=0.0 || tick_profit<=0.0 || tick_loss<=0.0 || contract_size<=0.0 ||
          volume_min<=0.0 || volume_max<volume_min || volume_step<=0.0 ||
          account_currency!=SWV5S5_MVP_ACCOUNT_CURRENCY || stops<0 || freeze<0) return false;
-      SWV5S5_InitContractVersion(specification.contract_version);
+      SWV5S5_MvpInitProductionVersion(specification.contract_version);
       specification.symbol=symbol;
       specification.specification_sequence=specification_sequence;
       specification.digits=(int)digits;

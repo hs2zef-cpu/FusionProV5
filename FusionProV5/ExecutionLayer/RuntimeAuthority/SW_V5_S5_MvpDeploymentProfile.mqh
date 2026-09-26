@@ -45,6 +45,18 @@ struct SWV5S5_MvpRuntimeProfileObservation
    bool account_trade_expert;
 };
 
+// Production DTOs nested inside Sprint 5 authority records retain the frozen
+// Production Contract V5 identity. Sprint 5 wrapper DTOs use
+// SWV5S5_InitContractVersion instead.
+void SWV5S5_MvpInitProductionVersion(SWV5_ContractVersion &version)
+{
+   ZeroMemory(version);
+   version.contract_name=SWV5_PRODUCTION_CONTRACT_NAME;
+   version.schema_version=SWV5_PRODUCTION_CONTRACT_VERSION;
+   version.minimum_compatible_version=SWV5_PRODUCTION_MINIMUM_COMPATIBLE_VERSION;
+   version.policy_id=SWV5_PRODUCTION_CONTRACT_POLICY;
+}
+
 bool SWV5S5_MvpNear(const double left,const double right,const double tolerance=1.0e-9)
 {
    return MathIsValidNumber(left) && MathIsValidNumber(right) && MathAbs(left-right)<=tolerance;
@@ -69,7 +81,7 @@ bool SWV5S5_MvpProfileMatches(const SWV5S5_MvpRuntimeProfileObservation &observa
 void SWV5S5_MvpLoadRiskLimits(SWV5_RiskLimits &limits)
 {
    ZeroMemory(limits);
-   SWV5S5_InitContractVersion(limits.contract_version);
+   SWV5S5_MvpInitProductionVersion(limits.contract_version);
    limits.contract_id=SWV5S5_MVP_RISK_POLICY_ID;
    limits.minimum_equity=100.00;
    limits.maximum_daily_net_loss=10.00;

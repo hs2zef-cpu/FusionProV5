@@ -304,7 +304,7 @@ public:
       double margin=0.0;
       if(!platform.CalculateMargin(candidate.direction,SWV5S5_MVP_SYMBOL,
          candidate.normalized.volume,candidate.normalized.price,margin) || !MathIsValidNumber(margin) || margin<=0.0) return false;
-      SWV5S5_InitContractVersion(record.contract_version);
+      SWV5S5_MvpInitProductionVersion(record.contract_version);
       record.persistence_namespace=candidate.persistence_namespace; record.account_namespace=candidate.account_namespace;
       record.ownership_fence=candidate.ownership_fence; record.request_identity=candidate.request_identity;
       record.basket_id=candidate.persistence_namespace.basket_id; record.symbol=SWV5S5_MVP_SYMBOL;
@@ -351,7 +351,7 @@ public:
       if(!MathIsValidNumber(incremental) || incremental>5.0) return false;
       string source_id,source_digest;
       if(!SWV5S5_MvpDeriveSourceSnapshot(candidate,source_id,source_digest)) return false;
-      SWV5S5_InitContractVersion(record.contract_version);
+      SWV5S5_MvpInitProductionVersion(record.contract_version);
       record.persistence_namespace=candidate.persistence_namespace; record.account_namespace=candidate.account_namespace;
       record.ownership_fence=candidate.ownership_fence; record.basket_id=candidate.persistence_namespace.basket_id;
       record.basket_state_version=candidate.basket.state_version; record.request_identity=candidate.request_identity;
@@ -360,7 +360,7 @@ public:
       record.existing_bounded_basket_loss=0.0; record.incremental_request_bounded_loss=incremental;
       record.interaction_or_offset_adjustment=0.0; record.resulting_basket_maximum_loss=incremental;
       record.realized_loss_basis=0.0; record.unrealized_loss_basis=0.0; record.accrued_cost_basis=0.0;
-      SWV5S5_InitContractVersion(record.monetary_basis.contract_version);
+      SWV5S5_MvpInitProductionVersion(record.monetary_basis.contract_version);
       record.monetary_basis.currency=SWV5S5_MVP_ACCOUNT_CURRENCY;
       record.monetary_basis.account_currency=SWV5S5_MVP_ACCOUNT_CURRENCY;
       record.monetary_basis.conversion_rate_to_account_currency=1.0;
