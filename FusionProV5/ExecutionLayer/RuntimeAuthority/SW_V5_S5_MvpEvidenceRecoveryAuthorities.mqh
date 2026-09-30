@@ -5,6 +5,7 @@
 // Demo MVP. Broker observations and Execution pending state remain independent.
 
 #include "SW_V5_S5_MvpPermitClaimAuthorities.mqh"
+#include "SW_V5_S5_MvpRequestMaterializationAuthorities.mqh"
 #include "../BrokerAdapter/SW_V5_S5_F_BrokerReconciliationIntegration.mqh"
 
 const string SWV5S5_MVP_DOMAIN_BROKER_SYNC="MVP_BROKER_SYNC_EVIDENCE";
@@ -149,6 +150,59 @@ bool SWV5S5_MvpDecodeCallbackPayload(const string payload,SWV5S5_F_AdapterCallba
       SWV5S5_F_DeriveCallbackDigest(evidence,digest) && digest==evidence.evidence_digest;
 }
 
+bool SWV5S5_MvpSyncResultPayload(const SWV5S5_F_AdapterSyncResult &result,string &payload)
+{
+   payload=""; string f;
+#define SYNC_BOOL(name,value) if(!SWV5S5_CanonicalBool(name,value,f)) return false; payload+=f
+#define SYNC_INT(name,value) if(!SWV5S5_CanonicalInt(name,value,f)) return false; payload+=f
+#define SYNC_UINT(name,value) if(!SWV5S5_CanonicalUInt(name,value,f)) return false; payload+=f
+#define SYNC_DOUBLE(name,value) if(!SWV5S5_CanonicalDouble(name,value,f)) return false; payload+=f
+#define SYNC_STRING(name,value) if(!SWV5S5_CanonicalString(name,value,f)) return false; payload+=f
+   SYNC_BOOL("invocation_attempted",result.invocation_attempted);
+   SYNC_BOOL("transport_result",result.transport_result);
+   SYNC_INT("last_error",result.last_error); SYNC_UINT("retcode",result.retcode);
+   SYNC_UINT("retcode_external",result.retcode_external);
+   SYNC_UINT("request_id",result.request_id_session_local); SYNC_UINT("order",result.order_ticket);
+   SYNC_UINT("deal",result.deal_ticket); SYNC_DOUBLE("volume",result.volume);
+   SYNC_DOUBLE("price",result.price); SYNC_DOUBLE("bid",result.bid); SYNC_DOUBLE("ask",result.ask);
+   SYNC_STRING("comment",result.comment); SYNC_INT("classification",(int)result.classification);
+   SYNC_BOOL("final_confirmation",result.final_confirmation); SYNC_BOOL("retry_allowed",result.retry_allowed);
+   SYNC_STRING("claim_id",result.claim_id); SYNC_STRING("claim_digest",result.claim_record_digest);
+   SYNC_STRING("correlation_id",result.request_correlation_id); SYNC_STRING("attempt_id",result.attempt_id);
+   SYNC_STRING("profile_digest",result.profile_digest);
+   SYNC_STRING("environment_digest",result.observed_environment_digest);
+   SYNC_STRING("result_digest",result.result_digest); SYNC_STRING("reason_code",result.reason_code);
+#undef SYNC_BOOL
+#undef SYNC_INT
+#undef SYNC_UINT
+#undef SYNC_DOUBLE
+#undef SYNC_STRING
+   return true;
+}
+
+bool SWV5S5_MvpDecodeSyncResultPayload(const string payload,SWV5S5_F_AdapterSyncResult &result)
+{
+   ZeroMemory(result); SWV5S5_MvpCodecReader r; r.Init(payload); long x=0;
+   if(!r.ReadBool("invocation_attempted",result.invocation_attempted) ||
+      !r.ReadBool("transport_result",result.transport_result) || !r.ReadInteger("last_error",x)) return false;
+   result.last_error=(int)x;
+   if(!r.ReadUnsigned("retcode",result.retcode) || !r.ReadUnsigned("retcode_external",result.retcode_external) ||
+      !r.ReadUnsigned("request_id",result.request_id_session_local) || !r.ReadUnsigned("order",result.order_ticket) ||
+      !r.ReadUnsigned("deal",result.deal_ticket) || !r.ReadDouble("volume",result.volume) ||
+      !r.ReadDouble("price",result.price) || !r.ReadDouble("bid",result.bid) || !r.ReadDouble("ask",result.ask) ||
+      !r.ReadString("comment",result.comment) || !r.ReadInteger("classification",x)) return false;
+   result.classification=(SWV5S5_F_AdapterSyncClassification)x;
+   if(!r.ReadBool("final_confirmation",result.final_confirmation) || !r.ReadBool("retry_allowed",result.retry_allowed) ||
+      !r.ReadString("claim_id",result.claim_id) || !r.ReadString("claim_digest",result.claim_record_digest) ||
+      !r.ReadString("correlation_id",result.request_correlation_id) || !r.ReadString("attempt_id",result.attempt_id) ||
+      !r.ReadString("profile_digest",result.profile_digest) ||
+      !r.ReadString("environment_digest",result.observed_environment_digest) ||
+      !r.ReadString("result_digest",result.result_digest) || !r.ReadString("reason_code",result.reason_code) ||
+      !r.AtEnd()) return false;
+   string digest;
+   return SWV5S5_F_DeriveAdapterSyncResultDigest(result,digest) && digest==result.result_digest;
+}
+
 // The store persists the canonical full callback projection. Typed recovery is
 // deliberately performed by the owning callback adapter from raw platform
 // evidence; this class never interprets a stored callback as confirmation.
@@ -158,6 +212,8 @@ private:
    SWV5S5_MvpSqliteAuthorityStore m_store;
    SWV5S5_F_ReconciliationBinding m_binding;
    bool m_has_binding;
+   bool m_has_sync_result;
+   SWV5S5_F_AdapterSyncResult m_sync_result;
    SWV5S5_F_AdapterCallbackEvidence m_callbacks[];
    ulong m_sync_order_ticket,m_sync_deal_ticket,m_sync_request_id;
 
@@ -172,10 +228,12 @@ private:
 
 public:
    SWV5S5_MvpBrokerEvidenceStore(void)
-   { m_has_binding=false; m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0; }
+   { m_has_binding=false; m_has_sync_result=false; ZeroMemory(m_sync_result);
+     m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0; }
 
    bool Configure(const string relative_path,const string namespace_digest)
-   { m_has_binding=false; m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0;
+   { m_has_binding=false; m_has_sync_result=false; ZeroMemory(m_sync_result);
+     m_sync_order_ticket=0; m_sync_deal_ticket=0; m_sync_request_id=0;
      ArrayResize(m_callbacks,0); return m_store.Open(relative_path,namespace_digest); }
 
    bool BindAuthoritativeOperation(const SWV5_ContractValidationContext &context,
@@ -187,17 +245,37 @@ public:
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(binding),row,found)) return false;
       if(found)
       {
-         const string order_marker="|ORDER=",deal_marker="|DEAL=",request_marker="|REQUEST=";
-         int order_at=StringFind(row.payload,order_marker),deal_at=StringFind(row.payload,deal_marker),
-             request_at=StringFind(row.payload,request_marker);
-         if(order_at<0 || deal_at<0 || request_at<0) return false;
-         m_sync_order_ticket=(ulong)StringToInteger(StringSubstr(row.payload,order_at+StringLen(order_marker),
-            deal_at-order_at-StringLen(order_marker)));
-         m_sync_deal_ticket=(ulong)StringToInteger(StringSubstr(row.payload,deal_at+StringLen(deal_marker),
-            request_at-deal_at-StringLen(deal_marker)));
-         m_sync_request_id=(ulong)StringToInteger(StringSubstr(row.payload,request_at+StringLen(request_marker)));
+         if(!SWV5S5_MvpDecodeSyncResultPayload(row.payload,m_sync_result) ||
+            row.payload_digest!=m_sync_result.result_digest || !SWV5S5_F_AdapterSyncResultBound(binding,m_sync_result))
+            return false;
+         m_has_sync_result=true; m_sync_order_ticket=m_sync_result.order_ticket;
+         m_sync_deal_ticket=m_sync_result.deal_ticket;
+         m_sync_request_id=m_sync_result.request_id_session_local;
       }
       return true;
+   }
+
+   bool LoadSubmissionResult(const SWV5S5_F_ReconciliationBinding &binding,
+                             SWV5S5_F_AdapterSyncResult &result,bool &found)
+   {
+      ZeroMemory(result); found=false;
+      if(!m_has_binding || SWV5S5_MvpEvidenceKey(binding)!=SWV5S5_MvpEvidenceKey(m_binding) ||
+         binding.claim_record_digest!=m_binding.claim_record_digest) return false;
+      SWV5S5_MvpAuthorityRow row;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(binding),row,found) || !found)
+         return !found;
+      if(!SWV5S5_MvpDecodeSyncResultPayload(row.payload,result) ||
+         row.payload_digest!=result.result_digest || !SWV5S5_F_AdapterSyncResultBound(binding,result)) return false;
+      return true;
+   }
+
+   bool NextCallbackSequence(ulong &sequence)
+   {
+      sequence=0; if(!m_has_binding) return false;
+      SWV5S5_MvpAuthorityRow index; bool found=false;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_CALLBACK_INDEX,
+                          SWV5S5_MvpEvidenceKey(m_binding),index,found)) return false;
+      sequence=(found ? index.logical_revision+1 : 1); return sequence>0;
    }
 
    virtual bool PersistSubmissionResult(const SWV5S5_F_AdapterSubmissionCommand &command,
@@ -210,12 +288,7 @@ public:
          result.claim_id!=m_binding.invocation_claim_id ||
          result.claim_record_digest!=m_binding.claim_record_digest ||
          result.final_confirmation || result.retry_allowed) return false;
-      if(!SWV5S5_CanonicalString("submission_digest",command.submission_digest,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalString("sync_result_digest",result.result_digest,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalString("claim_id",result.claim_id,f)) return false; payload+=f;
-      payload+="|ORDER="+IntegerToString((long)result.order_ticket)+
-         "|DEAL="+IntegerToString((long)result.deal_ticket)+
-         "|REQUEST="+IntegerToString((long)result.request_id_session_local);
+      if(!SWV5S5_MvpSyncResultPayload(result,payload)) return false;
       SWV5S5_MvpAuthorityRow current,committed; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_SYNC,SWV5S5_MvpEvidenceKey(m_binding),current,found)) return false;
       if(found) return current.payload_digest==digest && current.payload==payload;
@@ -223,7 +296,8 @@ public:
          0,"","",0,1,(int)result.classification,digest,payload,
          command.authoritative_claim.resulting_authority_record.claimed_at,committed);
       if(persisted)
-      { m_sync_order_ticket=result.order_ticket; m_sync_deal_ticket=result.deal_ticket;
+      { m_sync_result=result; m_has_sync_result=true;
+        m_sync_order_ticket=result.order_ticket; m_sync_deal_ticket=result.deal_ticket;
         m_sync_request_id=result.request_id_session_local; }
       return persisted;
    }
@@ -337,6 +411,31 @@ public:
 
    bool Configure(const string relative_path,const string namespace_digest)
    { m_staged=false; ArrayResize(m_requests,0); ArrayResize(m_row_success,0); return m_store.Open(relative_path,namespace_digest); }
+
+   bool CaptureFromCurrentRequestSet(const ulong connection_generation,const ulong restart_generation,
+                                     const datetime observed_at)
+   {
+      SWV5S5_MvpAuthorityRow request_row,current; bool request_found=false,current_found=false;
+      if(connection_generation==0 || restart_generation==0 || observed_at<=0 ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_REQUEST_SET,SWV5S5_MVP_REQUEST_SET_KEY,request_row,request_found) ||
+         !request_found || !m_store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",current,current_found))
+         return false;
+      string request_row_digest;
+      SWV5S5_MvpRequestSetPhysicalState state; SWV5_PendingRequest requests[];
+      if(!SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_REQUEST_SET,request_row.payload,request_row_digest) ||
+         request_row_digest!=request_row.payload_digest || !SWV5S5_MvpDecodeRequestSetState(request_row.payload,state))
+         return false;
+      const string persisted_projection_digest=state.view.projection_digest;
+      if(!SWV5S5_DeriveRequestSetProjection(state.view) ||
+         state.view.projection_digest!=persisted_projection_digest) return false;
+      ArrayResize(requests,ArraySize(state.view.requests));
+      for(int copy_index=0;copy_index<ArraySize(requests);copy_index++) requests[copy_index]=state.view.requests[copy_index];
+      bool row_success[]; ArrayResize(row_success,ArraySize(requests));
+      for(int i=0;i<ArraySize(row_success);i++) row_success[i]=true;
+      const ulong next=(current_found ? current.logical_revision+1 : 1);
+      return PublishObservationSource(requests,row_success,true,true,(uint)ArraySize(requests),next,
+                                      connection_generation,restart_generation,observed_at);
+   }
 
    bool PublishObservationSource(const SWV5_PendingRequest &requests[],const bool &row_success[],
                                  const bool operation_success,const bool complete,const uint reported_total,

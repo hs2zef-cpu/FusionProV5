@@ -8,6 +8,7 @@
 #include "SW_V5_S5_MvpSignalIngressAdapter.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpRequestMaterializationAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh"
 
 struct SWV5S5_MvpControlledDemoAuthoritySeed
 {
@@ -68,13 +69,49 @@ bool SWV5S5_MvpRiskAuthorizationCoherent(const SWV5_RiskEvaluationInput &candida
       authorization.expires_at==candidate.intent.authorization_expires_at;
 }
 
+// Read-only recovery seam. The production implementation delegates to the
+// accepted BrokerPlatformAdapter; tests may supply deterministic snapshots.
+// Neither interface method can submit, retry, or create policy authority.
+class ISWV5S5MvpBrokerRecoveryReadPort
+{
+public:
+   virtual bool Query(const SWV5S5_F_ReconciliationBinding &binding,
+                      const SWV5S5_F_CapabilityProof &capability_proof,
+                      const datetime history_from,const datetime history_to,
+                      ISWV5S5FBrokerEvidenceStore &evidence_store,
+                      SWV5S5_F_BrokerQuerySnapshot &snapshot)=0;
+   virtual bool CaptureCallback(const SWV5_ContractValidationContext &context,const ulong callback_sequence,
+                                const MqlTradeTransaction &transaction,const MqlTradeRequest &request,
+                                const MqlTradeResult &result,ISWV5S5FBrokerEvidenceStore &evidence_store)=0;
+};
+
+class SWV5S5_MvpBrokerRecoveryReadPort : public ISWV5S5MvpBrokerRecoveryReadPort
+{
+private:
+   SWV5S5_F_BrokerPlatformAdapter *m_adapter;
+public:
+   SWV5S5_MvpBrokerRecoveryReadPort(SWV5S5_F_BrokerPlatformAdapter *adapter){ m_adapter=adapter; }
+   virtual bool Query(const SWV5S5_F_ReconciliationBinding &binding,
+                      const SWV5S5_F_CapabilityProof &capability_proof,
+                      const datetime history_from,const datetime history_to,
+                      ISWV5S5FBrokerEvidenceStore &evidence_store,
+                      SWV5S5_F_BrokerQuerySnapshot &snapshot)
+   { return m_adapter!=NULL && m_adapter.QueryAuthoritativeBrokerDomains(binding,capability_proof,
+      history_from,history_to,evidence_store,snapshot); }
+   virtual bool CaptureCallback(const SWV5_ContractValidationContext &context,const ulong callback_sequence,
+                                const MqlTradeTransaction &transaction,const MqlTradeRequest &request,
+                                const MqlTradeResult &result,ISWV5S5FBrokerEvidenceStore &evidence_store)
+   { return m_adapter!=NULL && m_adapter.CaptureCallback(context,callback_sequence,transaction,request,result,evidence_store); }
+};
+
 class SWV5S5_MvpControlledDemoAuthorityPort : public ISWV5S5_MvpControlledDemoAuthorityPort
 {
 private:
    string m_path,m_namespace_digest;
    SWV5S5_MvpControlledDemoAuthoritySeed m_seed;
    ISWV5S5MvpReadOnlyPlatform *m_platform;
-   ISWV5S5FBrokerEvidenceStore *m_evidence_store;
+   SWV5S5_MvpBrokerEvidenceStore *m_evidence_store;
+   ISWV5S5MvpBrokerRecoveryReadPort *m_broker_recovery;
    bool m_configured,m_bootstrapped,m_permit_prepared,m_permit_committed,m_admission_ready,m_claimed;
    SWV5S5_IngressEnvelope m_ingress;
    SWV5S5_ProducerTrustScope m_trust_scope;
@@ -102,9 +139,13 @@ private:
    SWV5S5_InvocationClaimResult m_claim_result;
    bool m_store_schema_valid,m_genesis_valid,m_ownership_current,m_trust_current;
    bool m_safety_current,m_initial_request_set_empty,m_initial_submission_index_empty;
+   bool m_pin_durable;
    string m_last_stage;
    SWV5S5_MvpAccountObservation m_observed_account;
    SWV5S5_MvpRuntimeProfileObservation m_observed_profile;
+   SWV5S5_MvpAuthorityRow m_ownership_row,m_pin_row;
+   SWV5S5_MvpReconciliationGovernanceBundle m_governance;
+   SWV5S5_MvpAttemptReconciliationPin m_pin;
 
    bool CollectPhysicalPreconditions(const SWV5S5_MvpControlledDemoInvocation &invocation)
    {
@@ -124,7 +165,8 @@ private:
       if(!lease_authority.LoadCurrentLease(store,m_seed.current_lease.fence.ownership_namespace,
          m_seed.current_lease.fence,lease,lease_row) ||
          !SWV5S5_MvpLeaseCurrentForClock(m_seed.context,m_seed.current_lease.fence,lease) ||
-         !SWV5S5_MvpLeaseExact(lease,m_seed.current_lease)) return false;
+          !SWV5S5_MvpLeaseExact(lease,m_seed.current_lease)) return false;
+      m_ownership_row=lease_row;
       m_ownership_current=true;
       SWV5S5_MvpManualProducerTrustProvisioner trust_authority; SWV5S5_ProducerTrustRecord trust;
       SWV5S5_ProducerTrustAnchor anchor; string operator_id,authentication; bool trust_found=false;
@@ -156,6 +198,68 @@ private:
          m_observed_profile.account_login!=invocation.expected_demo_account_login ||
          !SWV5S5_MvpProfileMatches(m_observed_profile,ACCOUNT_TRADE_MODE_DEMO)) return false;
       m_seed.account_observation=m_observed_account;
+      return true;
+   }
+
+   bool CollectReadOnlyExecutionState(void)
+   {
+      m_initial_request_set_empty=false; m_initial_submission_index_empty=false;
+      SWV5S5_MvpSqliteAuthorityStore store; if(!store.Open(m_path,m_namespace_digest)) return false;
+      SWV5S5_MvpAuthorityRow request_row,index_row; bool request_found=false,index_found=false;
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_REQUEST_SET,SWV5S5_MVP_REQUEST_SET_KEY,request_row,request_found)) return false;
+      if(!request_found) m_initial_request_set_empty=true;
+      else
+      {
+         SWV5S5_MvpRequestSetPhysicalState request_state;
+         m_initial_request_set_empty=SWV5S5_MvpDecodeRequestSetState(request_row.payload,request_state) &&
+            ArraySize(request_state.view.requests)==0;
+      }
+      SWV5S5_SubmissionAuthorityIndexEntry entries[];
+      if(!SWV5S5_MvpLoadSubmissionIndex(store,entries,index_row,index_found)) return false;
+      m_initial_submission_index_empty=ArraySize(entries)==0;
+      return m_initial_request_set_empty && m_initial_submission_index_empty;
+   }
+
+   bool FillReadOnlyEvidence(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
+                             SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
+   {
+      SWV5_SymbolUnitSpecification specification; double margin=0.0,stop_profit=0.0;
+      const bool price_shape=invocation.requested_volume>0.0 && invocation.requested_price>0.0 &&
+         invocation.protective_stop_price>0.0 && (direction>0 ? invocation.protective_stop_price<invocation.requested_price :
+                                                               invocation.protective_stop_price>invocation.requested_price);
+      const bool symbol_ok=m_platform.CaptureSymbolSpecification(SWV5S5_MVP_SYMBOL,m_seed.context.clock_sequence,
+                                                                  m_seed.context.clock_time,specification);
+      const bool margin_ok=price_shape && m_platform.CalculateMargin(direction,SWV5S5_MVP_SYMBOL,
+         invocation.requested_volume,invocation.requested_price,margin);
+      const bool stop_ok=price_shape && m_platform.CalculateProfit(direction,SWV5S5_MVP_SYMBOL,
+         invocation.requested_volume,invocation.requested_price,invocation.protective_stop_price,stop_profit);
+      evidence.profile_exact=m_observed_profile.broker_identity==m_seed.adapter_environment.broker_identity &&
+         m_observed_profile.server==m_seed.adapter_environment.server &&
+         m_observed_profile.account_login==m_seed.adapter_environment.account_login &&
+         m_observed_profile.symbol==m_seed.adapter_environment.symbol;
+      evidence.demo_account=m_observed_profile.account_trade_mode==ACCOUNT_TRADE_MODE_DEMO;
+      evidence.usd_account=m_observed_profile.account_currency==SWV5S5_MVP_ACCOUNT_CURRENCY;
+      evidence.hedging_account=m_observed_profile.account_mode==SWV5_ACCOUNT_MODE_HEDGING;
+      evidence.symbol_exact=m_observed_profile.symbol==SWV5S5_MVP_SYMBOL;
+      evidence.connected=m_observed_profile.connected && m_seed.adapter_environment.connected;
+      evidence.permissions_observed=SWV5S5_F_AdapterPermissionsAllowMutation(m_seed.adapter_environment);
+      evidence.store_schema_valid=m_store_schema_valid; evidence.genesis_valid=m_genesis_valid;
+      evidence.ownership_current=m_ownership_current; evidence.trust_complete=m_trust_current;
+      evidence.trust_current_unexpired=m_seed.current_trust.status==SWV5S5_TRUST_AUTHORIZED &&
+         m_seed.current_trust.valid_from<=m_seed.context.clock_time && m_seed.context.clock_time<m_seed.current_trust.valid_until;
+      evidence.safety_allows_execution=m_safety_current;
+      evidence.broker_observation_complete=m_observed_account.complete && m_observed_account.history_complete;
+      evidence.execution_observation_complete=m_initial_request_set_empty && m_initial_submission_index_empty;
+      evidence.no_position=m_observed_account.positions_total==0; evidence.no_active_order=m_observed_account.orders_total==0;
+      evidence.no_unresolved_submission=m_initial_submission_index_empty; evidence.no_competing_operation=m_initial_request_set_empty;
+      evidence.symbol_specification_fresh=symbol_ok && SWV5S5_MvpSpecificationValid(m_seed.context,specification);
+      evidence.units_valid=price_shape && invocation.requested_volume<=SWV5S5_MVP_MAX_VOLUME;
+      evidence.margin_valid=margin_ok && margin>0.0; evidence.basket_risk_valid=stop_ok && stop_profit<0.0;
+      evidence.risk_inputs_valid=m_seed.risk_observation.account.authoritative &&
+         m_seed.risk_observation.exposure.complete && m_seed.risk_observation.basket.lifecycle.state_version>0;
+      evidence.protective_stop_valid=price_shape; evidence.prospective_permit_preparable=false;
+      evidence.d1_terminal=(invocation.mode!=MODE_D3_SELL); evidence.manual_cleanup_independently_observed=(invocation.mode!=MODE_D3_SELL);
+      evidence.independent_request_identity=(invocation.mode!=MODE_D3_SELL);
       return true;
    }
 
@@ -335,19 +439,198 @@ private:
       return SWV5S5_DeriveCollectionDigest(collection);
    }
 
+   bool BuildExpectedProfile(SWV5S5_F_ProfileScope &profile)
+   {
+      ZeroMemory(profile); SWV5S5_F_InitVersion(profile.contract_version);
+      profile.persistence_namespace=m_binding.persistence_namespace;
+      profile.account_namespace=m_risk_input.account_namespace;
+      profile.broker_identity=m_seed.adapter_environment.broker_identity;
+      profile.server=m_seed.adapter_environment.server;
+      profile.account_login=m_seed.adapter_environment.account_login;
+      profile.symbol=m_seed.adapter_environment.symbol;
+      profile.terminal_build=m_seed.adapter_environment.terminal_build;
+      profile.mql_build=m_seed.adapter_environment.mql_build;
+      profile.profile_id=SWV5S5_F_ADAPTER_PROFILE_ID;
+      return SWV5S5_F_DeriveProfileDigest(profile,profile.profile_digest) && SWV5S5_F_IsProfileValid(profile) &&
+         SWV5S5_F_AdapterEnvironmentMatchesProfile(profile,m_seed.adapter_environment);
+   }
+
+   bool PersistReconciliationPinBeforeClaim(void)
+   {
+      SWV5S5_F_ProfileScope profile; SWV5S5_MvpReconciliationGovernanceAuthority governance;
+      SWV5S5_MvpAuthorityRow governance_row; bool found=false;
+      if(!BuildExpectedProfile(profile) || !governance.Configure(m_path,m_namespace_digest) ||
+         !governance.Load(m_seed.context.clock_time,profile,m_governance,governance_row,found) || !found) return false;
+      ZeroMemory(m_claim_command); SWV5S5_InitContractVersion(m_claim_command.contract_version);
+      m_claim_command.claim_policy_id=SWV5S5_POLICY_ID; m_claim_command.claim_policy_version=SWV5S5_SCHEMA_VERSION;
+      m_claim_command.expected_authority_record=m_permit_result.proposed_record;
+      m_claim_command.expected_authority_revision=m_permit_result.proposed_record.authority_revision;
+      m_claim_command.expected_authority_digest=m_permit_result.proposed_record.durable_record_digest;
+      m_claim_command.admission_proof=m_admission_proof; m_claim_command.current_ownership_lease=m_seed.current_lease;
+      m_claim_command.claim_clock=m_admission_proof.snapshot.claim_clock;
+      if(!SWV5S5_DeriveClaimId(m_claim_command,m_claim_command.claim_id) ||
+         !SWV5S5_DeriveClaimCommandDigest(m_claim_command,m_claim_command.command_digest)) return false;
+      SWV5S5_RequestSetPublicationAuthority request_authority; SWV5_PendingRequest requests[];
+      if(!m_request_set.ReadState(request_authority,requests)) return false;
+      string hard_kill_payload,hard_kill_digest;
+      if(!SWV5S5_CanonicalHardKillState("hard_kill",m_seed.hard_kill_state,hard_kill_payload) ||
+         !SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL,hard_kill_payload,hard_kill_digest)) return false;
+      ZeroMemory(m_pin); SWV5S5_MvpInitProductionVersion(m_pin.contract_version);
+      m_pin.request_identity=m_request_identity; m_pin.permit_id=m_permit_result.proposed_record.permit.permit_id;
+      m_pin.permit_digest=m_permit_result.proposed_record.permit.permit_digest;
+      m_pin.admission_snapshot_digest=m_admission_proof.snapshot.snapshot_digest;
+      m_pin.expected_claim_id=m_claim_command.claim_id; m_pin.broker_profile_id=profile.profile_id;
+      m_pin.broker_profile_digest=profile.profile_digest;
+      m_pin.correlation_policy_id=m_governance.correlation_policy.policy_id;
+      m_pin.correlation_policy_version=m_governance.correlation_policy.policy_version;
+      m_pin.correlation_policy_digest=m_governance.correlation_policy.policy_digest;
+      m_pin.negative_policy_id=m_governance.negative_policy.policy_id;
+      m_pin.negative_policy_version=m_governance.negative_policy.policy_version;
+      m_pin.negative_policy_digest=m_governance.negative_policy.policy_digest;
+      m_pin.capability_proof_id=m_governance.capability_proof.artifact_id;
+      m_pin.capability_proof_version=m_governance.capability_proof.artifact_version;
+      m_pin.capability_proof_digest=m_governance.capability_proof.proof_digest;
+      m_pin.symbol_specification_sequence=m_symbol.specification.specification_sequence;
+      m_pin.expected_basket_version=m_risk_input.intent.expected_basket_version;
+      m_pin.direction=m_risk_input.intent.direction; m_pin.requested_volume=m_risk_input.intent.normalized_volume;
+      m_pin.request_set_digest=request_authority.current_complete_set_digest; m_pin.hard_kill_state_digest=hard_kill_digest;
+      m_pin.expected_broker_query_high_watermark=0; m_pin.expected_execution_query_high_watermark=0;
+      SWV5S5_MvpAttemptReconciliationPinAuthority pins;
+      m_pin_durable=pins.Configure(m_path,m_namespace_digest) &&
+         pins.PersistBeforeClaim(m_pin,m_ownership_row,m_seed.context.clock_time,m_pin_row);
+      return m_pin_durable;
+   }
+
+   bool RevalidateDurablePinAndVectorBeforeClaim(void)
+   {
+      SWV5S5_MvpAttemptReconciliationPinAuthority authority;
+      SWV5S5_MvpAttemptReconciliationPin loaded; SWV5S5_MvpAuthorityRow pin_row,vector_row;
+      bool pin_found=false,vector_found=false;
+      return authority.Configure(m_path,m_namespace_digest) &&
+         authority.Load(m_pin.request_identity,loaded,pin_row,pin_found) && pin_found &&
+         loaded.pin_digest==m_pin.pin_digest && pin_row.store_revision==m_pin_row.store_revision &&
+          authority.LoadInitialVector(loaded,vector_row,vector_found) && vector_found;
+   }
+
+   // Bind the broker evidence store only from the durable post-Claim graph.
+   // This is deliberately performed before the submission boundary receives
+   // the store, so synchronous evidence cannot be persisted against an
+   // in-memory or launch-wrapper-authored reconciliation identity.
+   bool BindDurableOperationBeforeAdapter(void)
+   {
+      m_last_stage="ADAPTER_BIND_INPUT";
+      if(!m_claimed || m_evidence_store==NULL) return false;
+      const SWV5S5_SubmissionAuthorityRecord claimed=m_claim_result.resulting_authority_record;
+      SWV5S5_F_ProfileScope profile;
+      if(!BuildExpectedProfile(profile) || profile.profile_digest!=m_pin.broker_profile_digest) return false;
+
+      m_last_stage="ADAPTER_BIND_REQUEST_SET";
+      SWV5S5_MvpRequestSetPublicationAuthority request_set;
+      SWV5S5_RequestSetPublicationAuthority request_authority; SWV5_PendingRequest requests[];
+      if(!request_set.Configure(m_path,m_namespace_digest) || !request_set.ReadState(request_authority,requests))
+         return false;
+      int exact=-1;
+      for(int i=0;i<ArraySize(requests);i++)
+         if(SWV5S5_EqualRequestIdentity(requests[i].intent.request_identity,claimed.permit.request_identity))
+         { if(exact>=0) return false; exact=i; }
+      if(exact<0) return false;
+
+      m_last_stage="ADAPTER_BIND_VECTOR";
+      SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpAuthorityRow hard_kill_row,reconciliation_row;
+      bool hard_kill_found=false,reconciliation_found=false;
+      const string key=SWV5S5_MvpAttemptPinKey(claimed.permit.request_identity);
+      if(!store.Open(m_path,m_namespace_digest) ||
+         !store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",hard_kill_row,hard_kill_found) || !hard_kill_found ||
+         !store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,reconciliation_row,reconciliation_found) ||
+         !reconciliation_found || reconciliation_row.logical_revision==0 ||
+         reconciliation_row.state!=(int)SWV5S5_F_SUBMISSION_UNRESOLVED) return false;
+      SWV5S5_MvpAttemptReconciliationPinAuthority pin_authority;
+      SWV5S5_MvpAuthorityRow initial_vector_row; bool initial_vector_found=false;
+      if(!pin_authority.Configure(m_path,m_namespace_digest) ||
+         !pin_authority.LoadInitialVector(m_pin,initial_vector_row,initial_vector_found) ||
+         !initial_vector_found || initial_vector_row.store_revision!=reconciliation_row.store_revision) return false;
+
+      m_last_stage="ADAPTER_BIND_EXECUTION";
+      SWV5S5_MvpExecutionPendingQuery execution_query;
+      if(!execution_query.Configure(m_path,m_namespace_digest) ||
+         !execution_query.CaptureFromCurrentRequestSet(1,1,m_seed.context.clock_time)) return false;
+      SWV5S5_MvpAuthorityRow execution_row; bool execution_found=false;
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",execution_row,execution_found) ||
+         !execution_found) return false;
+
+      m_last_stage="ADAPTER_BIND_DIGESTS";
+      string ordered_request_body,ordered_request_digest,checkpoint_body="",checkpoint_digest,f;
+      if(!SWV5S5_CanonicalPendingRequest(requests[exact],ordered_request_body) ||
+         !SWV5S5_DomainDigest("SWV5-S5-MVP-D6-ORDERED-REQUEST-EVIDENCE-V1",ordered_request_body,
+                              ordered_request_digest)) return false;
+      if(!SWV5S5_CanonicalString("claim",claimed.durable_record_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("pin",m_pin.pin_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("request_set",request_authority.current_complete_set_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("reconciliation",reconciliation_row.payload_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_DomainDigest("SWV5-S5-MVP-D6-CHECKPOINT-V1",checkpoint_body,checkpoint_digest)) return false;
+
+      m_last_stage="ADAPTER_BIND_CROSS_SOURCE";
+      if(!SWV5S5_EqualRequestIdentity(m_pin.request_identity,claimed.permit.request_identity) ||
+         m_pin.permit_id!=claimed.permit.permit_id || m_pin.permit_digest!=claimed.permit.permit_digest ||
+         m_pin.admission_snapshot_digest!=claimed.admission_snapshot_digest ||
+         m_pin.expected_claim_id!=claimed.invocation_claim_id ||
+         m_pin.request_set_digest!=request_authority.current_complete_set_digest ||
+         m_pin.hard_kill_state_digest!=hard_kill_row.payload_digest) return false;
+
+      SWV5S5_F_ReconciliationBinding binding; ZeroMemory(binding); SWV5S5_F_InitVersion(binding.contract_version);
+      binding.profile=profile; binding.request_identity=claimed.permit.request_identity;
+      binding.submission_state=claimed.state; binding.pending_request_state=requests[exact].state;
+      binding.pending_request_phase=requests[exact].lifecycle_phase; binding.permit_id=claimed.permit.permit_id;
+      binding.invocation_claim_id=claimed.invocation_claim_id; binding.admission_snapshot_digest=claimed.admission_snapshot_digest;
+      binding.claim_record_digest=claimed.durable_record_digest;
+      binding.pinned_correlation_policy_id=m_pin.correlation_policy_id;
+      binding.pinned_correlation_policy_version=m_pin.correlation_policy_version;
+      binding.pinned_correlation_policy_digest=m_pin.correlation_policy_digest;
+      binding.pinned_negative_policy_id=m_pin.negative_policy_id;
+      binding.pinned_negative_policy_version=m_pin.negative_policy_version;
+      binding.pinned_negative_policy_digest=m_pin.negative_policy_digest;
+      binding.pinned_capability_proof_id=m_pin.capability_proof_id;
+      binding.pinned_capability_proof_version=m_pin.capability_proof_version;
+      binding.pinned_capability_proof_digest=m_pin.capability_proof_digest;
+      binding.claimed_at=claimed.claimed_at; binding.claim_clock_sequence=claimed.claim_clock_sequence;
+      binding.claim_ownership_fence=claimed.claim_ownership_lease.fence;
+      binding.current_reconciliation_lease=m_seed.current_lease;
+      binding.expected_store_revision=m_seed.current_lease.store_revision;
+      binding.expected_reconciliation_revision=reconciliation_row.logical_revision;
+      binding.expected_broker_query_high_watermark=m_pin.expected_broker_query_high_watermark;
+      binding.expected_execution_query_high_watermark=m_pin.expected_execution_query_high_watermark;
+      binding.persisted_reconciliation_vector_digest=reconciliation_row.payload_digest;
+      binding.checkpoint_digest=checkpoint_digest; binding.request_set_digest=request_authority.current_complete_set_digest;
+      binding.execution_pending_summary_digest=execution_row.payload_digest;
+      binding.ordered_request_evidence_digest=ordered_request_digest;
+      binding.hard_kill_state_digest=hard_kill_row.payload_digest;
+      binding.symbol_specification_sequence=m_pin.symbol_specification_sequence;
+      binding.expected_basket_version=m_pin.expected_basket_version; binding.direction=m_pin.direction;
+      binding.requested_volume=m_pin.requested_volume; binding.persisted_confirmed_volume=0.0;
+      binding.persisted_residual_volume=m_pin.requested_volume; binding.persisted_terminal_evidence_digest="";
+      m_last_stage="ADAPTER_BIND_VALIDATE";
+      if(!SWV5S5_F_IsBindingValid(m_seed.context,binding)) return false;
+      m_last_stage="ADAPTER_BIND_STORE";
+      if(!m_evidence_store.BindAuthoritativeOperation(m_seed.context,binding)) return false;
+      m_last_stage="ADAPTER_BIND_COMPLETE";
+      return true;
+   }
+
 public:
    SWV5S5_MvpControlledDemoAuthorityPort(void)
-   { m_platform=NULL; m_evidence_store=NULL; m_configured=false; m_bootstrapped=false;
+   { m_platform=NULL; m_evidence_store=NULL; m_broker_recovery=NULL; m_configured=false; m_bootstrapped=false;
      m_permit_prepared=false; m_permit_committed=false; m_admission_ready=false; m_claimed=false;
      m_store_schema_valid=false; m_genesis_valid=false; m_ownership_current=false; m_trust_current=false;
-     m_safety_current=false; m_initial_request_set_empty=false; m_initial_submission_index_empty=false; }
+      m_safety_current=false; m_initial_request_set_empty=false; m_initial_submission_index_empty=false;
+      m_pin_durable=false; ZeroMemory(m_ownership_row); ZeroMemory(m_pin_row); ZeroMemory(m_governance); ZeroMemory(m_pin); }
 
    bool Configure(const string path,const string namespace_digest,
-                  const SWV5S5_MvpControlledDemoAuthoritySeed &seed,
-                  ISWV5S5MvpReadOnlyPlatform *platform,ISWV5S5FBrokerEvidenceStore *evidence_store)
+                   const SWV5S5_MvpControlledDemoAuthoritySeed &seed,
+                   ISWV5S5MvpReadOnlyPlatform *platform,SWV5S5_MvpBrokerEvidenceStore *evidence_store,
+                   ISWV5S5MvpBrokerRecoveryReadPort *broker_recovery=NULL)
    {
       m_path=path; m_namespace_digest=namespace_digest; m_seed=seed;
-      m_platform=platform; m_evidence_store=evidence_store;
+      m_platform=platform; m_evidence_store=evidence_store; m_broker_recovery=broker_recovery;
       m_configured=path!="" && namespace_digest!="" && platform!=NULL && evidence_store!=NULL;
       m_last_stage=(m_configured ? "CONFIGURED" : "CONFIGURE_REJECTED");
       return m_configured;
@@ -355,8 +638,17 @@ public:
 
    string LastStage(void) const { return m_last_stage; }
 
-   virtual bool CollectPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
-                                 SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
+   virtual bool CollectReadOnlyPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
+                                         SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
+   {
+      m_last_stage="READ_ONLY_PREFLIGHT"; ZeroMemory(evidence);
+      if(!m_configured || (direction!=1 && direction!=-1) || !CollectPhysicalPreconditions(invocation) ||
+         !CollectReadOnlyExecutionState() || !FillReadOnlyEvidence(invocation,direction,evidence)) return false;
+      m_last_stage="READ_ONLY_PREFLIGHT_COMPLETE"; return true;
+   }
+
+   virtual bool PrepareD1AuthorityPath(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
+                                  SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    {
       m_last_stage="PREFLIGHT_INVOCATION";
       ZeroMemory(evidence); if(!m_configured || direction!=(int)m_seed.decision.action ||
@@ -536,50 +828,231 @@ public:
       proof_input.current_ownership_lease=m_seed.current_lease;
       SWV5S5_DoubleCollectResult result; SWV5S5_MvpRiskContract risk;
       m_admission_ready=SWV5S5_DoubleCollect(m_seed.context,proof_input,risk,snapshot,result,m_admission_proof);
-      return m_admission_ready;
+      return m_admission_ready && PersistReconciliationPinBeforeClaim();
    }
    virtual bool ClaimPhysicalNow(bool &claim_granted_now)
    {
-      claim_granted_now=false; if(!m_admission_ready) return false;
-      ZeroMemory(m_claim_command); SWV5S5_InitContractVersion(m_claim_command.contract_version);
-      m_claim_command.claim_policy_id=SWV5S5_POLICY_ID; m_claim_command.claim_policy_version=SWV5S5_SCHEMA_VERSION;
-      m_claim_command.expected_authority_record=m_permit_result.proposed_record;
-      m_claim_command.expected_authority_revision=m_permit_result.proposed_record.authority_revision;
-      m_claim_command.expected_authority_digest=m_permit_result.proposed_record.durable_record_digest;
-      m_claim_command.admission_proof=m_admission_proof; m_claim_command.current_ownership_lease=m_seed.current_lease;
-      m_claim_command.claim_clock=m_admission_proof.snapshot.claim_clock;
+      claim_granted_now=false;
+      if(!m_admission_ready || !m_pin_durable || !RevalidateDurablePinAndVectorBeforeClaim()) return false;
       SWV5S5_MvpRiskContract risk;
-      if(!SWV5S5_DeriveClaimId(m_claim_command,m_claim_command.claim_id) ||
-         !SWV5S5_DeriveClaimCommandDigest(m_claim_command,m_claim_command.command_digest) ||
-         !SWV5S5_PrepareInvocationClaimTransition(m_seed.context,risk,m_claim_command,m_claim_transition) ||
+      if(!SWV5S5_PrepareInvocationClaimTransition(m_seed.context,risk,m_claim_command,m_claim_transition) ||
          !m_claim_authority.Configure(m_path,m_namespace_digest) || !m_claim_authority.StagePrepared(m_claim_transition) ||
          !m_claim_authority.TryClaimInvocation(m_claim_command,m_claim_result)) return false;
-      claim_granted_now=m_claim_result.claim_granted_now; m_claimed=claim_granted_now; return m_claimed;
+      claim_granted_now=m_claim_result.claim_granted_now;
+      m_claimed=claim_granted_now && m_claim_result.resulting_authority_record.invocation_claim_id==m_pin.expected_claim_id &&
+         m_claim_result.resulting_authority_record.permit.permit_id==m_pin.permit_id &&
+         m_claim_result.resulting_authority_record.permit.permit_digest==m_pin.permit_digest &&
+         m_claim_result.resulting_authority_record.admission_snapshot_digest==m_pin.admission_snapshot_digest &&
+         SWV5S5_EqualRequestIdentity(m_claim_result.resulting_authority_record.permit.request_identity,m_pin.request_identity);
+      return m_claimed;
    }
    virtual bool ReloadAndReconcileD6(SWV5S5_MvpControlledDemoRecoveryEvidence &evidence)
-   { ZeroMemory(evidence); return false; }
+   {
+      ZeroMemory(evidence); evidence.reason_code="D6_RECOVERY_INPUT_INVALID";
+      if(!m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
+      SWV5S5_MvpSqliteAuthorityStore store;
+      if(!store.Open(m_path,m_namespace_digest)) return false;
+      evidence.store_schema_valid=true;
+
+      // Reload the single durable unresolved Claim. claim_granted_now is
+      // intentionally never reconstructed after process/object restart.
+      SWV5S5_MvpInvocationClaimAuthority claims; SWV5S5_MvpReloadedClaim reloaded;
+      if(!claims.Configure(m_path,m_namespace_digest) || !claims.ReloadClaim(reloaded) || !reloaded.found ||
+         reloaded.claim_granted_now || reloaded.state!=SWV5S5_INVOCATION_CLAIMED_UNRESOLVED) return false;
+      evidence.exact_unresolved_claim_found=true; evidence.complete_claim_reloaded_from_sqlite=true;
+      evidence.claim_granted_now=false; evidence.request_correlation_id=reloaded.logical_correlation_id;
+      evidence.attempt_id=reloaded.attempt_id;
+      const SWV5S5_SubmissionAuthorityRecord claimed=reloaded.authority_record;
+
+      SWV5S5_MvpControlledDemoD6OwnershipLoader ownership_loader;
+      SWV5_InstanceLease current_lease; SWV5S5_MvpAuthorityRow ownership_row;
+      if(!ownership_loader.ReloadCurrent(m_path,m_namespace_digest,
+         claimed.permit.persistence_namespace.ownership_namespace,m_seed.current_lease.fence,
+         m_seed.context,current_lease,ownership_row)) return false;
+      evidence.ownership_reloaded_from_sqlite=true; evidence.ownership_current=true;
+
+      SWV5S5_F_ProfileScope profile; ZeroMemory(profile); SWV5S5_F_InitVersion(profile.contract_version);
+      profile.persistence_namespace=claimed.permit.persistence_namespace;
+      profile.account_namespace=claimed.permit.account_namespace;
+      profile.broker_identity=m_seed.adapter_environment.broker_identity;
+      profile.server=m_seed.adapter_environment.server; profile.account_login=m_seed.adapter_environment.account_login;
+      profile.symbol=m_seed.adapter_environment.symbol; profile.terminal_build=m_seed.adapter_environment.terminal_build;
+      profile.mql_build=m_seed.adapter_environment.mql_build; profile.profile_id=SWV5S5_F_ADAPTER_PROFILE_ID;
+      if(!SWV5S5_F_DeriveProfileDigest(profile,profile.profile_digest) || !SWV5S5_F_IsProfileValid(profile) ||
+         !SWV5S5_F_AdapterEnvironmentMatchesProfile(profile,m_seed.adapter_environment)) return false;
+
+      SWV5S5_MvpAttemptReconciliationPinAuthority pin_authority; SWV5S5_MvpAuthorityRow pin_row;
+      SWV5S5_MvpAttemptReconciliationPin pin; bool pin_found=false;
+      SWV5S5_MvpReconciliationGovernanceAuthority governance_authority;
+      SWV5S5_MvpReconciliationGovernanceBundle governance; SWV5S5_MvpAuthorityRow governance_row;
+      bool governance_found=false;
+      if(!pin_authority.Configure(m_path,m_namespace_digest) ||
+         !pin_authority.Load(claimed.permit.request_identity,pin,pin_row,pin_found) || !pin_found ||
+         !governance_authority.Configure(m_path,m_namespace_digest) ||
+         !governance_authority.Load(m_seed.context.clock_time,profile,governance,governance_row,governance_found) ||
+         !governance_found) return false;
+
+      SWV5S5_MvpRequestSetPublicationAuthority request_set; SWV5S5_RequestSetPublicationAuthority request_authority;
+      SWV5_PendingRequest requests[]; int exact=-1;
+      if(!request_set.Configure(m_path,m_namespace_digest) || !request_set.ReadState(request_authority,requests)) return false;
+      for(int i=0;i<ArraySize(requests);i++)
+         if(SWV5S5_EqualRequestIdentity(requests[i].intent.request_identity,claimed.permit.request_identity))
+         { if(exact>=0) return false; exact=i; }
+      if(exact<0) return false;
+
+      SWV5S5_MvpAuthorityRow hard_kill_row,reconciliation_row; bool hard_kill_found=false,reconciliation_found=false;
+      const string key=SWV5S5_MvpAttemptPinKey(claimed.permit.request_identity);
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",hard_kill_row,hard_kill_found) || !hard_kill_found ||
+         !store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,reconciliation_row,reconciliation_found) ||
+         !reconciliation_found || reconciliation_row.logical_revision==0 ||
+         reconciliation_row.state!=(int)SWV5S5_F_SUBMISSION_UNRESOLVED) return false;
+      SWV5S5_MvpAuthorityRow initial_vector_row; bool initial_vector_found=false;
+      if(!pin_authority.LoadInitialVector(pin,initial_vector_row,initial_vector_found) || !initial_vector_found ||
+         initial_vector_row.store_revision!=reconciliation_row.store_revision) return false;
+
+      SWV5S5_MvpExecutionPendingQuery execution_query;
+      if(!execution_query.Configure(m_path,m_namespace_digest) ||
+         !execution_query.CaptureFromCurrentRequestSet(1,1,m_seed.context.clock_time)) return false;
+      SWV5S5_MvpAuthorityRow execution_row; bool execution_found=false;
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_EXECUTION_PENDING,"CURRENT",execution_row,execution_found) ||
+         !execution_found) return false;
+
+      string ordered_request_body,ordered_request_digest,checkpoint_body="",checkpoint_digest,f;
+      if(!SWV5S5_CanonicalPendingRequest(requests[exact],ordered_request_body) ||
+         !SWV5S5_DomainDigest("SWV5-S5-MVP-D6-ORDERED-REQUEST-EVIDENCE-V1",ordered_request_body,
+                              ordered_request_digest)) return false;
+      if(!SWV5S5_CanonicalString("claim",claimed.durable_record_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("pin",pin.pin_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("request_set",request_authority.current_complete_set_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_CanonicalString("reconciliation",reconciliation_row.payload_digest,f)) return false; checkpoint_body+=f;
+      if(!SWV5S5_DomainDigest("SWV5-S5-MVP-D6-CHECKPOINT-V1",checkpoint_body,checkpoint_digest)) return false;
+
+      // Exact immutable cross-source validation. No launch-wrapper semantic
+      // field is accepted and the pin is never rewritten after Claim.
+      if(!SWV5S5_EqualRequestIdentity(pin.request_identity,claimed.permit.request_identity) ||
+         pin.permit_id!=claimed.permit.permit_id || pin.permit_digest!=claimed.permit.permit_digest ||
+         pin.admission_snapshot_digest!=claimed.admission_snapshot_digest ||
+         pin.expected_claim_id!=claimed.invocation_claim_id || pin.broker_profile_id!=profile.profile_id ||
+         pin.broker_profile_digest!=profile.profile_digest ||
+         pin.correlation_policy_id!=governance.correlation_policy.policy_id ||
+         pin.correlation_policy_version!=governance.correlation_policy.policy_version ||
+         pin.correlation_policy_digest!=governance.correlation_policy.policy_digest ||
+         pin.negative_policy_id!=governance.negative_policy.policy_id ||
+         pin.negative_policy_version!=governance.negative_policy.policy_version ||
+         pin.negative_policy_digest!=governance.negative_policy.policy_digest ||
+         pin.capability_proof_id!=governance.capability_proof.artifact_id ||
+         pin.capability_proof_version!=governance.capability_proof.artifact_version ||
+         pin.capability_proof_digest!=governance.capability_proof.proof_digest ||
+         pin.symbol_specification_sequence!=claimed.permit.symbol_specification_sequence ||
+         pin.expected_basket_version!=claimed.permit.basket_state_version ||
+         pin.direction!=claimed.permit.risk_authorization.authorized_direction ||
+         MathAbs(pin.requested_volume-claimed.permit.normalized_payload.volume)>m_seed.context.volume_tolerance ||
+         pin.request_set_digest!=request_authority.current_complete_set_digest ||
+         pin.hard_kill_state_digest!=hard_kill_row.payload_digest) return false;
+
+      SWV5S5_F_ReconciliationBinding binding; ZeroMemory(binding); SWV5S5_F_InitVersion(binding.contract_version);
+      binding.profile=profile; binding.request_identity=claimed.permit.request_identity;
+      binding.submission_state=claimed.state; binding.pending_request_state=requests[exact].state;
+      binding.pending_request_phase=requests[exact].lifecycle_phase; binding.permit_id=claimed.permit.permit_id;
+      binding.invocation_claim_id=claimed.invocation_claim_id; binding.admission_snapshot_digest=claimed.admission_snapshot_digest;
+      binding.claim_record_digest=claimed.durable_record_digest;
+      binding.pinned_correlation_policy_id=pin.correlation_policy_id;
+      binding.pinned_correlation_policy_version=pin.correlation_policy_version;
+      binding.pinned_correlation_policy_digest=pin.correlation_policy_digest;
+      binding.pinned_negative_policy_id=pin.negative_policy_id;
+      binding.pinned_negative_policy_version=pin.negative_policy_version;
+      binding.pinned_negative_policy_digest=pin.negative_policy_digest;
+      binding.pinned_capability_proof_id=pin.capability_proof_id;
+      binding.pinned_capability_proof_version=pin.capability_proof_version;
+      binding.pinned_capability_proof_digest=pin.capability_proof_digest;
+      binding.claimed_at=claimed.claimed_at; binding.claim_clock_sequence=claimed.claim_clock_sequence;
+      binding.claim_ownership_fence=claimed.claim_ownership_lease.fence;
+      binding.current_reconciliation_lease=current_lease; binding.expected_store_revision=current_lease.store_revision;
+      binding.expected_reconciliation_revision=reconciliation_row.logical_revision;
+      binding.expected_broker_query_high_watermark=pin.expected_broker_query_high_watermark;
+      binding.expected_execution_query_high_watermark=pin.expected_execution_query_high_watermark;
+      binding.persisted_reconciliation_vector_digest=reconciliation_row.payload_digest;
+      binding.checkpoint_digest=checkpoint_digest; binding.request_set_digest=request_authority.current_complete_set_digest;
+      binding.execution_pending_summary_digest=execution_row.payload_digest;
+      binding.ordered_request_evidence_digest=ordered_request_digest; binding.hard_kill_state_digest=hard_kill_row.payload_digest;
+      binding.symbol_specification_sequence=pin.symbol_specification_sequence;
+      binding.expected_basket_version=pin.expected_basket_version; binding.direction=pin.direction;
+      binding.requested_volume=pin.requested_volume; binding.persisted_confirmed_volume=0.0;
+      binding.persisted_residual_volume=pin.requested_volume; binding.persisted_terminal_evidence_digest="";
+      if(!SWV5S5_F_IsBindingValid(m_seed.context,binding) || !m_evidence_store.BindAuthoritativeOperation(m_seed.context,binding))
+         return false;
+
+      SWV5S5_F_AdapterSyncResult sync_result; bool sync_found=false;
+      if(!m_evidence_store.LoadSubmissionResult(binding,sync_result,sync_found) || !sync_found) return false;
+      SWV5S5_F_ExecutionPendingSnapshot execution_snapshot;
+      if(!execution_query.ObservePendingRequest(binding,execution_snapshot)) return false;
+      evidence.execution_observation_complete=execution_snapshot.operation_success && execution_snapshot.enumeration_complete &&
+         execution_snapshot.row_read_failures==0;
+
+      SWV5S5_F_BrokerQuerySnapshot broker_snapshot;
+      if(!m_broker_recovery.Query(binding,governance.capability_proof,claimed.claimed_at,
+                                   m_seed.context.clock_time,*m_evidence_store,broker_snapshot)) return false;
+      evidence.broker_observation_complete=broker_snapshot.positions_enumeration_complete &&
+         broker_snapshot.orders_enumeration_complete && broker_snapshot.history_orders_enumeration_complete &&
+         broker_snapshot.history_deals_enumeration_complete && broker_snapshot.callback_transactions_enumeration_complete &&
+         broker_snapshot.row_read_failures==0;
+      bool side_effect_shape=false; SWV5S5_F_TargetedPositiveEvidence positive;
+      if(!SWV5S5_F_AdapterBuildPositiveEvidence(m_seed.context,binding,governance.correlation_policy,
+         governance.capability_proof,sync_result,broker_snapshot,side_effect_shape,positive))
+      {
+         evidence.unresolved_no_positive=true;
+         evidence.reason_code="NEGATIVE_AUTHORITY_NOT_PROVEN_FOR_MVP_DEMO";
+         return false;
+      }
+
+      SWV5S5_F_ReconciliationInput candidate; ZeroMemory(candidate); SWV5S5_F_InitVersion(candidate.contract_version);
+      candidate.prior_state=SWV5S5_F_SUBMISSION_UNRESOLVED;
+      candidate.observation_kind=SWV5S5_F_ACCEPTED_SUBMISSION; candidate.binding=binding;
+      candidate.correlation_policy=governance.correlation_policy; candidate.capability_proof=governance.capability_proof;
+      candidate.after_restart_or_takeover=true; candidate.positive_evidence_present=true;
+      candidate.positive_evidence=positive; candidate.negative_evidence_present=false;
+      SWV5S5_F_ReconciliationPublication publication; ZeroMemory(publication); SWV5S5_F_InitVersion(publication.contract_version);
+      publication.binding=binding; publication.current_publication_lease=current_lease;
+      publication.expected_store_revision=current_lease.store_revision;
+      publication.expected_reconciliation_revision=reconciliation_row.logical_revision;
+      publication.proposed_reconciliation_revision=reconciliation_row.logical_revision+1;
+      SWV5S5_MvpReconciliationPublicationAuthority publication_authority;
+      SWV5S5_MvpRecoveryHost recovery_host; SWV5S5_MvpRecoveryResult recovery_result;
+      if(!publication_authority.Configure(m_path,m_namespace_digest) ||
+         !recovery_host.EvaluateAndPublish(m_seed.context,reloaded,candidate,publication,
+                                           publication_authority,recovery_result)) return false;
+      evidence.reconciliation_evaluated=recovery_result.evaluated;
+      evidence.reconciliation_published=recovery_result.published;
+
+      SWV5S5_MvpSubmissionTerminalAuthority terminal_authority;
+      SWV5S5_SubmissionAuthorityRecord terminal_record; SWV5S5_MvpAuthorityRow committed_record;
+      if(!terminal_authority.Configure(m_path,m_namespace_digest) ||
+         !terminal_authority.TryFinalizeFromPersistedReconciliation(publication,claimed,terminal_record,committed_record))
+         return false;
+      evidence.exact_record_terminalized=true;
+      SWV5S5_SubmissionAuthorityRecord readback; bool terminal_found=false;
+      if(!SWV5S5_MvpLoadSubmissionAuthority(store,reloaded.logical_correlation_id,reloaded.attempt_id,
+                                             readback,terminal_found) || !terminal_found ||
+         readback.durable_record_digest!=terminal_record.durable_record_digest ||
+         readback.state!=terminal_record.state) return false;
+      evidence.terminal_readback_verified=true; evidence.reason_code="D6_POSITIVE_RECOVERY_TERMINALIZED";
+      return recovery_result.submission_calls==0 && !recovery_result.claim_grant_reconstructed;
+   }
    virtual bool ObserveCallbackOnly(const MqlTradeTransaction &transaction,const MqlTradeRequest &request,
                                     const MqlTradeResult &result)
-   { return false; }
+   {
+      if(!m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
+      ulong sequence=0;
+      return m_evidence_store.NextCallbackSequence(sequence) &&
+         m_broker_recovery.CaptureCallback(m_seed.context,sequence,transaction,request,result,*m_evidence_store);
+   }
    virtual bool BuildAdapterCommand(SWV5S5_F_AdapterSubmissionCommand &command,
                                     ISWV5S5FBrokerEvidenceStore* &evidence_store)
    {
-      ZeroMemory(command); evidence_store=NULL; if(!m_claimed || m_evidence_store==NULL) return false;
+      ZeroMemory(command); evidence_store=NULL; if(!m_claimed || !m_pin_durable || m_evidence_store==NULL) return false;
       SWV5S5_F_InitVersion(command.contract_version); command.prepared_claim=m_claim_transition;
-      command.authoritative_claim=m_claim_result; ZeroMemory(command.expected_profile);
-      SWV5S5_F_InitVersion(command.expected_profile.contract_version);
-      command.expected_profile.persistence_namespace=m_binding.persistence_namespace;
-      command.expected_profile.account_namespace=m_risk_input.account_namespace;
-      command.expected_profile.broker_identity=m_seed.adapter_environment.broker_identity;
-      command.expected_profile.server=m_seed.adapter_environment.server;
-      command.expected_profile.account_login=m_seed.adapter_environment.account_login;
-      command.expected_profile.symbol=m_seed.adapter_environment.symbol;
-      command.expected_profile.terminal_build=m_seed.adapter_environment.terminal_build;
-      command.expected_profile.mql_build=m_seed.adapter_environment.mql_build;
-      command.expected_profile.profile_id=SWV5S5_F_ADAPTER_PROFILE_ID;
-      if(!SWV5S5_F_DeriveProfileDigest(command.expected_profile,command.expected_profile.profile_digest) ||
-         !SWV5S5_F_IsProfileValid(command.expected_profile) ||
-         !SWV5S5_F_AdapterEnvironmentMatchesProfile(command.expected_profile,m_seed.adapter_environment)) return false;
+      command.authoritative_claim=m_claim_result;
+      if(!BuildExpectedProfile(command.expected_profile) || command.expected_profile.profile_digest!=m_pin.broker_profile_digest) return false;
       command.observed_environment=m_seed.adapter_environment;
       command.direction=m_ingress.decision.direction; command.volume=m_normalized.volume;
       command.price=m_normalized.price; command.stop_price=m_normalized.stop_price;
@@ -597,7 +1070,8 @@ public:
       if(!SWV5S5_F_DeriveAdapterWirePayloadDigest(wire,command.wire_payload_digest) ||
          !SWV5S5_F_DeriveAdapterSubmissionDigest(command,command.submission_digest)) return false;
       string reason;
-      if(SWV5S5_F_AdapterValidatePreflight(command,reason)!=SWV5S5_F_ADAPTER_PREFLIGHT_READY_CURRENT_CLAIM) return false;
+      if(SWV5S5_F_AdapterValidatePreflight(command,reason)!=SWV5S5_F_ADAPTER_PREFLIGHT_READY_CURRENT_CLAIM ||
+         !BindDurableOperationBeforeAdapter()) return false;
       evidence_store=m_evidence_store; return true;
    }
 };

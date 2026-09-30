@@ -6,6 +6,29 @@
 #include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOfflineOrchestrator.mqh"
 #include "../ContractVerification/SW_V5_TestFixtures.mqh"
 
+// TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
+// Models a successful read-only enumeration. The production BootstrapZero
+// producer, not this observer, constructs the authority and typed evidence.
+class SWV5S5_MvpRuntimeBootstrapObserver : public ISWV5S5MvpBootstrapBrokerObserver
+{
+private:
+   SWV5S5_MvpRuntimeProfileObservation m_profile;
+   datetime m_observed_at;
+public:
+   SWV5S5_MvpRuntimeBootstrapObserver(const SWV5S5_MvpRuntimeProfileObservation &profile,
+                                      const datetime observed_at)
+   { m_profile=profile; m_observed_at=observed_at; }
+   virtual bool Capture(const string symbol,SWV5S5_MvpBootstrapBrokerObservation &observation)
+   {
+      ZeroMemory(observation); observation.profile=m_profile; observation.profile.symbol=symbol;
+      observation.observed_at=m_observed_at; observation.positions_query_succeeded=true;
+      observation.active_orders_query_succeeded=true; observation.enumeration_complete=true;
+      observation.row_failures=0; observation.total_positions=0; observation.total_active_orders=0;
+      observation.total_exposure_volume=0.0;
+      return SWV5S5_MvpBootstrapBrokerDigest(observation,observation.snapshot_digest);
+   }
+};
+
 bool SWV5S5_MvpFixtureDurableDigest(const SWV5S5_SubmissionAuthorityRecord &record,string &digest)
 {
    SWV5S5_SubmissionAuthorityRecord executable=record;
@@ -96,6 +119,15 @@ bool SWV5S5_MvpCallbackEqual(const SWV5S5_F_AdapterCallbackEvidence &a,
 void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
 {
    ZeroMemory(c); c.signature=1469598103934665603;
+   const string clean_paths[]={"mvp_runtime_claim_80e9.sqlite","mvp_runtime_execution_80e9.sqlite",
+      "mvp_runtime_genesis_full_80e9.sqlite","mvp_runtime_genesis_partial_80e9.sqlite",
+      "mvp_runtime_hardkill_80e9.sqlite","mvp_runtime_store_80e9.sqlite"};
+   for(int clean_index=0;clean_index<ArraySize(clean_paths);clean_index++)
+   {
+      FileDelete(clean_paths[clean_index],FILE_COMMON);
+      FileDelete(clean_paths[clean_index]+"-wal",FILE_COMMON);
+      FileDelete(clean_paths[clean_index]+"-shm",FILE_COMMON);
+   }
    SWV5S5_MvpRecord(c,"PROFILE-ID",SWV5S5_MVP_PROFILE_ID=="FUSION-V5-DEMO-MVP-V1");
    SWV5S5_MvpRecord(c,"RISK-POLICY-ID",SWV5S5_MVP_RISK_POLICY_ID=="FUSION-V5-DEMO-MVP-RISK-V1");
    SWV5S5_MvpRecord(c,"PROFILE-SYMBOL",SWV5S5_MVP_SYMBOL=="XAUUSD");
@@ -514,11 +546,16 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
       genesis_latch_found && genesis_latch.state==(int)SWV5_HARD_KILL_ACTIVE;
    SWV5S5_MvpRecord(c,"GENESIS-NOT-RUNTIME-ENABLED",genesis_latched);
 
+   // The Risk contract consumes frozen Production Contract V5 DTOs. Keep that
+   // validation context distinct from the Sprint 5 wrapper-contract context
+   // used by the surrounding runtime-authority fixtures.
+   SWV5_ContractValidationContext risk_context=context;
+   SWV5S5_MvpInitProductionVersion(risk_context.expected_version);
    SWV5_HardKillState active_state; SWV5_TestMakeHardKill(active_state,SWV5_HARD_KILL_ACTIVE);
-   active_state.contract_version=context.expected_version;
-   active_state.persistence_namespace.contract_version=context.expected_version;
-   active_state.account_namespace.contract_version=context.expected_version;
-   active_state.release_evidence.contract_version=context.expected_version;
+   active_state.contract_version=risk_context.expected_version;
+   active_state.persistence_namespace.contract_version=risk_context.expected_version;
+   active_state.account_namespace.contract_version=risk_context.expected_version;
+   active_state.release_evidence.contract_version=risk_context.expected_version;
    active_state.persistence_namespace.ownership_namespace.broker_identity=active_state.account_namespace.broker_identity;
    active_state.persistence_namespace.ownership_namespace.server=active_state.account_namespace.server;
    active_state.persistence_namespace.ownership_namespace.account_login=active_state.account_namespace.account_login;
@@ -531,35 +568,35 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    release.approval_sequence=1; release.operator_identity.operator_id="OPERATOR-1";
    release.operator_identity.authority_role=SWV5S5_MVP_OPERATOR_ROLE;
    release.operator_identity.authentication_reference="AUTH-EXPLICIT-1";
-   release.operator_identity.authenticated_at=context.clock_time;
+   release.operator_identity.authenticated_at=risk_context.clock_time;
    release.approving_component=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE;
-   release.broker_evidence.contract_version=context.expected_version;
+   release.broker_evidence.contract_version=risk_context.expected_version;
    release.broker_evidence.persistence_namespace=active_state.persistence_namespace;
    release.broker_evidence.evidence_id="BROKER-ZERO-1";
    release.broker_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_BROKER_ADAPTER;
    release.broker_evidence.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
-   release.broker_evidence.evidence_sequence=1; release.broker_evidence.observed_at=context.clock_time;
+   release.broker_evidence.evidence_sequence=1; release.broker_evidence.observed_at=risk_context.clock_time;
    release.broker_evidence.state_digest="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-   release.persistence_evidence.contract_version=context.expected_version;
+   release.persistence_evidence.contract_version=risk_context.expected_version;
    release.persistence_evidence.persistence_namespace=active_state.persistence_namespace;
    release.persistence_evidence.evidence_id="STORE-ZERO-1";
    release.persistence_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_PERSISTENCE;
    release.persistence_evidence.authority_source=SWV5_AUTHORITY_PERSISTED_CHECKPOINT;
-   release.persistence_evidence.evidence_sequence=1; release.persistence_evidence.observed_at=context.clock_time;
+   release.persistence_evidence.evidence_sequence=1; release.persistence_evidence.observed_at=risk_context.clock_time;
    release.persistence_evidence.state_digest="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-   release.exposure_evidence.contract_version=context.expected_version;
+   release.exposure_evidence.contract_version=risk_context.expected_version;
    release.exposure_evidence.evidence_id="EXPOSURE-ZERO-1";
    release.exposure_evidence.issuing_component=SWV5_COMPONENT_AUTHORITY_RISK_GOVERNANCE;
    release.exposure_evidence.authority_source=SWV5_AUTHORITY_LIVE_BROKER_STATE;
    release.exposure_evidence.observed_exposure_volume=0.0;
    release.exposure_evidence.prior_exposure_volume=0.01; release.exposure_evidence.zero_or_reducing=true;
-   release.exposure_evidence.evidence_sequence=1; release.exposure_evidence.observed_at=context.clock_time;
-   release.approved_at=context.clock_time; release.released_at=context.clock_time;
-   release.expires_at=context.clock_time+60; release.release_record_sequence=1;
+   release.exposure_evidence.evidence_sequence=1; release.exposure_evidence.observed_at=risk_context.clock_time;
+   release.approved_at=risk_context.clock_time; release.released_at=risk_context.clock_time;
+   release.expires_at=risk_context.clock_time+60; release.release_record_sequence=1;
    release.audit_reference="MVP-RELEASE-AUDIT-1";
    SWV5S5_MvpHardKillReleaseDigest(release,release.release_record_digest);
    SWV5_HardKillReleaseAuthorityRecord authority; ZeroMemory(authority);
-   authority.contract_version=context.expected_version; authority.persistence_namespace=active_state.persistence_namespace;
+   authority.contract_version=risk_context.expected_version; authority.persistence_namespace=active_state.persistence_namespace;
    authority.account_namespace=active_state.account_namespace; authority.latch_id=release.latch_id;
    authority.latch_generation=release.latch_generation; authority.release_id=release.release_id;
    authority.release_generation=release.release_generation; authority.operator_identity=release.operator_identity;
@@ -578,12 +615,12 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    SWV5_InstanceLease release_lease; SWV5_TestMakeLease(release_lease,SWV5_LOCK_ACQUIRED);
    release_lease.fence.ownership_namespace=active_state.persistence_namespace.ownership_namespace;
    release_lease.fence.owner.key=active_state.persistence_namespace.ownership_namespace;
-   release_lease.clock_id=context.clock_id; release_lease.clock_authority=context.clock_authority;
-   release_lease.acquired_clock_sequence=context.clock_sequence-2;
-   release_lease.heartbeat_clock_sequence=context.clock_sequence-1;
-   release_lease.expiry_clock_sequence=context.clock_sequence+60;
-   release_lease.acquired_at=context.clock_time-2; release_lease.heartbeat_at=context.clock_time-1;
-   release_lease.expires_at=context.clock_time+60;
+   release_lease.clock_id=risk_context.clock_id; release_lease.clock_authority=risk_context.clock_authority;
+   release_lease.acquired_clock_sequence=risk_context.clock_sequence-2;
+   release_lease.heartbeat_clock_sequence=risk_context.clock_sequence-1;
+   release_lease.expiry_clock_sequence=risk_context.clock_sequence+60;
+   release_lease.acquired_at=risk_context.clock_time-2; release_lease.heartbeat_at=risk_context.clock_time-1;
+   release_lease.expires_at=risk_context.clock_time+60;
    SWV5S5_LeaseLivenessAuthorityView release_lease_view; release_lease_view.lease=release_lease;
    string release_lease_payload;
    const bool release_lease_canonical=SWV5S5_CanonicalInstanceLease("lease",release_lease,release_lease_payload);
@@ -598,32 +635,44 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-CANONICAL",release_lease_canonical);
    SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-DIGEST",release_lease_derived);
    SWV5S5_MvpRecord(c,"HARD-KILL-CURRENT-LEASE-FIXTURE",release_lease_valid);
-   SWV5S5_F_ReconciliationResult zero_reconciliation; ZeroMemory(zero_reconciliation);
-   zero_reconciliation.contract_version=context.expected_version;
-   zero_reconciliation.state=SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED;
-   zero_reconciliation.disposition=SWV5S5_F_DISPOSITION_NEGATIVE_CONFIRMED;
-   zero_reconciliation.proposed_submission_state=SWV5S5_AUTHORITATIVE_NO_SIDE_EFFECT_CONFIRMED;
-   zero_reconciliation.authoritative_positive=false; zero_reconciliation.authoritative_negative=true;
-   zero_reconciliation.retry_allowed=false; zero_reconciliation.requires_new_admission_for_any_future_attempt=true;
-   zero_reconciliation.cumulative_confirmed_volume=0.0; zero_reconciliation.residual_volume=0.0;
-   zero_reconciliation.residual_is_submission_authority=false;
-   zero_reconciliation.requires_new_request_identity_for_residual=true;
-   zero_reconciliation.authoritative_evidence_digest="cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
-   zero_reconciliation.reason_code="MVP_ZERO_STATE_RECONCILED";
-   SWV5S5_F_DeriveResultDigest(zero_reconciliation,zero_reconciliation.result_digest);
+   SWV5S5_MvpBootstrapZeroStateAuthority bootstrap_zero; ZeroMemory(bootstrap_zero);
    SWV5S5_MvpSqliteAuthorityStore hard_kill_seed; SWV5S5_MvpAuthorityRow hard_kill_row;
    const bool hard_kill_seeded=hard_kill_seed.Open("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
-      hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",0,"","",0,1,
-         (int)SWV5_HARD_KILL_ACTIVE,active_digest,active_payload,context.clock_time,hard_kill_row) &&
-      release_lease_valid && hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,
-         SWV5S5_MVP_OWNERSHIP_KEY,0,"","",0,1,(int)release_lease.status,
-         release_lease_view.projection_digest,release_lease_payload,context.clock_time,hard_kill_row);
+       hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",0,"","",0,1,
+          (int)SWV5_HARD_KILL_ACTIVE,active_digest,active_payload,risk_context.clock_time,hard_kill_row) &&
+       release_lease_valid && hard_kill_seed.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,
+          SWV5S5_MVP_OWNERSHIP_KEY,0,"","",0,1,(int)release_lease.status,
+          release_lease_view.projection_digest,release_lease_payload,risk_context.clock_time,hard_kill_row);
+   SWV5S5_MvpRuntimeProfileObservation bootstrap_profile; ZeroMemory(bootstrap_profile);
+   bootstrap_profile.broker_identity=active_state.account_namespace.broker_identity;
+   bootstrap_profile.server=active_state.account_namespace.server;
+   bootstrap_profile.account_login=active_state.account_namespace.account_login;
+   bootstrap_profile.account_currency=active_state.account_namespace.account_currency;
+   bootstrap_profile.symbol=SWV5S5_MVP_SYMBOL;
+   bootstrap_profile.account_trade_mode=ACCOUNT_TRADE_MODE_DEMO;
+   bootstrap_profile.account_mode=active_state.account_namespace.account_mode;
+   bootstrap_profile.connected=true; bootstrap_profile.account_trade_allowed=true;
+   bootstrap_profile.account_trade_expert=true;
+   SWV5S5_MvpRuntimeBootstrapObserver bootstrap_observer(bootstrap_profile,risk_context.clock_time);
+   SWV5S5_MvpBootstrapZeroAuthorityProducer bootstrap_producer;
+   const bool bootstrap_produced=hard_kill_seeded && bootstrap_producer.Produce(risk_context,
+      active_state.persistence_namespace,active_state.account_namespace,release_lease,active_state,
+      bootstrap_observer,hard_kill_seed,bootstrap_zero);
+   SWV5S5_MvpBootstrapZeroAuthorityStore bootstrap_store; SWV5S5_MvpAuthorityRow bootstrap_row;
+   const bool bootstrap_seeded=bootstrap_produced &&
+      bootstrap_store.Configure("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
+      bootstrap_store.Persist(bootstrap_zero,hard_kill_row,bootstrap_row);
+   SWV5S5_MvpHardKillRiskGovernanceIssuer risk_governance_issuer;
+   const bool release_issued=bootstrap_seeded && risk_governance_issuer.Issue(op,risk_context,active_state,
+      bootstrap_zero,release,authority);
    SWV5S5_MvpRecord(c,"HARD-KILL-AUTHORITY-SEED",hard_kill_seeded);
+   SWV5S5_MvpRecord(c,"HARD-KILL-BOOTSTRAP-ZERO-PRODUCED",bootstrap_produced);
+   SWV5S5_MvpRecord(c,"HARD-KILL-BOOTSTRAP-ZERO-SEED",bootstrap_seeded && release_issued);
    hard_kill_seed.Close();
    SWV5S5_MvpManualSafetyReleaseProvisioner release_provisioner; SWV5_HardKillState pending_state;
    SWV5S5_MvpAuthorityRow pending_row,released_row;
-   const bool pending_ok=hard_kill_seeded && release_provisioner.Configure("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
-      release_provisioner.StageReleasePending(op,context,active_state,release,pending_state,pending_row);
+   const bool pending_ok=release_issued && release_provisioner.Configure("mvp_runtime_hardkill_80e9.sqlite",hard_kill_ns) &&
+      release_provisioner.StageReleasePending(op,risk_context,active_state,release,pending_state,pending_row);
    SWV5S5_MvpRecord(c,"HARD-KILL-ACTIVE-TO-PENDING",pending_ok &&
       pending_row.state==(int)SWV5_HARD_KILL_RELEASE_PENDING);
    SWV5S5_MvpRiskContract runtime_risk;
@@ -631,8 +680,8 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    stale_release_lease.fence.takeover_generation++;
    stale_release_lease.fence.fencing_token_digest="FENCE-DIGEST-STALE";
    SWV5S5_MvpAuthorityRow stale_release_row;
-   const bool stale_release_denied=pending_ok && !release_provisioner.PersistApprovedRelease(op,context,pending_state,
-      release,authority,stale_release_lease,zero_reconciliation,runtime_risk,stale_release_row);
+   const bool stale_release_denied=pending_ok && !release_provisioner.PersistApprovedRelease(op,risk_context,pending_state,
+       release,authority,stale_release_lease,bootstrap_zero,runtime_risk,stale_release_row);
    SWV5S5_MvpRecord(c,"HARD-KILL-STALE-OWNER-DENIED",stale_release_denied);
    SWV5S5_MvpSqliteAuthorityStore stale_release_readback; SWV5S5_MvpAuthorityRow stale_release_artifact;
    bool stale_release_artifact_found=false;
@@ -642,8 +691,40 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
          stale_release_artifact,stale_release_artifact_found) && !stale_release_artifact_found;
    SWV5S5_MvpRecord(c,"HARD-KILL-STALE-OWNER-NO-ARTIFACT",stale_release_no_artifact);
    stale_release_readback.Close();
-   const bool released_ok=pending_ok && release_provisioner.PersistApprovedRelease(op,context,pending_state,release,
-      authority,release_lease,zero_reconciliation,runtime_risk,released_row);
+   SWV5_ContractDecision direct_release_decision;
+   const bool direct_release_valid=pending_ok &&
+      runtime_risk.ValidateHardKillRelease(risk_context,pending_state,release,direct_release_decision);
+   SWV5S5_MvpRecord(c,"HARD-KILL-RISK-GOVERNANCE-VALID",direct_release_valid);
+   if(!direct_release_valid)
+   {
+      string release_check_digest="";
+      const bool version_group=SWV5S5_MvpVersionExact(risk_context,pending_state.contract_version) &&
+         SWV5S5_MvpVersionExact(risk_context,release.contract_version) &&
+         SWV5S5_MvpVersionExact(risk_context,release.broker_evidence.contract_version) &&
+         SWV5S5_MvpVersionExact(risk_context,release.persistence_evidence.contract_version) &&
+         SWV5S5_MvpVersionExact(risk_context,release.exposure_evidence.contract_version);
+      const bool scope_group=SWV5S5_EqualNamespace(pending_state.persistence_namespace,release.persistence_namespace) &&
+         SWV5S5_EqualNamespace(pending_state.persistence_namespace,release.broker_evidence.persistence_namespace) &&
+         SWV5S5_EqualNamespace(pending_state.persistence_namespace,release.persistence_evidence.persistence_namespace);
+      const bool time_group=release.broker_evidence.observed_at>=release.operator_identity.authenticated_at &&
+         release.persistence_evidence.observed_at>=release.operator_identity.authenticated_at &&
+         release.exposure_evidence.observed_at>=release.operator_identity.authenticated_at &&
+         release.released_at<=risk_context.clock_time && risk_context.clock_time<release.expires_at;
+      const bool digest_group=SWV5S5_MvpHardKillReleaseDigest(release,release_check_digest) &&
+         release_check_digest==release.release_record_digest;
+      Print("MVP_BOOTSTRAP_RISK_DIAGNOSTIC|version=",version_group,"|scope=",scope_group,
+            "|time=",time_group,"|digest=",digest_group,"|state=",pending_state.state,
+            "|basket=",pending_state.persistence_namespace.basket_id.value,
+            "|broker_id=",release.broker_evidence.evidence_id,
+            "|persistence_id=",release.persistence_evidence.evidence_id,
+            "|exposure_id=",release.exposure_evidence.evidence_id);
+   }
+   const bool released_ok=pending_ok && release_provisioner.PersistApprovedRelease(op,risk_context,pending_state,release,
+       authority,release_lease,bootstrap_zero,runtime_risk,released_row);
+   if(!released_ok)
+      Print("MVP_BOOTSTRAP_RELEASE_DIAGNOSTIC|pending=",pending_ok,"|risk=",direct_release_valid,
+            "|bootstrap=",bootstrap_seeded,"|issued=",release_issued,
+            "|latch=",pending_state.latch_id,"|generation=",pending_state.latch_generation);
    SWV5S5_MvpRecord(c,"HARD-KILL-PENDING-TO-RELEASED",released_ok &&
       released_row.state==(int)SWV5_HARD_KILL_RELEASED);
    SWV5S5_MvpSqliteAuthorityStore hard_kill_restart; SWV5S5_MvpAuthorityRow persisted_release;

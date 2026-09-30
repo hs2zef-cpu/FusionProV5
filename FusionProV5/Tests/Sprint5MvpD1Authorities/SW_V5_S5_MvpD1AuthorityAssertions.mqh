@@ -231,6 +231,105 @@ public:
    }
 };
 
+// TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
+// Persists the same unresolved synchronous shape the production boundary
+// would persist, but performs no platform call and no broker mutation.
+class SWV5S5_MvpD1PersistedEvidenceBoundary : public ISWV5S5_MvpControlledDemoSubmissionBoundary
+{
+public:
+   uint calls;
+   SWV5S5_MvpD1PersistedEvidenceBoundary(void){ calls=0; }
+   virtual bool SubmitExactlyOnce(SWV5S5_F_AdapterSubmissionCommand &command,
+                                  ISWV5S5FBrokerEvidenceStore &evidence_store,
+                                  SWV5S5_F_AdapterSyncResult &captured)
+   {
+      calls++; ZeroMemory(captured);
+      captured.invocation_attempted=true; captured.transport_result=true; captured.last_error=0;
+      captured.retcode=10009; captured.retcode_external=0; captured.request_id_session_local=6001;
+      captured.order_ticket=7001; captured.deal_ticket=8001; captured.volume=command.volume;
+      captured.price=command.price; captured.bid=command.price-command.observed_environment.point;
+      captured.ask=command.price; captured.comment="TEST_ONLY_SYNTHETIC_SYNC_RESULT";
+      captured.classification=SWV5S5_F_ADAPTER_SYNC_ACCEPTED_UNRESOLVED;
+      captured.final_confirmation=false; captured.retry_allowed=false;
+      captured.claim_id=command.authoritative_claim.resulting_authority_record.invocation_claim_id;
+      captured.claim_record_digest=command.authoritative_claim.resulting_authority_record.durable_record_digest;
+      captured.request_correlation_id=command.authoritative_claim.resulting_authority_record.permit.request_identity.request_id.correlation_id;
+      captured.attempt_id=command.authoritative_claim.resulting_authority_record.permit.request_identity.request_id.attempt_id;
+      captured.profile_digest=command.expected_profile.profile_digest;
+      captured.reason_code="TEST_ONLY_UNRESOLVED_SYNC_CAPTURE";
+      if(!SWV5S5_F_DeriveAdapterEnvironmentDigest(command.observed_environment,
+                                                   captured.observed_environment_digest) ||
+         !SWV5S5_F_DeriveAdapterSyncResultDigest(captured,captured.result_digest)) return false;
+      return evidence_store.PersistSubmissionResult(command,captured);
+   }
+};
+
+// TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
+// Supplies deterministic read-only snapshots for restart reconstruction.
+class SWV5S5_MvpD1RecoveryReadPort : public ISWV5S5MvpBrokerRecoveryReadPort
+{
+private:
+   bool m_positive;
+public:
+   uint query_calls;
+   SWV5S5_MvpD1RecoveryReadPort(const bool positive){ m_positive=positive; query_calls=0; }
+   virtual bool Query(const SWV5S5_F_ReconciliationBinding &binding,
+                      const SWV5S5_F_CapabilityProof &capability_proof,
+                      const datetime history_from,const datetime history_to,
+                      ISWV5S5FBrokerEvidenceStore &evidence_store,
+                      SWV5S5_F_BrokerQuerySnapshot &snapshot)
+   {
+      query_calls++; ZeroMemory(snapshot); SWV5S5_F_InitVersion(snapshot.contract_version);
+      snapshot.profile=binding.profile; snapshot.broker_read_path_id="TEST_ONLY_BROKER_READ";
+      snapshot.broker_authority_instance_id="TEST_ONLY_BROKER_AUTHORITY";
+      snapshot.broker_sequence_authority_id="TEST_ONLY_BROKER_SEQUENCE";
+      if(!evidence_store.ReserveBrokerQuerySequence(binding.profile,snapshot.owner_query_sequence)) return false;
+      snapshot.connection_generation=1; snapshot.restart_generation=2;
+      snapshot.history_from=history_from; snapshot.history_to=history_to; snapshot.observed_at=history_to;
+      snapshot.positions_enumeration_complete=true; snapshot.orders_enumeration_complete=true;
+      snapshot.history_orders_enumeration_complete=true; snapshot.history_deals_enumeration_complete=true;
+      snapshot.callback_transactions_enumeration_complete=true; snapshot.row_read_failures=0;
+      SWV5S5_MvpInitProductionVersion(snapshot.query_set.contract_version);
+      snapshot.query_set.observation_sequence=snapshot.owner_query_sequence;
+      snapshot.query_set.observed_at=history_to; snapshot.query_set.snapshot_id="TEST_ONLY_D6_BROKER_SNAPSHOT";
+      SWV5S5_SHA256(m_positive ? "TEST_ONLY_D6_POSITIVE" : "TEST_ONLY_D6_EMPTY",snapshot.snapshot_digest);
+      snapshot.query_set.snapshot_digest=snapshot.snapshot_digest;
+      snapshot.capability_proof_digest_consumed=capability_proof.proof_digest;
+      snapshot.completeness_claimed=false; snapshot.visibility_watermark_claimed=false;
+      if(m_positive)
+      {
+         ArrayResize(snapshot.history_orders,1); ZeroMemory(snapshot.history_orders[0]);
+         snapshot.history_orders[0].read_success=true; snapshot.history_orders[0].ticket=7001;
+         snapshot.history_orders[0].position_identifier=9001; snapshot.history_orders[0].symbol=binding.profile.symbol;
+         snapshot.history_orders[0].magic=SWV5_RUNTIME_STRATEGY_MAGIC;
+         snapshot.history_orders[0].order_type=(binding.direction>0 ? 0 : 1);
+         snapshot.history_orders[0].order_state=(int)ORDER_STATE_FILLED;
+         snapshot.history_orders[0].volume_initial=binding.requested_volume;
+         snapshot.history_orders[0].volume_current=0.0;
+         snapshot.history_orders[0].setup_time_msc=binding.claimed_at;
+         snapshot.history_orders[0].done_time_msc=history_to;
+         snapshot.history_orders[0].comment="TEST_ONLY_D6_ORDER";
+         ArrayResize(snapshot.history_deals,1); ZeroMemory(snapshot.history_deals[0]);
+         snapshot.history_deals[0].read_success=true; snapshot.history_deals[0].ticket=8001;
+         snapshot.history_deals[0].order_ticket=7001; snapshot.history_deals[0].position_identifier=9001;
+         snapshot.history_deals[0].symbol=binding.profile.symbol;
+         snapshot.history_deals[0].magic=SWV5_RUNTIME_STRATEGY_MAGIC;
+         snapshot.history_deals[0].deal_type=(binding.direction>0 ? 0 : 1);
+         snapshot.history_deals[0].entry_type=(int)DEAL_ENTRY_IN;
+         snapshot.history_deals[0].volume=binding.requested_volume;
+         snapshot.history_deals[0].price=3500.0; snapshot.history_deals[0].time_msc=history_to;
+         snapshot.history_deals[0].comment="TEST_ONLY_D6_DEAL";
+      }
+      snapshot.history_orders_reported_total=(uint)ArraySize(snapshot.history_orders);
+      snapshot.history_deals_reported_total=(uint)ArraySize(snapshot.history_deals);
+      return true;
+   }
+   virtual bool CaptureCallback(const SWV5_ContractValidationContext &context,const ulong callback_sequence,
+                                const MqlTradeTransaction &transaction,const MqlTradeRequest &request,
+                                const MqlTradeResult &result,ISWV5S5FBrokerEvidenceStore &evidence_store)
+   { return false; }
+};
+
 void SWV5S5_MvpD1MakeScope(SWV5_PersistenceNamespace &scope,SWV5_InstanceLease &lease,
                            string &namespace_digest)
 {
@@ -254,8 +353,8 @@ void SWV5S5_MvpD1MakeScope(SWV5_PersistenceNamespace &scope,SWV5_InstanceLease &
    lease.status=SWV5_LOCK_ACQUIRED; SWV5S5_SHA256("MVP-D1-LEASE-STORE",lease.store_revision);
    lease.heartbeat_sequence=1; lease.clock_id="BROKER-SERVER-CLOCK";
    lease.clock_authority=SWV5_TIME_AUTHORITY_BROKER_SERVER;
-   lease.acquired_clock_sequence=90; lease.heartbeat_clock_sequence=100; lease.expiry_clock_sequence=110;
-   lease.acquired_at=SWV5_TEST_TIME-100; lease.heartbeat_at=SWV5_TEST_TIME;
+   lease.acquired_clock_sequence=90; lease.heartbeat_clock_sequence=99; lease.expiry_clock_sequence=110;
+   lease.acquired_at=SWV5_TEST_TIME-100; lease.heartbeat_at=SWV5_TEST_TIME-1;
    lease.expires_at=SWV5_TEST_TIME+60;
    SWV5S5_MvpOwnershipNamespaceDigest(scope.ownership_namespace,namespace_digest);
 }
@@ -293,6 +392,7 @@ struct SWV5S5_MvpD1PhysicalSeedStatus
    bool request_sequence_initialized;
    bool ledger_initialized;
    bool request_set_initialized;
+   bool governance_round_trip;
 };
 
 bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_digest,
@@ -402,7 +502,23 @@ bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_
       request_set.ReadState(request_authority,requests) &&
       SWV5S5_IsCandidateVersion(request_authority.contract_version) &&
       SWV5S5_IsV5Version(request_authority.current_set_header.contract_version) && ArraySize(requests)==0;
-   if(!status.request_set_initialized) { Print("MVP_D1_E2E_SETUP_FAIL|REQUEST_SET"); return false; }
+    if(!status.request_set_initialized) { Print("MVP_D1_E2E_SETUP_FAIL|REQUEST_SET"); return false; }
+   SWV5S5_F_ProfileScope profile; ZeroMemory(profile); SWV5S5_F_InitVersion(profile.contract_version);
+   profile.persistence_namespace=scope; profile.account_namespace=seed.risk_observation.account_namespace;
+   profile.broker_identity=seed.adapter_environment.broker_identity; profile.server=seed.adapter_environment.server;
+   profile.account_login=seed.adapter_environment.account_login; profile.symbol=seed.adapter_environment.symbol;
+   profile.terminal_build=seed.adapter_environment.terminal_build; profile.mql_build=seed.adapter_environment.mql_build;
+   profile.profile_id=SWV5S5_F_ADAPTER_PROFILE_ID;
+   SWV5S5_MvpReconciliationGovernanceAuthority governance;
+   SWV5S5_MvpReconciliationGovernanceBundle provisioned,loaded; SWV5S5_MvpAuthorityRow governance_row,loaded_row;
+   bool governance_found=false;
+   status.governance_round_trip=SWV5S5_F_DeriveProfileDigest(profile,profile.profile_digest) &&
+      governance.Configure(path,namespace_digest) && governance.Provision(operator_invocation,profile,
+         "MVP-D1-OFFLINE-GOVERNANCE-APPROVAL","MVP-D1-OFFLINE-CAPABILITY-EVIDENCE",
+         seed.context.clock_time+50,1,provisioned,governance_row) &&
+      governance.Load(seed.context.clock_time,profile,loaded,loaded_row,governance_found) && governance_found &&
+      loaded.bundle_digest==provisioned.bundle_digest;
+   if(!status.governance_round_trip) { Print("MVP_D1_E2E_SETUP_FAIL|GOVERNANCE"); return false; }
    return true;
 }
 
@@ -495,6 +611,21 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    return SWV5S5_MvpD1ProvisionPhysicalSeed(path,namespace_digest,scope,seed,status);
 }
 
+void SWV5S5_MvpD1MakeInvocation(const string path,const string namespace_digest,
+                                const SWV5S5_MvpControlledDemoMode mode,
+                                SWV5S5_MvpControlledDemoInvocation &invocation)
+{
+   SWV5S5_MvpControlledDemoDefaults(invocation);
+   invocation.mode=mode; invocation.armed_for_demo_submission=true;
+   invocation.operator_confirmed_before_claim=true; invocation.execute_attended_once=true;
+   invocation.expected_broker_identity="APPROVED-DEMO-BROKER";
+   invocation.expected_server="APPROVED-DEMO-SERVER"; invocation.expected_demo_account_login=123456;
+   invocation.persistence_namespace_identity=namespace_digest; invocation.relative_store_path=path;
+   invocation.source_head="144814cb5076851b8bf59a739fb865d9d9c1ab7d";
+   invocation.requested_volume=0.01; invocation.requested_price=3500.00;
+   invocation.protective_stop_price=3499.00; invocation.optional_take_profit_price=3501.00;
+}
+
 void SWV5S5_MvpD1E2EAssertions(SWV5S5_MvpD1Collector &c)
 {
    const string path="mvp_d1_physical_e2e_v1.sqlite"; string namespace_digest;
@@ -519,21 +650,16 @@ void SWV5S5_MvpD1E2EAssertions(SWV5S5_MvpD1Collector &c)
    if(!seed_status.ledger_initialized) return;
    SWV5S5_MvpD1Record(c,"SEED-09-REQUEST-SET",seed_status.request_set_initialized);
    if(!seed_status.request_set_initialized) return;
+   SWV5S5_MvpD1Record(c,"SEED-10-GOVERNANCE-ROUND-TRIP",seed_status.governance_round_trip);
+   if(!seed_status.governance_round_trip) return;
    SWV5S5_MvpD1Record(c,"E2E-01-PHYSICAL-PRECONDITIONS",seeded);
    if(!seeded) return;
    SWV5S5_MvpD1ReadOnlyPlatform platform; SWV5S5_MvpBrokerEvidenceStore evidence_store;
    SWV5S5_MvpControlledDemoAuthorityPort port;
    const bool configured=seeded && evidence_store.Configure(path,namespace_digest) &&
       port.Configure(path,namespace_digest,seed,&platform,&evidence_store);
-   SWV5S5_MvpControlledDemoInvocation invocation; SWV5S5_MvpControlledDemoDefaults(invocation);
-   invocation.mode=MODE_D1_BUY; invocation.armed_for_demo_submission=true;
-   invocation.operator_confirmed_before_claim=true;
-   invocation.expected_broker_identity="APPROVED-DEMO-BROKER";
-   invocation.expected_server="APPROVED-DEMO-SERVER"; invocation.expected_demo_account_login=123456;
-   invocation.persistence_namespace_identity=namespace_digest; invocation.relative_store_path=path;
-   invocation.source_head="144814cb5076851b8bf59a739fb865d9d9c1ab7d";
-   invocation.requested_volume=0.01; invocation.requested_price=3500.00;
-   invocation.protective_stop_price=3499.00; invocation.optional_take_profit_price=3501.00;
+   SWV5S5_MvpControlledDemoInvocation invocation;
+   SWV5S5_MvpD1MakeInvocation(path,namespace_digest,MODE_D1_BUY,invocation);
    SWV5S5_MvpD1NonMutatingBoundary boundary; SWV5S5_MvpControlledDemoRunner runner;
    SWV5S5_MvpControlledDemoResult result;
    const bool ran=configured && runner.Run(invocation,port,boundary,result);
@@ -569,6 +695,33 @@ void SWV5S5_MvpD1E2EAssertions(SWV5S5_MvpD1Collector &c)
       submission.permit.request_identity.request_id.monotonic_sequence==1);
    SWV5S5_MvpD1Record(c,"E2E-08-ZERO-BROKER-MUTATION",boundary.calls==1 &&
       runner.BrokerSubmissionCalls()==0 && result.broker_submission_calls==0);
+
+   SWV5S5_MvpAttemptReconciliationPinAuthority pin_authority;
+   SWV5S5_MvpAttemptReconciliationPin durable_pin,restarted_pin;
+   SWV5S5_MvpAuthorityRow durable_pin_row,vector_row,restarted_pin_row,restarted_vector_row;
+   bool pin_found=false,vector_found=false,restarted_pin_found=false,restarted_vector_found=false;
+   const bool pin_loaded=claim_round_trip && pin_authority.Configure(path,namespace_digest) &&
+      pin_authority.Load(submission.permit.request_identity,durable_pin,durable_pin_row,pin_found) && pin_found;
+   const bool vector_loaded=pin_loaded && pin_authority.LoadInitialVector(durable_pin,vector_row,vector_found) && vector_found;
+   SWV5S5_MvpD1Record(c,"E2E-09-PRECLAIM-PIN-DURABLE",pin_loaded && durable_pin.pin_revision==1 &&
+      durable_pin.expected_claim_id==submission.invocation_claim_id);
+   SWV5S5_MvpD1Record(c,"E2E-10-PRECLAIM-VECTOR-DURABLE",vector_loaded &&
+      vector_row.logical_revision==1 && vector_row.state==(int)SWV5S5_F_SUBMISSION_UNRESOLVED);
+   SWV5S5_MvpD1Record(c,"E2E-11-PIN-VECTOR-ATOMIC-GUARDED",pin_loaded && vector_loaded &&
+      durable_pin_row.store_revision!="" && vector_row.store_revision!="" &&
+      durable_pin_row.updated_at==vector_row.updated_at);
+   SWV5S5_MvpAttemptReconciliationPinAuthority restarted_pin_authority;
+   const bool restart_pin_exact=restarted_pin_authority.Configure(path,namespace_digest) &&
+      restarted_pin_authority.Load(submission.permit.request_identity,restarted_pin,restarted_pin_row,restarted_pin_found) &&
+      restarted_pin_found && restarted_pin.pin_digest==durable_pin.pin_digest &&
+      restarted_pin_authority.LoadInitialVector(restarted_pin,restarted_vector_row,restarted_vector_found) &&
+      restarted_vector_found && restarted_vector_row.payload_digest==vector_row.payload_digest;
+   SWV5S5_MvpD1Record(c,"E2E-12-RESTART-EXACT-PIN-VECTOR",restart_pin_exact);
+   SWV5S5_MvpInvocationClaimAuthority restarted_claim_authority; SWV5S5_MvpReloadedClaim reloaded_claim;
+   const bool claim_reloaded=restarted_claim_authority.Configure(path,namespace_digest) &&
+      restarted_claim_authority.ReloadClaim(reloaded_claim);
+   SWV5S5_MvpD1Record(c,"E2E-13-CLAIM-GRANT-NOT-RECONSTRUCTED",claim_reloaded && reloaded_claim.found &&
+      !reloaded_claim.claim_granted_now && reloaded_claim.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED);
 
    SWV5S5_MvpSignalIngressAdapter ingress_adapter; SWV5S5_IngressEnvelope ingress; bool ingress_replayed=false;
    const bool ingress_loaded=ingress_adapter.Configure(path,namespace_digest) &&
@@ -712,6 +865,157 @@ void SWV5S5_MvpD1E2EAssertions(SWV5S5_MvpD1Collector &c)
       SWV5S5_EqualFence(submission.claim_ownership_lease.fence,submission.permit.ownership_fence));
    SWV5S5_MvpD1Record(c,"REL-12-BOUND-ID",bound_id_ready && ledger_valid &&
       ledger_records[0].bound_request_id==bound_request_id);
+}
+
+void SWV5S5_MvpD1D6Assertions(SWV5S5_MvpD1Collector &c,const bool positive)
+{
+   const string path=(positive ? "mvp_d1_d6_positive_v1.sqlite" : "mvp_d1_d6_no_positive_v1.sqlite");
+   string namespace_digest; SWV5S5_MvpControlledDemoAuthoritySeed seed;
+   SWV5S5_MvpD1PhysicalSeedStatus seed_status;
+   const bool seeded=SWV5S5_MvpD1BuildE2ESeed(path,seed,namespace_digest,seed_status);
+   SWV5S5_MvpD1ReadOnlyPlatform platform; SWV5S5_MvpBrokerEvidenceStore first_store;
+   SWV5S5_MvpControlledDemoAuthorityPort first_port;
+   SWV5S5_MvpControlledDemoInvocation d1;
+   SWV5S5_MvpD1MakeInvocation(path,namespace_digest,MODE_D1_BUY,d1);
+   SWV5S5_MvpD1PersistedEvidenceBoundary boundary; SWV5S5_MvpControlledDemoRunner d1_runner;
+   SWV5S5_MvpControlledDemoResult d1_result;
+   const bool d1_complete=seeded && first_store.Configure(path,namespace_digest) &&
+      first_port.Configure(path,namespace_digest,seed,&platform,&first_store) &&
+      d1_runner.Run(d1,first_port,boundary,d1_result) && boundary.calls==1 &&
+      d1_result.synchronous_result.invocation_attempted;
+   SWV5S5_MvpD1Record(c,positive ? "D6P-01-DURABLE-UNRESOLVED-SYNC" :
+                                    "D6N-01-DURABLE-UNRESOLVED-SYNC",d1_complete);
+
+   SWV5S5_MvpD1RecoveryReadPort recovery(positive); SWV5S5_MvpBrokerEvidenceStore restarted_store;
+   SWV5S5_MvpControlledDemoAuthorityPort restarted_port; SWV5S5_MvpControlledDemoRunner d6_runner;
+   SWV5S5_MvpControlledDemoInvocation d6;
+   SWV5S5_MvpD1MakeInvocation(path,namespace_digest,MODE_D6_RECOVER,d6);
+   SWV5S5_MvpControlledDemoResult d6_result;
+   const bool d6_configured=d1_complete && restarted_store.Configure(path,namespace_digest) &&
+      restarted_port.Configure(path,namespace_digest,seed,&platform,&restarted_store,&recovery);
+   const bool d6_ran=d6_configured && d6_runner.Run(d6,restarted_port,boundary,d6_result);
+   SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_SubmissionAuthorityRecord record; bool found=false;
+   const bool reloaded=store.Open(path,namespace_digest) &&
+      SWV5S5_MvpLoadSubmissionAuthority(store,d1_result.request_correlation_id,d1_result.attempt_id,record,found) && found;
+   if(positive)
+   {
+      SWV5S5_MvpD1Record(c,"D6P-02-POSITIVE-RECONSTRUCTION",d6_ran && d6_result.recovery_complete &&
+         record.state==SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED);
+      SWV5S5_MvpD1Record(c,"D6P-03-ZERO-RECOVERY-SUBMISSIONS",d6_runner.BrokerSubmissionCalls()==0 &&
+         d6_result.broker_submission_calls==0 && recovery.query_calls==1);
+   }
+   else
+   {
+      SWV5S5_MvpD1Record(c,"D6N-02-NO-POSITIVE-PRESERVES-UNRESOLVED",!d6_ran && reloaded &&
+         record.state==SWV5S5_INVOCATION_CLAIMED_UNRESOLVED &&
+         d6_result.stop_reason=="NEGATIVE_AUTHORITY_NOT_PROVEN_FOR_MVP_DEMO");
+      SWV5S5_MvpD1Record(c,"D6N-03-ZERO-RECOVERY-SUBMISSIONS",d6_runner.BrokerSubmissionCalls()==0 &&
+         d6_result.broker_submission_calls==0 && recovery.query_calls==1);
+   }
+}
+
+void SWV5S5_MvpD1PinVectorRollbackAssertions(SWV5S5_MvpD1Collector &c)
+{
+   const string path="mvp_d1_pin_vector_rollback_v1.sqlite";
+   const string namespace_digest="7777777777777777777777777777777777777777777777777777777777777777";
+   FileDelete(path,FILE_COMMON); FileDelete(path+"-wal",FILE_COMMON); FileDelete(path+"-shm",FILE_COMMON);
+   SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpAuthorityRow guard,empty;
+   string guard_digest,pin_digest,vector_digest;
+   const bool digests=SWV5S5_DomainDigest("MVP-D1-PAIR-GUARD","ownership-guard",guard_digest) &&
+      SWV5S5_DomainDigest("MVP-D1-PAIR-PIN","attempt-pin",pin_digest) &&
+      SWV5S5_DomainDigest("MVP-D1-PAIR-VECTOR","initial-unresolved-vector",vector_digest);
+   const datetime now=D'2026.09.12 12:00:05';
+   const bool guarded=digests && store.Open(path,namespace_digest) &&
+      store.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,
+         0,"","",0,1,(int)SWV5_LOCK_ACQUIRED,guard_digest,"ownership-guard",now,guard);
+   SWV5S5_MvpAuthorityMutation pin_mutation,vector_mutation;
+   if(guarded)
+   {
+      SWV5S5_MvpPrepareMutation(SWV5S5_MVP_DOMAIN_RECONCILIATION_PIN,"PAIR-ROLLBACK",empty,false,
+         1,1,pin_digest,"attempt-pin",now,pin_mutation);
+      SWV5S5_MvpPrepareMutation(SWV5S5_MVP_DOMAIN_RECONCILIATION,"PAIR-ROLLBACK",empty,false,
+         1,(int)SWV5S5_F_SUBMISSION_UNRESOLVED,vector_digest,"initial-unresolved-vector",now,vector_mutation);
+   }
+   const bool first_write_failure=guarded &&
+      store.TestGuardedPairRollback(pin_mutation,vector_mutation,guard,1);
+   const bool second_write_failure=first_write_failure &&
+      store.TestGuardedPairRollback(pin_mutation,vector_mutation,guard,2);
+   SWV5S5_MvpD1Record(c,"E2E-11A-PIN-VECTOR-FIRST-WRITE-FAILS-CLOSED",first_write_failure);
+   SWV5S5_MvpD1Record(c,"E2E-11B-PIN-VECTOR-SECOND-WRITE-ROLLS-BACK",second_write_failure);
+}
+
+bool SWV5S5_MvpD1DeleteInitialVectorTestOnly(const string path,const string namespace_digest)
+{
+   SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpAuthorityRow rows[];
+   if(!store.Open(path,namespace_digest) || !store.ReadAllRows(rows))
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=locate-read"); return false; }
+   string key=""; int pin_rows=0,vector_rows=0;
+   for(int i=0;i<ArraySize(rows);i++)
+      if(rows[i].domain_key==SWV5S5_MVP_DOMAIN_RECONCILIATION_PIN)
+      { key=rows[i].record_key; pin_rows++; }
+   if(pin_rows!=1 || key=="")
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=locate-pin|pin_rows=",pin_rows); return false; }
+   for(int i=0;i<ArraySize(rows);i++)
+      if(rows[i].domain_key==SWV5S5_MVP_DOMAIN_RECONCILIATION && rows[i].record_key==key)
+         vector_rows++;
+   if(vector_rows!=1)
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=locate-vector|key=",key,"|vector_rows=",vector_rows); return false; }
+   store.Close();
+   const int database=DatabaseOpen(path,DATABASE_OPEN_READWRITE|DATABASE_OPEN_COMMON);
+   if(database==INVALID_HANDLE)
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=open|error=",GetLastError()); return false; }
+   if(!DatabaseTransactionBegin(database))
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=begin|error=",GetLastError()); DatabaseClose(database); return false; }
+   const int statement=DatabasePrepare(database,
+      "DELETE FROM swv5_authority_rows WHERE namespace_digest=?1 AND domain_key=?2 AND record_key=?3;");
+   if(statement==INVALID_HANDLE)
+   { Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=prepare|error=",GetLastError());
+     DatabaseTransactionRollback(database); DatabaseClose(database); return false; }
+   const bool bound=DatabaseBind(statement,0,namespace_digest) &&
+      DatabaseBind(statement,1,SWV5S5_MVP_DOMAIN_RECONCILIATION) && DatabaseBind(statement,2,key);
+   ResetLastError(); const bool row=bound && DatabaseRead(statement);
+   const int execution_error=GetLastError();
+   const bool executed=row || (bound && execution_error==ERR_DATABASE_NO_MORE_DATA);
+   DatabaseFinalize(statement);
+   const bool committed=executed && DatabaseTransactionCommit(database);
+   if(!committed) DatabaseTransactionRollback(database);
+   DatabaseClose(database);
+   SWV5S5_MvpSqliteAuthorityStore verify; SWV5S5_MvpAuthorityRow absent; bool found=false;
+   const bool reopened=committed && verify.Open(path,namespace_digest);
+   const bool reread=reopened && verify.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,absent,found);
+   if(!(committed && reread && !found))
+      Print("MVP_D1_DELETE_VECTOR_DIAGNOSTIC|stage=readback|key=",key,"|bound=",bound,
+            "|row=",row,"|error=",execution_error,"|executed=",executed,"|committed=",committed,
+            "|reopened=",reopened,"|reread=",reread,"|found=",found);
+   return committed && reread && !found;
+}
+
+void SWV5S5_MvpD1MissingVectorAssertion(SWV5S5_MvpD1Collector &c)
+{
+   const string path="mvp_d1_missing_vector_v1.sqlite"; string namespace_digest;
+   SWV5S5_MvpControlledDemoAuthoritySeed seed; SWV5S5_MvpD1PhysicalSeedStatus seed_status;
+   const bool seeded=SWV5S5_MvpD1BuildE2ESeed(path,seed,namespace_digest,seed_status);
+   SWV5S5_MvpD1ReadOnlyPlatform platform; SWV5S5_MvpBrokerEvidenceStore evidence_store;
+   SWV5S5_MvpControlledDemoAuthorityPort port; SWV5S5_MvpControlledDemoInvocation invocation;
+   SWV5S5_MvpD1MakeInvocation(path,namespace_digest,MODE_D1_BUY,invocation);
+   SWV5S5_MvpControlledDemoPreflightEvidence read_only,prepared;
+   bool granted=false;
+   const bool admission_ready=seeded && evidence_store.Configure(path,namespace_digest) &&
+      port.Configure(path,namespace_digest,seed,&platform,&evidence_store) &&
+      port.CollectReadOnlyPreflight(invocation,1,read_only) &&
+      port.PrepareD1AuthorityPath(invocation,1,prepared) && port.PreparePermitSemantics() &&
+      port.CommitPermitPhysical() && port.CollectAdmissionSameEvent();
+   const bool vector_deleted=admission_ready &&
+      SWV5S5_MvpD1DeleteInitialVectorTestOnly(path,namespace_digest);
+   const bool claim_rejected=vector_deleted && !port.ClaimPhysicalNow(granted) && !granted;
+   SWV5S5_MvpInvocationClaimAuthority claims; SWV5S5_MvpReloadedClaim reloaded;
+   const bool still_unclaimed=claims.Configure(path,namespace_digest) && claims.ReloadClaim(reloaded) &&
+      reloaded.found && !reloaded.claim_granted_now && reloaded.state==SWV5S5_COMMITTED_NOT_INVOKED;
+   if(!(claim_rejected && still_unclaimed))
+      Print("MVP_D1_MISSING_VECTOR_DIAGNOSTIC|seeded=",seeded,"|admission_ready=",admission_ready,
+            "|vector_deleted=",vector_deleted,"|claim_rejected=",claim_rejected,
+            "|granted=",granted,"|still_unclaimed=",still_unclaimed,"|state=",reloaded.state);
+   SWV5S5_MvpD1Record(c,"E2E-14-MISSING-VECTOR-BLOCKS-CLAIM",claim_rejected && still_unclaimed);
 }
 
 void SWV5S5_RunMvpD1AuthorityAssertions(SWV5S5_MvpD1Collector &c)
@@ -920,6 +1224,10 @@ void SWV5S5_RunMvpD1AuthorityAssertions(SWV5S5_MvpD1Collector &c)
    SWV5S5_MvpD1Record(c,"BOUND-14",restart_ok && ArraySize(restarted_records)==1 &&
       restarted_records[0].lifecycle_state==SWV5S5_BOUND_TO_REQUEST);
    SWV5S5_MvpD1E2EAssertions(c);
+   SWV5S5_MvpD1PinVectorRollbackAssertions(c);
+   SWV5S5_MvpD1D6Assertions(c,true);
+   SWV5S5_MvpD1D6Assertions(c,false);
+   SWV5S5_MvpD1MissingVectorAssertion(c);
 }
 
 #endif

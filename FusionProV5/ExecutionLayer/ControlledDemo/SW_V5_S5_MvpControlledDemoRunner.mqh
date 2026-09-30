@@ -23,6 +23,7 @@ struct SWV5S5_MvpControlledDemoInvocation
    SWV5S5_MvpControlledDemoMode mode;
    bool armed_for_demo_submission;
    bool operator_confirmed_before_claim;
+   bool execute_attended_once;
    string expected_broker_identity;
    string expected_server;
    long expected_demo_account_login;
@@ -42,6 +43,7 @@ void SWV5S5_MvpControlledDemoDefaults(SWV5S5_MvpControlledDemoInvocation &invoca
    invocation.mode=MODE_PREFLIGHT;
    invocation.armed_for_demo_submission=false;
    invocation.operator_confirmed_before_claim=false;
+   invocation.execute_attended_once=false;
    invocation.requested_volume=SWV5S5_MVP_MAX_VOLUME;
 }
 
@@ -106,6 +108,8 @@ struct SWV5S5_MvpControlledDemoRecoveryEvidence
    bool reconciliation_published;
    bool exact_record_terminalized;
    bool terminal_readback_verified;
+   bool unresolved_no_positive;
+   string reason_code;
    string request_correlation_id;
    string attempt_id;
 };
@@ -256,9 +260,12 @@ bool SWV5S5_MvpWriteControlledDemoEvidence(const string relative_path,
 class ISWV5S5_MvpControlledDemoAuthorityPort
 {
 public:
-   virtual bool CollectPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,
-                                 const int direction,
-                                 SWV5S5_MvpControlledDemoPreflightEvidence &evidence)=0;
+   virtual bool CollectReadOnlyPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,
+                                         const int direction,
+                                         SWV5S5_MvpControlledDemoPreflightEvidence &evidence)=0;
+   virtual bool PrepareD1AuthorityPath(const SWV5S5_MvpControlledDemoInvocation &invocation,
+                                       const int direction,
+                                       SWV5S5_MvpControlledDemoPreflightEvidence &evidence)=0;
    virtual bool PreparePermitSemantics(void)=0;
    virtual bool CommitPermitPhysical(void)=0;
    virtual bool CollectAdmissionSameEvent(void)=0;
@@ -335,8 +342,14 @@ public:
       if(invocation.mode==MODE_D6_RECOVER)
       {
          SWV5S5_MvpControlledDemoRecoveryEvidence recovery;
-         if(!authority.ReloadAndReconcileD6(recovery) || !recovery.store_schema_valid ||
-            !recovery.ownership_reloaded_from_sqlite || !recovery.ownership_current ||
+         if(!authority.ReloadAndReconcileD6(recovery))
+         {
+            result.stop_reason=(recovery.unresolved_no_positive && recovery.reason_code!="" ?
+               recovery.reason_code : "D6_RECOVERY_NOT_AUTHORITATIVELY_COMPLETE");
+            return false;
+         }
+         if(!recovery.store_schema_valid ||
+             !recovery.ownership_reloaded_from_sqlite || !recovery.ownership_current ||
             !recovery.exact_unresolved_claim_found ||
             !recovery.complete_claim_reloaded_from_sqlite || recovery.claim_granted_now ||
             !recovery.broker_observation_complete || !recovery.execution_observation_complete ||
@@ -354,8 +367,16 @@ public:
 
       const int direction=(invocation.mode==MODE_D3_SELL ? -1 : 1);
       SWV5S5_MvpControlledDemoPreflightEvidence preflight;
-      if(!authority.CollectPreflight(invocation,direction,preflight) ||
-         !SWV5S5_MvpControlledDemoPreflightValid(preflight))
+      if(!authority.CollectReadOnlyPreflight(invocation,direction,preflight) ||
+         !preflight.profile_exact || !preflight.demo_account || !preflight.usd_account ||
+         !preflight.hedging_account || !preflight.symbol_exact || !preflight.connected ||
+         !preflight.permissions_observed || !preflight.store_schema_valid || !preflight.genesis_valid ||
+         !preflight.ownership_current || !preflight.trust_complete || !preflight.trust_current_unexpired ||
+         !preflight.safety_allows_execution || !preflight.broker_observation_complete ||
+         !preflight.execution_observation_complete || !preflight.no_position || !preflight.no_active_order ||
+         !preflight.no_unresolved_submission || !preflight.no_competing_operation ||
+         !preflight.symbol_specification_fresh || !preflight.units_valid || !preflight.margin_valid ||
+         !preflight.basket_risk_valid || !preflight.risk_inputs_valid || !preflight.protective_stop_valid)
       { result.stop_reason="PREFLIGHT_FAILED_CLOSED"; return false; }
       result.request_correlation_id=preflight.request_correlation_id;
       result.attempt_id=preflight.attempt_id;
@@ -375,6 +396,8 @@ public:
       { result.stop_reason="DEMO_SUBMISSION_NOT_ARMED"; return false; }
       if(!invocation.operator_confirmed_before_claim)
       { result.stop_reason="OPERATOR_CONFIRMATION_REQUIRED_BEFORE_CLAIM"; return false; }
+      if(!invocation.execute_attended_once)
+      { result.stop_reason="ATTENDED_ONE_SHOT_NOT_EXPLICITLY_ENABLED"; return false; }
       if(invocation.mode==MODE_D3_SELL &&
          (!preflight.d1_terminal || !preflight.manual_cleanup_independently_observed ||
           !preflight.independent_request_identity))
@@ -386,6 +409,11 @@ public:
       // this object resets it. The remainder is one synchronous stack frame.
       m_host_one_shot_consumed=true;
       result.host_latch_set_before_claim=true;
+      if(!authority.PrepareD1AuthorityPath(invocation,direction,preflight) ||
+         !SWV5S5_MvpControlledDemoPreflightValid(preflight))
+      { result.stop_reason="D1_AUTHORITY_PREPARATION_FAILED"; return false; }
+      result.request_correlation_id=preflight.request_correlation_id;
+      result.attempt_id=preflight.attempt_id;
       if(!authority.PreparePermitSemantics())
       { result.stop_reason="PERMIT_PREPARATION_FAILED"; return false; }
       result.permit_prepared=true;

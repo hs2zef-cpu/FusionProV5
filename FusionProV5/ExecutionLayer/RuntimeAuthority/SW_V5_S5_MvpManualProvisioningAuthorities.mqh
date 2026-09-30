@@ -6,6 +6,7 @@
 
 #include "SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
 #include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
+#include "SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh"
 
 const string SWV5S5_MVP_DOMAIN_GENESIS="MVP_NAMESPACE_GENESIS";
 const string SWV5S5_MVP_DOMAIN_OPERATOR="MVP_OPERATOR_PROVISIONING_REFERENCE";
@@ -303,19 +304,27 @@ public:
                                const SWV5_HardKillReleaseEvidence &evidence,
                                const SWV5_HardKillReleaseAuthorityRecord &authority_record,
                                const SWV5_InstanceLease &current_lease,
-                               const SWV5S5_F_ReconciliationResult &zero_state_reconciliation,
+                               const SWV5S5_MvpBootstrapZeroStateAuthority &bootstrap_zero,
                                ISWV5RiskContract &risk_contract,
                                SWV5S5_MvpAuthorityRow &committed)
    {
       SWV5_ContractDecision decision;
-      string evidence_digest,authority_digest,pending_payload,pending_digest,reconciliation_digest;
+      string evidence_digest,authority_digest,pending_payload,pending_digest,bootstrap_digest,bootstrap_payload;
       SWV5S5_LeaseLivenessAuthorityView lease_view; lease_view.lease=current_lease;
-      const bool zero_state_valid=SWV5S5_F_DeriveResultDigest(zero_state_reconciliation,reconciliation_digest) &&
-         reconciliation_digest==zero_state_reconciliation.result_digest &&
-         zero_state_reconciliation.state==SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED &&
-         zero_state_reconciliation.disposition==SWV5S5_F_DISPOSITION_NEGATIVE_CONFIRMED &&
-         zero_state_reconciliation.authoritative_negative && !zero_state_reconciliation.authoritative_positive &&
-         !zero_state_reconciliation.retry_allowed && zero_state_reconciliation.residual_volume<=context.volume_tolerance;
+      const bool zero_state_valid=SWV5S5_MvpBootstrapZeroDigest(bootstrap_zero,bootstrap_digest) &&
+         bootstrap_digest==bootstrap_zero.authority_digest &&
+         SWV5S5_MvpBootstrapZeroCanonical(bootstrap_zero,true,bootstrap_payload) &&
+         bootstrap_zero.observed_at==context.clock_time &&
+         bootstrap_zero.hard_kill_latch_id==current_state.latch_id &&
+         bootstrap_zero.hard_kill_latch_generation==current_state.latch_generation &&
+         SWV5S5_EqualNamespace(bootstrap_zero.persistence_namespace,current_state.persistence_namespace) &&
+         SWV5S5_EqualFence(bootstrap_zero.ownership_fence,current_lease.fence) &&
+         SameTypedEvidence(bootstrap_zero.broker_evidence,evidence.broker_evidence) &&
+         SameTypedEvidence(bootstrap_zero.persistence_evidence,evidence.persistence_evidence) &&
+         SameExposureEvidence(bootstrap_zero.exposure_evidence,evidence.exposure_evidence) &&
+         bootstrap_zero.exposure_evidence.observed_exposure_volume<=context.volume_tolerance &&
+         bootstrap_zero.exposure_evidence.prior_exposure_volume<=context.volume_tolerance &&
+         bootstrap_zero.exposure_evidence.zero_or_reducing;
       const bool lease_valid=SWV5S5_DeriveLeaseProjection(lease_view) &&
          (current_lease.status==SWV5_LOCK_ACQUIRED || current_lease.status==SWV5_LOCK_RENEWED) &&
          current_lease.clock_id==context.clock_id && current_lease.clock_authority==context.clock_authority &&
@@ -364,12 +373,18 @@ public:
       if(!SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,payload,digest)) return false;
       SWV5S5_MvpAuthorityRow latch; bool latch_found=false;
       SWV5S5_MvpAuthorityRow ownership; bool ownership_found=false;
+      SWV5S5_MvpAuthorityRow bootstrap_row; bool bootstrap_found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",latch,latch_found) || !latch_found ||
          latch.state!=(int)SWV5_HARD_KILL_RELEASE_PENDING || latch.payload_digest!=pending_digest ||
          latch.payload!=pending_payload ||
          !m_store.ReadRow(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,ownership,ownership_found) ||
          !ownership_found || ownership.payload_digest!=lease_view.projection_digest ||
-         ownership.state!=(int)current_lease.status) return false;
+         ownership.state!=(int)current_lease.status ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_BOOTSTRAP_ZERO,SWV5S5_MVP_BOOTSTRAP_ZERO_KEY,
+                          bootstrap_row,bootstrap_found) || !bootstrap_found ||
+         bootstrap_row.payload_digest!=bootstrap_digest || bootstrap_row.payload!=bootstrap_payload ||
+         bootstrap_row.logical_revision!=1)
+         return false;
       SWV5S5_MvpAuthorityRow current; bool found=false;
       if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL_RELEASE,"CURRENT",current,found)) return false;
       SWV5S5_MvpAuthorityRow release_row;

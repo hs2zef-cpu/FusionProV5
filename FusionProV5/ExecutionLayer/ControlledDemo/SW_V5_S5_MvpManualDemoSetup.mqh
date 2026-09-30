@@ -160,12 +160,12 @@ public:
    bool CompleteSafetyRelease(const SWV5S5_MvpManualDemoSetupInput &setup_input,
                               const SWV5_ContractValidationContext &context,
                               const SWV5_HardKillState &active_state,
-                              const SWV5_HardKillReleaseEvidence &release_evidence,
-                              const SWV5_HardKillReleaseAuthorityRecord &release_authority_record,
-                              const SWV5_InstanceLease &current_lease,
-                              const SWV5S5_F_ReconciliationResult &zero_state_reconciliation,
-                              SWV5S5_MvpRiskContract &risk_contract,
-                              SWV5S5_MvpManualDemoSetupResult &result)
+                               const SWV5_HardKillReleaseEvidence &release_evidence,
+                               const SWV5_HardKillReleaseAuthorityRecord &release_authority_record,
+                               const SWV5_InstanceLease &current_lease,
+                               const SWV5S5_MvpBootstrapZeroStateAuthority &bootstrap_zero,
+                               SWV5S5_MvpRiskContract &risk_contract,
+                               SWV5S5_MvpManualDemoSetupResult &result)
    {
       if(!SWV5S5_MvpManualDemoSetupInputValid(setup_input,context.clock_time))
       { result.stop_reason="SETUP_RELEASE_INPUT_INVALID"; return false; }
@@ -176,14 +176,15 @@ public:
          !release.StageReleasePending(setup_input.operator_invocation,context,active_state,
                                       release_evidence,pending,pending_row))
       { result.stop_reason="SETUP_RELEASE_PENDING_FAILED"; return false; }
-      result.zero_state_verified=(zero_state_reconciliation.state==SWV5S5_F_NO_SIDE_EFFECT_CONFIRMED &&
-         zero_state_reconciliation.authoritative_negative &&
-         !zero_state_reconciliation.authoritative_positive &&
-         !zero_state_reconciliation.retry_allowed &&
-         !zero_state_reconciliation.residual_is_submission_authority);
+      string bootstrap_digest;
+      result.zero_state_verified=SWV5S5_MvpBootstrapZeroDigest(bootstrap_zero,bootstrap_digest) &&
+         bootstrap_digest==bootstrap_zero.authority_digest &&
+         bootstrap_zero.exposure_evidence.zero_or_reducing &&
+         bootstrap_zero.exposure_evidence.observed_exposure_volume<=context.volume_tolerance &&
+         bootstrap_zero.exposure_evidence.prior_exposure_volume<=context.volume_tolerance;
       if(!result.zero_state_verified ||
-         !release.PersistApprovedRelease(setup_input.operator_invocation,context,pending,release_evidence,
-            release_authority_record,current_lease,zero_state_reconciliation,risk_contract,released_row))
+          !release.PersistApprovedRelease(setup_input.operator_invocation,context,pending,release_evidence,
+             release_authority_record,current_lease,bootstrap_zero,risk_contract,released_row))
       { result.stop_reason="SETUP_SAFETY_RELEASE_FAILED"; return false; }
       result.safety_release_persisted=true;
       result.stop_reason="SETUP_COMPLETE";

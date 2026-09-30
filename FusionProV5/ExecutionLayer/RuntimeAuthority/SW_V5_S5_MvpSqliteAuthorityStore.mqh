@@ -236,11 +236,12 @@ private:
    }
 
    bool CompareAndSetPairInternal(const SWV5S5_MvpAuthorityMutation &first,
-                                  const SWV5S5_MvpAuthorityMutation &second,
-                                  const bool guard_required,
-                                  const SWV5S5_MvpAuthorityRow &guard_expected,
-                                  SWV5S5_MvpAuthorityRow &first_committed,
-                                  SWV5S5_MvpAuthorityRow &second_committed)
+                                   const SWV5S5_MvpAuthorityMutation &second,
+                                   const bool guard_required,
+                                   const SWV5S5_MvpAuthorityRow &guard_expected,
+                                   SWV5S5_MvpAuthorityRow &first_committed,
+                                   SWV5S5_MvpAuthorityRow &second_committed,
+                                   const int test_failure_point)
    {
       ZeroMemory(first_committed); ZeroMemory(second_committed);
       if(!VerifyMetadata() || !MutationValid(first) || !MutationValid(second) ||
@@ -259,7 +260,12 @@ private:
       if(ok && guard_required)
          ok=ReadRowInternal(guard_expected.domain_key,guard_expected.record_key,guard_current,guard_found) &&
             guard_found && RowEqual(guard_current,guard_expected);
-      if(ok) ok=ApplyMutation(first,first_proposed) && ApplyMutation(second,second_proposed);
+      // Failure points are reachable only through the explicit TEST ONLY
+      // method below. Production callers always pass zero.
+      if(ok && test_failure_point==1) ok=false;
+      if(ok) ok=ApplyMutation(first,first_proposed);
+      if(ok && test_failure_point==2) ok=false;
+      if(ok) ok=ApplyMutation(second,second_proposed);
       if(ok) ok=ReadRowInternal(first.domain_key,first.record_key,first_inside,first_inside_found) &&
          first_inside_found && RowEqual(first_inside,first_proposed) &&
          ReadRowInternal(second.domain_key,second.record_key,second_inside,second_inside_found) &&
@@ -339,6 +345,42 @@ public:
    {
       if(!VerifyMetadata()) return false;
       return ReadRowInternal(domain_key,record_key,row,found);
+   }
+
+   // Complete, deterministic, read-only physical snapshot. Runtime authorities
+   // use this to prove absence without mistaking a failed/partial query for an
+   // empty store. Rows are returned in canonical domain/key order.
+   bool ReadAllRows(SWV5S5_MvpAuthorityRow &rows[])
+   {
+      ArrayResize(rows,0);
+      if(!VerifyMetadata()) return false;
+      const int statement=DatabasePrepare(m_database,
+         "SELECT domain_key,record_key,logical_revision,store_revision,state,payload_digest,payload,updated_at "
+         "FROM swv5_authority_rows WHERE namespace_digest=?1 ORDER BY domain_key ASC,record_key ASC;");
+      if(statement==INVALID_HANDLE) return false;
+      if(!BindText(statement,0,m_namespace_digest))
+      { DatabaseFinalize(statement); return false; }
+      while(DatabaseRead(statement))
+      {
+         const int index=ArraySize(rows); ArrayResize(rows,index+1);
+         int revision=0,state=0,updated=0;
+         if(!DatabaseColumnText(statement,0,rows[index].domain_key) ||
+            !DatabaseColumnText(statement,1,rows[index].record_key) ||
+            !DatabaseColumnInteger(statement,2,revision) ||
+            !DatabaseColumnText(statement,3,rows[index].store_revision) ||
+            !DatabaseColumnInteger(statement,4,state) ||
+            !DatabaseColumnText(statement,5,rows[index].payload_digest) ||
+            !DatabaseColumnText(statement,6,rows[index].payload) ||
+            !DatabaseColumnInteger(statement,7,updated))
+         { DatabaseFinalize(statement); ArrayResize(rows,0); return false; }
+         rows[index].logical_revision=(ulong)revision;
+         rows[index].state=state; rows[index].updated_at=(datetime)updated;
+      }
+      const int error=GetLastError();
+      DatabaseFinalize(statement);
+      if(error!=0 && error!=ERR_DATABASE_NO_MORE_DATA)
+      { ArrayResize(rows,0); return false; }
+      return true;
    }
 
    bool DeriveStoreRevision(const string domain_key,const string record_key,const ulong logical_revision,
@@ -450,7 +492,7 @@ public:
                           SWV5S5_MvpAuthorityRow &second_committed)
    {
       SWV5S5_MvpAuthorityRow unused_guard; ZeroMemory(unused_guard);
-      return CompareAndSetPairInternal(first,second,false,unused_guard,first_committed,second_committed);
+      return CompareAndSetPairInternal(first,second,false,unused_guard,first_committed,second_committed,0);
    }
 
    bool CompareAndSetPairWithGuard(const SWV5S5_MvpAuthorityMutation &first,
@@ -459,7 +501,29 @@ public:
                                    SWV5S5_MvpAuthorityRow &first_committed,
                                    SWV5S5_MvpAuthorityRow &second_committed)
    {
-      return CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed);
+      return CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed,0);
+   }
+
+   // TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
+   // Exercises the exact guarded pair-CAS transaction with deterministic
+   // failure before row one or between rows one and two, then proves by
+   // authoritative readback that neither row escaped rollback and the guard
+   // remained unchanged.
+   bool TestGuardedPairRollback(const SWV5S5_MvpAuthorityMutation &first,
+                                const SWV5S5_MvpAuthorityMutation &second,
+                                const SWV5S5_MvpAuthorityRow &guard_expected,
+                                const int failure_point)
+   {
+      if(failure_point!=1 && failure_point!=2) return false;
+      SWV5S5_MvpAuthorityRow first_committed,second_committed;
+      if(CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed,
+                                   failure_point)) return false;
+      SWV5S5_MvpAuthorityRow first_after,second_after,guard_after;
+      bool first_found=false,second_found=false,guard_found=false;
+      return ReadRowInternal(first.domain_key,first.record_key,first_after,first_found) && !first_found &&
+         ReadRowInternal(second.domain_key,second.record_key,second_after,second_found) && !second_found &&
+         ReadRowInternal(guard_expected.domain_key,guard_expected.record_key,guard_after,guard_found) &&
+         guard_found && RowEqual(guard_after,guard_expected);
    }
 
    bool TestRollbackWrite(const string domain_key,const string record_key,

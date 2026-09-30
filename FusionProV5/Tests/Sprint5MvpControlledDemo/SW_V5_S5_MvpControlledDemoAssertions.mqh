@@ -84,9 +84,12 @@ public:
       recovery_calls=0; callback_calls=0; build_calls=0;
    }
 
-   virtual bool CollectPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
-                                 SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
+   virtual bool CollectReadOnlyPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
+                                  SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    { collect_calls++; evidence=preflight; return collect_ok; }
+   virtual bool PrepareD1AuthorityPath(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
+                                       SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
+   { evidence=preflight; return collect_ok; }
    virtual bool PreparePermitSemantics(void) { prepare_calls++; return prepare_ok; }
    virtual bool CommitPermitPhysical(void) { commit_calls++; return commit_ok; }
    virtual bool CollectAdmissionSameEvent(void) { admission_calls++; return admission_ok; }
@@ -125,6 +128,7 @@ void SWV5S5_ControlledDemoInvocation(SWV5S5_MvpControlledDemoInvocation &invocat
    SWV5S5_MvpControlledDemoDefaults(invocation);
    invocation.mode=mode; invocation.armed_for_demo_submission=armed;
    invocation.operator_confirmed_before_claim=armed;
+   invocation.execute_attended_once=armed;
    invocation.expected_broker_identity="APPROVED-DEMO-BROKER";
    invocation.expected_server="APPROVED-DEMO-SERVER";
    invocation.expected_demo_account_login=123456;
