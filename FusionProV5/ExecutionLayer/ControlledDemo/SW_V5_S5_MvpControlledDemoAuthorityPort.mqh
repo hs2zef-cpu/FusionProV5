@@ -9,6 +9,7 @@
 #include "../RuntimeAuthority/SW_V5_S5_MvpRequestMaterializationAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpHardKillActivationAuthority.mqh"
 
 struct SWV5S5_MvpControlledDemoAuthoritySeed
 {
@@ -146,6 +147,15 @@ private:
    SWV5S5_MvpAuthorityRow m_ownership_row,m_pin_row;
    SWV5S5_MvpReconciliationGovernanceBundle m_governance;
    SWV5S5_MvpAttemptReconciliationPin m_pin;
+   datetime m_safety_horizon;
+
+   bool IncreasingEligibilityCurrent(void)
+   {
+      SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpHardKillActivationAuthority activation;
+      m_safety_horizon=0;
+      return store.Open(m_path,m_namespace_digest) && activation.EligibilityHorizon(store,m_seed.context,
+         m_seed.hard_kill_state,m_seed.current_lease,m_safety_horizon);
+   }
 
    bool CollectPhysicalPreconditions(const SWV5S5_MvpControlledDemoInvocation &invocation)
    {
@@ -185,6 +195,7 @@ private:
          hard_kill.state!=(int)m_seed.hard_kill_state.state || hard_kill.payload!=hard_kill_payload ||
          hard_kill.payload_digest!=hard_kill_digest || m_seed.hard_kill_state.state!=SWV5_HARD_KILL_INACTIVE)
          return false;
+      if(!IncreasingEligibilityCurrent()) return false;
       m_safety_current=true;
       datetime profile_at=0;
       if(!m_platform.CaptureProfile(SWV5S5_MVP_SYMBOL,m_observed_profile,profile_at) ||
@@ -268,12 +279,14 @@ private:
       datetime expiry=m_seed.context.clock_time+(datetime)SWV5S5_MVP_RISK_AUTHORIZATION_LIFETIME_SECONDS;
       if(m_seed.current_trust.valid_until<expiry) expiry=m_seed.current_trust.valid_until;
       if(m_seed.current_lease.expires_at<expiry) expiry=m_seed.current_lease.expires_at;
+      if(m_safety_horizon<expiry) expiry=m_safety_horizon;
       if(m_symbol.specification.valid_until<expiry) expiry=m_symbol.specification.valid_until;
       return expiry;
    }
 
    bool PrepareRiskInput(const int direction)
    {
+      if(!IncreasingEligibilityCurrent()) return false;
       m_risk_input=m_seed.risk_observation;
       SWV5S5_MvpInitProductionVersion(m_risk_input.contract_version);
       m_risk_input.account_namespace=m_seed.risk_observation.account_namespace;
@@ -393,6 +406,7 @@ private:
 
    bool CollectOne(SWV5S5_AdmissionAuthorityCollection &collection)
    {
+      if(!IncreasingEligibilityCurrent()) return false;
       ZeroMemory(collection); SWV5S5_MvpSqliteAuthorityStore store;
       SWV5S5_MvpLeasePublicationAuthority lease_authority; SWV5_InstanceLease lease; SWV5S5_MvpAuthorityRow lease_row;
       SWV5S5_MvpManualProducerTrustProvisioner trust_authority; SWV5S5_ProducerTrustRecord trust;
@@ -802,10 +816,10 @@ public:
    }
 
    virtual bool PreparePermitSemantics(void)
-   { m_permit_prepared=m_bootstrapped && BuildPermit(); return m_permit_prepared; }
+   { m_permit_prepared=m_bootstrapped && IncreasingEligibilityCurrent() && BuildPermit(); return m_permit_prepared; }
    virtual bool CommitPermitPhysical(void)
    {
-      if(!m_permit_prepared || !m_permit_authority.Configure(m_path,m_namespace_digest) ||
+      if(!m_permit_prepared || !IncreasingEligibilityCurrent() || !m_permit_authority.Configure(m_path,m_namespace_digest) ||
          !m_permit_authority.StagePrepared(m_permit_result)) return false;
       SWV5S5_SubmissionAuthorityIndexEntry entries[]; SWV5S5_MvpSqliteAuthorityStore store;
       SWV5S5_MvpAuthorityRow row; bool found=false;
@@ -817,7 +831,7 @@ public:
    }
    virtual bool CollectAdmissionSameEvent(void)
    {
-      if(!m_permit_committed) return false;
+      if(!m_permit_committed || !IncreasingEligibilityCurrent()) return false;
       SWV5S5_AdmissionSnapshot snapshot; ZeroMemory(snapshot); SWV5S5_InitContractVersion(snapshot.contract_version);
       snapshot.canonical_policy_id=SWV5S5_CANONICAL_POLICY_ID;
       if(!CollectOne(snapshot.collect_v1) || !CollectOne(snapshot.collect_v2)) return false;
@@ -833,7 +847,10 @@ public:
    virtual bool ClaimPhysicalNow(bool &claim_granted_now)
    {
       claim_granted_now=false;
-      if(!m_admission_ready || !m_pin_durable || !RevalidateDurablePinAndVectorBeforeClaim()) return false;
+      SWV5S5_MvpSqliteAuthorityStore safety_store; SWV5S5_MvpHardKillActivationAuthority activation;
+      if(!m_admission_ready || !m_pin_durable || !safety_store.Open(m_path,m_namespace_digest) ||
+         !activation.ValidateAdmittedEligibility(safety_store,m_seed.context,m_admission_proof,m_seed.current_lease) ||
+         !RevalidateDurablePinAndVectorBeforeClaim()) return false;
       SWV5S5_MvpRiskContract risk;
       if(!SWV5S5_PrepareInvocationClaimTransition(m_seed.context,risk,m_claim_command,m_claim_transition) ||
          !m_claim_authority.Configure(m_path,m_namespace_digest) || !m_claim_authority.StagePrepared(m_claim_transition) ||

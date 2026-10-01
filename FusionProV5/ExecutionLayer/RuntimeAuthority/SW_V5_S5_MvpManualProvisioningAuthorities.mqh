@@ -7,6 +7,7 @@
 #include "SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
 #include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
 #include "SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh"
+#include "SW_V5_S5_MvpHardKillReleasePhysical.mqh"
 
 const string SWV5S5_MVP_DOMAIN_GENESIS="MVP_NAMESPACE_GENESIS";
 const string SWV5S5_MVP_DOMAIN_OPERATOR="MVP_OPERATOR_PROVISIONING_REFERENCE";
@@ -408,6 +409,24 @@ public:
       released_state.release_authority_reference.release_generation=authority_record.release_generation;
       string latch_payload,latch_digest;
       if(!StatePayload(released_state,latch_payload,latch_digest)) return false;
+      // Preserve the issuer's COMPLETE record plus the exact RELEASED DTO in
+      // an immutable, ownership-guarded physical row. An orphaned approval
+      // cannot enable execution: activation still requires exact CURRENT.
+      string complete_payload,complete_digest;
+      SWV5S5_MvpAuthorityRow complete_row; bool complete_found=false;
+      if(!SWV5S5_MvpCompleteReleaseValid(context,released_state,authority_record) ||
+         !SWV5S5_MvpReleaseBundle(released_state,authority_record,complete_payload,complete_digest) ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_RELEASE_COMPLETE,authority_record.authority_record_id,
+                         complete_row,complete_found)) return false;
+      if(complete_found)
+      {
+         if(complete_row.logical_revision!=1 || complete_row.state!=(int)SWV5_HARD_KILL_RELEASED ||
+            complete_row.payload!=complete_payload || complete_row.payload_digest!=complete_digest) return false;
+      }
+      else if(!m_store.CompareAndSetWithGuard(SWV5S5_MVP_DOMAIN_RELEASE_COMPLETE,authority_record.authority_record_id,
+         0,"","",0,1,(int)SWV5_HARD_KILL_RELEASED,complete_digest,complete_payload,context.clock_time,
+         SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,ownership.logical_revision,
+         ownership.store_revision,ownership.payload_digest,ownership.state,complete_row)) return false;
       return m_store.CompareAndSetWithGuard(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",
          latch.logical_revision,latch.store_revision,latch.payload_digest,latch.state,
          latch.logical_revision+1,(int)SWV5_HARD_KILL_RELEASED,latch_digest,latch_payload,context.clock_time,

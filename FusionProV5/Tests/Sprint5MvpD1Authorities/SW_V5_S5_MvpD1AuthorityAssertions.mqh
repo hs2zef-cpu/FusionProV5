@@ -395,10 +395,69 @@ struct SWV5S5_MvpD1PhysicalSeedStatus
    bool governance_round_trip;
 };
 
+// TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
+// Independent simulated read-only broker boundary; the real producer/issuer,
+// physical store, release validation and activation path are not mocked.
+class SWV5S5_MvpD1BootstrapObserver : public ISWV5S5MvpBootstrapBrokerObserver
+{
+private:
+   SWV5S5_MvpRuntimeProfileObservation m_profile;
+   datetime m_now;
+public:
+   SWV5S5_MvpD1BootstrapObserver(const SWV5S5_MvpRuntimeProfileObservation &profile,const datetime now)
+   { m_profile=profile; m_now=now; }
+   virtual bool Capture(const string symbol,SWV5S5_MvpBootstrapBrokerObservation &o)
+   {
+      ZeroMemory(o); if(symbol!=m_profile.symbol) return false;
+      o.profile=m_profile; o.observed_at=m_now; o.positions_query_succeeded=true;
+      o.active_orders_query_succeeded=true; o.enumeration_complete=true;
+      return SWV5S5_MvpBootstrapBrokerDigest(o,o.snapshot_digest);
+   }
+};
+
+bool SWV5S5_MvpD1PhysicalRelease(SWV5S5_MvpSqliteAuthorityStore &store,const string path,const string namespace_digest,
+                                 SWV5S5_MvpControlledDemoAuthoritySeed &seed,
+                                 const SWV5S5_MvpOperatorInvocation &op,
+                                 SWV5_HardKillState &released,SWV5_HardKillReleaseAuthorityRecord &authority,
+                                 SWV5S5_MvpAuthorityRow &released_row)
+{
+   SWV5S5_MvpHardKillActivationAuthority activation; SWV5_HardKillState active,pending;
+   if(!activation.LoadGenesisActive(store,seed.context,seed.current_trust.persistence_namespace,
+                                     seed.risk_observation.account_namespace,active)) return false;
+   SWV5S5_MvpD1ReadOnlyPlatform platform; SWV5S5_MvpRuntimeProfileObservation profile; datetime at=0;
+   if(!platform.CaptureProfile(SWV5S5_MVP_SYMBOL,profile,at) || at!=seed.context.clock_time) return false;
+   SWV5S5_MvpD1BootstrapObserver broker(profile,at); SWV5S5_MvpBootstrapZeroAuthorityProducer producer;
+   SWV5S5_MvpBootstrapZeroStateAuthority bootstrap; SWV5S5_MvpBootstrapZeroAuthorityStore bootstrap_store;
+   SWV5S5_MvpAuthorityRow ownership,bootstrap_row; bool found=false;
+   if(!store.ReadRow(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,ownership,found) || !found ||
+      !producer.Produce(seed.context,active.persistence_namespace,active.account_namespace,
+                        seed.current_lease,active,broker,store,bootstrap) ||
+      !bootstrap_store.Configure(path,namespace_digest) || !bootstrap_store.Persist(bootstrap,ownership,bootstrap_row)) return false;
+   SWV5S5_MvpHardKillRiskGovernanceIssuer issuer; SWV5_HardKillReleaseEvidence evidence;
+   SWV5S5_MvpManualSafetyReleaseProvisioner release; SWV5S5_MvpRiskContract risk; SWV5S5_MvpAuthorityRow pending_row;
+   if(!issuer.Issue(op,seed.context,active,bootstrap,evidence,authority) ||
+      !release.Configure(path,namespace_digest) ||
+      !release.StageReleasePending(op,seed.context,active,evidence,pending,pending_row)) return false;
+   string pending_payload,pending_digest,issuer_record,durable_record;
+   SWV5S5_MvpAuthorityRow pending_readback;
+   if(!SWV5S5_CanonicalHardKillState("hard_kill",pending,pending_payload) ||
+      !SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL,pending_payload,pending_digest) ||
+      !store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",pending_readback,found) || !found ||
+      pending_readback.state!=(int)SWV5_HARD_KILL_RELEASE_PENDING || pending_readback.payload!=pending_payload ||
+      pending_readback.payload_digest!=pending_digest || pending_readback.store_revision!=pending_row.store_revision ||
+      !SWV5S5_MvpCodecEncode_SWV5_HardKillReleaseAuthorityRecord(authority,issuer_record) ||
+      !release.PersistApprovedRelease(op,seed.context,pending,evidence,authority,seed.current_lease,
+                                     bootstrap,risk,released_row)) return false;
+   SWV5S5_MvpAuthorityRow complete;
+   return store.ReadRow(SWV5S5_MVP_DOMAIN_RELEASE_COMPLETE,authority.authority_record_id,complete,found) && found &&
+      SWV5S5_MvpDecodeReleaseBundle(complete.payload,released,authority) &&
+      SWV5S5_MvpCodecEncode_SWV5_HardKillReleaseAuthorityRecord(authority,durable_record) && issuer_record==durable_record;
+}
+
 bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_digest,
                                        const SWV5_PersistenceNamespace &scope,
                                        SWV5S5_MvpControlledDemoAuthoritySeed &seed,
-                                       SWV5S5_MvpD1PhysicalSeedStatus &status)
+                                       SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true)
 {
    ZeroMemory(status);
    FileDelete(path,FILE_COMMON); FileDelete(path+"-wal",FILE_COMMON); FileDelete(path+"-shm",FILE_COMMON);
@@ -456,22 +515,17 @@ bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_
       persisted_operator==operator_invocation.operator_id &&
       persisted_authentication==operator_invocation.authentication_reference;
    if(!status.trust_round_trip) { Print("MVP_D1_E2E_SETUP_FAIL|TRUST_READBACK"); return false; }
-   SWV5S5_MvpAuthorityRow current_hard_kill; bool found=false; string payload,digest;
-   if(!store.Open(path,namespace_digest) ||
-      !store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",current_hard_kill,found) || !found ||
-      !SWV5S5_CanonicalHardKillState("hard_kill",seed.hard_kill_state,payload) ||
-      !SWV5S5_DomainDigest(SWV5S5_MVP_DOMAIN_HARD_KILL,payload,digest) ||
-      !store.CompareAndSet(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",current_hard_kill.logical_revision,
-         current_hard_kill.store_revision,current_hard_kill.payload_digest,current_hard_kill.state,
-          current_hard_kill.logical_revision+1,(int)SWV5_HARD_KILL_INACTIVE,digest,payload,
-          seed.context.clock_time,committed))
-   { Print("MVP_D1_E2E_SETUP_FAIL|HARD_KILL|error=",GetLastError()); return false; }
-   SWV5S5_MvpAuthorityRow hard_kill_readback; bool hard_kill_found=false;
-   status.hard_kill_valid=store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",
-      hard_kill_readback,hard_kill_found) && hard_kill_found &&
-      hard_kill_readback.state==(int)SWV5_HARD_KILL_INACTIVE &&
-      hard_kill_readback.payload==payload && hard_kill_readback.payload_digest==digest;
+   SWV5_HardKillState released; SWV5_HardKillReleaseAuthorityRecord authority;
+   SWV5S5_MvpAuthorityRow released_row; SWV5S5_MvpHardKillActivationAuthority activation;
+   status.hard_kill_valid=store.Open(path,namespace_digest) &&
+      SWV5S5_MvpD1PhysicalRelease(store,path,namespace_digest,seed,operator_invocation,released,authority,released_row);
+   if(!status.hard_kill_valid) return false;
+   if(!activate) { seed.hard_kill_state=released; seed.risk_observation.hard_kill_state=released; return true; }
+   status.hard_kill_valid=
+      activation.TryActivateInactiveAfterValidatedRelease(store,seed.context,operator_invocation,true,
+         released,seed.current_lease,released_row,seed.hard_kill_state,committed);
    if(!status.hard_kill_valid) { Print("MVP_D1_E2E_SETUP_FAIL|HARD_KILL_READBACK"); return false; }
+   seed.risk_observation.hard_kill_state=seed.hard_kill_state;
    store.Close();
    SWV5S5_MvpSignalIngressAdapter producer_sequence; ulong producer_high=0;
    SWV5S5_MvpProducerSequenceEntry producer_entries[];
@@ -523,7 +577,7 @@ bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_
 }
 
 bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthoritySeed &seed,
-                               string &namespace_digest,SWV5S5_MvpD1PhysicalSeedStatus &status)
+                               string &namespace_digest,SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true)
 {
    ZeroMemory(seed); SWV5S5_MvpD1MakeContext(seed.context);
    SWV5S5_MvpInitProductionVersion(seed.context.expected_version);
@@ -582,7 +636,7 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    seed.risk_observation.projected.monetary_basis.account_currency=SWV5S5_MVP_ACCOUNT_CURRENCY;
    seed.risk_observation.projected.monetary_basis.conversion_source=SWV5S5_MVP_CONVERSION_SOURCE;
    seed.risk_observation.projected.monetary_basis.valuation_at=seed.context.clock_time;
-   SWV5_TestMakeHardKill(seed.hard_kill_state,SWV5_HARD_KILL_INACTIVE);
+   SWV5_TestMakeHardKill(seed.hard_kill_state,SWV5_HARD_KILL_ACTIVE);
    seed.hard_kill_state.persistence_namespace=scope;
    seed.hard_kill_state.account_namespace=account_namespace;
    seed.hard_kill_state.latch_id="MVP-D1-HARD-KILL"; seed.hard_kill_state.latch_generation=1;
@@ -608,7 +662,7 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    seed.adapter_environment.volume_min=0.01; seed.adapter_environment.volume_max=100.0;
    seed.adapter_environment.volume_step=0.01; seed.adapter_environment.runtime_magic=SWV5_RUNTIME_STRATEGY_MAGIC;
    seed.filling_mode=1; seed.comment_metadata="FUSION-V5-MVP-D1-OFFLINE";
-   return SWV5S5_MvpD1ProvisionPhysicalSeed(path,namespace_digest,scope,seed,status);
+   return SWV5S5_MvpD1ProvisionPhysicalSeed(path,namespace_digest,scope,seed,status,activate);
 }
 
 void SWV5S5_MvpD1MakeInvocation(const string path,const string namespace_digest,

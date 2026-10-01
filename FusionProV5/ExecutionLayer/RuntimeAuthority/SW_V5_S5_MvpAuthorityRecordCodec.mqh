@@ -2688,6 +2688,83 @@ bool SWV5S5_MvpCodecDecode_SWV5S5_SubmissionAuthorityRecord(const string text,SW
    return reader.AtEnd();
 }
 
+bool SWV5S5_MvpCodecEncode_SWV5_HardKillReleaseAuthorityRecord(const SWV5_HardKillReleaseAuthorityRecord &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_PersistenceNamespace(v.persistence_namespace,nested) ||
+      !SWV5S5_CanonicalNested("persistence_namespace",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_AccountRiskNamespace(v.account_namespace,nested) ||
+      !SWV5S5_CanonicalNested("account_namespace",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("latch_id",v.latch_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("latch_generation",v.latch_generation,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("release_id",v.release_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_generation",v.release_generation,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_OperatorIdentity(v.operator_identity,nested) ||
+      !SWV5S5_CanonicalNested("operator_identity",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("approving_component",v.approving_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("approval_policy_id",v.approval_policy_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("approval_sequence",v.approval_sequence,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_TypedReconciliationEvidence(v.broker_evidence_reference,nested) ||
+      !SWV5S5_CanonicalNested("broker_evidence_reference",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_TypedReconciliationEvidence(v.persistence_evidence_reference,nested) ||
+      !SWV5S5_CanonicalNested("persistence_evidence_reference",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_ExposureReductionEvidence(v.exposure_evidence_reference,nested) ||
+      !SWV5S5_CanonicalNested("exposure_evidence_reference",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("approved_at",v.approved_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("released_at",v.released_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("expires_at",v.expires_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("release_record_sequence",v.release_record_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authority_record_id",v.authority_record_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authority_record_digest",v.authority_record_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("issuing_component",v.issuing_component,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("authority_source",v.authority_source,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5_HardKillReleaseAuthorityRecord(const string text,SWV5_HardKillReleaseAuthorityRecord &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("persistence_namespace",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_PersistenceNamespace(nested,v.persistence_namespace)) return false;
+   if(!reader.ReadNested("account_namespace",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_AccountRiskNamespace(nested,v.account_namespace)) return false;
+   if(!reader.ReadString("latch_id",v.latch_id)) return false;
+   if(!reader.ReadUnsigned("latch_generation",v.latch_generation)) return false;
+   if(!reader.ReadString("release_id",v.release_id)) return false;
+   if(!reader.ReadUnsigned("release_generation",v.release_generation)) return false;
+   if(!reader.ReadNested("operator_identity",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_OperatorIdentity(nested,v.operator_identity)) return false;
+   if(!reader.ReadInteger("approving_component",number) || number<0 || number>7) return false;
+   v.approving_component=(SWV5_ComponentAuthority)number;
+   if(!reader.ReadString("approval_policy_id",v.approval_policy_id)) return false;
+   if(!reader.ReadUnsigned("approval_sequence",v.approval_sequence)) return false;
+   if(!reader.ReadNested("broker_evidence_reference",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_TypedReconciliationEvidence(nested,v.broker_evidence_reference)) return false;
+   if(!reader.ReadNested("persistence_evidence_reference",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_TypedReconciliationEvidence(nested,v.persistence_evidence_reference)) return false;
+   if(!reader.ReadNested("exposure_evidence_reference",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ExposureReductionEvidence(nested,v.exposure_evidence_reference)) return false;
+   if(!reader.ReadInteger("approved_at",number)) return false;
+   v.approved_at=(datetime)number;
+   if(!reader.ReadInteger("released_at",number)) return false;
+   v.released_at=(datetime)number;
+   if(!reader.ReadInteger("expires_at",number)) return false;
+   v.expires_at=(datetime)number;
+   if(!reader.ReadUnsigned("release_record_sequence",v.release_record_sequence)) return false;
+   if(!reader.ReadString("authority_record_id",v.authority_record_id)) return false;
+   if(!reader.ReadString("authority_record_digest",v.authority_record_digest)) return false;
+   if(!reader.ReadInteger("issuing_component",number) || number<0 || number>7) return false;
+   v.issuing_component=(SWV5_ComponentAuthority)number;
+   if(!reader.ReadInteger("authority_source",number) || number<0 || number>9) return false;
+   v.authority_source=(SWV5_AuthoritySource)number;
+   return reader.AtEnd();
+}
+
 bool SWV5S5_MvpEncodeProducerTrustPhysical(const SWV5S5_ProducerTrustRecord &record,
                                                 const SWV5S5_ProducerTrustAnchor &anchor,
                                                 const string operator_id,

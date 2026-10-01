@@ -515,13 +515,19 @@ public:
                                 const int failure_point)
    {
       if(failure_point!=1 && failure_point!=2) return false;
+      SWV5S5_MvpAuthorityRow first_before,second_before;
+      bool first_existed=false,second_existed=false;
+      if(!ReadRowInternal(first.domain_key,first.record_key,first_before,first_existed) ||
+         !ReadRowInternal(second.domain_key,second.record_key,second_before,second_existed)) return false;
       SWV5S5_MvpAuthorityRow first_committed,second_committed;
       if(CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed,
                                    failure_point)) return false;
       SWV5S5_MvpAuthorityRow first_after,second_after,guard_after;
       bool first_found=false,second_found=false,guard_found=false;
-      return ReadRowInternal(first.domain_key,first.record_key,first_after,first_found) && !first_found &&
-         ReadRowInternal(second.domain_key,second.record_key,second_after,second_found) && !second_found &&
+      return ReadRowInternal(first.domain_key,first.record_key,first_after,first_found) && first_found==first_existed &&
+         (!first_found || RowEqual(first_after,first_before)) &&
+         ReadRowInternal(second.domain_key,second.record_key,second_after,second_found) && second_found==second_existed &&
+         (!second_found || RowEqual(second_after,second_before)) &&
          ReadRowInternal(guard_expected.domain_key,guard_expected.record_key,guard_after,guard_found) &&
          guard_found && RowEqual(guard_after,guard_expected);
    }

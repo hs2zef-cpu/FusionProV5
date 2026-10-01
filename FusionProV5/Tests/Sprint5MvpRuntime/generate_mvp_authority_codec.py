@@ -2,7 +2,7 @@
 """Generate the narrow, field-explicit MVP authority-record codec.
 
 The generated MQL has no reflection or generic object serialization.  This
-build-time script reads the two authorized root DTOs and emits one strict
+build-time script reads the authorized root DTOs and emits one strict
 encoder/decoder function per transitively contained struct.
 """
 
@@ -28,6 +28,7 @@ ROOTS = (
     "SWV5S5_ProducerTrustAnchor",
     "SWV5S5_ProducerTrustRecord",
     "SWV5S5_SubmissionAuthorityRecord",
+    "SWV5_HardKillReleaseAuthorityRecord",
 )
 PRIMITIVES = {"string", "int", "uint", "ulong", "long", "double", "bool", "datetime"}
 
