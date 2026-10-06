@@ -298,6 +298,11 @@ public:
       snapshot.completeness_claimed=false; snapshot.visibility_watermark_claimed=false;
       if(m_positive)
       {
+         ArrayResize(snapshot.positions,1); ZeroMemory(snapshot.positions[0]);
+         snapshot.positions[0].read_success=true; snapshot.positions[0].ticket=9001;
+         snapshot.positions[0].position_identifier=9001; snapshot.positions[0].symbol=binding.profile.symbol;
+         snapshot.positions[0].direction=binding.direction; snapshot.positions[0].volume=binding.requested_volume;
+         snapshot.positions[0].magic=SWV5_RUNTIME_STRATEGY_MAGIC; snapshot.positions_reported_total=1;
          ArrayResize(snapshot.history_orders,1); ZeroMemory(snapshot.history_orders[0]);
          snapshot.history_orders[0].read_success=true; snapshot.history_orders[0].ticket=7001;
          snapshot.history_orders[0].position_identifier=9001; snapshot.history_orders[0].symbol=binding.profile.symbol;
@@ -457,7 +462,7 @@ bool SWV5S5_MvpD1PhysicalRelease(SWV5S5_MvpSqliteAuthorityStore &store,const str
 bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_digest,
                                        const SWV5_PersistenceNamespace &scope,
                                        SWV5S5_MvpControlledDemoAuthoritySeed &seed,
-                                       SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true)
+                                       SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true,const bool initialize_basket=true)
 {
    ZeroMemory(status);
    FileDelete(path,FILE_COMMON); FileDelete(path+"-wal",FILE_COMMON); FileDelete(path+"-shm",FILE_COMMON);
@@ -573,11 +578,21 @@ bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_
       governance.Load(seed.context.clock_time,profile,loaded,loaded_row,governance_found) && governance_found &&
       loaded.bundle_digest==provisioned.bundle_digest;
    if(!status.governance_round_trip) { Print("MVP_D1_E2E_SETUP_FAIL|GOVERNANCE"); return false; }
+   if(initialize_basket)
+   {
+      SWV5S5_MvpD1ReadOnlyPlatform platform; SWV5S5_MvpRuntimeProfileObservation observed; datetime observed_at=0;
+      SWV5S5_MvpBasketLifecycleAuthority basket_owner; SWV5_BasketAggregate basket; SWV5S5_MvpAuthorityRow basket_row;
+      if(!platform.CaptureProfile(SWV5S5_MVP_SYMBOL,observed,observed_at)) return false;
+      SWV5S5_MvpD1BootstrapObserver broker(observed,observed_at);
+      if(!store.Open(path,namespace_digest) || !basket_owner.TryCreateInitialFlatBasket(store,seed.context,scope,
+         seed.current_lease,broker,basket,basket_row)) { Print("MVP_D1_E2E_SETUP_FAIL|CANONICAL_BASKET|",basket_owner.LastFailure()); return false; }
+      seed.risk_observation.basket.lifecycle=basket.lifecycle;
+   }
    return true;
 }
 
 bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthoritySeed &seed,
-                               string &namespace_digest,SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true)
+                               string &namespace_digest,SWV5S5_MvpD1PhysicalSeedStatus &status,const bool activate=true,const bool initialize_basket=true)
 {
    ZeroMemory(seed); SWV5S5_MvpD1MakeContext(seed.context);
    SWV5S5_MvpInitProductionVersion(seed.context.expected_version);
@@ -619,13 +634,6 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    seed.risk_observation.exposure.complete=true;
    SWV5S5_MvpInitProductionVersion(seed.risk_observation.basket.contract_version);
    seed.risk_observation.basket.account_namespace=account_namespace;
-   SWV5_TestMakeLifecycle(seed.risk_observation.basket.lifecycle,SWV5_BASKET_IDLE);
-   seed.risk_observation.basket.lifecycle.basket_id=scope.basket_id;
-   seed.risk_observation.basket.lifecycle.ownership_fence=seed.current_lease.fence;
-   seed.risk_observation.basket.lifecycle.state_version=1;
-   seed.risk_observation.basket.lifecycle.cumulative_recovery_attempts=0;
-   seed.risk_observation.basket.lifecycle.current_recovery_layer=0;
-   seed.risk_observation.basket.lifecycle.state_entered_at=seed.context.clock_time-100;
    seed.risk_observation.basket.realized_net=0.0; seed.risk_observation.basket.unrealized_net=0.0;
    seed.risk_observation.basket.maximum_adverse_net=0.0;
    seed.risk_observation.basket.observed_at=seed.context.clock_time;
@@ -662,7 +670,7 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    seed.adapter_environment.volume_min=0.01; seed.adapter_environment.volume_max=100.0;
    seed.adapter_environment.volume_step=0.01; seed.adapter_environment.runtime_magic=SWV5_RUNTIME_STRATEGY_MAGIC;
    seed.filling_mode=1; seed.comment_metadata="FUSION-V5-MVP-D1-OFFLINE";
-   return SWV5S5_MvpD1ProvisionPhysicalSeed(path,namespace_digest,scope,seed,status,activate);
+   return SWV5S5_MvpD1ProvisionPhysicalSeed(path,namespace_digest,scope,seed,status,activate,initialize_basket);
 }
 
 void SWV5S5_MvpD1MakeInvocation(const string path,const string namespace_digest,

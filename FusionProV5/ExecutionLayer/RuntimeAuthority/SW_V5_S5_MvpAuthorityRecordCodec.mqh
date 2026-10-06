@@ -4,6 +4,7 @@
 #define SW_V5_S5_MVP_AUTHORITY_RECORD_CODEC_MQH
 
 #include "SW_V5_S5_MvpDemoAuthorityProviders.mqh"
+#include "../BrokerAdapter/SW_V5_S5_F_BrokerAdapterTypes.mqh"
 
 const string SWV5S5_MVP_TRUST_PHYSICAL_FORMAT="SWV5-MVP-TRUST-PHYSICAL-V1";
 const string SWV5S5_MVP_SUBMISSION_PHYSICAL_FORMAT="SWV5-MVP-SUBMISSION-PHYSICAL-V1";
@@ -2762,6 +2763,390 @@ bool SWV5S5_MvpCodecDecode_SWV5_HardKillReleaseAuthorityRecord(const string text
    v.issuing_component=(SWV5_ComponentAuthority)number;
    if(!reader.ReadInteger("authority_source",number) || number<0 || number>9) return false;
    v.authority_source=(SWV5_AuthoritySource)number;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5_BasketAggregate(const SWV5_BasketAggregate &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_PersistenceNamespace(v.persistence_namespace,nested) ||
+      !SWV5S5_CanonicalNested("persistence_namespace",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("account_mode",v.account_mode,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_BasketLifecycleSnapshot(v.lifecycle,nested) ||
+      !SWV5S5_CanonicalNested("lifecycle",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("initial_volume",v.initial_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("aggregate_closed_volume",v.aggregate_closed_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("close_verification",v.close_verification,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("opened_at",v.opened_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("updated_at",v.updated_at,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5_BasketAggregate(const string text,SWV5_BasketAggregate &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("persistence_namespace",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_PersistenceNamespace(nested,v.persistence_namespace)) return false;
+   if(!reader.ReadInteger("account_mode",number) || number<0 || number>3) return false;
+   v.account_mode=(SWV5_AccountPositionMode)number;
+   if(!reader.ReadNested("lifecycle",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_BasketLifecycleSnapshot(nested,v.lifecycle)) return false;
+   if(!reader.ReadDouble("initial_volume",v.initial_volume)) return false;
+   if(!reader.ReadDouble("aggregate_closed_volume",v.aggregate_closed_volume)) return false;
+   if(!reader.ReadInteger("close_verification",number) || number<0 || number>5) return false;
+   v.close_verification=(SWV5_CloseVerificationState)number;
+   if(!reader.ReadInteger("opened_at",number)) return false;
+   v.opened_at=(datetime)number;
+   if(!reader.ReadInteger("updated_at",number)) return false;
+   v.updated_at=(datetime)number;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5_RecoveryTransitionEvidence(const SWV5_RecoveryTransitionEvidence &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_ExecutionRequestIdentity(v.request_identity,nested) ||
+      !SWV5S5_CanonicalNested("request_identity",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("prior_cumulative_recovery_attempts",v.prior_cumulative_recovery_attempts,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("proposed_cumulative_recovery_attempts",v.proposed_cumulative_recovery_attempts,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("prior_recovery_layer",v.prior_recovery_layer,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("proposed_recovery_layer",v.proposed_recovery_layer,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authorization_id",v.authorization_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("evidence_identity",v.evidence_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("evidence_sequence",v.evidence_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("evidenced_at",v.evidenced_at,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5_RecoveryTransitionEvidence(const string text,SWV5_RecoveryTransitionEvidence &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("request_identity",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ExecutionRequestIdentity(nested,v.request_identity)) return false;
+   if(!reader.ReadUnsigned("prior_cumulative_recovery_attempts",v.prior_cumulative_recovery_attempts)) return false;
+   if(!reader.ReadUnsigned("proposed_cumulative_recovery_attempts",v.proposed_cumulative_recovery_attempts)) return false;
+   if(!reader.ReadUnsigned("prior_recovery_layer",v.prior_recovery_layer)) return false;
+   if(!reader.ReadUnsigned("proposed_recovery_layer",v.proposed_recovery_layer)) return false;
+   if(!reader.ReadString("authorization_id",v.authorization_id)) return false;
+   if(!reader.ReadString("evidence_identity",v.evidence_identity)) return false;
+   if(!reader.ReadUnsigned("evidence_sequence",v.evidence_sequence)) return false;
+   if(!reader.ReadInteger("evidenced_at",number)) return false;
+   v.evidenced_at=(datetime)number;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5_BasketTransitionRequest(const SWV5_BasketTransitionRequest &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_BasketID(v.basket_id,nested) ||
+      !SWV5S5_CanonicalNested("basket_id",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_OwnershipFence(v.ownership_fence,nested) ||
+      !SWV5S5_CanonicalNested("ownership_fence",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("from_state",v.from_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("to_state",v.to_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("cause",v.cause,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_state_version",v.expected_state_version,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_ExecutionCorrelation(v.correlation,nested) ||
+      !SWV5S5_CanonicalNested("correlation",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_RecoveryTransitionEvidence(v.recovery_evidence,nested) ||
+      !SWV5S5_CanonicalNested("recovery_evidence",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("evidence_time",v.evidence_time,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractDecision(v.risk_decision,nested) ||
+      !SWV5S5_CanonicalNested("risk_decision",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("reconciliation_state",v.reconciliation_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("residual_volume",v.residual_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("live_position_count",v.live_position_count,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("live_order_count",v.live_order_count,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("pending_request_count",v.pending_request_count,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_AuthoritativeQuerySet(v.broker_queries,nested) ||
+      !SWV5S5_CanonicalNested("broker_queries",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("confirmation_authority",v.confirmation_authority,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5_BasketTransitionRequest(const string text,SWV5_BasketTransitionRequest &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("basket_id",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_BasketID(nested,v.basket_id)) return false;
+   if(!reader.ReadNested("ownership_fence",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_OwnershipFence(nested,v.ownership_fence)) return false;
+   if(!reader.ReadInteger("from_state",number) || number<0 || number>6) return false;
+   v.from_state=(SWV5_BasketState)number;
+   if(!reader.ReadInteger("to_state",number) || number<0 || number>6) return false;
+   v.to_state=(SWV5_BasketState)number;
+   if(!reader.ReadInteger("cause",number) || number<0 || number>16) return false;
+   v.cause=(SWV5_BasketTransitionCause)number;
+   if(!reader.ReadUnsigned("expected_state_version",v.expected_state_version)) return false;
+   if(!reader.ReadNested("correlation",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ExecutionCorrelation(nested,v.correlation)) return false;
+   if(!reader.ReadNested("recovery_evidence",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_RecoveryTransitionEvidence(nested,v.recovery_evidence)) return false;
+   if(!reader.ReadInteger("evidence_time",number)) return false;
+   v.evidence_time=(datetime)number;
+   if(!reader.ReadNested("risk_decision",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractDecision(nested,v.risk_decision)) return false;
+   if(!reader.ReadInteger("reconciliation_state",number) || number<0 || number>4) return false;
+   v.reconciliation_state=(SWV5_ReconciliationState)number;
+   if(!reader.ReadDouble("residual_volume",v.residual_volume)) return false;
+   if(!reader.ReadUnsigned("live_position_count",v.live_position_count)) return false;
+   if(!reader.ReadUnsigned("live_order_count",v.live_order_count)) return false;
+   if(!reader.ReadUnsigned("pending_request_count",v.pending_request_count)) return false;
+   if(!reader.ReadNested("broker_queries",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_AuthoritativeQuerySet(nested,v.broker_queries)) return false;
+   if(!reader.ReadInteger("confirmation_authority",number) || number<0 || number>9) return false;
+   v.confirmation_authority=(SWV5_AuthoritySource)number;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5S5_F_ProfileScope(const SWV5S5_F_ProfileScope &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_PersistenceNamespace(v.persistence_namespace,nested) ||
+      !SWV5S5_CanonicalNested("persistence_namespace",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_AccountRiskNamespace(v.account_namespace,nested) ||
+      !SWV5S5_CanonicalNested("account_namespace",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("broker_identity",v.broker_identity,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("server",v.server,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("account_login",v.account_login,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("symbol",v.symbol,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("terminal_build",v.terminal_build,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("mql_build",v.mql_build,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("profile_id",v.profile_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("profile_digest",v.profile_digest,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5S5_F_ProfileScope(const string text,SWV5S5_F_ProfileScope &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("persistence_namespace",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_PersistenceNamespace(nested,v.persistence_namespace)) return false;
+   if(!reader.ReadNested("account_namespace",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_AccountRiskNamespace(nested,v.account_namespace)) return false;
+   if(!reader.ReadString("broker_identity",v.broker_identity)) return false;
+   if(!reader.ReadString("server",v.server)) return false;
+   if(!reader.ReadInteger("account_login",v.account_login)) return false;
+   if(!reader.ReadString("symbol",v.symbol)) return false;
+   if(!reader.ReadInteger("terminal_build",number) || number<-2147483648 || number>2147483647) return false;
+   v.terminal_build=(int)number;
+   if(!reader.ReadInteger("mql_build",number) || number<-2147483648 || number>2147483647) return false;
+   v.mql_build=(int)number;
+   if(!reader.ReadString("profile_id",v.profile_id)) return false;
+   if(!reader.ReadString("profile_digest",v.profile_digest)) return false;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationBinding(const SWV5S5_F_ReconciliationBinding &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5S5_F_ProfileScope(v.profile,nested) ||
+      !SWV5S5_CanonicalNested("profile",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_ExecutionRequestIdentity(v.request_identity,nested) ||
+      !SWV5S5_CanonicalNested("request_identity",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("submission_state",v.submission_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("pending_request_state",v.pending_request_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("pending_request_phase",v.pending_request_phase,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("permit_id",v.permit_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("invocation_claim_id",v.invocation_claim_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("admission_snapshot_digest",v.admission_snapshot_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("claim_record_digest",v.claim_record_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_correlation_policy_id",v.pinned_correlation_policy_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("pinned_correlation_policy_version",v.pinned_correlation_policy_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_correlation_policy_digest",v.pinned_correlation_policy_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_negative_policy_id",v.pinned_negative_policy_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("pinned_negative_policy_version",v.pinned_negative_policy_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_negative_policy_digest",v.pinned_negative_policy_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_capability_proof_id",v.pinned_capability_proof_id,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("pinned_capability_proof_version",v.pinned_capability_proof_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("pinned_capability_proof_digest",v.pinned_capability_proof_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("claimed_at",v.claimed_at,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("claim_clock_sequence",v.claim_clock_sequence,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_OwnershipFence(v.claim_ownership_fence,nested) ||
+      !SWV5S5_CanonicalNested("claim_ownership_fence",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_InstanceLease(v.current_reconciliation_lease,nested) ||
+      !SWV5S5_CanonicalNested("current_reconciliation_lease",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("expected_store_revision",v.expected_store_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_reconciliation_revision",v.expected_reconciliation_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_broker_query_high_watermark",v.expected_broker_query_high_watermark,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_execution_query_high_watermark",v.expected_execution_query_high_watermark,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("persisted_reconciliation_vector_digest",v.persisted_reconciliation_vector_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("checkpoint_digest",v.checkpoint_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("request_set_digest",v.request_set_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("execution_pending_summary_digest",v.execution_pending_summary_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("ordered_request_evidence_digest",v.ordered_request_evidence_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("hard_kill_state_digest",v.hard_kill_state_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("symbol_specification_sequence",v.symbol_specification_sequence,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_basket_version",v.expected_basket_version,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("direction",v.direction,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("requested_volume",v.requested_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("persisted_confirmed_volume",v.persisted_confirmed_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("persisted_residual_volume",v.persisted_residual_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("persisted_terminal_evidence_digest",v.persisted_terminal_evidence_digest,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationBinding(const string text,SWV5S5_F_ReconciliationBinding &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("profile",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5S5_F_ProfileScope(nested,v.profile)) return false;
+   if(!reader.ReadNested("request_identity",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ExecutionRequestIdentity(nested,v.request_identity)) return false;
+   if(!reader.ReadInteger("submission_state",number) || number<0 || number>7) return false;
+   v.submission_state=(SWV5S5_SubmissionAuthorityState)number;
+   if(!reader.ReadInteger("pending_request_state",number) || number<0 || number>10) return false;
+   v.pending_request_state=(SWV5_PendingRequestState)number;
+   if(!reader.ReadInteger("pending_request_phase",number) || number<0 || number>7) return false;
+   v.pending_request_phase=(SWV5_ExecutionLifecyclePhase)number;
+   if(!reader.ReadString("permit_id",v.permit_id)) return false;
+   if(!reader.ReadString("invocation_claim_id",v.invocation_claim_id)) return false;
+   if(!reader.ReadString("admission_snapshot_digest",v.admission_snapshot_digest)) return false;
+   if(!reader.ReadString("claim_record_digest",v.claim_record_digest)) return false;
+   if(!reader.ReadString("pinned_correlation_policy_id",v.pinned_correlation_policy_id)) return false;
+   if(!reader.ReadUnsigned("pinned_correlation_policy_version",v.pinned_correlation_policy_version)) return false;
+   if(!reader.ReadString("pinned_correlation_policy_digest",v.pinned_correlation_policy_digest)) return false;
+   if(!reader.ReadString("pinned_negative_policy_id",v.pinned_negative_policy_id)) return false;
+   if(!reader.ReadUnsigned("pinned_negative_policy_version",v.pinned_negative_policy_version)) return false;
+   if(!reader.ReadString("pinned_negative_policy_digest",v.pinned_negative_policy_digest)) return false;
+   if(!reader.ReadString("pinned_capability_proof_id",v.pinned_capability_proof_id)) return false;
+   if(!reader.ReadUnsigned("pinned_capability_proof_version",v.pinned_capability_proof_version)) return false;
+   if(!reader.ReadString("pinned_capability_proof_digest",v.pinned_capability_proof_digest)) return false;
+   if(!reader.ReadInteger("claimed_at",number)) return false;
+   v.claimed_at=(datetime)number;
+   if(!reader.ReadUnsigned("claim_clock_sequence",v.claim_clock_sequence)) return false;
+   if(!reader.ReadNested("claim_ownership_fence",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_OwnershipFence(nested,v.claim_ownership_fence)) return false;
+   if(!reader.ReadNested("current_reconciliation_lease",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_InstanceLease(nested,v.current_reconciliation_lease)) return false;
+   if(!reader.ReadString("expected_store_revision",v.expected_store_revision)) return false;
+   if(!reader.ReadUnsigned("expected_reconciliation_revision",v.expected_reconciliation_revision)) return false;
+   if(!reader.ReadUnsigned("expected_broker_query_high_watermark",v.expected_broker_query_high_watermark)) return false;
+   if(!reader.ReadUnsigned("expected_execution_query_high_watermark",v.expected_execution_query_high_watermark)) return false;
+   if(!reader.ReadString("persisted_reconciliation_vector_digest",v.persisted_reconciliation_vector_digest)) return false;
+   if(!reader.ReadString("checkpoint_digest",v.checkpoint_digest)) return false;
+   if(!reader.ReadString("request_set_digest",v.request_set_digest)) return false;
+   if(!reader.ReadString("execution_pending_summary_digest",v.execution_pending_summary_digest)) return false;
+   if(!reader.ReadString("ordered_request_evidence_digest",v.ordered_request_evidence_digest)) return false;
+   if(!reader.ReadString("hard_kill_state_digest",v.hard_kill_state_digest)) return false;
+   if(!reader.ReadUnsigned("symbol_specification_sequence",v.symbol_specification_sequence)) return false;
+   if(!reader.ReadUnsigned("expected_basket_version",v.expected_basket_version)) return false;
+   if(!reader.ReadInteger("direction",number) || number<-2147483648 || number>2147483647) return false;
+   v.direction=(int)number;
+   if(!reader.ReadDouble("requested_volume",v.requested_volume)) return false;
+   if(!reader.ReadDouble("persisted_confirmed_volume",v.persisted_confirmed_volume)) return false;
+   if(!reader.ReadDouble("persisted_residual_volume",v.persisted_residual_volume)) return false;
+   if(!reader.ReadString("persisted_terminal_evidence_digest",v.persisted_terminal_evidence_digest)) return false;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationResult(const SWV5S5_F_ReconciliationResult &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("state",v.state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("disposition",v.disposition,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalInt("proposed_submission_state",v.proposed_submission_state,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("authoritative_positive",v.authoritative_positive,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("authoritative_negative",v.authoritative_negative,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("retry_allowed",v.retry_allowed,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("requires_new_admission_for_any_future_attempt",v.requires_new_admission_for_any_future_attempt,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("cumulative_confirmed_volume",v.cumulative_confirmed_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalDouble("residual_volume",v.residual_volume,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("residual_is_submission_authority",v.residual_is_submission_authority,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalBool("requires_new_request_identity_for_residual",v.requires_new_request_identity_for_residual,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("authoritative_evidence_digest",v.authoritative_evidence_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("result_digest",v.result_digest,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("reason_code",v.reason_code,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationResult(const string text,SWV5S5_F_ReconciliationResult &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadInteger("state",number) || number<0 || number>5) return false;
+   v.state=(SWV5S5_F_ReconciliationState)number;
+   if(!reader.ReadInteger("disposition",number) || number<0 || number>7) return false;
+   v.disposition=(SWV5S5_F_ReconciliationDisposition)number;
+   if(!reader.ReadInteger("proposed_submission_state",number) || number<0 || number>7) return false;
+   v.proposed_submission_state=(SWV5S5_SubmissionAuthorityState)number;
+   if(!reader.ReadBool("authoritative_positive",v.authoritative_positive)) return false;
+   if(!reader.ReadBool("authoritative_negative",v.authoritative_negative)) return false;
+   if(!reader.ReadBool("retry_allowed",v.retry_allowed)) return false;
+   if(!reader.ReadBool("requires_new_admission_for_any_future_attempt",v.requires_new_admission_for_any_future_attempt)) return false;
+   if(!reader.ReadDouble("cumulative_confirmed_volume",v.cumulative_confirmed_volume)) return false;
+   if(!reader.ReadDouble("residual_volume",v.residual_volume)) return false;
+   if(!reader.ReadBool("residual_is_submission_authority",v.residual_is_submission_authority)) return false;
+   if(!reader.ReadBool("requires_new_request_identity_for_residual",v.requires_new_request_identity_for_residual)) return false;
+   if(!reader.ReadString("authoritative_evidence_digest",v.authoritative_evidence_digest)) return false;
+   if(!reader.ReadString("result_digest",v.result_digest)) return false;
+   if(!reader.ReadString("reason_code",v.reason_code)) return false;
+   return reader.AtEnd();
+}
+
+bool SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationPublication(const SWV5S5_F_ReconciliationPublication &v,string &body)
+{
+   body=""; string f="",nested="";
+   if(!SWV5S5_MvpCodecEncode_SWV5_ContractVersion(v.contract_version,nested) ||
+      !SWV5S5_CanonicalNested("contract_version",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationBinding(v.binding,nested) ||
+      !SWV5S5_CanonicalNested("binding",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationResult(v.result,nested) ||
+      !SWV5S5_CanonicalNested("result",nested,f)) return false; body+=f;
+   if(!SWV5S5_MvpCodecEncode_SWV5_InstanceLease(v.current_publication_lease,nested) ||
+      !SWV5S5_CanonicalNested("current_publication_lease",nested,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("expected_store_revision",v.expected_store_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("expected_reconciliation_revision",v.expected_reconciliation_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalUInt("proposed_reconciliation_revision",v.proposed_reconciliation_revision,f)) return false; body+=f;
+   if(!SWV5S5_CanonicalString("publication_digest",v.publication_digest,f)) return false; body+=f;
+   return true;
+}
+
+bool SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationPublication(const string text,SWV5S5_F_ReconciliationPublication &v)
+{
+   ZeroMemory(v); SWV5S5_MvpCodecReader reader; reader.Init(text);
+   string nested=""; long number=0; ulong count=0;
+   if(!reader.ReadNested("contract_version",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_ContractVersion(nested,v.contract_version)) return false;
+   if(!reader.ReadNested("binding",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationBinding(nested,v.binding)) return false;
+   if(!reader.ReadNested("result",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationResult(nested,v.result)) return false;
+   if(!reader.ReadNested("current_publication_lease",nested) ||
+      !SWV5S5_MvpCodecDecode_SWV5_InstanceLease(nested,v.current_publication_lease)) return false;
+   if(!reader.ReadString("expected_store_revision",v.expected_store_revision)) return false;
+   if(!reader.ReadUnsigned("expected_reconciliation_revision",v.expected_reconciliation_revision)) return false;
+   if(!reader.ReadUnsigned("proposed_reconciliation_revision",v.proposed_reconciliation_revision)) return false;
+   if(!reader.ReadString("publication_digest",v.publication_digest)) return false;
    return reader.AtEnd();
 }
 

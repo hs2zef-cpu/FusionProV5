@@ -29,16 +29,22 @@ ROOTS = (
     "SWV5S5_ProducerTrustRecord",
     "SWV5S5_SubmissionAuthorityRecord",
     "SWV5_HardKillReleaseAuthorityRecord",
+    "SWV5_BasketAggregate",
+    "SWV5_BasketTransitionRequest",
+    "SWV5S5_F_ReconciliationPublication",
 )
 PRIMITIVES = {"string", "int", "uint", "ulong", "long", "double", "bool", "datetime"}
 
 
 def source_text() -> str:
-    return "\n".join(
+    contracts = "\n".join(
         path.read_text(encoding="utf-8-sig")
         for directory in CONTRACT_DIRS
         for path in sorted(directory.glob("*.mqh"))
     )
+    # Read the existing adapter DTO definition only; never change its semantics.
+    return contracts + "\n" + (REPO / "FusionProV5" / "ExecutionLayer" /
+        "BrokerAdapter" / "SW_V5_S5_F_BrokerAdapterTypes.mqh").read_text(encoding="utf-8-sig")
 
 
 def parse_structs(text: str) -> dict[str, list[tuple[str, str, bool]]]:
@@ -195,6 +201,7 @@ def generate() -> str:
         "#define SW_V5_S5_MVP_AUTHORITY_RECORD_CODEC_MQH",
         "",
         '#include "SW_V5_S5_MvpDemoAuthorityProviders.mqh"',
+        '#include "../BrokerAdapter/SW_V5_S5_F_BrokerAdapterTypes.mqh"',
         "",
         'const string SWV5S5_MVP_TRUST_PHYSICAL_FORMAT="SWV5-MVP-TRUST-PHYSICAL-V1";',
         'const string SWV5S5_MVP_SUBMISSION_PHYSICAL_FORMAT="SWV5-MVP-SUBMISSION-PHYSICAL-V1";',

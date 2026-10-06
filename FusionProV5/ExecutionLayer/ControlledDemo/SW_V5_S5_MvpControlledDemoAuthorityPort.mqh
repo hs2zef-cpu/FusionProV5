@@ -10,6 +10,7 @@
 #include "../RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpHardKillActivationAuthority.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpBasketLifecycleAuthority.mqh"
 
 struct SWV5S5_MvpControlledDemoAuthoritySeed
 {
@@ -149,6 +150,16 @@ private:
    SWV5S5_MvpAttemptReconciliationPin m_pin;
    datetime m_safety_horizon;
 
+   bool CurrentBasketMatchesSeed(void)
+   {
+      SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpBasketLifecycleAuthority owner;
+      SWV5_BasketAggregate basket; SWV5S5_MvpAuthorityRow row; string actual,expected;
+      return store.Open(m_path,m_namespace_digest) && owner.ValidateCurrentBasket(store,m_seed.context,
+         m_seed.current_trust.persistence_namespace,m_seed.current_lease,basket,row) &&
+         SWV5S5_MvpCodecEncode_SWV5_BasketLifecycleSnapshot(basket.lifecycle,actual) &&
+         SWV5S5_MvpCodecEncode_SWV5_BasketLifecycleSnapshot(m_seed.risk_observation.basket.lifecycle,expected) && actual==expected;
+   }
+
    bool IncreasingEligibilityCurrent(void)
    {
       SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpHardKillActivationAuthority activation;
@@ -195,7 +206,7 @@ private:
          hard_kill.state!=(int)m_seed.hard_kill_state.state || hard_kill.payload!=hard_kill_payload ||
          hard_kill.payload_digest!=hard_kill_digest || m_seed.hard_kill_state.state!=SWV5_HARD_KILL_INACTIVE)
          return false;
-      if(!IncreasingEligibilityCurrent()) return false;
+      if(!IncreasingEligibilityCurrent() || !CurrentBasketMatchesSeed()) return false;
       m_safety_current=true;
       datetime profile_at=0;
       if(!m_platform.CaptureProfile(SWV5S5_MVP_SYMBOL,m_observed_profile,profile_at) ||
@@ -286,7 +297,7 @@ private:
 
    bool PrepareRiskInput(const int direction)
    {
-      if(!IncreasingEligibilityCurrent()) return false;
+      if(!IncreasingEligibilityCurrent() || !CurrentBasketMatchesSeed()) return false;
       m_risk_input=m_seed.risk_observation;
       SWV5S5_MvpInitProductionVersion(m_risk_input.contract_version);
       m_risk_input.account_namespace=m_seed.risk_observation.account_namespace;
@@ -406,7 +417,7 @@ private:
 
    bool CollectOne(SWV5S5_AdmissionAuthorityCollection &collection)
    {
-      if(!IncreasingEligibilityCurrent()) return false;
+      if(!IncreasingEligibilityCurrent() || !CurrentBasketMatchesSeed()) return false;
       ZeroMemory(collection); SWV5S5_MvpSqliteAuthorityStore store;
       SWV5S5_MvpLeasePublicationAuthority lease_authority; SWV5_InstanceLease lease; SWV5S5_MvpAuthorityRow lease_row;
       SWV5S5_MvpManualProducerTrustProvisioner trust_authority; SWV5S5_ProducerTrustRecord trust;
@@ -865,6 +876,7 @@ public:
    }
    virtual bool ReloadAndReconcileD6(SWV5S5_MvpControlledDemoRecoveryEvidence &evidence)
    {
+      m_last_stage="D6_RELOAD";
       ZeroMemory(evidence); evidence.reason_code="D6_RECOVERY_INPUT_INVALID";
       if(!m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
       SWV5S5_MvpSqliteAuthorityStore store;
@@ -922,9 +934,26 @@ public:
       if(!store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",hard_kill_row,hard_kill_found) || !hard_kill_found ||
          !store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,reconciliation_row,reconciliation_found) ||
          !reconciliation_found || reconciliation_row.logical_revision==0 ||
-         reconciliation_row.state!=(int)SWV5S5_F_SUBMISSION_UNRESOLVED) return false;
+         (reconciliation_row.state!=(int)SWV5S5_F_SUBMISSION_UNRESOLVED &&
+          reconciliation_row.state!=(int)SWV5S5_F_SIDE_EFFECT_POSITIVELY_CONFIRMED)) return false;
+      const bool resume_positive=reconciliation_row.state==(int)SWV5S5_F_SIDE_EFFECT_POSITIVELY_CONFIRMED;
+      SWV5S5_MvpReconciliationPublicationAuthority publication_authority;
+      SWV5S5_F_ReconciliationPublication persisted_publication;
+      if(!publication_authority.Configure(m_path,m_namespace_digest) ||
+         (resume_positive && !publication_authority.LoadPersistedPublication(key,persisted_publication,reconciliation_row))) return false;
       SWV5S5_MvpAuthorityRow initial_vector_row; bool initial_vector_found=false;
-      if(!pin_authority.LoadInitialVector(pin,initial_vector_row,initial_vector_found) || !initial_vector_found ||
+      if(resume_positive)
+      {
+         // CURRENT reconciliation replaces its initial unresolved vector. Its
+         // immutable pin deterministically defines that original vector, and
+         // the fully persisted publication must bind its exact original digest.
+         string original_payload,original_digest;
+         if(!SWV5S5_MvpInitialReconciliationVector(pin,original_payload,original_digest) ||
+            persisted_publication.binding.persisted_reconciliation_vector_digest!=original_digest ||
+            persisted_publication.expected_reconciliation_revision!=1 ||
+            persisted_publication.proposed_reconciliation_revision!=2) return false;
+      }
+      else if(!pin_authority.LoadInitialVector(pin,initial_vector_row,initial_vector_found) || !initial_vector_found ||
          initial_vector_row.store_revision!=reconciliation_row.store_revision) return false;
 
       SWV5S5_MvpExecutionPendingQuery execution_query;
@@ -996,6 +1025,19 @@ public:
       binding.expected_basket_version=pin.expected_basket_version; binding.direction=pin.direction;
       binding.requested_volume=pin.requested_volume; binding.persisted_confirmed_volume=0.0;
       binding.persisted_residual_volume=pin.requested_volume; binding.persisted_terminal_evidence_digest="";
+      if(resume_positive)
+      {
+         // Resume only the exact persisted result for this physical Claim.
+         // The initial vector is re-derived from its immutable physical pin;
+         // CURRENT ownership is independently loaded and validated.
+         binding=persisted_publication.binding;
+         if(binding.invocation_claim_id!=claimed.invocation_claim_id ||
+            binding.claim_record_digest!=claimed.durable_record_digest ||
+            !SWV5S5_EqualRequestIdentity(binding.request_identity,claimed.permit.request_identity) ||
+            !SWV5S5_EqualFence(binding.claim_ownership_fence,current_lease.fence) ||
+            persisted_publication.result.retry_allowed || !persisted_publication.result.authoritative_positive ||
+            persisted_publication.result.proposed_submission_state!=SWV5S5_AUTHORITATIVE_SIDE_EFFECT_CONFIRMED) return false;
+      }
       if(!SWV5S5_F_IsBindingValid(m_seed.context,binding) || !m_evidence_store.BindAuthoritativeOperation(m_seed.context,binding))
          return false;
 
@@ -1033,26 +1075,43 @@ public:
       publication.expected_store_revision=current_lease.store_revision;
       publication.expected_reconciliation_revision=reconciliation_row.logical_revision;
       publication.proposed_reconciliation_revision=reconciliation_row.logical_revision+1;
-      SWV5S5_MvpReconciliationPublicationAuthority publication_authority;
       SWV5S5_MvpRecoveryHost recovery_host; SWV5S5_MvpRecoveryResult recovery_result;
-      if(!publication_authority.Configure(m_path,m_namespace_digest) ||
-         !recovery_host.EvaluateAndPublish(m_seed.context,reloaded,candidate,publication,
-                                           publication_authority,recovery_result)) return false;
+      if(resume_positive)
+      {
+         publication=persisted_publication; ZeroMemory(recovery_result);
+         if(MathAbs(positive.cumulative_confirmed_volume-publication.result.cumulative_confirmed_volume)>
+            m_seed.context.volume_tolerance) return false;
+         recovery_result.evaluated=true; recovery_result.published=true;
+      }
+      else if(!recovery_host.EvaluateAndPublish(m_seed.context,reloaded,candidate,publication,
+                                                publication_authority,recovery_result)) return false;
       evidence.reconciliation_evaluated=recovery_result.evaluated;
       evidence.reconciliation_published=recovery_result.published;
 
       SWV5S5_MvpSubmissionTerminalAuthority terminal_authority;
       SWV5S5_SubmissionAuthorityRecord terminal_record; SWV5S5_MvpAuthorityRow committed_record;
+      // Only a frozen positive reconciliation + exact currently open Broker
+      // position can advance the canonical Basket. Not acknowledgement, callback
+      // arrival, or local IDLE. No submission capability is involved here.
+      SWV5S5_MvpBasketLifecycleAuthority basket_owner; SWV5_BasketAggregate confirmed_basket;
+      SWV5S5_MvpAuthorityRow confirmed_basket_row;
+      m_last_stage="D6_BASKET_PUBLICATION";
+      if(!basket_owner.PublishGuardedTransition(store,m_seed.context,current_lease,binding,
+         governance.correlation_policy,governance.capability_proof,positive,broker_snapshot,
+         confirmed_basket,confirmed_basket_row)) return false;
+      m_last_stage="D6_SUBMISSION_TERMINALIZATION";
       if(!terminal_authority.Configure(m_path,m_namespace_digest) ||
          !terminal_authority.TryFinalizeFromPersistedReconciliation(publication,claimed,terminal_record,committed_record))
          return false;
       evidence.exact_record_terminalized=true;
+      m_last_stage="D6_TERMINAL_READBACK";
       SWV5S5_SubmissionAuthorityRecord readback; bool terminal_found=false;
       if(!SWV5S5_MvpLoadSubmissionAuthority(store,reloaded.logical_correlation_id,reloaded.attempt_id,
                                              readback,terminal_found) || !terminal_found ||
          readback.durable_record_digest!=terminal_record.durable_record_digest ||
          readback.state!=terminal_record.state) return false;
       evidence.terminal_readback_verified=true; evidence.reason_code="D6_POSITIVE_RECOVERY_TERMINALIZED";
+      m_last_stage="D6_COMPLETE";
       return recovery_result.submission_calls==0 && !recovery_result.claim_grant_reconstructed;
    }
    virtual bool ObserveCallbackOnly(const MqlTradeTransaction &transaction,const MqlTradeRequest &request,

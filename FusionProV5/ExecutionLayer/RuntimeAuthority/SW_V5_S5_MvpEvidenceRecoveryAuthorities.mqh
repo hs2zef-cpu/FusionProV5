@@ -542,6 +542,24 @@ public:
    bool Configure(const string relative_path,const string namespace_digest)
    { return m_store.Open(relative_path,namespace_digest); }
 
+   // A summary is not enough to resume the cross-domain confirmation handoff.
+   // Reload the exact validated typed publication; do not synthesize a result.
+   bool LoadPersistedPublication(const string key,SWV5S5_F_ReconciliationPublication &publication,
+                                 SWV5S5_MvpAuthorityRow &row)
+   {
+      bool found=false; string encoded,result_digest,publication_digest,revision;
+      return m_store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,row,found) && found &&
+         SWV5S5_MvpCodecDecode_SWV5S5_F_ReconciliationPublication(row.payload,publication) &&
+         SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationPublication(publication,encoded) && encoded==row.payload &&
+         SWV5S5_F_DeriveResultDigest(publication.result,result_digest) && result_digest==row.payload_digest &&
+         result_digest==publication.result.result_digest &&
+         SWV5S5_F_DeriveReconciliationPublicationDigest(publication,publication_digest) &&
+         publication_digest==publication.publication_digest && row.state==(int)publication.result.state &&
+         row.logical_revision==publication.proposed_reconciliation_revision &&
+         m_store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,result_digest,revision) &&
+         revision==row.store_revision;
+   }
+
    virtual bool TryPublishReconciliation(const SWV5S5_F_ReconciliationPublication &publication,
                                          string &committed_store_revision)
    {
@@ -562,9 +580,7 @@ public:
          (!found && publication.expected_reconciliation_revision!=0)) return false;
       if(found && current.state==(int)publication.result.state && current.payload_digest==publication.result.result_digest)
       { committed_store_revision=current.store_revision; return true; }
-      if(!SWV5S5_CanonicalString("publication_digest",publication.publication_digest,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalString("result_digest",publication.result.result_digest,f)) return false; payload+=f;
-      if(!SWV5S5_CanonicalInt("state",publication.result.state,f)) return false; payload+=f;
+      if(!SWV5S5_MvpCodecEncode_SWV5S5_F_ReconciliationPublication(publication,payload)) return false;
       if(!m_store.CompareAndSetWithGuard(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,
          (found ? current.logical_revision : 0),(found ? current.store_revision : ""),
          (found ? current.payload_digest : ""),(found ? current.state : 0),
