@@ -492,6 +492,17 @@ bool SWV5S5_MvpD1ProvisionPhysicalSeed(const string path,const string namespace_
       seed.current_lease.fence.ownership_namespace,seed.current_lease.fence,
       persisted_lease,persisted_lease_row) && SWV5S5_MvpLeaseExact(seed.current_lease,persisted_lease);
    if(!status.lease_round_trip) { Print("MVP_D1_E2E_SETUP_FAIL|LEASE_READBACK"); return false; }
+   SWV5S5_MvpAccountRiskAuthority account_owner; SWV5S5_MvpAccountRiskAuthorityRecord account_record;
+   SWV5S5_MvpD1ReadOnlyPlatform account_platform;
+   if(!account_owner.Provision(store,seed.context,scope,seed.current_lease,account_platform,account_record,committed))
+   { Print("MVP_D1_E2E_SETUP_FAIL|ACCOUNT_AUTHORITY|",account_owner.LastFailure()); return false; }
+   seed.risk_observation.account_namespace=account_record.account_namespace;
+   seed.risk_observation.account.account_namespace=account_record.account_namespace;
+   seed.risk_observation.exposure.account_namespace=account_record.account_namespace;
+   seed.risk_observation.basket.account_namespace=account_record.account_namespace;
+   seed.risk_observation.projected.account_namespace=account_record.account_namespace;
+   seed.hard_kill_state.account_namespace=account_record.account_namespace;
+   seed.risk_observation.hard_kill_state=seed.hard_kill_state;
    store.Close();
    ZeroMemory(seed.trust_anchor); seed.trust_anchor.issuer_identity="MVP-D1-TRUST-ISSUER";
    seed.trust_anchor.issuer_policy_id="MVP-D1-TRUST-POLICY";
@@ -608,7 +619,9 @@ bool SWV5S5_MvpD1BuildE2ESeed(const string path,SWV5S5_MvpControlledDemoAuthorit
    seed.decision.action=SWV5_ACTION_BUY; seed.decision.direction=1; seed.decision.state="BUY";
    seed.decision.blocking_engine=SWV5_ENGINE_DECISION;
    SWV5_AccountRiskNamespace account_namespace;
-   SWV5S5_MvpD1MakeAccountNamespace(scope,account_namespace);
+   // Deliberately empty until the independent physical owner issues/readbacks
+   // the canonical record in ProvisionPhysicalSeed. No fixture token issuance.
+   ZeroMemory(account_namespace);
    SWV5_TestMakeRiskInput(seed.risk_observation);
    SWV5S5_MvpInitProductionVersion(seed.risk_observation.contract_version);
    seed.risk_observation.account_namespace=account_namespace;

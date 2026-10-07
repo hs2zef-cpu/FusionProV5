@@ -226,6 +226,8 @@ public:
       found=true;
       return true;
    }
+   bool ConfigureReadOnly(const string relative_path,const string namespace_digest)
+   { return m_store.OpenReadOnly(relative_path,namespace_digest); }
 };
 
 class SWV5S5_MvpManualSafetyReleaseProvisioner

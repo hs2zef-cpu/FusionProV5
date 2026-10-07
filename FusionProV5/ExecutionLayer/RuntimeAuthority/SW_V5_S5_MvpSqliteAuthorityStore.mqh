@@ -298,6 +298,22 @@ public:
    string NamespaceDigest(void) const { return m_namespace_digest; }
    bool IsOpen(void) const { return m_open; }
 
+   // No CREATE, schema DDL, metadata insertion, or implicit provisioning.
+   bool OpenReadOnly(const string relative_path,const string namespace_digest)
+   {
+      Close();
+      if(StringLen(relative_path)<=7 || StringFind(relative_path,"\\")>=0 || StringFind(relative_path,"/")>=0 ||
+         StringFind(relative_path,":")>=0 || StringFind(relative_path,"..")>=0 ||
+         StringSubstr(relative_path,StringLen(relative_path)-7)!=".sqlite" ||
+         !SWV5S5_IsDigest64Lower(namespace_digest)) return false;
+      m_relative_path=relative_path; m_namespace_digest=namespace_digest;
+      m_database=DatabaseOpen(relative_path,DATABASE_OPEN_READONLY|DATABASE_OPEN_COMMON);
+      if(m_database==INVALID_HANDLE) return false;
+      m_open=true;
+      if(!VerifyMetadata()) { Close(); return false; }
+      return true;
+   }
+
    bool Open(const string relative_path,const string namespace_digest)
    {
       Close();

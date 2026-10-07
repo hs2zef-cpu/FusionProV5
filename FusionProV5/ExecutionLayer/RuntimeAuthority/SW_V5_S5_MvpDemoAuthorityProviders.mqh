@@ -178,6 +178,40 @@ public:
    }
 };
 
+// Runtime-only immutable observation envelope; not a namespace generation.
+struct SWV5S5_MvpAccountObservationEnvelope
+{
+   SWV5_AccountRiskSnapshot account;
+   SWV5_ExposureRiskSnapshot exposure;
+   string account_digest,exposure_digest,combined_digest,namespace_record_digest;
+};
+
+bool SWV5S5_MvpObservationDigests(const SWV5_AccountRiskSnapshot &account,
+                                 const SWV5_ExposureRiskSnapshot &exposure,
+                                 string &account_digest,string &exposure_digest,string &combined_digest)
+{
+   string a,e;
+   return SWV5S5_CanonicalAccountRiskSnapshot("account",account,a) &&
+      SWV5S5_CanonicalExposureRiskSnapshot("exposure",exposure,e) &&
+      SWV5S5_DomainDigest("MVP_ACCOUNT_OBSERVATION/V1",a,account_digest) &&
+      SWV5S5_DomainDigest("MVP_EXPOSURE_OBSERVATION/V1",e,exposure_digest) &&
+      SWV5S5_DomainDigest("MVP_ACCOUNT_EXPOSURE_OBSERVATION/V1",a+e,combined_digest);
+}
+
+bool SWV5S5_MvpObservationValid(const SWV5_ContractValidationContext &context,
+                                const SWV5_AccountRiskNamespace &account,
+                                const SWV5S5_MvpAccountObservationEnvelope &o)
+{
+   string a,e,d,scope,actual;
+   return o.account.authoritative && o.exposure.complete &&
+      o.account.observed_at==context.clock_time && o.exposure.observed_at==context.clock_time &&
+      SWV5S5_CanonicalAccountNamespace("account",account,scope) &&
+      SWV5S5_CanonicalAccountNamespace("account",o.account.account_namespace,actual) && scope==actual &&
+      SWV5S5_CanonicalAccountNamespace("account",o.exposure.account_namespace,actual) && scope==actual &&
+      SWV5S5_MvpObservationDigests(o.account,o.exposure,a,e,d) &&
+      a==o.account_digest && e==o.exposure_digest && d==o.combined_digest;
+}
+
 struct SWV5S5_MvpIncreasingAuthorityInput
 {
    SWV5_ContractValidationContext context;
@@ -189,6 +223,7 @@ struct SWV5S5_MvpIncreasingAuthorityInput
    SWV5S5_SymbolSpecificationAuthorityView symbol;
    SWV5_NormalizedUnits normalized;
    SWV5S5_MvpAccountObservation account;
+   SWV5S5_MvpAccountObservationEnvelope observation;
    int direction;
    bool active_fusion_operation;
    bool unresolved_fusion_request;
@@ -197,7 +232,14 @@ struct SWV5S5_MvpIncreasingAuthorityInput
 
 bool SWV5S5_MvpIncreasingInputFlat(const SWV5S5_MvpIncreasingAuthorityInput &candidate)
 {
-   return candidate.account.complete && candidate.account.history_complete && candidate.account.positions_total==0 &&
+   const SWV5S5_MvpAccountObservationEnvelope o=candidate.observation;
+   return SWV5S5_MvpObservationValid(candidate.context,candidate.account_namespace,o) &&
+      candidate.account.balance==o.account.balance && candidate.account.equity==o.account.equity &&
+      candidate.account.margin==o.account.margin && candidate.account.free_margin==o.account.free_margin &&
+      candidate.account.daily_realized_net==o.account.daily_realized_net &&
+      candidate.account.daily_unrealized_net==o.account.daily_unrealized_net &&
+      candidate.account.trading_day_start==o.account.trading_day_start && candidate.account.observed_at==o.account.observed_at &&
+      candidate.account.complete && candidate.account.history_complete && candidate.account.positions_total==0 &&
       candidate.account.orders_total==0 && candidate.account.margin<=SWV5S5_MVP_MAX_EXISTING_MARGIN &&
       !candidate.active_fusion_operation && !candidate.unresolved_fusion_request && !candidate.session_can_cross_rollover &&
       candidate.basket.state==SWV5_BASKET_IDLE && candidate.basket.aggregate_open_volume<=candidate.context.volume_tolerance &&
@@ -276,19 +318,9 @@ bool SWV5S5_MvpDeriveBasketRiskAuthorityDigest(const SWV5_BasketRiskAuthorityRec
 bool SWV5S5_MvpDeriveSourceSnapshot(const SWV5S5_MvpIncreasingAuthorityInput &candidate,
                                     string &snapshot_id,string &snapshot_digest)
 {
-   string body="",f;
-   if(!SWV5S5_CanonicalNamespace("scope",candidate.persistence_namespace,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalAccountNamespace("account",candidate.account_namespace,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalFence("fence",candidate.ownership_fence,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalRequestIdentity("request",candidate.request_identity,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalString("symbol_projection",candidate.symbol.projection_digest,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalUInt("basket_version",candidate.basket.state_version,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalInt("basket_state",candidate.basket.state,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalDouble("balance",candidate.account.balance,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalDouble("equity",candidate.account.equity,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalDouble("margin",candidate.account.margin,f)) return false; body+=f;
-   if(!SWV5S5_CanonicalDouble("daily_net",candidate.account.daily_realized_net,f)) return false; body+=f;
-   if(!SWV5S5_DomainDigest("FUSION-V5-DEMO-MVP-SOURCE-SNAPSHOT-V1",body,snapshot_digest)) return false;
+   if(!SWV5S5_MvpObservationValid(candidate.context,candidate.account_namespace,candidate.observation)) return false;
+   // Request/symbol/Basket identities remain explicit authority-record fields.
+   snapshot_digest=candidate.observation.combined_digest;
    snapshot_id="MVP-SNAPSHOT/"+snapshot_digest;
    return true;
 }
@@ -315,7 +347,7 @@ public:
       record.current_account_margin=candidate.account.margin; record.additional_margin=margin;
       record.projected_account_margin=candidate.account.margin+margin; record.current_free_margin=candidate.account.free_margin;
       record.account_currency=SWV5S5_MVP_ACCOUNT_CURRENCY;
-      record.broker_calculation_reference="MT5/OrderCalcMargin/FUSION-V5-DEMO-MVP-V1";
+      record.broker_calculation_reference="MT5/OrderCalcMargin/FUSION-V5-DEMO-MVP-V1/OBS/"+candidate.observation.combined_digest;
       record.observation_sequence=candidate.account_namespace.snapshot_sequence;
       record.observed_at=candidate.account.observed_at; record.calculated_at=candidate.context.clock_time;
       string key=candidate.request_identity.request_id.correlation_id+"/"+candidate.request_identity.request_id.attempt_id;
@@ -420,6 +452,29 @@ bool SWV5S5_MvpRiskInputAllowed(const SWV5_ContractValidationContext &context,
 
 const string SWV5S5_MVP_RISK_AUTHORIZATION_ID_DOMAIN="SWV5-S5-MVP-RISK-AUTHORIZATION-ID-V1";
 const uint SWV5S5_MVP_RISK_AUTHORIZATION_LIFETIME_SECONDS=5;
+
+// The serialized D1 path requires this exact observation gate before Risk and
+// again before Admission. No platform read is performed by this pure check.
+bool SWV5S5_MvpRiskObservationMatches(const SWV5_ContractValidationContext &context,
+                                     const SWV5_RiskEvaluationInput &candidate,
+                                     const SWV5S5_MvpAccountObservationEnvelope &o)
+{
+   string a,e,d,scope,actual;
+   return SWV5S5_MvpObservationValid(context,candidate.account_namespace,o) &&
+      SWV5S5_MvpObservationDigests(candidate.account,candidate.exposure,a,e,d) &&
+      a==o.account_digest && e==o.exposure_digest && d==o.combined_digest &&
+      SWV5S5_CanonicalAccountNamespace("account",candidate.account_namespace,scope) &&
+      SWV5S5_CanonicalAccountNamespace("account",candidate.margin_authority_record.account_namespace,actual) && scope==actual &&
+      SWV5S5_CanonicalAccountNamespace("account",candidate.basket_risk_authority_record.account_namespace,actual) && scope==actual &&
+      candidate.margin_authority_record.observed_at==o.account.observed_at &&
+      candidate.basket_risk_authority_record.observed_at==o.account.observed_at &&
+      candidate.margin_authority_record.current_account_margin==o.account.margin &&
+      candidate.margin_authority_record.current_free_margin==o.account.free_margin &&
+      candidate.margin_authority_record.broker_calculation_reference==
+         "MT5/OrderCalcMargin/FUSION-V5-DEMO-MVP-V1/OBS/"+o.combined_digest &&
+      candidate.basket_risk_authority_record.source_snapshot_digest==o.combined_digest &&
+      candidate.basket_risk_authority_record.source_snapshot_id=="MVP-SNAPSHOT/"+o.combined_digest;
+}
 
 // Deterministic authority identity for the immutable pre-blueprint Risk candidate.
 // The identifier itself is deliberately excluded from the preimage.
@@ -636,6 +691,19 @@ public:
       authorization.expires_at=(candidate.intent.authorization_expires_at<policy_expiry ? candidate.intent.authorization_expires_at : policy_expiry);
       authorization.reason_text="FUSION-V5-DEMO-MVP-RISK-ALLOW";
       return authorization.authorization_id!="" && authorization.expires_at>authorization.evaluated_at;
+   }
+
+   bool EvaluateObserved(const SWV5_ContractValidationContext &context,
+                         const SWV5_RiskEvaluationInput &candidate,
+                         const SWV5S5_MvpAccountObservationEnvelope &observation,
+                         SWV5_RiskAuthorization &authorization)
+   {
+      ZeroMemory(authorization);
+      // MQL ZeroMemory produces NULL strings, not the explicit empty sentinel.
+      authorization.authorization_id="";
+      authorization.disposition=SWV5_RISK_BLOCK_REQUEST;
+      return SWV5S5_MvpRiskObservationMatches(context,candidate,observation) &&
+         Evaluate(context,candidate,authorization);
    }
 
    virtual bool ValidateAuthorization(const SWV5_ContractValidationContext &context,

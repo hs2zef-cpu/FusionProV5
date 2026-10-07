@@ -11,6 +11,7 @@
 #include "../RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpHardKillActivationAuthority.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpBasketLifecycleAuthority.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpAccountObservationProducer.mqh"
 
 struct SWV5S5_MvpControlledDemoAuthoritySeed
 {
@@ -144,17 +145,30 @@ private:
    bool m_pin_durable;
    string m_last_stage;
    SWV5S5_MvpAccountObservation m_observed_account;
+   SWV5S5_MvpAccountObservationEnvelope m_account_observation;
    SWV5S5_MvpRuntimeProfileObservation m_observed_profile;
    SWV5S5_MvpAuthorityRow m_ownership_row,m_pin_row;
    SWV5S5_MvpReconciliationGovernanceBundle m_governance;
    SWV5S5_MvpAttemptReconciliationPin m_pin;
    datetime m_safety_horizon;
 
+   bool LoadAccountAuthority(SWV5_AccountRiskNamespace &account)
+   {
+      SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpAccountRiskAuthority owner;
+      SWV5S5_MvpAccountRiskAuthorityRecord record; SWV5S5_MvpAuthorityRow row;
+      SWV5S5_MvpRuntimeProfileObservation profile; datetime at=0;
+      if(!m_platform.CaptureProfile(SWV5S5_MVP_SYMBOL,profile,at) || at!=m_seed.context.clock_time ||
+         !store.OpenReadOnly(m_path,m_namespace_digest) ||
+         !owner.ValidateCurrent(store,m_seed.current_trust.persistence_namespace,profile,record,row) ||
+         !SWV5S5_EqualAccountNamespace(record.account_namespace,m_seed.risk_observation.account_namespace)) return false;
+      account=record.account_namespace; return true;
+   }
+
    bool CurrentBasketMatchesSeed(void)
    {
       SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpBasketLifecycleAuthority owner;
       SWV5_BasketAggregate basket; SWV5S5_MvpAuthorityRow row; string actual,expected;
-      return store.Open(m_path,m_namespace_digest) && owner.ValidateCurrentBasket(store,m_seed.context,
+      return store.OpenReadOnly(m_path,m_namespace_digest) && owner.ValidateCurrentBasket(store,m_seed.context,
          m_seed.current_trust.persistence_namespace,m_seed.current_lease,basket,row) &&
          SWV5S5_MvpCodecEncode_SWV5_BasketLifecycleSnapshot(basket.lifecycle,actual) &&
          SWV5S5_MvpCodecEncode_SWV5_BasketLifecycleSnapshot(m_seed.risk_observation.basket.lifecycle,expected) && actual==expected;
@@ -164,7 +178,7 @@ private:
    {
       SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpHardKillActivationAuthority activation;
       m_safety_horizon=0;
-      return store.Open(m_path,m_namespace_digest) && activation.EligibilityHorizon(store,m_seed.context,
+      return store.OpenReadOnly(m_path,m_namespace_digest) && activation.EligibilityHorizon(store,m_seed.context,
          m_seed.hard_kill_state,m_seed.current_lease,m_safety_horizon);
    }
 
@@ -173,9 +187,10 @@ private:
       m_store_schema_valid=false; m_genesis_valid=false; m_ownership_current=false;
       m_trust_current=false; m_safety_current=false; m_initial_request_set_empty=false;
       m_initial_submission_index_empty=false; ZeroMemory(m_observed_account); ZeroMemory(m_observed_profile);
+      ZeroMemory(m_account_observation);
       SWV5S5_MvpSqliteAuthorityStore store;
       if(invocation.persistence_namespace_identity!=m_namespace_digest ||
-         !store.Open(m_path,m_namespace_digest)) return false;
+         !store.OpenReadOnly(m_path,m_namespace_digest)) return false;
       m_store_schema_valid=true;
       SWV5S5_MvpAuthorityRow genesis; bool found=false;
       if(!store.ReadRow(SWV5S5_MVP_DOMAIN_GENESIS,"GENESIS",genesis,found) || !found ||
@@ -191,7 +206,7 @@ private:
       m_ownership_current=true;
       SWV5S5_MvpManualProducerTrustProvisioner trust_authority; SWV5S5_ProducerTrustRecord trust;
       SWV5S5_ProducerTrustAnchor anchor; string operator_id,authentication; bool trust_found=false;
-      if(!trust_authority.Configure(m_path,m_namespace_digest) ||
+      if(!trust_authority.ConfigureReadOnly(m_path,m_namespace_digest) ||
          !trust_authority.LoadCurrent(trust,anchor,operator_id,authentication,trust_found) || !trust_found ||
          trust.record_digest!=m_seed.current_trust.record_digest ||
          anchor.current_authority_record_id!=m_seed.trust_anchor.current_authority_record_id ||
@@ -211,14 +226,18 @@ private:
       datetime profile_at=0;
       if(!m_platform.CaptureProfile(SWV5S5_MVP_SYMBOL,m_observed_profile,profile_at) ||
          profile_at!=m_seed.context.clock_time ||
-         !m_platform.CaptureFlatAccount(m_seed.context.clock_time,m_observed_account) ||
-         m_observed_account.observed_at!=m_seed.context.clock_time || !m_observed_account.complete ||
-         !m_observed_account.history_complete || m_observed_account.positions_total!=0 ||
-         m_observed_account.orders_total!=0 ||
          m_observed_profile.broker_identity!=invocation.expected_broker_identity ||
          m_observed_profile.server!=invocation.expected_server ||
          m_observed_profile.account_login!=invocation.expected_demo_account_login ||
          !SWV5S5_MvpProfileMatches(m_observed_profile,ACCOUNT_TRADE_MODE_DEMO)) return false;
+      SWV5_AccountRiskNamespace account;
+      if(!LoadAccountAuthority(account)) { m_last_stage="ACCOUNT_AUTHORITY_MISSING_CORRUPT_OR_PROFILE_DRIFT"; return false; }
+      SWV5S5_MvpAccountObservationProducer observations;
+      if(!observations.CaptureInitialFlat(store,m_seed.context,m_seed.current_trust.persistence_namespace,
+         m_seed.current_lease,*m_platform,m_observed_account,m_account_observation) ||
+         !SWV5S5_EqualAccountNamespace(m_account_observation.account.account_namespace,account)) return false;
+      // One coherent current observation feeds Margin, Basket Risk and Risk.
+      // A second capture later in this event must not mix numeric snapshots.
       m_seed.account_observation=m_observed_account;
       return true;
    }
@@ -226,7 +245,7 @@ private:
    bool CollectReadOnlyExecutionState(void)
    {
       m_initial_request_set_empty=false; m_initial_submission_index_empty=false;
-      SWV5S5_MvpSqliteAuthorityStore store; if(!store.Open(m_path,m_namespace_digest)) return false;
+      SWV5S5_MvpSqliteAuthorityStore store; if(!store.OpenReadOnly(m_path,m_namespace_digest)) return false;
       SWV5S5_MvpAuthorityRow request_row,index_row; bool request_found=false,index_found=false;
       if(!store.ReadRow(SWV5S5_MVP_DOMAIN_REQUEST_SET,SWV5S5_MVP_REQUEST_SET_KEY,request_row,request_found)) return false;
       if(!request_found) m_initial_request_set_empty=true;
@@ -301,6 +320,11 @@ private:
       m_risk_input=m_seed.risk_observation;
       SWV5S5_MvpInitProductionVersion(m_risk_input.contract_version);
       m_risk_input.account_namespace=m_seed.risk_observation.account_namespace;
+      SWV5_AccountRiskNamespace current_account;
+      if(!LoadAccountAuthority(current_account) ||
+         !SWV5S5_EqualAccountNamespace(m_account_observation.account.account_namespace,current_account) ||
+         !SWV5S5_MvpObservationValid(m_seed.context,current_account,m_account_observation)) return false;
+      m_risk_input.account=m_account_observation.account; m_risk_input.exposure=m_account_observation.exposure;
       m_risk_input.account_mode=SWV5_ACCOUNT_MODE_HEDGING;
       SWV5S5_MvpLoadRiskLimits(m_risk_input.limits);
       m_risk_input.intent.contract_version=m_request_identity.contract_version;
@@ -344,7 +368,7 @@ private:
       if(m_risk_input.intent.authorization_expires_at<=m_seed.context.clock_time ||
          !SWV5S5_MvpDeriveRiskAuthorizationId(m_risk_input,m_risk_input.intent.risk_authorization_id)) return false;
       SWV5S5_MvpRiskContract risk;
-      return risk.Evaluate(m_seed.context,m_risk_input,m_risk_authorization) &&
+      return risk.EvaluateObserved(m_seed.context,m_risk_input,m_account_observation,m_risk_authorization) &&
          SWV5S5_MvpRiskAuthorizationCoherent(m_risk_input,m_risk_authorization);
    }
 
@@ -436,7 +460,9 @@ private:
       collection.attempt_id=m_request_identity.request_id.attempt_id; collection.ownership.fence=lease.fence;
       collection.lease_liveness.lease=lease; collection.producer_trust.record=trust;
       collection.hard_kill.state=m_risk_input.hard_kill_state;
-      collection.account.account_namespace=m_risk_input.account_namespace;
+      if(!SWV5S5_MvpRiskObservationMatches(m_seed.context,m_risk_input,m_account_observation) ||
+         !LoadAccountAuthority(collection.account.account_namespace) ||
+         !SWV5S5_EqualAccountNamespace(collection.account.account_namespace,m_risk_input.account_namespace)) return false;
       collection.basket.basket=m_risk_input.basket.lifecycle;
       collection.request_set.persistence_namespace=m_binding.persistence_namespace;
       collection.request_set.ownership_fence=lease.fence;
@@ -663,6 +689,14 @@ public:
 
    string LastStage(void) const { return m_last_stage; }
 
+   // Read-only diagnostic copies for evidence; no issuance or mutable handles.
+   bool ReadPreparedRiskBinding(SWV5_RiskEvaluationInput &candidate,SWV5_RiskAuthorization &authorization)
+   { if(!m_bootstrapped) return false; candidate=m_risk_input; authorization=m_risk_authorization; return true; }
+   bool ReadAdmissionCollections(SWV5S5_AdmissionSnapshot &snapshot)
+   { if(!m_admission_ready) return false; snapshot=m_admission_proof.snapshot; return true; }
+   bool ReadPreparedObservation(SWV5S5_MvpAccountObservationEnvelope &observation)
+   { if(!m_bootstrapped) return false; observation=m_account_observation; return true; }
+
    virtual bool CollectReadOnlyPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
                                          SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    {
@@ -749,6 +783,7 @@ public:
       increasing.ownership_fence=m_seed.current_lease.fence; increasing.request_identity=m_request_identity;
       increasing.basket=m_seed.risk_observation.basket.lifecycle; increasing.symbol=m_symbol;
       increasing.normalized=m_normalized; increasing.account=m_seed.account_observation;
+      increasing.observation=m_account_observation;
       increasing.direction=direction;
       SWV5S5_MvpMarginAuthority margin_authority; SWV5S5_MvpBasketRiskAuthority basket_risk_authority;
       m_last_stage="PREFLIGHT_RISK";
@@ -858,6 +893,11 @@ public:
    virtual bool ClaimPhysicalNow(bool &claim_granted_now)
    {
       claim_granted_now=false;
+      SWV5_AccountRiskNamespace current_account;
+      if(!LoadAccountAuthority(current_account) ||
+         !SWV5S5_EqualAccountNamespace(current_account,m_risk_input.account_namespace) ||
+         !SWV5S5_EqualAccountNamespace(current_account,m_admission_proof.snapshot.collect_v1.account.account_namespace) ||
+         !SWV5S5_EqualAccountNamespace(current_account,m_admission_proof.snapshot.collect_v2.account.account_namespace)) return false;
       SWV5S5_MvpSqliteAuthorityStore safety_store; SWV5S5_MvpHardKillActivationAuthority activation;
       if(!m_admission_ready || !m_pin_durable || !safety_store.Open(m_path,m_namespace_digest) ||
          !activation.ValidateAdmittedEligibility(safety_store,m_seed.context,m_admission_proof,m_seed.current_lease) ||
@@ -909,6 +949,12 @@ public:
       profile.mql_build=m_seed.adapter_environment.mql_build; profile.profile_id=SWV5S5_F_ADAPTER_PROFILE_ID;
       if(!SWV5S5_F_DeriveProfileDigest(profile,profile.profile_digest) || !SWV5S5_F_IsProfileValid(profile) ||
          !SWV5S5_F_AdapterEnvironmentMatchesProfile(profile,m_seed.adapter_environment)) return false;
+
+      SWV5S5_MvpAccountRiskAuthority account_owner; SWV5S5_MvpAccountRiskAuthorityRecord account_record;
+      SWV5S5_MvpAuthorityRow account_row; SWV5S5_MvpRuntimeProfileObservation current_profile; datetime profile_at=0;
+      if(!m_platform.CaptureProfile(SWV5S5_MVP_SYMBOL,current_profile,profile_at) || profile_at!=m_seed.context.clock_time ||
+         !account_owner.ValidateCurrent(store,claimed.permit.persistence_namespace,current_profile,account_record,account_row) ||
+         !SWV5S5_EqualAccountNamespace(account_record.account_namespace,claimed.permit.account_namespace)) return false;
 
       SWV5S5_MvpAttemptReconciliationPinAuthority pin_authority; SWV5S5_MvpAuthorityRow pin_row;
       SWV5S5_MvpAttemptReconciliationPin pin; bool pin_found=false;

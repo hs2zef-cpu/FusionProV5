@@ -6,6 +6,7 @@
 // It is manually invoked to establish the already-approved durable authorities.
 
 #include "../RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh"
+#include "../RuntimeAuthority/SW_V5_S5_MvpAccountRiskAuthority.mqh"
 
 struct SWV5S5_MvpManualDemoSetupInput
 {
@@ -33,6 +34,8 @@ struct SWV5S5_MvpManualDemoSetupResult
    bool clock_observed;
    bool ownership_acquired_now;
    bool ownership_readback_complete;
+   bool account_authority_readback_complete;
+   SWV5_AccountRiskNamespace account_namespace;
    bool trust_persisted;
    bool trust_reloaded_complete;
    bool zero_state_verified;
@@ -124,6 +127,23 @@ public:
       SWV5S5_InitContractVersion(trust_scope.persistence_namespace.contract_version);
       trust_scope.persistence_namespace.ownership_namespace=claimant.key;
       trust_scope.persistence_namespace.basket_id.value=setup_input.basket_id;
+      // Account namespace issuance is an explicit setup prerequisite, guarded
+      // by Ownership but independent of Ownership generations and restarts.
+      SWV5S5_MvpInitProductionVersion(trust_scope.persistence_namespace.contract_version);
+      SWV5_ContractValidationContext account_context; ZeroMemory(account_context);
+      SWV5S5_MvpInitProductionVersion(account_context.expected_version);
+      account_context.clock_id=result.accepted_clock.clock_id;
+      account_context.clock_authority=result.accepted_clock.clock_authority;
+      account_context.clock_sequence=result.accepted_clock.clock_sequence;
+      account_context.evaluation_sequence=result.accepted_clock.clock_sequence;
+      account_context.clock_time=result.accepted_clock.observed_at;
+      SWV5S5_MvpSqliteAuthorityStore account_store; SWV5S5_MvpAccountRiskAuthority account_owner;
+      SWV5S5_MvpAccountRiskAuthorityRecord account_record; SWV5S5_MvpAuthorityRow account_row;
+      if(!account_store.Open(setup_input.relative_store_path,setup_input.persistence_namespace_identity) ||
+         !account_owner.Provision(account_store,account_context,trust_scope.persistence_namespace,result.current_lease,
+            platform,account_record,account_row))
+      { result.stop_reason="SETUP_ACCOUNT_AUTHORITY_FAILED/"+account_owner.LastFailure(); return false; }
+      result.account_authority_readback_complete=true; result.account_namespace=account_record.account_namespace;
       trust_scope.producer_component="DECISION";
       trust_scope.producer_instance=SWV5S5_MVP_PRODUCER_INSTANCE;
       trust_scope.producer_epoch=setup_input.producer_epoch; trust_scope.symbol=SWV5S5_MVP_SYMBOL;

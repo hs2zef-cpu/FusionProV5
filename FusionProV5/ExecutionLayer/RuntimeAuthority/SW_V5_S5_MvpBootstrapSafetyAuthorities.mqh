@@ -6,6 +6,7 @@
 
 #include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
 #include "SW_V5_S5_MvpReadOnlyPlatform.mqh"
+#include "SW_V5_S5_MvpAccountRiskRecordCodec.mqh"
 
 const string SWV5S5_MVP_DOMAIN_BOOTSTRAP_ZERO="MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY";
 const string SWV5S5_MVP_BOOTSTRAP_ZERO_KEY="CURRENT";
@@ -181,7 +182,16 @@ public:
       string body="",f,row_body;
       for(int i=0;i<ArraySize(rows);i++)
       {
-         if(!SWV5S5_MvpInfrastructureRowAllowed(rows[i])) return false;
+         if(rows[i].domain_key==SWV5S5_MVP_DOMAIN_ACCOUNT_RISK)
+         {
+            // The account namespace record is setup infrastructure, not exposure
+            // or an operational request. Recognize only its complete valid row,
+            // not a blanket domain exemption. Frozen release semantics unchanged.
+            SWV5S5_MvpAccountRiskAuthorityRecord account;
+            if(!SWV5S5_MvpAccountRiskValidateRow(store,rows[i],account) ||
+               !SWV5S5_EqualNamespace(scope,account.persistence_namespace)) return false;
+         }
+         else if(!SWV5S5_MvpInfrastructureRowAllowed(rows[i])) return false;
          row_body="";
          if(!SWV5S5_CanonicalString("domain",rows[i].domain_key,f)) return false; row_body+=f;
          if(!SWV5S5_CanonicalString("key",rows[i].record_key,f)) return false; row_body+=f;
