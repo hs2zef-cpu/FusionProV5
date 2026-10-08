@@ -183,6 +183,12 @@ public:
 
    void Close(void) { m_store.Close(); m_fresh_since_open=false; ZeroMemory(m_fresh); }
 
+   bool ConfigureReadOnly(const string relative_path,const string namespace_digest)
+   {
+      m_fresh_since_open=false; ZeroMemory(m_fresh);
+      return m_store.OpenReadOnly(relative_path,namespace_digest);
+   }
+
    bool LoadStored(SWV5S5_MvpLeaseClockObservation &observation,
                    SWV5S5_MvpAuthorityRow &row,bool &found)
    { return LoadVerified(observation,row,found); }

@@ -151,6 +151,8 @@ private:
    SWV5S5_MvpReconciliationGovernanceBundle m_governance;
    SWV5S5_MvpAttemptReconciliationPin m_pin;
    datetime m_safety_horizon;
+   SWV5S5_MvpControlledDemoEvidence m_observation_diagnostics;
+   string m_last_wire_digest,m_last_submission_digest;
 
    bool LoadAccountAuthority(SWV5_AccountRiskNamespace &account)
    {
@@ -296,8 +298,8 @@ private:
       evidence.symbol_specification_fresh=symbol_ok && SWV5S5_MvpSpecificationValid(m_seed.context,specification);
       evidence.units_valid=price_shape && invocation.requested_volume<=SWV5S5_MVP_MAX_VOLUME;
       evidence.margin_valid=margin_ok && margin>0.0; evidence.basket_risk_valid=stop_ok && stop_profit<0.0;
-      evidence.risk_inputs_valid=m_seed.risk_observation.account.authoritative &&
-         m_seed.risk_observation.exposure.complete && m_seed.risk_observation.basket.lifecycle.state_version>0;
+      evidence.risk_inputs_valid=m_account_observation.account.authoritative &&
+         m_account_observation.exposure.complete && m_seed.risk_observation.basket.lifecycle.state_version>0;
       evidence.protective_stop_valid=price_shape; evidence.prospective_permit_preparable=false;
       evidence.d1_terminal=(invocation.mode!=MODE_D3_SELL); evidence.manual_cleanup_independently_observed=(invocation.mode!=MODE_D3_SELL);
       evidence.independent_request_identity=(invocation.mode!=MODE_D3_SELL);
@@ -673,7 +675,8 @@ public:
      m_permit_prepared=false; m_permit_committed=false; m_admission_ready=false; m_claimed=false;
      m_store_schema_valid=false; m_genesis_valid=false; m_ownership_current=false; m_trust_current=false;
       m_safety_current=false; m_initial_request_set_empty=false; m_initial_submission_index_empty=false;
-      m_pin_durable=false; ZeroMemory(m_ownership_row); ZeroMemory(m_pin_row); ZeroMemory(m_governance); ZeroMemory(m_pin); }
+      m_pin_durable=false; ZeroMemory(m_ownership_row); ZeroMemory(m_pin_row); ZeroMemory(m_governance); ZeroMemory(m_pin);
+      ZeroMemory(m_observation_diagnostics); m_last_wire_digest=""; m_last_submission_digest=""; }
 
    bool Configure(const string path,const string namespace_digest,
                    const SWV5S5_MvpControlledDemoAuthoritySeed &seed,
@@ -689,6 +692,56 @@ public:
 
    string LastStage(void) const { return m_last_stage; }
 
+   // Diagnostics ONLY: no Configure(write), authority issuance, or CAS occurs.
+   // Unknown/not-yet-observed fields are marked explicitly, never a proof of
+   // zero exposure/completeness/confirmation. Complete DTOs are read back.
+   void FillRuntimeEvidence(SWV5S5_MvpControlledDemoEvidence &e)
+   {
+      e.wire_digest=m_last_wire_digest; e.submission_payload_digest=m_last_submission_digest;
+      e.broker_observation_taken=m_observation_diagnostics.broker_observation_taken;
+      e.execution_observation_taken=m_observation_diagnostics.execution_observation_taken;
+      e.broker_observation_complete=m_observation_diagnostics.broker_observation_complete;
+      e.execution_observation_complete=m_observation_diagnostics.execution_observation_complete;
+      e.broker_observation_sequence=m_observation_diagnostics.broker_observation_sequence;
+      e.execution_observation_sequence=m_observation_diagnostics.execution_observation_sequence;
+      e.broker_row_failures=m_observation_diagnostics.broker_row_failures;
+      e.execution_row_failures=m_observation_diagnostics.execution_row_failures;
+      e.position_identifier=m_observation_diagnostics.position_identifier;
+      SWV5S5_MvpSqliteAuthorityStore readonly; SWV5S5_MvpAuthorityRow row; bool found=false;
+      e.authority_readback_complete=false; e.safety_state=-1; e.submission_authority_state=-1; e.reconciliation_state=-1;
+      if(!readonly.OpenReadOnly(m_path,m_namespace_digest)) return;
+      if(!readonly.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",row,found) || !found) return;
+      e.safety_state=row.state;
+      string safety_generation;
+      if(!SWV5S5_MvpCanonicalScalar(row.payload,"latch_id","s",e.safety_latch_id) ||
+         !SWV5S5_MvpCanonicalScalar(row.payload,"latch_generation","u",safety_generation)) return;
+      e.safety_latch_generation=(ulong)StringToInteger(safety_generation);
+      if(!readonly.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION_GOVERNANCE,SWV5S5_MVP_RECONCILIATION_GOVERNANCE_KEY,row,found)) return;
+      SWV5S5_MvpReconciliationGovernanceBundle governance;
+      if(found) { if(!SWV5S5_MvpDecodeGovernance(row.payload,governance) || governance.bundle_digest!=row.payload_digest) return;
+         e.governance_bundle_digest=governance.bundle_digest; }
+      if(e.request_correlation_id!="" && e.attempt_id!="")
+      {
+         SWV5S5_SubmissionAuthorityRecord record;
+         if(!SWV5S5_MvpLoadSubmissionAuthority(readonly,e.request_correlation_id,e.attempt_id,record,found) || !found) return;
+         e.submission_authority_state=(int)record.state; e.permit_id=record.permit.permit_id; e.permit_digest=record.permit.permit_digest;
+         e.admission_snapshot_digest=record.admission_snapshot_digest; e.claim_id=record.invocation_claim_id;
+         e.claimed_record_digest=record.durable_record_digest;
+         SWV5S5_CanonicalRequestIdentity("request",record.permit.request_identity,e.request_identity);
+         e.symbol_specification_sequence=record.permit.symbol_specification_sequence;
+         e.symbol_specification_digest=record.admission_snapshot.collect_v2.symbol_specification.projection_digest;
+         const string key=SWV5S5_MvpAttemptPinKey(record.permit.request_identity);
+         if(!readonly.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION_PIN,key,row,found)) return;
+         SWV5S5_MvpAttemptReconciliationPin pin;
+         if(found) { if(!SWV5S5_MvpDecodeAttemptPin(row.payload,pin) || pin.pin_digest!=row.payload_digest) return; e.attempt_pin_digest=pin.pin_digest; }
+         if(!readonly.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION,key,row,found)) return;
+         if(found) { e.reconciliation_vector_revision=row.logical_revision; e.reconciliation_state=row.state; e.reconciliation_result_digest=row.payload_digest; }
+         if(!readonly.ReadRow(SWV5S5_MVP_DOMAIN_BROKER_CALLBACK_INDEX,key,row,found)) return;
+         if(found) e.callback_count=(uint)row.logical_revision;
+      }
+      e.authority_readback_complete=true;
+   }
+
    // Read-only diagnostic copies for evidence; no issuance or mutable handles.
    bool ReadPreparedRiskBinding(SWV5_RiskEvaluationInput &candidate,SWV5_RiskAuthorization &authorization)
    { if(!m_bootstrapped) return false; candidate=m_risk_input; authorization=m_risk_authorization; return true; }
@@ -703,6 +756,9 @@ public:
       m_last_stage="READ_ONLY_PREFLIGHT"; ZeroMemory(evidence);
       if(!m_configured || (direction!=1 && direction!=-1) || !CollectPhysicalPreconditions(invocation) ||
          !CollectReadOnlyExecutionState() || !FillReadOnlyEvidence(invocation,direction,evidence)) return false;
+      m_observation_diagnostics.broker_observation_taken=true; m_observation_diagnostics.execution_observation_taken=true;
+      m_observation_diagnostics.broker_observation_complete=evidence.broker_observation_complete;
+      m_observation_diagnostics.execution_observation_complete=evidence.execution_observation_complete;
       m_last_stage="READ_ONLY_PREFLIGHT_COMPLETE"; return true;
    }
 
@@ -1093,14 +1149,23 @@ public:
       if(!execution_query.ObservePendingRequest(binding,execution_snapshot)) return false;
       evidence.execution_observation_complete=execution_snapshot.operation_success && execution_snapshot.enumeration_complete &&
          execution_snapshot.row_read_failures==0;
+      m_observation_diagnostics.execution_observation_taken=true;
+      m_observation_diagnostics.execution_observation_complete=evidence.execution_observation_complete;
+      m_observation_diagnostics.execution_observation_sequence=execution_snapshot.owner_query_sequence;
+      m_observation_diagnostics.execution_row_failures=execution_snapshot.row_read_failures;
 
       SWV5S5_F_BrokerQuerySnapshot broker_snapshot;
-      if(!m_broker_recovery.Query(binding,governance.capability_proof,claimed.claimed_at,
-                                   m_seed.context.clock_time,*m_evidence_store,broker_snapshot)) return false;
+      const bool queried=m_broker_recovery.Query(binding,governance.capability_proof,claimed.claimed_at,
+                                   m_seed.context.clock_time,*m_evidence_store,broker_snapshot);
+      m_observation_diagnostics.broker_observation_taken=true;
+      m_observation_diagnostics.broker_observation_sequence=broker_snapshot.owner_query_sequence;
+      m_observation_diagnostics.broker_row_failures=broker_snapshot.row_read_failures;
       evidence.broker_observation_complete=broker_snapshot.positions_enumeration_complete &&
          broker_snapshot.orders_enumeration_complete && broker_snapshot.history_orders_enumeration_complete &&
          broker_snapshot.history_deals_enumeration_complete && broker_snapshot.callback_transactions_enumeration_complete &&
          broker_snapshot.row_read_failures==0;
+      m_observation_diagnostics.broker_observation_complete=queried && evidence.broker_observation_complete;
+      if(!queried) return false;
       bool side_effect_shape=false; SWV5S5_F_TargetedPositiveEvidence positive;
       if(!SWV5S5_F_AdapterBuildPositiveEvidence(m_seed.context,binding,governance.correlation_policy,
          governance.capability_proof,sync_result,broker_snapshot,side_effect_shape,positive))
@@ -1110,6 +1175,7 @@ public:
          return false;
       }
 
+      m_observation_diagnostics.position_identifier=positive.position_identifier;
       SWV5S5_F_ReconciliationInput candidate; ZeroMemory(candidate); SWV5S5_F_InitVersion(candidate.contract_version);
       candidate.prior_state=SWV5S5_F_SUBMISSION_UNRESOLVED;
       candidate.observation_kind=SWV5S5_F_ACCEPTED_SUBMISSION; candidate.binding=binding;
@@ -1194,6 +1260,7 @@ public:
       string reason;
       if(SWV5S5_F_AdapterValidatePreflight(command,reason)!=SWV5S5_F_ADAPTER_PREFLIGHT_READY_CURRENT_CLAIM ||
          !BindDurableOperationBeforeAdapter()) return false;
+      m_last_wire_digest=command.wire_payload_digest; m_last_submission_digest=command.submission_digest;
       evidence_store=m_evidence_store; return true;
    }
 };

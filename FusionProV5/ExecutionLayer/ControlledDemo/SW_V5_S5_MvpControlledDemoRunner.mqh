@@ -160,6 +160,15 @@ struct SWV5S5_MvpControlledDemoEvidence
    string runner_version;
    int mode;
    bool armed;
+   bool armed_input,operator_confirmed_input,execute_once_input;
+   string stop_reason;
+   bool authority_readback_complete;
+   int safety_state;
+   string governance_bundle_digest;
+   string request_identity;
+   string attempt_pin_digest;
+   ulong reconciliation_vector_revision;
+   bool broker_observation_taken,execution_observation_taken;
    datetime timestamp;
    int terminal_build;
    int mql_build;
@@ -225,6 +234,12 @@ bool SWV5S5_MvpWriteControlledDemoEvidence(const string relative_path,
    CD_EVIDENCE("source_head",evidence.source_head);
    CD_EVIDENCE("runner_version",evidence.runner_version);
    CD_EVIDENCE("mode",evidence.mode); CD_EVIDENCE("armed",evidence.armed);
+   CD_EVIDENCE("armed_input",evidence.armed_input); CD_EVIDENCE("operator_confirmed_input",evidence.operator_confirmed_input);
+   CD_EVIDENCE("execute_once_input",evidence.execute_once_input); CD_EVIDENCE("stop_reason",evidence.stop_reason);
+   CD_EVIDENCE("authority_readback_complete",evidence.authority_readback_complete); CD_EVIDENCE("safety_state",evidence.safety_state);
+   CD_EVIDENCE("governance_bundle_digest",evidence.governance_bundle_digest); CD_EVIDENCE("request_identity",evidence.request_identity);
+   CD_EVIDENCE("attempt_pin_digest",evidence.attempt_pin_digest); CD_EVIDENCE("reconciliation_vector_revision",evidence.reconciliation_vector_revision);
+   CD_EVIDENCE("broker_observation_taken",evidence.broker_observation_taken); CD_EVIDENCE("execution_observation_taken",evidence.execution_observation_taken);
    CD_EVIDENCE("timestamp",evidence.timestamp); CD_EVIDENCE("terminal_build",evidence.terminal_build);
    CD_EVIDENCE("mql_build",evidence.mql_build); CD_EVIDENCE("broker",evidence.broker);
    CD_EVIDENCE("server",evidence.server); CD_EVIDENCE("account_login",evidence.account_login);
@@ -342,7 +357,9 @@ public:
       if(invocation.mode==MODE_D6_RECOVER)
       {
          SWV5S5_MvpControlledDemoRecoveryEvidence recovery;
-         if(!authority.ReloadAndReconcileD6(recovery))
+         const bool reconciled=authority.ReloadAndReconcileD6(recovery);
+         result.request_correlation_id=recovery.request_correlation_id; result.attempt_id=recovery.attempt_id;
+         if(!reconciled)
          {
             result.stop_reason=(recovery.unresolved_no_positive && recovery.reason_code!="" ?
                recovery.reason_code : "D6_RECOVERY_NOT_AUTHORITATIVELY_COMPLETE");

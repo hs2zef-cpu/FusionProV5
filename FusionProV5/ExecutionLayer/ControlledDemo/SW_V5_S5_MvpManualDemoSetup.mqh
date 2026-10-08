@@ -58,7 +58,6 @@ bool SWV5S5_MvpManualDemoSetupInputValid(const SWV5S5_MvpManualDemoSetupInput &s
       setup_input.lease_duration_seconds<=SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS &&
       setup_input.platform_observation_id!="" && setup_input.basket_id!="" &&
       setup_input.producer_epoch>0 && setup_input.producer_timeframe>0 &&
-      setup_input.ingress_identity!="" &&
       SWV5S5_MvpOperatorInvocationValid(setup_input.operator_invocation,now);
 }
 
@@ -151,7 +150,9 @@ public:
       trust_scope.execution_mode=setup_input.producer_execution_mode;
       trust_scope.publication_clock_id=result.accepted_clock.clock_id;
       trust_scope.publication_clock_authority=result.accepted_clock.clock_authority;
-      trust_scope.ingress_identity=setup_input.ingress_identity;
+      // Producer Trust scopes the producer, not a future caller-invented ingress.
+      // The actual ingress identity is derived only from Decision publication.
+      trust_scope.ingress_identity="";
 
       SWV5S5_MvpManualProducerTrustProvisioner trust;
       SWV5S5_ProducerTrustRecord persisted;

@@ -248,6 +248,7 @@ private:
    SWV5S5_MvpSqliteAuthorityStore m_store;
 public:
    bool Configure(const string path,const string namespace_digest){ return m_store.Open(path,namespace_digest); }
+   bool ConfigureReadOnly(const string path,const string namespace_digest){ return m_store.OpenReadOnly(path,namespace_digest); }
    bool Provision(const SWV5S5_MvpOperatorInvocation &op,const SWV5S5_F_ProfileScope &profile,
                   const string approval_reference,const string proof_source_reference,
                   const datetime valid_until,const ulong authority_sequence,

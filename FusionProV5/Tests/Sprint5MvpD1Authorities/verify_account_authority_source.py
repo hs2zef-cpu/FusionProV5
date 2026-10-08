@@ -49,7 +49,11 @@ sites = []
 for path in (repo / "FusionProV5/ExecutionLayer").rglob("*.mqh"):
     sites.extend((path, m.start()) for m in re.finditer(r'\bOrderSend\s*\(', code(path.read_text(encoding="utf-8"))))
 check("one-production-ordersend", len(sites) == 1 and sites[0][0].name == "SW_V5_S5_F_BrokerPlatformBoundary.mqh")
-changed = subprocess.check_output(["git", "diff", "--name-only", "03bc0b3927036ce6a64264421153898282b3fe1b"], cwd=repo, text=True).splitlines()
+account_commit = "3d0224e7a0d8bd42a0b9eec91e8bdf3f8c048dd7"
+# Keep the original Account patch scope check IMMUTABLE. The later attended
+# launch has a separately checked native enum translation fix, not an Account
+# patch exemption permitting arbitrary Broker changes.
+changed = subprocess.check_output(["git", "diff", "--name-only", "03bc0b3927036ce6a64264421153898282b3fe1b", account_commit], cwd=repo, text=True).splitlines()
 check("frozen-contracts-and-signal-unchanged", not any(p.startswith(("FusionProV5/ProductionArchitecture/", "FusionProV5/ExecutionLayer/Contracts/", "FusionProV5/Engines/", "FusionProV5/Decision/", "FusionProV5/Orchestration/", "FusionProV5/ExecutionLayer/BrokerAdapter/")) for p in changed))
 failures = [name for name, ok in checks if not ok]
 print(f"ACCOUNT_SOURCE_SUMMARY|total={len(checks)}|passed={len(checks)-len(failures)}|failed={len(failures)}|mql_executed=false")

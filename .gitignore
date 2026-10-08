@@ -22,3 +22,5 @@ __pycache__/
 .vscode/
 .idea/
 
+# Generated attended-launch source identity (build artifact, never authority).
+SW_V5_S5_MvpAttendedBuild.generated.mqh

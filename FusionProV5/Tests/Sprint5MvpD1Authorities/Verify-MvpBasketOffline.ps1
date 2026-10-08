@@ -1,4 +1,4 @@
-param([switch]$RunTester,[switch]$SkipCompile,[switch]$AccountOnly)
+param([switch]$RunTester,[switch]$SkipCompile,[switch]$AccountOnly,[switch]$LaunchOnly)
 # TEST ONLY / NO BROKER ACCESS. Never launches the attended production runner.
 $ErrorActionPreference='Stop'
 $repo=(Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
@@ -22,6 +22,7 @@ if(!$SkipCompile){
 }
 if(!$RunTester){return}
 $runs=@(
+ @('Sprint5MvpControlledDemo/attended_launch_offline_tester.ini','ATTENDED_LAUNCH_SUMMARY',47),
  @('Sprint5MvpD1Authorities/mvp_account_authority_offline_tester.ini','MVP_ACCOUNT_AUTHORITY_SUMMARY',61),
  @('Sprint5MvpD1Authorities/mvp_basket_authority_offline_tester.ini','MVP_BASKET_AUTHORITY_SUMMARY',36),
  @('Sprint5MvpD1Authorities/mvp_basket_restart_offline_tester.ini','MVP_BASKET_RESTART_SUMMARY',4),
@@ -35,6 +36,7 @@ $runs=@(
  @('Sprint5MvpRuntime/phase_f_broker_mql_regression.ini','S5F_BROKER_MQL_RESULT',48)
 )
 if($AccountOnly){$runs=@($runs | Where-Object {$_[1] -eq 'MVP_ACCOUNT_AUTHORITY_SUMMARY'})}
+if($LaunchOnly){$runs=@($runs | Where-Object {$_[1] -eq 'ATTENDED_LAUNCH_SUMMARY'})}
 foreach($run in $runs){
   if(Get-Process -Name terminal64 -ErrorAction SilentlyContinue){throw 'Existing terminal: stop without interacting with it.'}
   $config=Join-Path $repo ('FusionProV5/Tests/'+$run[0]); $settings=Get-Content -LiteralPath $config -Raw

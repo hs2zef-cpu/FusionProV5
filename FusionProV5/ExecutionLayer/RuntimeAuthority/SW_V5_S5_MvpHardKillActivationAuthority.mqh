@@ -250,6 +250,23 @@ public:
       return ValidateEligibilityCore(store,context,admission.snapshot.collect_v1.hard_kill.state,lease,false,projection);
    }
 
+   // Read-only complete lineage projection; the existing eligibility validator
+   // remains the sole decision authority. A scalar latch ID is a lookup only.
+   bool LoadCurrentInactive(SWV5S5_MvpSqliteAuthorityStore &store,const SWV5_ContractValidationContext &context,
+                            const SWV5_InstanceLease &lease,SWV5_HardKillState &inactive)
+   {
+      ZeroMemory(inactive); SWV5S5_MvpAuthorityRow current,history,validated; bool found=false; string id;
+      SWV5S5_MvpHardKillActivationProof proof; SWV5_HardKillState released;
+      SWV5_HardKillReleaseAuthorityRecord record;
+      if(!store.ReadRow(SWV5S5_MVP_DOMAIN_HARD_KILL,"CURRENT",current,found) || !found ||
+         current.state!=(int)SWV5_HARD_KILL_INACTIVE || !SWV5S5_MvpCanonicalScalar(current.payload,"latch_id","s",id) ||
+         !store.ReadRow(SWV5S5_MVP_DOMAIN_RELEASE_HISTORY,id,history,found) || !found ||
+         !SWV5S5_MvpDecodeActivation(history.payload,proof) ||
+         !SWV5S5_MvpDecodeReleaseBundle(proof.release_bundle,released,record)) return false;
+      SWV5S5_MvpNewInactiveEpoch(released,history.payload_digest,inactive);
+      return ValidateEligibility(store,context,inactive,lease,validated);
+   }
+
 private:
    bool ValidateEligibilityCore(SWV5S5_MvpSqliteAuthorityStore &store,const SWV5_ContractValidationContext &context,
                                  const SWV5_HardKillState &inactive,const SWV5_InstanceLease &lease,

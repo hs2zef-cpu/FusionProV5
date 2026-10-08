@@ -7,6 +7,8 @@
 // attended operator integration; blank/default values always fail closed.
 
 #include "../../ExecutionLayer/ControlledDemo/SW_V5_S5_MvpManualDemoSetup.mqh"
+#include "../../ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedSetupEvidence.mqh"
+#include "SW_V5_S5_MvpAttendedBuild.generated.mqh"
 
 input string InpOperatorId="";
 input string InpAuthorityRole="";
@@ -62,20 +64,31 @@ int OnInit(void)
    g_trust_anchor.trust_anchor_id=InpTrustAnchorId;
    g_trust_anchor.current_authority_record_id=InpTrustAuthorityRecordId;
    g_trust_anchor.current_authority_generation=InpTrustAuthorityGeneration;
-   g_setup_armed=InpExecuteAttendedSetupOnce && _Symbol==SWV5S5_MVP_SYMBOL &&
-      InpLeaseDurationSeconds>0 && InpLeaseDurationSeconds<=SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS &&
-      InpClaimantInstanceId!="" && InpClaimantProcessFingerprint!="" &&
-      InpPlatformObservationId!="" && InpOperatorAuthenticatedAt>0;
-   Print("CONTROLLED_DEMO_SETUP|",(g_setup_armed ? "ARMED_WAITING_CURRENT_XAUUSD_TICK" : "FAIL_CLOSED_EXPLICIT_INPUT_REQUIRED"));
+   g_setup_armed=false; g_setup_attempted=false;
+   Print("CONTROLLED_DEMO_SETUP|FRESH_ATTENDED_A_KEY_REQUIRED|NO_MUTATION");
    return INIT_SUCCEEDED;
+}
+
+void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
+{
+   if(id==CHARTEVENT_KEYDOWN && lparam==65 && InpExecuteAttendedSetupOnce && SWV5S5_MVP_ATTENDED_CLEAN_SOURCE && !g_setup_attempted &&
+      _Symbol==SWV5S5_MVP_SYMBOL && InpLeaseDurationSeconds>0 &&
+      InpLeaseDurationSeconds<=SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS &&
+      InpClaimantInstanceId!="" && InpClaimantProcessFingerprint!="" && InpPlatformObservationId!="") g_setup_armed=true;
 }
 
 void OnTick(void)
 {
    if(!g_setup_armed || g_setup_attempted || _Symbol!=SWV5S5_MVP_SYMBOL) return;
    g_setup_attempted=true; // latch before any clock or ownership mutation
+   g_setup_armed=false;
+   g_setup_request.operator_invocation.authenticated_at=TimeCurrent(); // fresh attended event, never a saved timestamp
    SWV5S5_MvpMt5ReadOnlyPlatform platform; SWV5S5_MvpManualDemoSetup setup;
    SWV5S5_MvpManualDemoSetupResult result;
    const bool ok=setup.ProvisionOnCurrentSymbolTick(g_setup_request,platform,g_trust_anchor,result);
+   SWV5S5_MvpRuntimeProfileObservation observed; datetime at=0;
+   if(platform.CaptureProfile(_Symbol,observed,at))
+      SWV5S5_MvpWriteAttendedSetupEvidence(g_setup_request.relative_store_path,g_setup_request.persistence_namespace_identity,
+         SWV5S5_MVP_ATTENDED_BUILT_SOURCE,"MANUAL_SETUP",result.stop_reason,ok,observed,true);
    Print("CONTROLLED_DEMO_SETUP|",(ok ? "OWNERSHIP_AND_TRUST_READY" : "FAILED"),"|reason=",result.stop_reason);
 }

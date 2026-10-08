@@ -7,6 +7,16 @@
 
 #include "SW_V5_S5_F_BrokerAdapterCore.mqh"
 
+// Native MT5 enum values are not the frozen contract enum values.
+// Translation only: the accepted Demo/HEDGING policy is unchanged.
+SWV5_AccountPositionMode SWV5S5_F_NativeAccountMode(const long native_mode)
+{
+   if(native_mode==ACCOUNT_MARGIN_MODE_RETAIL_HEDGING) return SWV5_ACCOUNT_MODE_HEDGING;
+   if(native_mode==ACCOUNT_MARGIN_MODE_RETAIL_NETTING || native_mode==ACCOUNT_MARGIN_MODE_EXCHANGE)
+      return SWV5_ACCOUNT_MODE_NETTING;
+   return SWV5_ACCOUNT_MODE_UNKNOWN;
+}
+
 class SWV5S5_F_BrokerPlatformAdapter
 {
 private:
@@ -28,7 +38,7 @@ private:
       environment.terminal_build=(int)TerminalInfoInteger(TERMINAL_BUILD);
       environment.mql_build=(int)__MQLBUILD__;
       environment.account_trade_mode=(int)AccountInfoInteger(ACCOUNT_TRADE_MODE);
-      environment.account_mode=(SWV5_AccountPositionMode)AccountInfoInteger(ACCOUNT_MARGIN_MODE);
+      environment.account_mode=SWV5S5_F_NativeAccountMode(AccountInfoInteger(ACCOUNT_MARGIN_MODE));
       environment.connected=(bool)TerminalInfoInteger(TERMINAL_CONNECTED);
       environment.terminal_trade_allowed=(bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
       environment.mql_trade_allowed=(bool)MQLInfoInteger(MQL_TRADE_ALLOWED);
@@ -182,6 +192,9 @@ private:
    }
 
 public:
+   // Observation only; never changes permissions, settings, or broker state.
+   bool ObserveEnvironment(const string symbol,SWV5S5_F_AdapterEnvironment &environment) const
+   { return CaptureEnvironment(symbol,environment); }
    SWV5S5_F_BrokerPlatformAdapter(const string broker_read_path_id,
                                    const string broker_authority_instance_id,
                                    const string broker_sequence_authority_id,
