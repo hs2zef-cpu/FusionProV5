@@ -22,7 +22,7 @@ if(!$SkipCompile){
 }
 if(!$RunTester){return}
 $runs=@(
- @('Sprint5MvpControlledDemo/attended_launch_offline_tester.ini','ATTENDED_LAUNCH_SUMMARY',47),
+ @('Sprint5MvpControlledDemo/attended_launch_offline_tester.ini','ATTENDED_LAUNCH_SUMMARY',75),
  @('Sprint5MvpD1Authorities/mvp_account_authority_offline_tester.ini','MVP_ACCOUNT_AUTHORITY_SUMMARY',61),
  @('Sprint5MvpD1Authorities/mvp_basket_authority_offline_tester.ini','MVP_BASKET_AUTHORITY_SUMMARY',36),
  @('Sprint5MvpD1Authorities/mvp_basket_restart_offline_tester.ini','MVP_BASKET_RESTART_SUMMARY',4),

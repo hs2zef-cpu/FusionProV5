@@ -17,7 +17,8 @@ bool SWV5S5_MvpGitSourceIdentity(const string sha)
 // rehearsal. The host builds every input from native observations/real owners;
 // only tests substitute the explicitly non-mutating submission/read seams.
 bool SWV5S5_MvpDispatchAttended(const SWV5S5_MvpControlledDemoInvocation &invocation,
-   const SWV5S5_MvpLeaseClockObservation &clock,const SWV5S5_F_AdapterEnvironment &environment,
+   const SWV5S5_MvpLeaseClockObservation &clock,const SWV5S5_MvpMarketQuoteObservation &event_quote,
+   const SWV5S5_F_AdapterEnvironment &environment,
    const SWV5_EngineInput &engine,const SWV5_DecisionResult &decision,const ulong filling,
    ISWV5S5MvpReadOnlyPlatform &platform,SWV5S5_MvpControlledDemoAuthorityPort &authority,
    SWV5S5_MvpControlledDemoRunner &runner,ISWV5S5_MvpControlledDemoSubmissionBoundary &boundary,
@@ -26,6 +27,8 @@ bool SWV5S5_MvpDispatchAttended(const SWV5S5_MvpControlledDemoInvocation &invoca
 {
    ZeroMemory(result); SWV5S5_MvpAttendedAuthoritySeedBuilder builder;
    if(!builder.LoadBase(invocation,clock,platform,environment,seed,reason)) return false;
+   if(invocation.mode==MODE_D1_BUY && !event_quote.complete) { reason="CURRENT_EVENT_QUOTE_REQUIRED"; return false; }
+   seed.event_quote=event_quote;
    seed.engine_input=engine; seed.decision=decision; seed.filling_mode=filling;
    SWV5S5_MvpSqliteAuthorityStore readonly;
    if(invocation.mode!=MODE_D6_RECOVER &&
@@ -141,9 +144,12 @@ public:
       SWV5_EngineInput engine_input; SWV5_DecisionResult decision; ZeroMemory(engine_input); ZeroMemory(decision);
       SWV5S5_MvpLeaseClockAuthority clock; SWV5S5_MvpLeaseClockObservation observation;
       SWV5S5_MvpAuthorityRow clock_row; bool found=false;
+      SWV5S5_MvpMarketQuoteObservation event_quote; ZeroMemory(event_quote);
       if(m_invocation.mode==MODE_D1_BUY)
       {
          if(!m_gate.SessionArmed()) return;
+         if(!m_platform.CaptureMarketQuote(SWV5S5_MVP_SYMBOL,TimeCurrent(),event_quote))
+         { RecordStop(environment,"CURRENT_EVENT_QUOTE_FAIL_CLOSED"); return; }
          SWV5_PriceActionResult pa; SWV5_TrendResult trend; SWV5_MomentumResult momentum;
          SWV5_LegacyResult legacy; SWV5_PolicyResult policy;
          SWV5_TrendRegressionResult tr; SWV5_MomentumRegressionResult mr;
@@ -178,7 +184,7 @@ public:
       }
       SWV5S5_MvpControlledDemoAuthoritySeed seed; string reason;
       SWV5S5_MvpControlledDemoResult result;
-      SWV5S5_MvpDispatchAttended(m_invocation,observation,environment,engine_input,decision,m_filling,m_platform,
+      SWV5S5_MvpDispatchAttended(m_invocation,observation,event_quote,environment,engine_input,decision,m_filling,m_platform,
          m_authority,m_runner,*m_boundary,m_evidence_store,m_recovery,seed,result,reason);
       m_callback_bound=m_invocation.mode!=MODE_PREFLIGHT;
       m_recorded_seed=seed; m_recorded_result=result; m_has_record=true;

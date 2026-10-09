@@ -25,6 +25,7 @@ struct SWV5S5_MvpControlledDemoAuthoritySeed
    SWV5_RiskEvaluationInput risk_observation;
    SWV5S5_MvpAccountObservation account_observation;
    SWV5S5_F_AdapterEnvironment adapter_environment;
+   SWV5S5_MvpMarketQuoteObservation event_quote;
    ulong filling_mode;
    string comment_metadata;
 };
@@ -122,6 +123,8 @@ private:
    SWV5_ExecutionRequestIdentity m_request_identity;
    SWV5S5_SymbolSpecificationAuthorityView m_symbol;
    SWV5_NormalizedUnits m_normalized;
+   SWV5S5_MvpMarketQuoteObservation m_quote;
+   SWV5_UnitNormalizationRequest m_unit_request;
    string m_normalization_identity,m_unit_authority_id,m_unit_authority_digest;
    ulong m_unit_authority_revision;
    SWV5_MarginAuthorityRecord m_margin;
@@ -267,15 +270,17 @@ private:
                              SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    {
       SWV5_SymbolUnitSpecification specification; double margin=0.0,stop_profit=0.0;
-      const bool price_shape=invocation.requested_volume>0.0 && invocation.requested_price>0.0 &&
-         invocation.protective_stop_price>0.0 && (direction>0 ? invocation.protective_stop_price<invocation.requested_price :
-                                                               invocation.protective_stop_price>invocation.requested_price);
       const bool symbol_ok=m_platform.CaptureSymbolSpecification(SWV5S5_MVP_SYMBOL,m_seed.context.clock_sequence,
                                                                   m_seed.context.clock_time,specification);
+      SWV5S5_MvpMarketQuoteObservation quote; SWV5_UnitNormalizationRequest quote_unit; ZeroMemory(quote_unit);
+      const bool price_shape=symbol_ok && invocation.requested_volume>0.0 &&
+         m_platform.CaptureMarketQuote(SWV5S5_MVP_SYMBOL,m_seed.context.clock_time,quote) &&
+         SWV5S5_MvpBindQuoteToUnit(quote,specification,m_seed.context.clock_time,direction,
+            invocation.protective_stop_price,invocation.optional_take_profit_price,quote_unit);
       const bool margin_ok=price_shape && m_platform.CalculateMargin(direction,SWV5S5_MVP_SYMBOL,
-         invocation.requested_volume,invocation.requested_price,margin);
+         invocation.requested_volume,quote_unit.raw_price,margin);
       const bool stop_ok=price_shape && m_platform.CalculateProfit(direction,SWV5S5_MVP_SYMBOL,
-         invocation.requested_volume,invocation.requested_price,invocation.protective_stop_price,stop_profit);
+         invocation.requested_volume,quote_unit.raw_price,invocation.protective_stop_price,stop_profit);
       evidence.profile_exact=m_observed_profile.broker_identity==m_seed.adapter_environment.broker_identity &&
          m_observed_profile.server==m_seed.adapter_environment.server &&
          m_observed_profile.account_login==m_seed.adapter_environment.account_login &&
@@ -684,6 +689,7 @@ public:
                    ISWV5S5MvpBrokerRecoveryReadPort *broker_recovery=NULL)
    {
       m_path=path; m_namespace_digest=namespace_digest; m_seed=seed;
+      ZeroMemory(m_quote); ZeroMemory(m_unit_request);
       m_platform=platform; m_evidence_store=evidence_store; m_broker_recovery=broker_recovery;
       m_configured=path!="" && namespace_digest!="" && platform!=NULL && evidence_store!=NULL;
       m_last_stage=(m_configured ? "CONFIGURED" : "CONFIGURE_REJECTED");
@@ -749,6 +755,9 @@ public:
    { if(!m_admission_ready) return false; snapshot=m_admission_proof.snapshot; return true; }
    bool ReadPreparedObservation(SWV5S5_MvpAccountObservationEnvelope &observation)
    { if(!m_bootstrapped) return false; observation=m_account_observation; return true; }
+   bool ReadPreparedMarketBinding(SWV5S5_MvpMarketQuoteObservation &quote,SWV5_UnitNormalizationRequest &unit,
+                                 SWV5_NormalizedUnits &normalized)
+   { if(!m_bootstrapped) return false; quote=m_quote; unit=m_unit_request; normalized=m_normalized; return true; }
 
    virtual bool CollectReadOnlyPreflight(const SWV5S5_MvpControlledDemoInvocation &invocation,const int direction,
                                          SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
@@ -770,6 +779,13 @@ public:
          ((invocation.mode==MODE_D1_BUY && direction!=1) || (invocation.mode==MODE_D3_SELL && direction!=-1))) return false;
       m_last_stage="PREFLIGHT_PHYSICAL";
       if(!CollectPhysicalPreconditions(invocation)) return false;
+      // Observe before increasing-authority writes. An attended host also pins
+      // the quote captured at entry to its serialized OnTick; no newer/cached
+      // quote may silently replace that event's evidence, even in the same second.
+      m_last_stage="PREFLIGHT_NATIVE_QUOTE";
+      if(!m_platform.CaptureMarketQuote(SWV5S5_MVP_SYMBOL,m_seed.context.clock_time,m_quote)) return false;
+      if(m_seed.event_quote.complete &&
+         (m_quote.symbol!=m_seed.event_quote.symbol || m_quote.tick_time_msc!=m_seed.event_quote.tick_time_msc)) return false;
       m_last_stage="PREFLIGHT_SIGNAL";
       SWV5S5_MvpSignalIngressAdapter signal; bool ingress_replayed=false;
       if(!signal.Configure(m_path,m_namespace_digest) ||
@@ -817,17 +833,21 @@ public:
       SWV5S5_MvpSqliteAuthorityStore store; SWV5S5_MvpSymbolSpecificationAuthority symbol_authority;
       m_last_stage="PREFLIGHT_SYMBOL";
       if(!store.Open(m_path,m_namespace_digest) || !symbol_authority.Refresh(store,*m_platform,m_seed.context.clock_time,m_symbol)) return false;
+      const double quote_tolerance=m_symbol.specification.tick_size*1e-6;
+      if(m_seed.event_quote.complete &&
+         (!SWV5S5_MvpQuoteValid(m_seed.event_quote,SWV5S5_MVP_SYMBOL,m_seed.context.clock_time,m_symbol.specification.tick_size) ||
+          MathAbs(m_quote.bid-m_seed.event_quote.bid)>quote_tolerance ||
+          MathAbs(m_quote.ask-m_seed.event_quote.ask)>quote_tolerance)) return false;
       SWV5_UnitNormalizationRequest unit; ZeroMemory(unit); SWV5S5_MvpInitProductionVersion(unit.contract_version);
       unit.persistence_namespace=scope; unit.ownership_fence=m_seed.current_lease.fence; unit.intent_type=SWV5_INTENT_OPEN;
       unit.purpose=SWV5_PRICE_ENTRY; unit.operation_kind=SWV5_OPERATION_MARKET_ENTRY; unit.direction=direction;
-      unit.raw_price=invocation.requested_price; unit.raw_stop_price=invocation.protective_stop_price;
-      unit.raw_limit_price=invocation.optional_take_profit_price; unit.raw_volume=invocation.requested_volume;
+      if(!SWV5S5_MvpBindQuoteToUnit(m_quote,m_symbol.specification,m_seed.context.clock_time,direction,
+         invocation.protective_stop_price,invocation.optional_take_profit_price,unit)) return false;
+      unit.raw_volume=invocation.requested_volume;
       unit.current_exposure_volume=0.0; unit.target_exposure_volume=invocation.requested_volume;
-      unit.reference_market_price=invocation.requested_price; unit.operation_price=invocation.requested_price;
-      unit.market_bid=(direction>0 ? invocation.requested_price-m_symbol.specification.point_size : invocation.requested_price);
-      unit.market_ask=(direction>0 ? invocation.requested_price : invocation.requested_price+m_symbol.specification.point_size);
       unit.expected_specification_sequence=m_symbol.specification.specification_sequence;
       unit.exposure_increasing=true; unit.protective_operation=false;
+      m_unit_request=unit;
       SWV5S5_MvpUnitSystemContract unit_contract; SWV5_UnitValidationResult unit_result;
       m_last_stage="PREFLIGHT_UNITS";
       if(!unit_contract.Normalize(m_seed.context,m_symbol.specification,unit,m_normalized,unit_result) ||

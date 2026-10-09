@@ -6,6 +6,45 @@
 
 #include "SW_V5_S5_MvpDeploymentProfile.mqh"
 
+// Runtime observation only: not a new frozen contract or durable authority.
+struct SWV5S5_MvpMarketQuoteObservation
+{
+   string symbol;
+   double bid,ask;
+   datetime tick_time,observed_at;
+   long tick_time_msc;
+   SWV5_AuthoritySource source;
+   bool complete;
+};
+
+bool SWV5S5_MvpQuoteValid(const SWV5S5_MvpMarketQuoteObservation &q,const string symbol,
+                        const datetime event_at,const double tick_size)
+{
+   if(!q.complete || q.source!=SWV5_AUTHORITY_LIVE_BROKER_STATE ||
+      symbol!=SWV5S5_MVP_SYMBOL || q.symbol!=symbol || event_at<=0 ||
+      q.observed_at!=event_at || q.tick_time!=event_at || q.tick_time_msc<=0 ||
+      q.tick_time_msc/1000!=(long)q.tick_time || !MathIsValidNumber(q.bid) ||
+      !MathIsValidNumber(q.ask) || q.bid<=0.0 || q.ask<q.bid ||
+      !MathIsValidNumber(tick_size) || tick_size<=0.0) return false;
+   return MathAbs(q.bid-MathRound(q.bid/tick_size)*tick_size)<=tick_size*1e-6 &&
+          MathAbs(q.ask-MathRound(q.ask/tick_size)*tick_size)<=tick_size*1e-6;
+}
+
+// Populate only market/protection inputs; the frozen Unit evaluator still
+// owns normalization. Operator protection is never shifted with the quote.
+bool SWV5S5_MvpBindQuoteToUnit(const SWV5S5_MvpMarketQuoteObservation &q,
+   const SWV5_SymbolUnitSpecification &spec,const datetime event_at,const int direction,
+   const double stop,const double target,SWV5_UnitNormalizationRequest &unit)
+{
+   if(direction!=1 || !SWV5S5_MvpQuoteValid(q,spec.symbol,event_at,spec.tick_size) ||
+      !MathIsValidNumber(stop) || !MathIsValidNumber(target) || stop<=0.0 || stop>=q.ask ||
+      target<0.0 || (target!=0.0 && target<=q.ask)) return false;
+   unit.raw_price=q.ask; unit.reference_market_price=q.ask; unit.operation_price=q.ask;
+   unit.market_bid=q.bid; unit.market_ask=q.ask;
+   unit.raw_stop_price=stop; unit.raw_limit_price=target;
+   return true;
+}
+
 struct SWV5S5_MvpAccountObservation
 {
    SWV5S5_MvpRuntimeProfileObservation profile;
@@ -26,6 +65,8 @@ struct SWV5S5_MvpAccountObservation
 class ISWV5S5MvpReadOnlyPlatform
 {
 public:
+   virtual bool CaptureMarketQuote(const string symbol,const datetime event_at,
+                                  SWV5S5_MvpMarketQuoteObservation &quote)=0;
    virtual bool CaptureProfile(const string symbol,SWV5S5_MvpRuntimeProfileObservation &profile,
                                datetime &observed_at)=0;
    virtual bool CaptureSymbolSpecification(const string symbol,const ulong specification_sequence,
@@ -79,6 +120,20 @@ private:
    }
 
 public:
+   virtual bool CaptureMarketQuote(const string symbol,const datetime event_at,
+                                  SWV5S5_MvpMarketQuoteObservation &quote)
+   {
+      ZeroMemory(quote);
+      // Called synchronously from current-symbol OnTick, never a cache or timer.
+      if(symbol!=SWV5S5_MVP_SYMBOL || _Symbol!=symbol || event_at!=TimeCurrent()) return false;
+      MqlTick tick; ZeroMemory(tick); double size=0.0;
+      if(!SymbolInfoTick(symbol,tick) || !SymbolInfoDouble(symbol,SYMBOL_TRADE_TICK_SIZE,size)) return false;
+      quote.symbol=symbol; quote.bid=tick.bid; quote.ask=tick.ask;
+      quote.tick_time=tick.time; quote.tick_time_msc=tick.time_msc; quote.observed_at=event_at;
+      quote.source=SWV5_AUTHORITY_LIVE_BROKER_STATE; quote.complete=true;
+      if(!SWV5S5_MvpQuoteValid(quote,symbol,event_at,size)) { ZeroMemory(quote); return false; }
+      return true;
+   }
    virtual bool CaptureProfile(const string symbol,SWV5S5_MvpRuntimeProfileObservation &profile,
                                datetime &observed_at)
    {

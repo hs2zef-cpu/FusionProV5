@@ -161,6 +161,15 @@ void SWV5S5_MvpD1SignalAssertions(SWV5S5_MvpD1Collector &c,const string path,
 class SWV5S5_MvpD1ReadOnlyPlatform : public ISWV5S5MvpReadOnlyPlatform
 {
 public:
+   virtual bool CaptureMarketQuote(const string symbol,const datetime event_at,
+                                  SWV5S5_MvpMarketQuoteObservation &quote)
+   {
+      ZeroMemory(quote); if(symbol!=SWV5S5_MVP_SYMBOL || event_at!=SWV5_TEST_TIME) return false;
+      // TEST ONLY independent non-one-point quote, compatible with 0.01 ticks.
+      quote.symbol=symbol; quote.bid=3499.80; quote.ask=3500.0;
+      quote.tick_time=event_at; quote.observed_at=event_at; quote.tick_time_msc=(long)event_at*1000;
+      quote.source=SWV5_AUTHORITY_LIVE_BROKER_STATE; quote.complete=true; return true;
+   }
    virtual bool CaptureProfile(const string symbol,SWV5S5_MvpRuntimeProfileObservation &profile,
                                datetime &observed_at)
    {
@@ -238,12 +247,13 @@ class SWV5S5_MvpD1PersistedEvidenceBoundary : public ISWV5S5_MvpControlledDemoSu
 {
 public:
    uint calls;
+   SWV5S5_F_AdapterSubmissionCommand last_command;
    SWV5S5_MvpD1PersistedEvidenceBoundary(void){ calls=0; }
    virtual bool SubmitExactlyOnce(SWV5S5_F_AdapterSubmissionCommand &command,
                                   ISWV5S5FBrokerEvidenceStore &evidence_store,
                                   SWV5S5_F_AdapterSyncResult &captured)
    {
-      calls++; ZeroMemory(captured);
+      calls++; last_command=command; ZeroMemory(captured);
       captured.invocation_attempted=true; captured.transport_result=true; captured.last_error=0;
       captured.retcode=10009; captured.retcode_external=0; captured.request_id_session_local=6001;
       captured.order_ticket=7001; captured.deal_ticket=8001; captured.volume=command.volume;

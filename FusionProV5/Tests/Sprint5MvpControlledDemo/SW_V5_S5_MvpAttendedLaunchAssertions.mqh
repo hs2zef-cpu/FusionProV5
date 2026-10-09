@@ -134,6 +134,8 @@ public:
    }
 };
 
+#include "SW_V5_S5_MvpNativeQuoteAssertions.mqh"
+
 class SWV5S5_TestAttendedLaunchSuite
 {
 private:
@@ -143,7 +145,7 @@ private:
    string m_ns;
    const string m_path;
    SWV5S5_MvpManualDemoSetupResult m_setup_result;
-   SWV5S5_MvpMt5ReadOnlyPlatform m_platform;
+   SWV5S5_TestQuoteCalculationPlatform m_platform;
    SWV5S5_MvpRuntimeProfileObservation m_profile;
 public:
    SWV5S5_TestAttendedLaunchSuite(void):m_path("mvp_attended_launch_TEST_ONLY_private.sqlite")
@@ -216,6 +218,14 @@ public:
       invocation.expected_broker_identity=m_profile.broker_identity; invocation.expected_server=m_profile.server;
       invocation.expected_demo_account_login=m_profile.account_login; invocation.source_head="TEST_ONLY_OFFLINE_SOURCE_NOT_DEPLOYABLE";
       MqlTick tick; SymbolInfoTick(_Symbol,tick); invocation.requested_price=tick.ask; invocation.protective_stop_price=tick.ask-2.0;
+      SWV5S5_MvpMarketQuoteObservation event_quote;
+      const bool captured=m_platform.CaptureMarketQuote(_Symbol,context.clock_time,event_quote);
+      SWV5S5_MvpD1Record(m_c,"QUOTE-01",captured && event_quote.complete &&
+         event_quote.bid==tick.bid && event_quote.ask==tick.ask && event_quote.tick_time_msc==tick.time_msc);
+      SWV5S5_TestQuoteUnitNegatives(m_c,event_quote,context,m_platform);
+      // Deliberately stale compatibility input. Native quote must win throughout
+      // the actual physical graph, not just in the isolated helper.
+      invocation.requested_price=tick.ask+10.0;
       SWV5S5_MvpAttendedAuthoritySeedBuilder builder; SWV5S5_MvpControlledDemoAuthoritySeed seed;
       SWV5S5_MvpSqliteAuthorityStore readonly;
       const bool seeded=governance && builder.LoadBase(invocation,observed,m_platform,environment,seed,reason) &&
@@ -297,6 +307,31 @@ public:
       // Permit+Admission on exact copies of the real native setup state.
       seed.engine_input=engine; seed.decision=decision;
       const ulong filling=((environment.symbol_filling_mask & 1)!=0 ? 1 : 2);
+      // Real dispatch/authority rejection, not only helper validation. Same
+      // second/different millisecond also fails; never promote a cached quote.
+      for(int n=0;n<4;n++)
+      {
+         const string clone="mvp_launch_TEST_ONLY_quote_"+IntegerToString(n)+".sqlite";
+         FileDelete(clone,FILE_COMMON); FileDelete(clone+"-wal",FILE_COMMON); FileDelete(clone+"-shm",FILE_COMMON);
+         const bool cloned=seeded && SWV5S5_TestLaunchCheckpoint(m_path) &&
+            FileCopy(m_path,FILE_COMMON,clone,FILE_COMMON|FILE_REWRITE);
+         SWV5S5_MvpMarketQuoteObservation bad=event_quote;
+         if(n==0) bad.tick_time_msc--;
+         if(n==1) bad.bid-=environment.point*10.0;
+         if(n==2) bad.symbol="EURUSD";
+         if(n==3) bad.complete=false;
+         SWV5S5_MvpControlledDemoInvocation rejected_invocation=invocation; rejected_invocation.relative_store_path=clone;
+         SWV5S5_MvpControlledDemoAuthorityPort rejected_port; SWV5S5_MvpBrokerEvidenceStore rejected_store;
+         SWV5S5_MvpControlledDemoRunner rejected_runner; SWV5S5_MvpD1NonMutatingBoundary rejected_seam;
+         SWV5S5_MvpControlledDemoAuthoritySeed rejected_seed; SWV5S5_MvpControlledDemoResult rejected_result;
+         const bool accepted=cloned && SWV5S5_MvpDispatchAttended(rejected_invocation,observed,bad,environment,
+            engine,decision,filling,m_platform,rejected_port,rejected_runner,rejected_seam,rejected_store,NULL,
+            rejected_seed,rejected_result,reason);
+         const bool quote_guard=(n==3 ? reason=="CURRENT_EVENT_QUOTE_REQUIRED" :
+            rejected_port.LastStage()==(n==1 ? "PREFLIGHT_SYMBOL" : "PREFLIGHT_NATIVE_QUOTE"));
+         SWV5S5_MvpD1Record(m_c,"QUOTE-EVENT-REJECT-"+IntegerToString(n),cloned && !accepted &&
+            quote_guard && !rejected_result.claim_attempted && rejected_seam.calls==0 && rejected_runner.BrokerSubmissionCalls()==0);
+      }
       for(int n=0;n<2;n++)
       {
          const string clone="mvp_launch_TEST_ONLY_missing_"+IntegerToString(n)+".sqlite";
@@ -313,7 +348,7 @@ public:
          SWV5S5_MvpBrokerEvidenceStore negative_store; SWV5S5_MvpControlledDemoRunner negative_runner;
          SWV5S5_MvpD1NonMutatingBoundary negative_boundary;
          SWV5S5_MvpControlledDemoResult denied; SWV5S5_MvpControlledDemoAuthoritySeed denied_seed;
-         const bool ran=cloned && SWV5S5_MvpDispatchAttended(missing,observed,environment,engine,decision,filling,
+         const bool ran=cloned && SWV5S5_MvpDispatchAttended(missing,observed,event_quote,environment,engine,decision,filling,
             m_platform,negative_port,negative_runner,negative_boundary,negative_store,NULL,denied_seed,denied,reason);
          Print("LAUNCH_MISSING_AUTHORITY|",n,"|",reason,"|removed=",negative_port.removed);
          SWV5S5_MvpD1Record(m_c,n==0 ? "LAUNCH-16-MISSING-PIN" : "LAUNCH-17-MISSING-VECTOR",
@@ -331,7 +366,7 @@ public:
       SWV5S5_MvpControlledDemoResult d1_result; SWV5S5_MvpControlledDemoAuthoritySeed d1_seed;
       SWV5S5_MvpControlledDemoRunner d1_runner; SWV5S5_MvpControlledDemoAuthorityPort d1_port;
       SWV5S5_MvpBrokerEvidenceStore d1_store; SWV5S5_MvpBrokerRecoveryReadPort native_callback(GetPointer(adapter));
-      const bool d1=d1_clock && SWV5S5_MvpDispatchAttended(invocation,observed,environment,engine,decision,filling,
+      const bool d1=d1_clock && SWV5S5_MvpDispatchAttended(invocation,observed,event_quote,environment,engine,decision,filling,
          m_platform,d1_port,d1_runner,d1_seam,d1_store,GetPointer(native_callback),d1_seed,d1_result,reason);
       Print("LAUNCH_NATIVE_D1_SEAM|",reason,"|calls=",d1_seam.calls,"|SIMULATED_TRANSPORT_ONLY");
       SWV5S5_MvpD1Record(m_c,"LAUNCH-19-ONE-STRUCTURAL-SEAM",d1 && d1_seam.calls==1 && d1_result.claim_granted_now &&
@@ -339,6 +374,7 @@ public:
       SWV5S5_SubmissionAuthorityRecord claimed; bool found=false;
       const bool loaded=readonly.ReadAllRows(after) && SWV5S5_MvpLoadSubmissionAuthority(readonly,
          d1_result.request_correlation_id,d1_result.attempt_id,claimed,found) && found;
+      SWV5S5_TestQuotePhysicalBindings(m_c,d1,loaded,event_quote,invocation,m_platform,d1_port,claimed,d1_seam.last_command,d1_seam.calls);
       SWV5S5_MvpAttemptReconciliationPinAuthority pins; SWV5S5_MvpAttemptReconciliationPin pin;
       SWV5S5_MvpAuthorityRow pin_row,vector_row; bool pin_found=false,vector_found=false;
       const bool pinned=loaded && pins.Configure(m_path,m_ns) && pins.Load(claimed.permit.request_identity,pin,pin_row,pin_found) && pin_found &&
@@ -357,7 +393,7 @@ public:
 
       MqlTradeTransaction tx; MqlTradeRequest rq; MqlTradeResult rs; ZeroMemory(tx); ZeroMemory(rq); ZeroMemory(rs);
       tx.type=TRADE_TRANSACTION_DEAL_ADD; tx.order=7001; tx.deal=8001; tx.position=9001; tx.symbol=_Symbol;
-      tx.deal_type=DEAL_TYPE_BUY; tx.volume=invocation.requested_volume; tx.price=invocation.requested_price;
+      tx.deal_type=DEAL_TYPE_BUY; tx.volume=invocation.requested_volume; tx.price=event_quote.ask;
       rq.magic=SWV5_RUNTIME_STRATEGY_MAGIC; rs.request_id=6001; rs.retcode=10009;
       const bool callback=d1 && d1_port.ObserveCallbackOnly(tx,rq,rs);
       SWV5S5_SubmissionAuthorityRecord after_callback; bool callback_found=false;
@@ -380,11 +416,11 @@ public:
          SWV5S5_MvpLeaseClockAuthority restarted_clock; SWV5S5_MvpLeaseClockObservation restarted;
          const bool current=restarted_clock.Configure(m_path,m_ns) && restarted_clock.ObserveFromCurrentSymbolOnTick(_Symbol,
             "TEST_ONLY_RESTART_D6_"+IntegerToString(p),restarted,row) && restarted.clock_sequence>observed.clock_sequence;
-         SWV5S5_TestLaunchRecovery broker_fixture(p==1,invocation.requested_price);
+         SWV5S5_TestLaunchRecovery broker_fixture(p==1,event_quote.ask);
          SWV5S5_MvpBrokerEvidenceStore restarted_store; SWV5S5_MvpControlledDemoAuthorityPort restarted_port;
          SWV5S5_MvpControlledDemoRunner restarted_runner; SWV5S5_MvpD1NonMutatingBoundary forbidden_seam;
          SWV5S5_MvpControlledDemoResult recovered; SWV5S5_MvpControlledDemoAuthoritySeed recovered_seed;
-         const bool recovered_ok=d1 && current && SWV5S5_MvpDispatchAttended(recovery,restarted,environment,engine,decision,filling,
+         const bool recovered_ok=d1 && current && SWV5S5_MvpDispatchAttended(recovery,restarted,event_quote,environment,engine,decision,filling,
             m_platform,restarted_port,restarted_runner,forbidden_seam,restarted_store,GetPointer(broker_fixture),recovered_seed,recovered,reason);
          Print("LAUNCH_NATIVE_D6|positive=",p,"|",reason,"|queries=",broker_fixture.query_calls);
          ZeroMemory(diagnostic); diagnostic.request_correlation_id=d1_result.request_correlation_id; diagnostic.attempt_id=d1_result.attempt_id;

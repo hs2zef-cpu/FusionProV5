@@ -79,5 +79,24 @@ for prefix in ("FusionProV5/ProductionArchitecture/", "FusionProV5/ExecutionLaye
 check("no-other-broker-change", not any(p.startswith("FusionProV5/ExecutionLayer/BrokerAdapter/") and p != broker_path for p in changed))
 check("no-frozen-root-manifest-change", not any('/' not in p and p.endswith('.mq5') for p in changed))
 failed = [name for name, ok in checks if not ok]
+quote_platform = read(runtime / "SW_V5_S5_MvpReadOnlyPlatform.mqh")
+quote_tests = read(tests / "SW_V5_S5_MvpNativeQuoteAssertions.mqh")
+native_quote = quote_platform[quote_platform.index("class SWV5S5_MvpMt5ReadOnlyPlatform"):]
+native_quote = native_quote[native_quote.index("virtual bool CaptureMarketQuote"):native_quote.index("virtual bool CaptureProfile")]
+check("QUOTE-19-no-caller-market-fabrication", "invocation.requested_price" not in code(port))
+check("QUOTE-native-single-tick-read", "SymbolInfoTick(symbol,tick)" in native_quote and "quote.bid=tick.bid" in native_quote and "quote.ask=tick.ask" in native_quote)
+check("QUOTE-readonly-no-mutation", not re.search(r'\b(?:OrderSend|OrderSendAsync|DatabaseExecute|DatabaseOpen|FileOpen|SymbolSelect|ChartSet\w*)\s*\(', code(native_quote)))
+check("QUOTE-event-capture-before-decision", launch.index("m_platform.CaptureMarketQuote") < launch.index("m_orchestrator.Evaluate("))
+check("QUOTE-no-silent-event-replacement", "m_quote.tick_time_msc!=m_seed.event_quote.tick_time_msc" in port and "MathAbs(m_quote.ask-m_seed.event_quote.ask)>quote_tolerance" in port)
+check("QUOTE-time-symbol-source-shape", all(s in quote_platform for s in ("q.tick_time!=event_at", "q.observed_at!=event_at", "q.symbol!=symbol", "q.source!=SWV5_AUTHORITY_LIVE_BROKER_STATE", "q.ask<q.bid")))
+check("QUOTE-canonical-tick-check", "MathRound(q.ask/tick_size)" in quote_platform and "tick_size*1e-6" in quote_platform)
+check("QUOTE-native-entry-and-protection", "unit.raw_price=q.ask" in quote_platform and "stop>=q.ask" in quote_platform and "target<=q.ask" in quote_platform)
+check("QUOTE-unit-feeds-all-authorities", "increasing.normalized=m_normalized" in port and "m_risk_input.intent.normalized_price=m_normalized.price" in port and "command.price=m_normalized.price" in port)
+check("QUOTE-no-observer-constants", not any(s in code(port + launch + quote_platform) for s in ("4123.334", "4123.502", "168")))
+check("QUOTE-nontrivial-regression", "200.0*spec.tick_size" in quote_tests and "invocation.requested_price=tick.ask+10.0" in read(tests / "SW_V5_S5_MvpAttendedLaunchAssertions.mqh"))
+seam = read(root / "Tests/Sprint5MvpD1Authorities/SW_V5_S5_MvpD1AuthorityAssertions.mqh")
+seam = seam[seam.index("class SWV5S5_MvpD1PersistedEvidenceBoundary"):seam.index("class SWV5S5_MvpD1RecoveryReadPort")]
+check("QUOTE-test-seam-no-native-send", "last_command=command" in seam and not re.search(r'\b(?:OrderSend|OrderSendAsync|SubmitWithCurrentClaim)\s*\(', code(seam)))
+failed = [name for name, ok in checks if not ok]
 print(f"ATTENDED_SOURCE_SUMMARY|total={len(checks)}|passed={len(checks)-len(failed)}|failed={len(failed)}|mql_executed=false")
 if failed: raise SystemExit(', '.join(failed))
