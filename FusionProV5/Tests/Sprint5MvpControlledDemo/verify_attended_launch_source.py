@@ -30,7 +30,7 @@ check("LAUNCH-01-complete-native-graph", all(s in launch for s in (
     "CCentralOrchestrator", "MvpMt5ReadOnlyPlatform", "MvpControlledDemoAuthorityPort", "MvpBrokerEvidenceStore",
     "new SWV5S5_F_BrokerPlatformAdapter", "new SWV5S5_MvpBrokerRecoveryReadPort", "new SWV5S5_MvpControlledDemoBrokerBoundary")))
 check("actual-wrapper-dispatch", "g_launch.OnCurrentSymbolTick()" in wrapper and "runner.Run(invocation,authority,boundary,result)" in launch)
-check("LAUNCH-02-default-readonly-clock", "clock.ConfigureReadOnly" in launch and "observation.observed_at!=TimeCurrent()" in launch)
+check("LAUNCH-02-default-readonly-clock", "clock.ConfigureReadOnly" in launch and "LoadBaseForReadOnlyPreflight" in launch and "observation.observed_at!=TimeCurrent()" not in launch)
 check("LAUNCH-04-four-safe-defaults", all(s in wrapper for s in (
     "runner_mode=MODE_PREFLIGHT", "armed_for_demo_submission=false", "operator_confirmed_before_claim=false", "execute_attended_once=false")))
 check("actual-decision-source", "m_orchestrator.Evaluate(" in launch and "seed.decision=decision" in launch and "MvpProjectSignalSource" in gate)
@@ -97,6 +97,23 @@ check("QUOTE-nontrivial-regression", "200.0*spec.tick_size" in quote_tests and "
 seam = read(root / "Tests/Sprint5MvpD1Authorities/SW_V5_S5_MvpD1AuthorityAssertions.mqh")
 seam = seam[seam.index("class SWV5S5_MvpD1PersistedEvidenceBoundary"):seam.index("class SWV5S5_MvpD1RecoveryReadPort")]
 check("QUOTE-test-seam-no-native-send", "last_command=command" in seam and not re.search(r'\b(?:OrderSend|OrderSendAsync|SubmitWithCurrentClaim)\s*\(', code(seam)))
+failed = [name for name, ok in checks if not ok]
+pref = launch[launch.index("if(m_invocation.mode==MODE_PREFLIGHT)"):launch.index("else\n      {\n         // Wrapper latch")]
+check("PREFLIGHT-no-durable-publication", "clock.LoadStored" in pref and not re.search(r'ObserveAcceptedEvent|ObserveFromCurrentSymbolOnTick|clock\.Configure\(', pref))
+diagnostic = seed[seed.index("bool LoadBaseForReadOnlyPreflight"):seed.index("private:")]
+check("PREFLIGHT-separate-diagnostic-now", "seed.preflight_lineage=stored" in diagnostic and "seed.preflight_now.observed_at=now" in diagnostic and "seed.context.clock_time=now" in diagnostic)
+check("PREFLIGHT-no-sequence-invention", "MvpContextFromClock(stored,seed.context)" in diagnostic and "clock_sequence=" not in diagnostic and not re.search(r'CompareAndSet|ObserveAcceptedEvent|ObserveFromCurrentSymbolOnTick', diagnostic))
+check("PREFLIGHT-physical-lineage-native-profile", all(s in diagnostic for s in ("clock.LoadStored", "actual!=supplied", "now<stored.observed_at", "native_clock_id!=stored.clock_id", "profile.account_login!=invocation.expected_demo_account_login")))
+check("PREFLIGHT-current-lease-time", "MvpLeaseCurrentForClock(seed.context" in seed and "lease.expires_at>context.clock_time" in read(runtime / "SW_V5_S5_MvpPermitClaimAuthorities.mqh"))
+check("PREFLIGHT-current-trust-and-governance", "seed.current_trust.valid_until<=now" in diagnostic and "governance.ConfigureReadOnly" in diagnostic and "governance.Load(now,expected" in diagnostic)
+check("PREFLIGHT-no-authority-escape", code(port).count("m_seed.read_only_preflight") >= 9)
+check("PREFLIGHT-host-result-not-row-only", "ReadLastResult" in launch and 'native_result.stop_reason=="PREFLIGHT_COMPLETE_ZERO_SUBMISSION"' in read(tests / "SW_V5_S5_MvpAttendedLaunchAssertions.mqh"))
+delayed = read(tests / "SW_V5_S5_MvpPreflightClockAssertions.mqh")
+check("PREFLIGHT-native-later-ticks", "m_t1>m_t0" in delayed and "TimeCurrent()>m_t1 && pass" in delayed and "host.OnCurrentSymbolTick()" in delayed)
+check("PREFLIGHT-whole-store-assertions", "SWV5S5_LaunchRowsEqual(m_before,rows)" in delayed and "bytes[i]!=m_bytes[i]" in delayed and "ChangeDeadline(path,n)" in delayed)
+check("PREFLIGHT-return-before-claim-send", runner.index('result.stop_reason="PREFLIGHT_COMPLETE_ZERO_SUBMISSION"') < runner.index("authority.ClaimPhysicalNow") < runner.index("submission_boundary.SubmitExactlyOnce"))
+check("PREFLIGHT-accepted-quote-code-unchanged", not any(p in git("diff", "--name-only", "16080a7eab0f36d58e8fdf0f4174b1640099daec").splitlines() for p in (
+    "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReadOnlyPlatform.mqh", "FusionProV5/Tests/Sprint5MvpControlledDemo/SW_V5_S5_MvpNativeQuoteAssertions.mqh")))
 failed = [name for name, ok in checks if not ok]
 print(f"ATTENDED_SOURCE_SUMMARY|total={len(checks)}|passed={len(checks)-len(failed)}|failed={len(failed)}|mql_executed=false")
 if failed: raise SystemExit(', '.join(failed))

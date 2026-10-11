@@ -135,11 +135,13 @@ public:
 };
 
 #include "SW_V5_S5_MvpNativeQuoteAssertions.mqh"
+#include "SW_V5_S5_MvpPreflightClockAssertions.mqh"
 
 class SWV5S5_TestAttendedLaunchSuite
 {
 private:
    SWV5S5_MvpD1Collector m_c;
+   SWV5S5_TestPreflightClockSuite m_preflight_clock;
    datetime m_setup_at;
    bool m_setup_ok;
    string m_ns;
@@ -244,12 +246,16 @@ public:
       SWV5S5_MvpD1Record(m_c,"LAUNCH-03-ALL-ROWS-UNCHANGED",before_ok && readonly.ReadAllRows(after) && SWV5S5_LaunchRowsEqual(before,after));
       invocation.source_head=SWV5S5_MVP_ATTENDED_BUILT_SOURCE;
       invocation.evidence_relative_path="TEST_ONLY_attended_native_preflight.log";
+      m_preflight_clock.Prepare(m_c,invocation);
       SWV5S5_MvpAttendedLaunch *native_host=new SWV5S5_MvpAttendedLaunch;
       const bool native_init=native_host!=NULL && native_host.Init(invocation,1);
       SWV5S5_MvpD1Record(m_c,"LAUNCH-01-NATIVE-GRAPH-INIT",native_init);
-      if(native_init){ native_host.OnCurrentSymbolTick(); native_host.OnCurrentSymbolTick(); }
+      SWV5S5_MvpControlledDemoResult native_result; bool native_pass=false;
+      if(native_init){ native_host.OnCurrentSymbolTick(); native_host.OnCurrentSymbolTick();
+         native_pass=native_host.ReadLastResult(native_result) && native_result.accepted &&
+            native_result.stop_reason=="PREFLIGHT_COMPLETE_ZERO_SUBMISSION"; }
       SWV5S5_MvpD1Record(m_c,"LAUNCH-02-NATIVE-HOST-DEFAULT-READONLY",native_init && readonly.ReadAllRows(after) &&
-         SWV5S5_LaunchRowsEqual(before,after));
+         native_pass && SWV5S5_LaunchRowsEqual(before,after));
       if(native_host!=NULL) delete native_host;
       invocation.mode=MODE_D1_BUY; invocation.armed_for_demo_submission=true;
       invocation.operator_confirmed_before_claim=true; invocation.execute_attended_once=true;
@@ -450,10 +456,16 @@ public:
       SWV5S5_MvpD1Record(m_c,"LAUNCH-NATIVE-ENUM-NETTING",SWV5S5_F_NativeAccountMode(ACCOUNT_MARGIN_MODE_RETAIL_NETTING)==SWV5_ACCOUNT_MODE_NETTING);
       SWV5S5_MvpD1Record(m_c,"LAUNCH-NATIVE-ENUM-EXCHANGE",SWV5S5_F_NativeAccountMode(ACCOUNT_MARGIN_MODE_EXCHANGE)==SWV5_ACCOUNT_MODE_NETTING);
       SWV5S5_MvpD1Record(m_c,"LAUNCH-NATIVE-ENUM-UNKNOWN",SWV5S5_F_NativeAccountMode(999)==SWV5_ACCOUNT_MODE_UNKNOWN);
+   }
+   bool CompleteDelayedPreflight(void)
+   {
+      m_preflight_clock.OnTick(m_c);
+      if(!m_preflight_clock.Done()) return false;
       Print("ATTENDED_LAUNCH_SUMMARY|total=",m_c.total,"|passed=",m_c.passed,"|failed=",m_c.failed,
          "|skipped=0|signature=",m_c.signature,"|broker_submission_calls=0");
       Print("ATTENDED_LAUNCH_SOURCE|compiled_source=",SWV5S5_MVP_ATTENDED_BUILT_SOURCE,
          "|clean_source=",SWV5S5_MVP_ATTENDED_CLEAN_SOURCE,"|TEST_ONLY_NON_MUTATING_REHEARSAL");
+      return true;
    }
 };
 #endif

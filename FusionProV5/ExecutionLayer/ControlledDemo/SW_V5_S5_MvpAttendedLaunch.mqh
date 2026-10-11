@@ -26,7 +26,10 @@ bool SWV5S5_MvpDispatchAttended(const SWV5S5_MvpControlledDemoInvocation &invoca
    SWV5S5_MvpControlledDemoAuthoritySeed &seed,SWV5S5_MvpControlledDemoResult &result,string &reason)
 {
    ZeroMemory(result); SWV5S5_MvpAttendedAuthoritySeedBuilder builder;
-   if(!builder.LoadBase(invocation,clock,platform,environment,seed,reason)) return false;
+   const bool loaded=(invocation.mode==MODE_PREFLIGHT ?
+      builder.LoadBaseForReadOnlyPreflight(invocation,clock,platform,environment,seed,reason) :
+      builder.LoadBase(invocation,clock,platform,environment,seed,reason));
+   if(!loaded) { result.stop_reason=reason; return false; }
    if(invocation.mode==MODE_D1_BUY && !event_quote.complete) { reason="CURRENT_EVENT_QUOTE_REQUIRED"; return false; }
    seed.event_quote=event_quote;
    seed.engine_input=engine; seed.decision=decision; seed.filling_mode=filling;
@@ -106,6 +109,7 @@ private:
    {
       SWV5S5_MvpControlledDemoAuthoritySeed unavailable; SWV5S5_MvpControlledDemoResult stopped;
       ZeroMemory(unavailable); ZeroMemory(stopped); unavailable.adapter_environment=environment; stopped.stop_reason=reason;
+      m_recorded_seed=unavailable; m_recorded_result=stopped; m_has_record=true;
       Record(unavailable,stopped); // Unknown fields remain explicitly unobserved.
    }
 
@@ -135,6 +139,10 @@ public:
    // Explicit fresh human key acknowledgement, not a submit event. No state
    // survives object destruction; saved input flags alone cannot re-arm.
    bool ArmSession(void) { return m_initialized && m_gate.ArmExplicitly(m_invocation); }
+
+   // Read-only diagnostic result, including failures before dispatch.
+   bool ReadLastResult(SWV5S5_MvpControlledDemoResult &result) const
+   { ZeroMemory(result); if(!m_has_record) return false; result=m_recorded_result; return true; }
 
    void OnCurrentSymbolTick(void)
    {
@@ -166,12 +174,11 @@ public:
 
       if(m_invocation.mode==MODE_PREFLIGHT)
       {
-         // Historical stored clock is never promoted to fresh current time.
-         // A missing/non-current observation is a prerequisite failure, not
-         // permission to publish a clock from default PREFLIGHT.
+         // Physically validated lineage only. A separate diagnostic seed takes
+         // native "now"; PREFLIGHT never publishes or changes this clock.
          if(!clock.ConfigureReadOnly(m_invocation.relative_store_path,m_invocation.persistence_namespace_identity) ||
-            !clock.LoadStored(observation,clock_row,found) || !found || observation.observed_at!=TimeCurrent())
-         { RecordStop(environment,"PREFLIGHT_ACCEPTED_CURRENT_CLOCK_PREREQUISITE_MISSING_ZERO_AUTHORITY_MUTATION"); return; }
+            !clock.LoadStored(observation,clock_row,found) || !found)
+         { RecordStop(environment,"PREFLIGHT_PERSISTED_CLOCK_MISSING_OR_INVALID_ZERO_AUTHORITY_MUTATION"); return; }
       }
       else
       {

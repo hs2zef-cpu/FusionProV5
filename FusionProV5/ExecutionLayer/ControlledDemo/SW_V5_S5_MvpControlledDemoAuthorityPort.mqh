@@ -13,8 +13,20 @@
 #include "../RuntimeAuthority/SW_V5_S5_MvpBasketLifecycleAuthority.mqh"
 #include "../RuntimeAuthority/SW_V5_S5_MvpAccountObservationProducer.mqh"
 
+// EPHEMERAL DIAGNOSTIC ONLY: no sequence, durable revision, or Claim authority.
+struct SWV5S5_MvpReadOnlyPreflightNowObservation
+{
+   datetime observed_at;
+   string clock_id;
+   SWV5_TimeAuthority clock_authority;
+   SWV5S5_MvpRuntimeProfileObservation profile;
+};
+
 struct SWV5S5_MvpControlledDemoAuthoritySeed
 {
+   bool read_only_preflight;
+   SWV5S5_MvpReadOnlyPreflightNowObservation preflight_now;
+   SWV5S5_MvpLeaseClockObservation preflight_lineage;
    SWV5_ContractValidationContext context;
    SWV5_EngineInput engine_input;
    SWV5_DecisionResult decision;
@@ -763,7 +775,8 @@ public:
                                          SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    {
       m_last_stage="READ_ONLY_PREFLIGHT"; ZeroMemory(evidence);
-      if(!m_configured || (direction!=1 && direction!=-1) || !CollectPhysicalPreconditions(invocation) ||
+      if(!m_configured || (m_seed.read_only_preflight && invocation.mode!=MODE_PREFLIGHT) ||
+         (direction!=1 && direction!=-1) || !CollectPhysicalPreconditions(invocation) ||
          !CollectReadOnlyExecutionState() || !FillReadOnlyEvidence(invocation,direction,evidence)) return false;
       m_observation_diagnostics.broker_observation_taken=true; m_observation_diagnostics.execution_observation_taken=true;
       m_observation_diagnostics.broker_observation_complete=evidence.broker_observation_complete;
@@ -775,7 +788,7 @@ public:
                                   SWV5S5_MvpControlledDemoPreflightEvidence &evidence)
    {
       m_last_stage="PREFLIGHT_INVOCATION";
-      ZeroMemory(evidence); if(!m_configured || direction!=(int)m_seed.decision.action ||
+      ZeroMemory(evidence); if(m_seed.read_only_preflight || !m_configured || direction!=(int)m_seed.decision.action ||
          ((invocation.mode==MODE_D1_BUY && direction!=1) || (invocation.mode==MODE_D3_SELL && direction!=-1))) return false;
       m_last_stage="PREFLIGHT_PHYSICAL";
       if(!CollectPhysicalPreconditions(invocation)) return false;
@@ -938,10 +951,10 @@ public:
    }
 
    virtual bool PreparePermitSemantics(void)
-   { m_permit_prepared=m_bootstrapped && IncreasingEligibilityCurrent() && BuildPermit(); return m_permit_prepared; }
+   { m_permit_prepared=!m_seed.read_only_preflight && m_bootstrapped && IncreasingEligibilityCurrent() && BuildPermit(); return m_permit_prepared; }
    virtual bool CommitPermitPhysical(void)
    {
-      if(!m_permit_prepared || !IncreasingEligibilityCurrent() || !m_permit_authority.Configure(m_path,m_namespace_digest) ||
+      if(m_seed.read_only_preflight || !m_permit_prepared || !IncreasingEligibilityCurrent() || !m_permit_authority.Configure(m_path,m_namespace_digest) ||
          !m_permit_authority.StagePrepared(m_permit_result)) return false;
       SWV5S5_SubmissionAuthorityIndexEntry entries[]; SWV5S5_MvpSqliteAuthorityStore store;
       SWV5S5_MvpAuthorityRow row; bool found=false;
@@ -953,7 +966,7 @@ public:
    }
    virtual bool CollectAdmissionSameEvent(void)
    {
-      if(!m_permit_committed || !IncreasingEligibilityCurrent()) return false;
+      if(m_seed.read_only_preflight || !m_permit_committed || !IncreasingEligibilityCurrent()) return false;
       SWV5S5_AdmissionSnapshot snapshot; ZeroMemory(snapshot); SWV5S5_InitContractVersion(snapshot.contract_version);
       snapshot.canonical_policy_id=SWV5S5_CANONICAL_POLICY_ID;
       if(!CollectOne(snapshot.collect_v1) || !CollectOne(snapshot.collect_v2)) return false;
@@ -969,6 +982,7 @@ public:
    virtual bool ClaimPhysicalNow(bool &claim_granted_now)
    {
       claim_granted_now=false;
+      if(m_seed.read_only_preflight) return false;
       SWV5_AccountRiskNamespace current_account;
       if(!LoadAccountAuthority(current_account) ||
          !SWV5S5_EqualAccountNamespace(current_account,m_risk_input.account_namespace) ||
@@ -994,7 +1008,7 @@ public:
    {
       m_last_stage="D6_RELOAD";
       ZeroMemory(evidence); evidence.reason_code="D6_RECOVERY_INPUT_INVALID";
-      if(!m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
+      if(m_seed.read_only_preflight || !m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
       SWV5S5_MvpSqliteAuthorityStore store;
       if(!store.Open(m_path,m_namespace_digest)) return false;
       evidence.store_schema_valid=true;
@@ -1249,7 +1263,7 @@ public:
    virtual bool ObserveCallbackOnly(const MqlTradeTransaction &transaction,const MqlTradeRequest &request,
                                     const MqlTradeResult &result)
    {
-      if(!m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
+      if(m_seed.read_only_preflight || !m_configured || m_evidence_store==NULL || m_broker_recovery==NULL) return false;
       ulong sequence=0;
       return m_evidence_store.NextCallbackSequence(sequence) &&
          m_broker_recovery.CaptureCallback(m_seed.context,sequence,transaction,request,result,*m_evidence_store);
@@ -1257,7 +1271,7 @@ public:
    virtual bool BuildAdapterCommand(SWV5S5_F_AdapterSubmissionCommand &command,
                                     ISWV5S5FBrokerEvidenceStore* &evidence_store)
    {
-      ZeroMemory(command); evidence_store=NULL; if(!m_claimed || !m_pin_durable || m_evidence_store==NULL) return false;
+      ZeroMemory(command); evidence_store=NULL; if(m_seed.read_only_preflight || !m_claimed || !m_pin_durable || m_evidence_store==NULL) return false;
       SWV5S5_F_InitVersion(command.contract_version); command.prepared_claim=m_claim_transition;
       command.authoritative_claim=m_claim_result;
       if(!BuildExpectedProfile(command.expected_profile) || command.expected_profile.profile_digest!=m_pin.broker_profile_digest) return false;
