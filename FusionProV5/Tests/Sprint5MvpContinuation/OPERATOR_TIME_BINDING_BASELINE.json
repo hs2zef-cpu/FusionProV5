@@ -1,0 +1,1420 @@
+{
+  "classification": "READ_ONLY_BASELINE_BEFORE_OPERATOR_TIME_BINDING_PATCH",
+  "files": [
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAccountObservationProducer.mqh",
+      "sha256": "C155B6253CC9F493BC688EF8ACCC059F64662B6D48CAED6133B1A3E778BF7614",
+      "bytes": 3082
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAccountRiskAuthority.mqh",
+      "sha256": "2AD197C3C1C601A0A1E4ADC90D65A5405D607A2C82355CD6C3D1989B5D86E6C2",
+      "bytes": 9998
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAccountRiskRecordCodec.mqh",
+      "sha256": "AC0E31212FD0A28CAD19049162C7EAD086B04B60B742F33C1B62B46E9819DF52",
+      "bytes": 5136
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedAdministration.mqh",
+      "sha256": "3AFA01C13F99AC9E40C1D0D73ECB31A8DFAE1F43DBBD70D01B74209B77E7972C",
+      "bytes": 5477
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+      "sha256": "BBB387425FE63E8C213882BF9AAB8A2CF900EF140B1FE8FEC1E6C755504E74F0",
+      "bytes": 45934
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedSetupEvidence.mqh",
+      "sha256": "D61F5D4FB35B8706B388F13A86133F40E4333E5D5B764EA8205F8776C2321564",
+      "bytes": 4297
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAuthorityRecordCodec.mqh",
+      "sha256": "00125EE8429AB44FAF8E123494E8FAD461CBF54AF74AB035430A2CB0CA96951A",
+      "bytes": 214493
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketIntegrity.mqh",
+      "sha256": "0A6C96F77CF4813B1CA691CBD82E4F2268EF6C2C4E2BAF7D85F843A5660A8150",
+      "bytes": 2946
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketLifecycleAuthority.mqh",
+      "sha256": "7233E2CB75DD61DC417454DDDA2D5D4B0FBFC91480F51D3BFD1F23E78D9DFEE5",
+      "bytes": 25905
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketStateMachine.mqh",
+      "sha256": "91AEF87F3FE06CBF97D7748DDE3E1C52B636B16DEC0BCB25C90537CD2B5F5A94",
+      "bytes": 6731
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh",
+      "sha256": "5945C6C716655ACE1AE84C2BDB1A31622B1F6FC6F5AC366D7D2A2134651A3204",
+      "bytes": 22267
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationActivation.mqh",
+      "sha256": "C2ECBFB29B0873EC1836EFA156B9029F8EBFB254EDB3316EA0ED0803D8032CDB",
+      "bytes": 15980
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationFlatAuthority.mqh",
+      "sha256": "8EEA7E8E5239727E77EB25669A48E8506418B2C985034191451E6CCA1EA84494",
+      "bytes": 26167
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationLineage.mqh",
+      "sha256": "0BEB4C3563C08650F67B01530FFB45C170C64124E2933A929BD04FEA69040207",
+      "bytes": 11593
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationPhysicalCodec.mqh",
+      "sha256": "DC0D4507B8AD7F2B802A3135A453C3288B78D35D33AD3A73B47550B9C8C6F114",
+      "bytes": 9807
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpDemoAuthorityProviders.mqh",
+      "sha256": "2F1DE51E2C905B9BDD405E7F12BF29E6E63D77FC64DD662B7F5A13F2BF69AEDA",
+      "bytes": 54729
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpDeploymentProfile.mqh",
+      "sha256": "873556AB41F6F858130314EB27C7D9D98C77199C243B9740D8926444FAEECE1A",
+      "bytes": 4944
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh",
+      "sha256": "B9726B3886777464005BA33D803EEC2CBE5672CEFEB1B2FABA2B9DD4F39FC3AE",
+      "bytes": 45640
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpHardKillActivationAuthority.mqh",
+      "sha256": "0B3716481742037B2B9E027D48A6FB963BBF1CE8181263A6D75D09C22F186BE5",
+      "bytes": 23124
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpHardKillReleasePhysical.mqh",
+      "sha256": "EAC8F2C0FC255E435EEB3763D7251CA6DC1CD3734820FA5FBF293450D5258DE5",
+      "bytes": 5399
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpIngressRequestAuthorities.mqh",
+      "sha256": "560D21171F028230B70517BEC4DB066B20168E8B57C5B520078D3030B3DD958D",
+      "bytes": 39404
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpManualProvisioningAuthorities.mqh",
+      "sha256": "EC374818FCF786C7C4003D3971293028A392136C64B524B25286B548F719E78B",
+      "bytes": 27761
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpOfflineOrchestrator.mqh",
+      "sha256": "35303C1EBFF34598F25A009FA1A0A414311799405037B35BAAE8A1C4B88B0BCB",
+      "bytes": 5503
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpOwnershipAuthority.mqh",
+      "sha256": "E44AB0428BE758D9DAA2450676FB4916BB7292878D3EC09AFDEF6166F2312AF4",
+      "bytes": 30732
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpPermitClaimAuthorities.mqh",
+      "sha256": "627DB81C0C4E8517DA1CF2AE2CBE284EB799816F395B2A30AE0D979AF06CCCFB",
+      "bytes": 35080
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpReadOnlyPlatform.mqh",
+      "sha256": "DAEAFA7F366ABE7E4C1E483A94E19E011A3B542E447644E7D8669DEC92EC172F",
+      "bytes": 13196
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh",
+      "sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+      "bytes": 46727
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpRequestMaterializationAuthorities.mqh",
+      "sha256": "FE050C541B6B5504AF863599BD9EDB762A3F0E369213C9094E20CC628635DC6F",
+      "bytes": 13286
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpSqliteAuthorityStore.mqh",
+      "sha256": "0AD7D085CF9FCDD01F13286E0914CEC33CEF3F10B6197C53218E027ABD8BD87A",
+      "bytes": 32339
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpAttendedAuthoritySeed.mqh",
+      "sha256": "97E9177CE5C954C7F2986118E935A3BE7D6F6793CC3E2A2E40C9780FC158AB4E",
+      "bytes": 10392
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpAttendedLaunch.mqh",
+      "sha256": "4A679BA0B8803B1F9D95BCBCE0E1AD7F1A77C79FEF172492856965F6FC1ADEE2",
+      "bytes": 13007
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpAttendedLaunchGate.mqh",
+      "sha256": "C8D2953A4CEEB6A8841DE80D9F44E1C6108469DB61598E3E6DD996FE4B59D1FA",
+      "bytes": 2378
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpControlledDemoAuthorityPort.mqh",
+      "sha256": "474644010B3D404F7724D79E5ACD034210FC80A5F7F0C3831DFCB726602E4D95",
+      "bytes": 95241
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpControlledDemoRunner.mqh",
+      "sha256": "9CAD85B620E8F360378F3C89A3631B53FC1C9486C25150F21500D309A2A31ED1",
+      "bytes": 23217
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpManualDemoSetup.mqh",
+      "sha256": "989286717CFE729CF554EDB87CD8F3C2A0894F8DC8797F5A45DEEF94595F920C",
+      "bytes": 12326
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\ControlledDemo\\SW_V5_S5_MvpSignalIngressAdapter.mqh",
+      "sha256": "522A6F2D4B4ACFC2464C76940537EFAB77CA07213B251C8D763633DE8C81B0B0",
+      "bytes": 11507
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION.mq5",
+      "sha256": "46650F5BAF87C2B3E35B17F5A9BB68AF72D0088E2794425B2C420AAFC1B96904",
+      "bytes": 5570
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_ASSERTIONS.mq5",
+      "sha256": "D98769321C5F663D29AAE2E48CB82F4D00A6821B6F0F5AC354E8BB8467CD1F17",
+      "bytes": 1233
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.mq5",
+      "sha256": "507F778D15C092C34EC669D39CA81100CF062B123F46CB91BD29BB2117D06A10",
+      "bytes": 5129
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_RESUME_CLOCK_DIAGNOSTIC.mq5",
+      "sha256": "57F964FD1CD34CD3FA5433A43401370E180AA6E46F14725ED4E750D55DC92D0C",
+      "bytes": 15405
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationAssertions.mqh",
+      "sha256": "3800DCF5AC918B745155489455B1D65BE15F8A88D806E33707DF8522B2761BEB",
+      "bytes": 52037
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationTestIsolation.mqh",
+      "sha256": "D4F189B668E6E05410BC9180A8AC4F07F8F524D9D1E54F213B440CC9CC3CCA24",
+      "bytes": 1320
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpResumeClockDiagnosticGate.mqh",
+      "sha256": "6AC375CBCF84A131F9B7FA9AA2022057658CA5D6C16B60B5F8E05237E651D269",
+      "bytes": 999
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.BOUND_ACTIVE.sqlite",
+      "sha256": "39E5369EF5A85BEF07A60614A835F461DB50009CBD0E2CD46CCD0B84B152BFBD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.BOUND_PENDING.sqlite",
+      "sha256": "864D27E527961D9FBAD929311FE7E7AEEC5053FD24082EA7C7700241C959DD4F",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.GOV_CLOCK.sqlite",
+      "sha256": "26F50BF68A739BABB28DC50296E7B147140E237C37ED16A1EF7BEB0BAEA00AAF",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.HB_NEGATIVES.sqlite",
+      "sha256": "D731D647490ED685590EDB0CD6CF64686B49BF4FC76CAC61771D2823602BF570",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.MAIN.sqlite",
+      "sha256": "D6B8C4F712D3C0C7AF9F508E51A5FC98E1875C1405678805C3CB86628E84561E",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.MAIN.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.MAIN.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_1.sqlite",
+      "sha256": "3C4AAC288B77021B9359668A1C2BE510ED7C597869F645CE731653E7FB213AAF",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_10.sqlite",
+      "sha256": "F6C2076EF44DF0E47FF5DDE875C1DED9F2C2F3DB6675F1A322186F1172CE1901",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_11.sqlite",
+      "sha256": "716AAAB2D302BED52AF4516231F6DF6603D60F64A5331383221FF52370955C66",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_2.sqlite",
+      "sha256": "2F778F63B1A7C559AD7724150C67DE9FA5B21265ADD3BBEBCD1E19F008FB552D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_3.sqlite",
+      "sha256": "6F69B95DE6F032A8FCAE311D3A65BE9169EA418FD1F2F17DAEF004F7AA63DC99",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_4.sqlite",
+      "sha256": "B2234751FD661388F0F2C67D6735B3DA011691EFB95A78992962D0CAE587EC2F",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_5.sqlite",
+      "sha256": "5941F0C6791B69D4BAD20A545B27D82C88F59D8B8F637DA9A79991C03F5DABEE",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_6.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_7.sqlite",
+      "sha256": "489245F08455CDF3CC8FD76ADA90AB2410137F6B6E094E420ECD644E0C9B7479",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_8.sqlite",
+      "sha256": "BF1C69F990544DF68BFB5A5155E0BF8D4DBAAAF53D8E19881F2E85AA9F670F0C",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.NEG_9.sqlite",
+      "sha256": "50F644062EC651CC4EC9417DBC3CE7D2ED09B20904324F31E9E8CA737FEE7262",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_0.sqlite",
+      "sha256": "58754FDD606F374E1ECE26215F14C5A90CDC9DC24C73C12C0CC7C1B18BF5233E",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_1.sqlite",
+      "sha256": "61053FEBC464D2AFB630CA46CB2BD0AFC6BDA57B846E565889F64113F2BA04CE",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_10.sqlite",
+      "sha256": "38BA8B6A8D8E635BC4A2277C673941686861D874DC953640EE98DC971FDE960F",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_11.sqlite",
+      "sha256": "8C8AC46165A885FABB693873FB598EC6EBA411742F5BA065DFF3287D362843D1",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_2.sqlite",
+      "sha256": "0697176B542B080FE93D80D05ED388BD7F7275AEFAF43243225EAF626B17F8C4",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_3.sqlite",
+      "sha256": "6505998A600ABB19E2BEAD2CCEB7B55FB0198E9EFC3951DB01A21FFB50C7CD95",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_4.sqlite",
+      "sha256": "C9139E75BCA90722E9A3C29115B776312101B5CE1D5E4D9993C316A92D501ADD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_5.sqlite",
+      "sha256": "529AE87316D85DD25293F2AD1D54967F5E6C34989F26AEC05C551001A3FA05A5",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_6.sqlite",
+      "sha256": "8D4C0A3A283D12FE85E08D1C774ED0B0F05BA6442135E85EB2B850DEF6138F14",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_7.sqlite",
+      "sha256": "1343709637E78F7DCC057D86C8DDE4E5633126367993577207A6726B52CA2923",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_8.sqlite",
+      "sha256": "EC121C3EA5D37C5C9B6B5D6D46BFB9AE9795EEB079AEC588CC8ED2A3F4E3DAB0",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.OP_9.sqlite",
+      "sha256": "A7442313293FD9CB4A8E66BF488FAE1FB43DAC40BE9B116FB689D65A80566799",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_ACTIVE.sqlite",
+      "sha256": "B1F6EBB364FDF0053257C622100BD3D0D58E0AF2B4EFC15110BDD4D3AA25920A",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_CLOCK.sqlite",
+      "sha256": "9B08300BEC67577BABC6180EBB30B12CEE40F0F389C075AA0795E89ECCC997A8",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_FLAT.sqlite",
+      "sha256": "76A9DE391F32A585A767BD5945342C7246457D1DE3601BEA7FB303EBA5F66415",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_GOVERNANCE.sqlite",
+      "sha256": "76FA946F0FF3604FA9976B014B1DC55EB4BE85DDAB996DD207D9EC48AB1E9176",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_HEARTBEAT.sqlite",
+      "sha256": "E43C8B0027A138479846DB5F4645D6059E86189683A18E303CA85FBA35E8B8B6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_INACTIVE.sqlite",
+      "sha256": "B4B1F5EF42B975DB3A323668C597BF63EF24A8874A8B6CDC6EA4510F9561AD05",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_INACTIVE.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_INACTIVE.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_PENDING.sqlite",
+      "sha256": "9B3945BF5B66BCAF2CC39D56E2100EEEC1E820900F68DAD8AC2349873E0FAE4D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_RELEASED.sqlite",
+      "sha256": "A7866963E58700490F8EB0F5A4ABDF5D6439604C7988926E1972EC3E668C93F5",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_TRUST.sqlite",
+      "sha256": "812127EADF47B83160C95D8C0FC141F9CD31A85674B821C675C81E559932F305",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.BOUND_ACTIVE.sqlite.CONTROL.sqlite",
+      "sha256": "4FC72529C3D83BD88C96757E1D9091CBFF10930C39A23494A6566D1E8C6465A6",
+      "bytes": 98304
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.BOUND_ACTIVE.sqlite.MUTATED.sqlite",
+      "sha256": "45A042FBC1913D24207A23A3A9D2C9CF37A7DF15E8F16394385B4242CEEC39E9",
+      "bytes": 172032
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.BOUND_PENDING.sqlite.CONTROL.sqlite",
+      "sha256": "36DBD3701920950663A6BD58D0D47B3E0271A94E3E3474E62A41E20993E82CA9",
+      "bytes": 184320
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.BOUND_PENDING.sqlite.MUTATED.sqlite",
+      "sha256": "4AA253B595F494431C0D728A598A7955214AE8CFCD21F23C28A4A10518E8FCCE",
+      "bytes": 176128
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_ACCOUNT.sqlite",
+      "sha256": "971BD3F9F27ABB4E02CDC8514F9E4736F60CD64A901E4B622189B9F807BE097E",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_AUTHORITY.sqlite",
+      "sha256": "DB21D2D8E34B3AFF287E06566B570D988F419014E9C1C22779535F3A2BBF6CBD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_BACKWARD_SEQUENCE.sqlite",
+      "sha256": "6525315B1650D35ED2DEC1B3441FCEFCC517810E9365A43CA3A9BAF6F5C43398",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_BACKWARD_TIME.sqlite",
+      "sha256": "631EA33B0DD5F850005D578D68B02F2C9B751FF30517A27AFB53FEE859070844",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_BROKER.sqlite",
+      "sha256": "274ED5E603A9E114DDE485294C090406429CE8A5FD31C28F3E197D8A94614B3D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_DIGEST.sqlite",
+      "sha256": "2D1F2AEE10E38063386B056BC5081E16B3429D802C7A57112D8F2DD2F2744BE5",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_DUPLICATE_OBSERVATION.sqlite",
+      "sha256": "BDD6DAFC01D5ED3FFA791851920F17277CBF2B0F2B976B94B272D868EAE131CA",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_FUTURE_TIME.sqlite",
+      "sha256": "E88CECCC88EDEE240584149D86982B0834B8B45396430693F0553867462E3B75",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_ID.sqlite",
+      "sha256": "F08BD5E0B062A553CCC84A2C32E5CA0509CDD2146920FBB312BD2C03E4945BFD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_MALFORMED.sqlite",
+      "sha256": "EF3F33B2DF49AA33A11C0201B722B1BF538794D4FB5C5823D8403B281739FC9B",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_SERVER.sqlite",
+      "sha256": "C43526343FFD5197F1EB999FACCFCE4313B549FEE05E5BC0926946A55008632D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_STORE_REVISION.sqlite",
+      "sha256": "5325A72EAFD378D4764CCC5546884FC8E5CFDB6343FBAA42CCF2B8E3B72CF73E",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_SYMBOL.sqlite",
+      "sha256": "8CB1D6EDC322510D1081D85F33F06F79D8830034AC8C5B80F78554BC7631AF5D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_ZERO_SEQUENCE.sqlite",
+      "sha256": "49E8AB059384B59540E8AABC014D39ECABD6A8802AFE9EBFA55111CC85BD0FA5",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.CLOCK_DIAG_ZERO_TIME.sqlite",
+      "sha256": "CF17AA0210CF4AEAF7A77E4AA8DF0EF02039011D9623FB3E92D27009504919CC",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.GOV_CLOCK_ALIAS.sqlite",
+      "sha256": "415929471903D37BFB41D0260ABD394320B27ED7DBFBF42AEB15EE94CF8F4C53",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.GOV_CLOCK_DISTINCT.sqlite",
+      "sha256": "CBF1B4734ED5BC0D118F14F4740FE0B098056AA946BB9A4633C13AB8C477BE69",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.GOV_NEG_0.sqlite",
+      "sha256": "35A4B76DB9980F39E1C3F8D893DB83635FCC050B391105BF8909828BB5A45E63",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.GOV_NEG_1.sqlite",
+      "sha256": "A3D215A2E77BA68A4FB1EBE80EBAB9DC425D7F8A4751121AE30D9E1C160D6BE2",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.GOV_NEG_2.sqlite",
+      "sha256": "ECF5522529021F80DC07189E6A6E32E8D5C1D1D9647408FFC6D2AF888775EDFD",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.HB_NEGATIVES.sqlite",
+      "sha256": "D62B703418ACC06CDACAFF9931CE8E40A2D636773997D4238ABDB95294A51112",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.MAIN.sqlite",
+      "sha256": "5CBCAB4062F2D90BE470BD74E167E7BF229F63DE3D51A3DAA730C9162DE9C4AB",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.MAIN.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.MAIN.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_1.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_1.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_1.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_10.sqlite",
+      "sha256": "85739C00E07127CCABB4381767A1E03CFB357460E13F3EDC965BB1050224476A",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_11.sqlite",
+      "sha256": "D4D888B09D5016E89E19F831BB0B2A4F29419724FFB8A796F3DAA872B93C211B",
+      "bytes": 98304
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_2.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_2.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_2.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_3.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_3.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_3.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_4.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_5.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_5.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_5.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_6.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_7.sqlite",
+      "sha256": "B44383E013BB1F8C125387F362DE31F3766648EAB574E767024CFC2398F88FD1",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_8.sqlite",
+      "sha256": "66A41472A0105920ABDA2479B5F2884753D6E066FB067ED8BA5A29560651C39D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.NEG_9.sqlite",
+      "sha256": "566805D03AB107B3198F06E91920BA81065F973D543371A288A3339E07E617EE",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_0.sqlite",
+      "sha256": "C5EE1F2826BD8BA5EBDFB73E736ABF387B95C9535F134FC49FB4468F0C21BDBC",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_0.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_0.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_1.sqlite",
+      "sha256": "423F02282456B11B926339FA1765776C397467676374FF5842E1EF62B56720B2",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_1.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_1.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_10.sqlite",
+      "sha256": "7FD432A1F5AA99237F6A577BCFDAD0176D89B0AE843B47EBD3B41BF3695567FA",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_10.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_10.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_11.sqlite",
+      "sha256": "81468C6F7FFED5252B4C68FB860FE9320DC9A3AAB038B9CE76AC489A4CD2356D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_11.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_11.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_2.sqlite",
+      "sha256": "E41E61E1C9FF3B4E434375C258042B83ADD058536CE186F0D27BC88CF51AC4E3",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_2.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_2.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_3.sqlite",
+      "sha256": "58C3EA429E5B1CCC71D6BB83744753D5A5763050DB9263C6EA324FDB3071D8C4",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_3.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_3.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_4.sqlite",
+      "sha256": "48BA6A2E8E6D0BE365B169D53628C483EECC54B1D4092A5B856B7A8A6447E223",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_4.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_4.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_5.sqlite",
+      "sha256": "B55C5928AA571FA63F37A3604977C7C0DE32016DA3B5403350DA6E5C5FDA5A90",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_5.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_5.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_6.sqlite",
+      "sha256": "7CA2A692314109CDCCE778BCED9AE4304FD9C586F6C7275CAF5567E466403A6A",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_6.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_6.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_7.sqlite",
+      "sha256": "8C1E6402A47BF7A91BC9387131CAB9CB705C09AE38EEFF04D7BF62F05984EE05",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_7.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_7.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_8.sqlite",
+      "sha256": "341B536323D8A9FE1311D8315D63ADAAFC151EE8A37B9940B86D8D40B14668EC",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_8.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_8.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_9.sqlite",
+      "sha256": "4D51C5E28429C97FE16F48AF38EE04C5E73E246224AF16714EA14EAF03225D93",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_9.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.OP_9.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.PERIODIC.sqlite",
+      "sha256": "3C8149C354C27D3828582ACDF6208351AE16E628457559D6AD8DC2DA970D413C",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_ACTIVE.sqlite",
+      "sha256": "2D431E2E9619D7027A7009973331D7A47F24580C5A96F15A9997079689CD38A3",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_CLOCK.sqlite",
+      "sha256": "2B7507CBCFFC85F55BC662940783AF13D2E23608578794E5E8B9D2EAABF605A5",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_FLAT.sqlite",
+      "sha256": "F17A1F5E0E45165E23687688367B903FADDB0286F2CE59E0C7572967D9A62FFC",
+      "bytes": 172032
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_GOVERNANCE.sqlite",
+      "sha256": "9718BFB7A0DA621F9CB66F417A1A0943E702C6B2362CCD9AD45392A809958B06",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_HEARTBEAT.sqlite",
+      "sha256": "D0B00338D8CE584B9A569AF69FD44FB775BFC45CC99DD09B70102FECF8349866",
+      "bytes": 98304
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_INACTIVE.sqlite",
+      "sha256": "FA822298E14B9835EFEBB507059D7318696424FD9CB9346699D55B64A0901D66",
+      "bytes": 98304
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_PENDING.sqlite",
+      "sha256": "234A24BAE47B6FB27346BE6690B70DAECEABBCF802F184D5DA8257ACF1034870",
+      "bytes": 176128
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_RELEASED.sqlite",
+      "sha256": "88DCB47DEE0D6381EFDE05796711125C913AD0635CF7B48154E66D4905BF9271",
+      "bytes": 184320
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8e6c2b6183a44fedb58c28d730aa1140.sqlite.RETEST.RESUME_TRUST.sqlite",
+      "sha256": "19405F2E6D60B69328DBFEAB541355259D17E742BDB32674092B0B0DE14AD1D1",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_FIXTURE.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_PREFLIGHT.log",
+      "sha256": "4D73E5A8A91BBFBA494AB9EC38949C555988A814FB8081A4DF700D5ED82951CA",
+      "bytes": 2038
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.BOUND_ACTIVE.sqlite.CONTROL.sqlite",
+      "sha256": "D4E53EBC29EF8B850DF92BF8BF51D6938F86B036D584C4F8C09B12200BE360E3",
+      "bytes": 176128
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.BOUND_ACTIVE.sqlite.MUTATED.sqlite",
+      "sha256": "211A0C1FEF816FCDB59AC74689E355AA7CA4D44B4B7C1F3B47E6851A65E7C5B4",
+      "bytes": 172032
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.BOUND_PENDING.sqlite.CONTROL.sqlite",
+      "sha256": "36274CEBD9524E474CB77A8694698A41544BB7F827E097EE1DB8B07112121731",
+      "bytes": 184320
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.BOUND_PENDING.sqlite.MUTATED.sqlite",
+      "sha256": "023D0F8AD7003293158F0F5AE7DE6A6B00C4EC33AA88AB5F24EE741EDA672C1B",
+      "bytes": 176128
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_ACCOUNT.sqlite",
+      "sha256": "5B2167FD8C342A076665B958C0BF96A85E652FDD1EED588DCB3E7605D1D5A882",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_AUTHORITY.sqlite",
+      "sha256": "3232FBADCABDE24C8E55EE1A0E8C12B868C46434B63AC1C5479C91E40C69EBDA",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_BACKWARD_SEQUENCE.sqlite",
+      "sha256": "47159C7E7ED161BFDAABCBD20B88B2C47808D47F0F2E8BA9D810A347013C2339",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_BACKWARD_TIME.sqlite",
+      "sha256": "9DD4740CF23F3AA9BCE8D314B438410915F869653E41388E2BDE764CBF42EA05",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_BROKER.sqlite",
+      "sha256": "02A38C5CE067F49789F2CFFBDB8A4BC6814E68164E0E108CCFBD9804028720AD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_DIGEST.sqlite",
+      "sha256": "807C09EC6F81F56355F749F75EAF0484F87A296E0AB0095DD7C4FF23E4C15EEE",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_DUPLICATE_OBSERVATION.sqlite",
+      "sha256": "1FBFE0935828A5FFED431BA3C0381EAE1E7E16D73AD6F4F94E0DFE913CEDB091",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_FUTURE_TIME.sqlite",
+      "sha256": "54A4F6C49A5DCB3B9CCDBFBCE06025AB517252A1D9AEB64AAF5182A6D257FDB1",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_ID.sqlite",
+      "sha256": "81D40E691D9B53F4CAEC347C26552C51EE3C74D09EE3956F56CD0E176BDC3E3F",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_MALFORMED.sqlite",
+      "sha256": "0730FDF97935F8E55B0AB0B517D9B65534BF5076E642F6E5C6ABD92048CB8714",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_SERVER.sqlite",
+      "sha256": "B173A71007F9F8D8B8A9EF56E5C515CBC509D7545AE077D7B08F1BFC8507554D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_STORE_REVISION.sqlite",
+      "sha256": "5CAB7C9289DD04D77BDE301684D6472646D1256EBF5694837C2E3DCB63180496",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_SYMBOL.sqlite",
+      "sha256": "274DF70CA18EB0EADE72B31B2CEC186EAD1E81991FF2A777B297F2DE68628CD3",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_ZERO_SEQUENCE.sqlite",
+      "sha256": "8039D7105D8BED161E504429784C1E962B0B9D773898580A01DB220616D6B40B",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.CLOCK_DIAG_ZERO_TIME.sqlite",
+      "sha256": "10F43E4FC8C52E0995137F208DB0E45FEB8B5F70002298464EA249D608621E4C",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.GOV_CLOCK_ALIAS.sqlite",
+      "sha256": "B6B5784FE336EC398031AA30C150383FD795097860AA02BD97AEA9699EAC68DD",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.GOV_CLOCK_DISTINCT.sqlite",
+      "sha256": "3D1C19ACBBCAF59F7FF963CCFB802D0943E4E020C332B2C611C6E1949EE1F3BE",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.GOV_NEG_0.sqlite",
+      "sha256": "BF28872DBB619AEE48194743E114F84B05829B96AF074A3831C57C4500292DF1",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.GOV_NEG_1.sqlite",
+      "sha256": "CA8F0932A075470C148EDF2641A752E609988D05EA4C5677F75D47437B74CC5C",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.GOV_NEG_2.sqlite",
+      "sha256": "721B719ADEE29E33612A78A422BFDF1A03940978EDF9AD71D801B568E6B730F5",
+      "bytes": 86016
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.HB_NEGATIVES.sqlite",
+      "sha256": "ECA91AB25439DFA12152DBEB45BC6E40C8D96251FD11CDDF984399C62AD98143",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.MAIN.sqlite",
+      "sha256": "310771BDDD8306AA4B76075C8DB92E1951C33EC7C0CC69019B228D64C3A5E156",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.MAIN.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.MAIN.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_1.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_1.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_1.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_10.sqlite",
+      "sha256": "B0C51EF9B39C594468D1CAC8FCB1AD86D73DFE11101695F13596446D837C2865",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_11.sqlite",
+      "sha256": "FBBDB46683A31B897E2D73F240F07E704A2476FA399921C53F781D786062FD18",
+      "bytes": 98304
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_2.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_2.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_2.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_3.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_3.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_3.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_4.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_5.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_5.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_5.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_6.sqlite",
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_7.sqlite",
+      "sha256": "1A31E4C67DF0B24FCF0A53FC41920D4F2DF7AF56651B45D8DCFE122C85D944AD",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_8.sqlite",
+      "sha256": "968ACD6362BA14696547D3FADC78800942546920261BB821E97B748B38012DB6",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.NEG_9.sqlite",
+      "sha256": "0BE018E9E52603586C465A8C8594ED236144E3D7FF13FFB4D8777048E9C156D1",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_0.sqlite",
+      "sha256": "E393093B02E085D3667E389CC7FDD02DFD0A4A63CF915064A64FCEF8002090A0",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_0.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_0.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_1.sqlite",
+      "sha256": "6EB6761679C81E03BE105632A6D9967960DE732E93D6399436CDB1102EE7362B",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_1.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_1.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_10.sqlite",
+      "sha256": "C9DFB1BD2CFEC45A1766F70B891766FA1DC5B2D63041BAC4F993C5D3B9C943E2",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_10.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_10.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_11.sqlite",
+      "sha256": "B1B3C1FD16BC6D028FC46BCD2201D1F55EBBDF479288B4A585FEC5DCDCBB32B1",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_11.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_11.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_2.sqlite",
+      "sha256": "A4E4D4B00183E5C19FC259BD69DBA7F1CE964E34F5D01847434277AC2797C89D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_2.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_2.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_3.sqlite",
+      "sha256": "5910C4560B7817FE8A1A4BE5DF3D0B08176515914A01BBC4C43B5009F440DADF",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_3.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_3.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_4.sqlite",
+      "sha256": "3BEEFDB309E4F49BE5426B89E8277921E2F19330F43879852271A481D3316E8D",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_4.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_4.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_5.sqlite",
+      "sha256": "D9A63F7C91D76A48C891287D0168945EF2F8A40456DDFAEC2FCC9C004828CCCA",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_5.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_5.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_6.sqlite",
+      "sha256": "EDB6FDC40915B2D0FEE4B5FED58C56D9F920F2FBF7810C2F6D0BC70B8D1C3605",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_6.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_6.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_7.sqlite",
+      "sha256": "0BB4A5404D5ECC02A1E7A02156095F82E86EE15855EE75D62A911788CFE5ED30",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_7.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_7.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_8.sqlite",
+      "sha256": "87404FE0C1D9699D603B1547CEF9B7D92DB86C675CE55CADE91291958C0B2512",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_8.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_8.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_9.sqlite",
+      "sha256": "C4498A2DBFD9C3904114EF47CD19CA403DBE6D8068D59F00ACC60A661C0D71A3",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_9.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.OP_9.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.PERIODIC.sqlite",
+      "sha256": "43FB02E8C25627FC7152100E34458F644A1CB5C6A1DC38C828A87389F90B197F",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_ACTIVE.sqlite",
+      "sha256": "08E8FB04C240BC4E9DA7A29501398F4387CE0A9B3B412929A548E424DC8E546C",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_CLOCK.sqlite",
+      "sha256": "979367CA4C00D7E9B1C9D99A69321145396440836D18F9019DBF097F23671BA8",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_FLAT.sqlite",
+      "sha256": "682064A68A8FD5EACA91C68A5AE4F1B22D09B661889A979CA102FE7E83B2BAF0",
+      "bytes": 172032
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_GOVERNANCE.sqlite",
+      "sha256": "FBBA6620F21BA254BADD7CA0FA1A52F457BD0EA432C1C7592A65F4898F13C65F",
+      "bytes": 81920
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_HEARTBEAT.sqlite",
+      "sha256": "DB7D0403A06929475212AFE5B2E6AC6F332F54B5447792402E091BD34E1AAB39",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_INACTIVE.sqlite",
+      "sha256": "5728FB7EA0E8908C4A5FC1858FC38197E279104EA4727884CFD4052E703D521D",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_INACTIVE.sqlite-shm",
+      "sha256": "FD4C9FDA9CD3F9AE7C962B0DDF37232294D55580E1AA165AA06129B8549389EB",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_INACTIVE.sqlite-wal",
+      "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_PENDING.sqlite",
+      "sha256": "000E8159D979F6F2D6E1DE5B46A01EAB62FEF7EFD35DF721DAF157796F910C52",
+      "bytes": 176128
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_RELEASED.sqlite",
+      "sha256": "37050C030A81036561A106128642D3F692E863FF2C4F0A411C61CE305ABE2A36",
+      "bytes": 196608
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_1791980150_19426183.RESUME_TRUST.sqlite",
+      "sha256": "D5B2E0C40C3792DAB489E9E9C0814C705915861BA8E8FEF8B09F9C568B8C9BF4",
+      "bytes": 81920
+    }
+  ]
+}

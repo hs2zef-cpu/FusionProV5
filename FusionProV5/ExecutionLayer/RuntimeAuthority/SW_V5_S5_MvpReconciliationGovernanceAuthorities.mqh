@@ -5,6 +5,7 @@
 // Frozen Phase-F DTOs are stored losslessly; the Broker Adapter cannot provision.
 
 #include "SW_V5_S5_MvpAuthorityRecordCodec.mqh"
+#include "SW_V5_S5_MvpOwnershipAuthority.mqh"
 
 const string SWV5S5_MVP_DOMAIN_RECONCILIATION_GOVERNANCE="MVP_RECONCILIATION_GOVERNANCE_BUNDLE";
 const string SWV5S5_MVP_RECONCILIATION_GOVERNANCE_KEY="CURRENT";
@@ -246,9 +247,130 @@ class SWV5S5_MvpReconciliationGovernanceAuthority
 {
 private:
    SWV5S5_MvpSqliteAuthorityStore m_store;
+   // Structural inspection ONLY for RefreshCurrent. Never execution eligibility.
+   // The old finite window is checked at its origin, not presented as current.
+   bool LoadCurrentStructural(const SWV5S5_F_ProfileScope &profile,const string approval,const string proof,
+                              SWV5S5_MvpReconciliationGovernanceBundle &current,SWV5S5_MvpAuthorityRow &row)
+   {
+      bool found=false; string canonical,revision,a,b,identity,digest,namespace_digest;
+      if(!m_store.ReadRow(SWV5S5_MVP_DOMAIN_RECONCILIATION_GOVERNANCE,SWV5S5_MVP_RECONCILIATION_GOVERNANCE_KEY,row,found) || !found ||
+         row.state!=1 || row.logical_revision==0 || row.logical_revision==18446744073709551615 ||
+         !SWV5S5_MvpDecodeGovernance(row.payload,current) || !SWV5S5_MvpGovernanceValid(current,current.valid_from) ||
+         !SWV5S5_IsV5Version(current.contract_version) ||
+         !SWV5S5_F_IsVersion(current.correlation_policy.contract_version) ||
+         !SWV5S5_F_IsVersion(current.capability_proof.contract_version) ||
+         !SWV5S5_F_IsVersion(current.negative_policy.contract_version) ||
+         !SWV5S5_MvpGovernanceCanonical(current,true,canonical) || canonical!=row.payload ||
+         current.bundle_digest!=row.payload_digest || row.updated_at!=current.valid_from ||
+         !m_store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,row.payload_digest,revision) || revision!=row.store_revision ||
+         !SWV5S5_MvpEncodeFProfile(current.profile,a) || !SWV5S5_MvpEncodeFProfile(profile,b) || a!=b ||
+         !SWV5S5_MvpOwnershipNamespaceDigest(current.profile.persistence_namespace.ownership_namespace,namespace_digest) ||
+         namespace_digest!=m_store.NamespaceDigest() ||
+         approval=="" || proof=="" || current.correlation_policy.approval_reference!=approval ||
+         current.capability_proof.approval_reference!=approval || current.negative_policy.approval_reference!=approval ||
+         current.capability_proof.proof_source_reference!=proof || current.capability_proof.artifact_version!=1 ||
+         current.operator_identity.authenticated_at!=current.valid_from ||
+         current.correlation_policy.approved_at!=current.valid_from || current.capability_proof.approved_at!=current.valid_from ||
+         current.negative_policy.approved_at!=current.valid_from ||
+         current.capability_proof.valid_from!=current.valid_from || current.capability_proof.valid_until!=current.valid_until ||
+         current.negative_policy.capability_proof_id!=current.capability_proof.artifact_id ||
+         current.negative_policy.capability_proof_version!=current.capability_proof.artifact_version ||
+         current.negative_policy.required_broker_flags!=(SWV5_QUERY_POSITIONS|SWV5_QUERY_ORDERS|SWV5_QUERY_DEALS|SWV5_QUERY_TRANSACTIONS) ||
+         current.negative_policy.required_execution_flags!=SWV5_QUERY_PENDING_REQUESTS ||
+         current.negative_policy.minimum_stable_observations!=2 || current.negative_policy.minimum_stability_seconds!=1 ||
+         current.negative_policy.proven_visibility_lag_seconds!=0 || current.negative_policy.required_connection_generation!=1 ||
+         current.negative_policy.required_restart_generation!=1) return false;
+      if(!SWV5S5_CanonicalString("profile",profile.profile_digest,a) || !SWV5S5_CanonicalString("approval",approval,b)) return false;
+      identity=a+b;
+      if(!SWV5S5_CanonicalUInt("sequence",current.authority_sequence,a)) return false; identity+=a;
+      return SWV5S5_DomainDigest(SWV5S5_MVP_GOVERNANCE_DIGEST_DOMAIN+"-ID",identity,digest) &&
+         current.bundle_id=="MVP-RECONCILIATION-GOVERNANCE-"+digest;
+   }
 public:
    bool Configure(const string path,const string namespace_digest){ return m_store.Open(path,namespace_digest); }
    bool ConfigureReadOnly(const string path,const string namespace_digest){ return m_store.OpenReadOnly(path,namespace_digest); }
+   // Independent finite attended re-affirmation; Provision remains create-only.
+   bool RefreshCurrent(const bool acknowledged,const SWV5S5_MvpOperatorInvocation &op,
+                       SWV5S5_MvpLeaseClockAuthority &accepted_clock_authority,
+                       const SWV5S5_MvpLeaseClockObservation &clock,
+                       const SWV5S5_MvpReconciliationGovernanceBundle &expected,
+                       const SWV5S5_MvpAuthorityRow &expected_row,
+                       const SWV5S5_F_ProfileScope &profile,const string approval,const string proof,
+                       const datetime valid_until,SWV5S5_MvpReconciliationGovernanceBundle &refreshed,
+                       SWV5S5_MvpAuthorityRow &committed)
+   {
+      // Caller may supply the same row as prior CAS input and committed output.
+      // Preserve it BEFORE output initialization (MQL references can alias).
+      const SWV5S5_MvpAuthorityRow prior_expected_row=expected_row;
+      ZeroMemory(refreshed); ZeroMemory(committed);
+      SWV5S5_MvpAuthorityRow row; bool found=false; string payload,digest,revision,a,b;
+      SWV5S5_MvpLeaseClockObservation fresh,stored; SWV5S5_MvpAuthorityRow clock_row,local_clock;
+      string supplied_clock,fresh_clock,clock_digest;
+      SWV5S5_MvpReconciliationGovernanceBundle current;
+      if(!acknowledged || !accepted_clock_authority.CurrentFreshObservation(fresh) ||
+         !accepted_clock_authority.LoadStored(stored,clock_row,found) || !found ||
+         !SWV5S5_MvpLeaseClockPayload(clock,supplied_clock,clock_digest) ||
+         !SWV5S5_MvpLeaseClockPayload(fresh,fresh_clock,clock_digest) || supplied_clock!=fresh_clock ||
+         !m_store.ReadRow(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_CLOCK_KEY,local_clock,found) || !found ||
+         local_clock.payload!=fresh_clock || local_clock.payload!=clock_row.payload ||
+         local_clock.payload_digest!=clock_row.payload_digest || local_clock.store_revision!=clock_row.store_revision ||
+         local_clock.logical_revision!=clock_row.logical_revision || local_clock.state!=clock_row.state ||
+         local_clock.updated_at!=clock_row.updated_at ||
+         !SWV5S5_MvpOperatorInvocationValid(op,clock.observed_at) ||
+         op.authenticated_at!=clock.observed_at || valid_until<=clock.observed_at ||
+         valid_until>clock.observed_at+(datetime)SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS ||
+         !LoadCurrentStructural(profile,approval,proof,current,row) ||
+         !SWV5S5_MvpGovernanceCanonical(expected,true,payload) || payload!=row.payload ||
+         row.logical_revision!=prior_expected_row.logical_revision || row.store_revision!=prior_expected_row.store_revision ||
+         row.payload_digest!=prior_expected_row.payload_digest || row.state!=prior_expected_row.state ||
+         row.domain_key!=prior_expected_row.domain_key || row.record_key!=prior_expected_row.record_key ||
+         row.payload!=prior_expected_row.payload || row.updated_at!=prior_expected_row.updated_at ||
+         current.bundle_digest!=row.payload_digest ||
+         !m_store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,row.payload_digest,revision) ||
+         revision!=row.store_revision ||
+         !SWV5S5_MvpEncodeFProfile(current.profile,a) || !SWV5S5_MvpEncodeFProfile(profile,b) || a!=b ||
+         current.correlation_policy.approval_reference!=approval || current.capability_proof.approval_reference!=approval ||
+         current.negative_policy.approval_reference!=approval || current.capability_proof.proof_source_reference!=proof ||
+         !current.capability_proof.correlation_capability_proven || current.capability_proof.query_completeness_capability_proven ||
+         current.capability_proof.visibility_watermark_proven || current.capability_proof.proven_visibility_lag_seconds!=0 ||
+         clock.clock_sequence<=current.authority_sequence || clock.observed_at<current.valid_from ||
+         clock.broker_identity!=profile.broker_identity || clock.server!=profile.server ||
+         clock.account_login!=profile.account_login || clock.source_symbol!=profile.symbol) return false;
+      refreshed=current; refreshed.operator_identity.operator_id=op.operator_id;
+      refreshed.operator_identity.authority_role=op.authority_role;
+      refreshed.operator_identity.authentication_reference=op.authentication_reference;
+      refreshed.operator_identity.authenticated_at=op.authenticated_at;
+      refreshed.valid_from=clock.observed_at; refreshed.valid_until=valid_until;
+      refreshed.authority_sequence=clock.clock_sequence;
+      refreshed.correlation_policy.approved_at=clock.observed_at;
+      refreshed.capability_proof.approved_at=clock.observed_at;
+      refreshed.capability_proof.valid_from=clock.observed_at; refreshed.capability_proof.valid_until=valid_until;
+      refreshed.negative_policy.approved_at=clock.observed_at;
+      if(!SWV5S5_F_DeriveCorrelationPolicyDigest(refreshed.correlation_policy,refreshed.correlation_policy.policy_digest) ||
+         !SWV5S5_F_DeriveCapabilityProofDigest(refreshed.capability_proof,refreshed.capability_proof.proof_digest)) return false;
+      refreshed.negative_policy.capability_proof_digest=refreshed.capability_proof.proof_digest;
+      if(!SWV5S5_F_DeriveNegativePolicyDigest(refreshed.negative_policy,refreshed.negative_policy.policy_digest)) return false;
+      if(!SWV5S5_CanonicalString("profile",profile.profile_digest,a) || !SWV5S5_CanonicalString("approval",approval,b)) return false;
+      payload=a+b;
+      if(!SWV5S5_CanonicalUInt("sequence",clock.clock_sequence,a)) return false; payload+=a;
+      if(!SWV5S5_DomainDigest(SWV5S5_MVP_GOVERNANCE_DIGEST_DOMAIN+"-ID",payload,digest)) return false;
+      refreshed.bundle_id="MVP-RECONCILIATION-GOVERNANCE-"+digest;
+      if(!SWV5S5_MvpGovernanceDigest(refreshed,refreshed.bundle_digest) ||
+         !SWV5S5_MvpGovernanceValid(refreshed,clock.observed_at) ||
+         !SWV5S5_MvpGovernanceCanonical(refreshed,true,payload) ||
+         !m_store.CompareAndSetWithGuard(row.domain_key,row.record_key,row.logical_revision,row.store_revision,row.payload_digest,row.state,
+            row.logical_revision+1,1,refreshed.bundle_digest,payload,clock.observed_at,
+            local_clock.domain_key,local_clock.record_key,local_clock.logical_revision,local_clock.store_revision,
+            local_clock.payload_digest,local_clock.state,committed)) return false;
+      SWV5S5_MvpReconciliationGovernanceBundle verified; SWV5S5_MvpAuthorityRow readback;
+      return Load(clock.observed_at,profile,verified,readback,found) && found &&
+         readback.payload==payload && readback.store_revision==committed.store_revision &&
+         readback.domain_key==row.domain_key && readback.record_key==row.record_key &&
+         readback.logical_revision==row.logical_revision+1 && readback.logical_revision==committed.logical_revision &&
+         readback.payload_digest==refreshed.bundle_digest && readback.payload_digest==committed.payload_digest &&
+         readback.state==1 && readback.state==committed.state && readback.updated_at==clock.observed_at &&
+         readback.updated_at==committed.updated_at && readback.payload==committed.payload;
+   }
    bool Provision(const SWV5S5_MvpOperatorInvocation &op,const SWV5S5_F_ProfileScope &profile,
                   const string approval_reference,const string proof_source_reference,
                   const datetime valid_until,const ulong authority_sequence,

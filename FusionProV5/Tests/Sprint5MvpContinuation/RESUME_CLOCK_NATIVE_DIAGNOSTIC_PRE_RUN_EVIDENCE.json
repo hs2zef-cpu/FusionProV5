@@ -1,0 +1,491 @@
+{
+  "classification": "NON_NATIVE_PRE_RUN_AUDIT_NOT_EXECUTED",
+  "checks": [
+    {
+      "id": "classifier/shared-production-draft-called",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/no-predicate-copy-in-harness",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/no-mutating-tail",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/no-flat-method",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/read-only-store-open",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/predicates-retained",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "ordinary/diagnostic-mode-absent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "architecture/no-checkpoint-or-R-intent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/no-grant",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "classifier/helper-methods-read-only",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "includes/no-launcher-or-full-suite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "transport/compile-time-traps",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "harness/no-execution-calls",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "harness/no-authority-grant-calls",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "harness/broker-fail-trap",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/single-native-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/publication-is-production-path",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "restart/publisher-closed-before-return",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "restart/separate-function-new-objects",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "restart/no-local-freshness-reconstruction",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "snapshot/full-canonical-exports",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "snapshot/full-non-clock-equality",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "snapshot/exact-sequence-time-id",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "snapshot/operational-absence",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "result/no-rejection-false-pass",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "result/exact-failing-facts",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "oneshot/attach-and-preset-no-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "oneshot/ack-required",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "oneshot/consumed-before-first-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "oneshot/no-timer-or-retry",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "paths/production-db-never-opened",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "paths/no-existing-target-overwrite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "gate/valid",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/marker-missing",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/marker-invalid",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/absolute",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/slash",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/colon",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/old-clone",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/run-missing",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/run-too-short",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/run-nonhex",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/run-uppercase",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/wrong-extension",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/different-run",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PURE_MQL_GATE_NOT_NATIVE"
+    },
+    {
+      "id": "gate/domination-before-any-durable-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "gate/production-refusal-before-io",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "integrity/original-donor",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "integrity/original-sidecars-absent",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "integrity/donor-wal-empty",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "integrity/target-absent",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "integrity/donor-namespace",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_DONOR_SQLITE"
+    },
+    {
+      "id": "integrity/old-native-binary-untouched",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "preset/exact-inputs",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PRESET"
+    },
+    {
+      "id": "compile/native-diagnostic",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "install/binary-exact",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "install/preset-exact",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "git/branch",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "git/head",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "git/main-unchanged",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "integrity/end-hashes-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    }
+  ],
+  "summary": {
+    "total": 64,
+    "passed": 64,
+    "failed": 0,
+    "native_executions": 0
+  },
+  "refusal_cases": [
+    {
+      "case": "valid",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "case": "production-filename",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "marker-missing",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "marker-invalid",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "traversal",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "absolute",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "slash",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "colon",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "old-clone",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "run-missing",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "run-too-short",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "run-nonhex",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "run-uppercase",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "wrong-extension",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "case": "different-run",
+      "accepted": false,
+      "expected": false
+    }
+  ],
+  "source_path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_RESUME_CLOCK_DIAGNOSTIC.mq5",
+  "source_sha256": "57F964FD1CD34CD3FA5433A43401370E180AA6E46F14725ED4E750D55DC92D0C",
+  "verification_source_digest": "2A63F2695BA7A4E7E9005623D06002E234AA4C16B4D48E5A9ACDABD0EE32AF89",
+  "dependency_hashes": {
+    "FusionProV5\\Configuration\\SW_V5_RuntimeIdentityProfile.mqh": "E84F287A6C138A837E7929F62EEA20F9BCEE363C80FDD481730767F1CCB93776",
+    "FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerAdapterCore.mqh": "7C39FBA4A5BF12F155843FA7657EC4D1F019EE2CDBDBE3EAB97E23A01D612FFB",
+    "FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerAdapterTypes.mqh": "BE1A3EF06A2391217C977ACA6673D1338471AB132EC69D776A864EED0F312691",
+    "FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerReconciliationIntegration.mqh": "46EF2733EA4D9C3058EE114866CD55C7CB05E5C24A8A83CBF1873264DD360A42",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_AdmissionContract.mqh": "157B727D1643AAB90F89D3901C5211EE3E0D10CE623A300C51CB8BF49580B7C1",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_AdmissionSnapshotContract.mqh": "97BB433651E596A2864FF629721FBEE4A6BBFCD69FC8CD9AC9C23882F90E16F9",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_Canonical.mqh": "FA6123FA08F349C2BAE145DC9B7DFC0BA2AFC81169B93CB180874FD5BBC62847",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_Common.mqh": "FD8B03B6C3DC8268EE115E579F91FA7DEA744E2635EF3F74D925538294AE9A5C",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_Contracts.mqh": "6F0F96E1E3EE70733D14D39AB953E6464E60B1C1DB3BE188AAF3A2E6C467FE8C",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_IngressContract.mqh": "927158931E530588417E66D6D849EA0F0CAF920F8C7694168BE59D5F5AD1F863",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_IngressLedgerContract.mqh": "F508CAF7D1DF7F3523E739882A7358D940ADE5643BF5C1BA06AD26E0C1FD346F",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_InvocationClaimContract.mqh": "3A0A60BA4965FF6A49015A43482585C79F6ED51CDE763B7356ECA4B7CDD3072B",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_OrchestrationContract.mqh": "551B5ABC04605FA1FD244339836E707489AFFCED3C1540630F62F72792991A37",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_ProducerTrustContract.mqh": "699B2B6F180EC63575DBF8429AB040D28672839547E9D82DD0AD2EF8742AA57F",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_ReconciliationEvidenceContract.mqh": "2086EC300B70F7AA66BC404F42DEE4FBBF9469C63BB46E69F2CBB64A0AD0D7E8",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_RequestBindingContract.mqh": "255D7AC30C89A23040BCD59B2E09D3605B88208C6D08AD317315CA158CE05345",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_RequestSequenceContract.mqh": "8AA038A047FA0014289618C1EF2215244B41A96E5A113CA20A2C5073C93D9B52",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_RuntimePublicationContract.mqh": "429309E83DDA6287381D9FB3D67F18A60CF8A7D98968DC7EECED29749B88099E",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_SubmissionAuthorityContract.mqh": "DC7DD071D40FC10597803EDBF72F33B5350E3B1DB0095F3D39469D2A46A111B7",
+    "FusionProV5\\ExecutionLayer\\Contracts\\SW_V5_S5_SubmissionRecordContract.mqh": "7D3AC6170F81D81066A959F6570DAACA7A38DD816A928EC795270AFDA8292AEC",
+    "FusionProV5\\ExecutionLayer\\Coordinator\\SW_V5_S5_CoordinatorCommon.mqh": "4822694D9E5692F0617F6EDD8E3DA63B8813F0AF4C4E45E0DA276CF6C8412B9F",
+    "FusionProV5\\ExecutionLayer\\Coordinator\\SW_V5_S5_DeterministicCoordinator.mqh": "C6647D21D7C3B7AD42EBB961592801242EF0F2B9FB60ADF2DC9902C5DFA231E2",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAccountRiskAuthority.mqh": "2AD197C3C1C601A0A1E4ADC90D65A5405D607A2C82355CD6C3D1989B5D86E6C2",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAccountRiskRecordCodec.mqh": "AC0E31212FD0A28CAD19049162C7EAD086B04B60B742F33C1B62B46E9819DF52",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedAdministration.mqh": "3AFA01C13F99AC9E40C1D0D73ECB31A8DFAE1F43DBBD70D01B74209B77E7972C",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh": "D41A13490C53D8DD3C1AA72B674BAE7E0696B1E3BB4748E8B028416FE7157953",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAuthorityRecordCodec.mqh": "00125EE8429AB44FAF8E123494E8FAD461CBF54AF74AB035430A2CB0CA96951A",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketIntegrity.mqh": "0A6C96F77CF4813B1CA691CBD82E4F2268EF6C2C4E2BAF7D85F843A5660A8150",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketLifecycleAuthority.mqh": "7233E2CB75DD61DC417454DDDA2D5D4B0FBFC91480F51D3BFD1F23E78D9DFEE5",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBasketStateMachine.mqh": "91AEF87F3FE06CBF97D7748DDE3E1C52B636B16DEC0BCB25C90537CD2B5F5A94",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh": "5945C6C716655ACE1AE84C2BDB1A31622B1F6FC6F5AC366D7D2A2134651A3204",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationActivation.mqh": "C2ECBFB29B0873EC1836EFA156B9029F8EBFB254EDB3316EA0ED0803D8032CDB",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationFlatAuthority.mqh": "1182BD2B70C6B7F10DADE0EC89903EA95738A0422C808215A518787D3106D969",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationLineage.mqh": "0BEB4C3563C08650F67B01530FFB45C170C64124E2933A929BD04FEA69040207",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationPhysicalCodec.mqh": "DC0D4507B8AD7F2B802A3135A453C3288B78D35D33AD3A73B47550B9C8C6F114",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpDemoAuthorityProviders.mqh": "2F1DE51E2C905B9BDD405E7F12BF29E6E63D77FC64DD662B7F5A13F2BF69AEDA",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpDeploymentProfile.mqh": "873556AB41F6F858130314EB27C7D9D98C77199C243B9740D8926444FAEECE1A",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh": "B9726B3886777464005BA33D803EEC2CBE5672CEFEB1B2FABA2B9DD4F39FC3AE",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpHardKillActivationAuthority.mqh": "0B3716481742037B2B9E027D48A6FB963BBF1CE8181263A6D75D09C22F186BE5",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpHardKillReleasePhysical.mqh": "EAC8F2C0FC255E435EEB3763D7251CA6DC1CD3734820FA5FBF293450D5258DE5",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpIngressRequestAuthorities.mqh": "560D21171F028230B70517BEC4DB066B20168E8B57C5B520078D3030B3DD958D",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpManualProvisioningAuthorities.mqh": "EC374818FCF786C7C4003D3971293028A392136C64B524B25286B548F719E78B",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpOwnershipAuthority.mqh": "E44AB0428BE758D9DAA2450676FB4916BB7292878D3EC09AFDEF6166F2312AF4",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpPermitClaimAuthorities.mqh": "627DB81C0C4E8517DA1CF2AE2CBE284EB799816F395B2A30AE0D979AF06CCCFB",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpReadOnlyPlatform.mqh": "DAEAFA7F366ABE7E4C1E483A94E19E011A3B542E447644E7D8669DEC92EC172F",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpRequestMaterializationAuthorities.mqh": "FE050C541B6B5504AF863599BD9EDB762A3F0E369213C9094E20CC628635DC6F",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpSqliteAuthorityStore.mqh": "0AD7D085CF9FCDD01F13286E0914CEC33CEF3F10B6197C53218E027ABD8BD87A",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_BasketContract.mqh": "DADD581E75C9F5AC2034F84F2AB1AD69CD85976D181B4535D2D1B3595335D64A",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_BasketStateContract.mqh": "BA22862812F694E439506DFCA0E8455DF8FC75AC214FB70E1936C158E1DF2FEA",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_ExecutionContract.mqh": "CC8C1AF7D9657CE5FFA63E6F0DE0EFDF271D1E90F04E9C21831B85E721B76675",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_InstanceOwnershipContract.mqh": "B03BD635C478C72D768DDE18C4B79A02D87DEF004B0D4808EE76A58126AFBE80",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_PersistenceContract.mqh": "C64EBF909BC1329E6434C9F3AE476E879D3EA1D84B436241F3BB172BFC7383E3",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_ProductionCommon.mqh": "00C65A4FDB18EDDC2F9C693FDC24EFB3FEB58D729F4AF0187D270C65332B67EF",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_ProductionContracts.mqh": "FB7771DE8CCD0A4934343EB99F1B78FF3F11743875FCC10DB3D9BB3E8F70E1CB",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_RiskContract.mqh": "A1C0E76098DA427F1DD4A6DE513693D61904A0667AD2B9F9F0CDEA519758ED38",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_StatisticsContract.mqh": "361855E143CC04BEFA2228E61E916970EA50D2D53F9CE60605ED46774927B8FF",
+    "FusionProV5\\ProductionArchitecture\\SW_V5_UnitSystemContract.mqh": "5FF1F93DA02108F61A2F8F2C64A5A891C21394A28096126D3586D32E7F5E4E49",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_RESUME_CLOCK_DIAGNOSTIC.mq5": "57F964FD1CD34CD3FA5433A43401370E180AA6E46F14725ED4E750D55DC92D0C",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationTestIsolation.mqh": "D4F189B668E6E05410BC9180A8AC4F07F8F524D9D1E54F213B440CC9CC3CCA24",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpResumeClockDiagnosticGate.mqh": "6AC375CBCF84A131F9B7FA9AA2022057658CA5D6C16B60B5F8E05237E651D269"
+  },
+  "compile_result": "Result: 0 errors, 0 warnings, 7915 ms elapsed, cpu='X64 Regular'",
+  "compiled_ex5": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_RESUME_CLOCK_DIAGNOSTIC.ex5",
+  "compiled_ex5_sha256": "FB38D8ED95A3FA38B0E3E9810B8D8F036C759DED20DE4020C5A1851FB1AF84DD",
+  "installed_ex5": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Experts\\FusionProV5Tests\\TEST_ONLY_SW_V5_S5_MVP_CONTINUATION_RESUME_CLOCK_DIAGNOSTIC.ex5",
+  "installed_ex5_sha256": "FB38D8ED95A3FA38B0E3E9810B8D8F036C759DED20DE4020C5A1851FB1AF84DD",
+  "preset_path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Presets\\TEST_ONLY_RESUME_CLOCK_DIAGNOSTIC_9ee7fc055411445882dc75714db10333.set",
+  "preset_sha256": "0FB16EA0B36A4A41D5BB666A37A21F9F30AE6B70ADA8D41333D6129B51265B6D",
+  "original_donor_hashes": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "donor_row_count": 26,
+  "namespace": "58408af3c3381470aa50161762e4f1102eec5d214448495a79d732cd31d90d8c",
+  "diagnostic_target": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_RESUME_CLOCK_DIAGNOSTIC_9ee7fc055411445882dc75714db10333.sqlite",
+  "diagnostic_target_created": false,
+  "option_R_implemented": false,
+  "verifier_sha256": "9F042CC3A082CE18088CEBDBE643BF5A57CAE56A8015CCB8A8FA3AE3A0C3F138"
+}

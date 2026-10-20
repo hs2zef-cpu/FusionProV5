@@ -66,7 +66,9 @@ bool SWV5S5_MvpOperatorInvocationValid(const SWV5S5_MvpOperatorInvocation &invoc
                                        const datetime now)
 {
    return invocation.operator_id!="" && invocation.authority_role==SWV5S5_MVP_OPERATOR_ROLE &&
-      invocation.authentication_reference!="" && invocation.authenticated_at==now && now>0;
+      invocation.authentication_reference!="" && invocation.authenticated_at>0 &&
+      now>=invocation.authenticated_at &&
+      now-invocation.authenticated_at<(datetime)SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS;
 }
 
 bool SWV5S5_MvpProfileMatches(const SWV5S5_MvpRuntimeProfileObservation &observation,

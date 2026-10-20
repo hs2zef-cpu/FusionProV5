@@ -2,8 +2,8 @@
 #define SW_V5_S5_MVP_OWNERSHIP_AUTHORITY_MQH
 
 // CONTROLLED DEMO MVP OWNERSHIP AUTHORITY.
-// Physical SQLite authority only. No broker mutation, retry, heartbeat, release,
-// or takeover path is implemented here.
+// Physical SQLite authority only. Attended same-fence heartbeat is explicit;
+// no broker mutation, automatic heartbeat, retry, release, or takeover path.
 
 #include "SW_V5_S5_MvpManualProvisioningAuthorities.mqh"
 
@@ -258,6 +258,47 @@ public:
          current.platform_observation_id!=m_fresh.platform_observation_id) return false;
       observation=current; return true;
    }
+   // Continuation-only predicate diagnostics. Same freshness/physical checks
+   // as CurrentFreshObservation/LoadVerified; no publication, retry, freshness
+   // reconstruction or mutation of m_fresh/m_fresh_since_open.
+   bool CurrentFreshObservationDiagnostic(SWV5S5_MvpLeaseClockObservation &observation,string &reason)
+   {
+      ZeroMemory(observation);reason="";
+#ifdef SWV5S5_TEST_ONLY_RESUME_CLOCK_CLASSIFIER
+      Print("RESUME_CLOCK_DIAGNOSTIC|PREDICATE_FACT|name=m_fresh_since_open|required=true|actual=",
+         m_fresh_since_open ? "true" : "false","|event_local_sequence=",m_fresh.clock_sequence,
+         "|event_local_observation_id=",m_fresh.platform_observation_id);
+#endif
+#define CONT_CLOCK_REQUIRE(condition,code) if(!(condition)){reason=code;return false;}
+      CONT_CLOCK_REQUIRE(m_fresh_since_open,"PRESTATE_CLOCK_EVENT_LOCAL_FRESHNESS_MISSING");
+      CONT_CLOCK_REQUIRE(SWV5S5_MvpLeaseClockObservationValid(m_fresh),"PRESTATE_CLOCK_EVENT_LOCAL_OBSERVATION_INVALID");
+      SWV5S5_MvpAuthorityRow row;bool found=false;
+      CONT_CLOCK_REQUIRE(m_store.ReadRow(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_CLOCK_KEY,row,found),"PRESTATE_CLOCK_READ_FAILED");
+      CONT_CLOCK_REQUIRE(found,"PRESTATE_CLOCK_MISSING");
+      CONT_CLOCK_REQUIRE(row.logical_revision>0,"PRESTATE_CLOCK_SEQUENCE_INVALID");
+      CONT_CLOCK_REQUIRE(row.state==1,"PRESTATE_CLOCK_PHYSICAL_INVALID");
+      SWV5S5_MvpLeaseClockObservation current;
+      CONT_CLOCK_REQUIRE(SWV5S5_MvpDecodeLeaseClockPayload(row.payload,current),"PRESTATE_CLOCK_PAYLOAD_MALFORMED");
+      string expected_id;
+      CONT_CLOCK_REQUIRE(SWV5S5_MvpLeaseClockId(current.broker_identity,current.server,current.account_login,current.source_symbol,expected_id),"PRESTATE_CLOCK_PROFILE_FIELDS_INVALID");
+      CONT_CLOCK_REQUIRE(current.clock_id==expected_id,"PRESTATE_CLOCK_ID_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.clock_authority==SWV5_TIME_AUTHORITY_BROKER_SERVER,"PRESTATE_CLOCK_AUTHORITY_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.observed_at>0,"PRESTATE_CLOCK_TIME_INVALID");
+      CONT_CLOCK_REQUIRE(current.clock_sequence>0,"PRESTATE_CLOCK_SEQUENCE_INVALID");
+      CONT_CLOCK_REQUIRE(current.source_symbol==SWV5S5_MVP_SYMBOL,"PRESTATE_CLOCK_SYMBOL_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.source==SWV5S5_MVP_CLOCK_SOURCE_CURRENT_SYMBOL_ONTICK,"PRESTATE_CLOCK_SOURCE_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.platform_observation_id!="","PRESTATE_CLOCK_OBSERVATION_ID_MISSING");
+      CONT_CLOCK_REQUIRE(SWV5S5_MvpLeaseClockObservationValid(current),"PRESTATE_CLOCK_OTHER_EXACT_BINDING_FAILED");
+      string payload,digest,revision;
+      CONT_CLOCK_REQUIRE(SWV5S5_MvpLeaseClockPayload(current,payload,digest) && payload==row.payload,"PRESTATE_CLOCK_CANONICAL_MISMATCH");
+      CONT_CLOCK_REQUIRE(digest==row.payload_digest,"PRESTATE_CLOCK_PAYLOAD_DIGEST_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.clock_sequence==row.logical_revision,"PRESTATE_CLOCK_SEQUENCE_ROW_MISMATCH");
+      CONT_CLOCK_REQUIRE(m_store.DeriveStoreRevision(row.domain_key,row.record_key,row.logical_revision,row.payload_digest,revision) && revision==row.store_revision,"PRESTATE_CLOCK_STORE_REVISION_MISMATCH");
+      CONT_CLOCK_REQUIRE(current.clock_sequence==m_fresh.clock_sequence,"PRESTATE_CLOCK_EVENT_SEQUENCE_CHANGED");
+      CONT_CLOCK_REQUIRE(current.platform_observation_id==m_fresh.platform_observation_id,"PRESTATE_CLOCK_EVENT_OBSERVATION_CHANGED");
+#undef CONT_CLOCK_REQUIRE
+      observation=current;return true;
+   }
 };
 
 bool SWV5S5_MvpDeriveLeaseRecordRevision(const SWV5_InstanceLease &lease,string &revision)
@@ -335,6 +376,57 @@ public:
       context.price_tolerance=0.0000001; context.volume_tolerance=0.0000001;
       return SWV5S5_MvpLeaseClockObservationValid(clock) &&
          SWV5S5_MvpLeaseCurrentForClock(context,lease.fence,lease);
+   }
+
+   // Explicit attended continuation only. Late renewal does not grant liveness
+   // until the exact prior-row CAS and complete readback have succeeded.
+   bool HeartbeatAttended(const bool acknowledged,const SWV5S5_MvpOperatorInvocation &op,
+                          const SWV5_OwnerIdentity &configured_owner,const SWV5_InstanceLease &expected,
+                          const SWV5S5_MvpAuthorityRow &expected_row,const uint lease_seconds,
+                          SWV5S5_MvpLeaseClockAuthority &clock_authority,
+                          SWV5_InstanceLease &renewed,SWV5S5_MvpAuthorityRow &committed)
+   {
+      ZeroMemory(renewed); ZeroMemory(committed);
+      SWV5S5_MvpLeaseClockObservation clock; SWV5_InstanceLease current; SWV5S5_MvpAuthorityRow row;
+      string owner_a,owner_b;
+      if(!acknowledged || !clock_authority.CurrentFreshObservation(clock) ||
+         !SWV5S5_MvpOperatorInvocationValid(op,clock.observed_at) ||
+         !SWV5S5_MvpOwnerComplete(configured_owner) ||
+         !SWV5S5_MvpCodecEncode_SWV5_OwnerIdentity(configured_owner,owner_a) ||
+         !SWV5S5_MvpCodecEncode_SWV5_OwnerIdentity(expected.fence.owner,owner_b) || owner_a!=owner_b ||
+         lease_seconds==0 || lease_seconds>SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS ||
+         !LoadCurrent(expected.fence.ownership_namespace,expected.fence,current,row) ||
+         !SWV5S5_MvpLeaseExact(current,expected) || row.logical_revision!=expected_row.logical_revision ||
+         row.store_revision!=expected_row.store_revision || row.payload_digest!=expected_row.payload_digest ||
+         row.state!=expected_row.state || row.payload!=expected_row.payload ||
+         (current.status!=SWV5_LOCK_ACQUIRED && current.status!=SWV5_LOCK_RENEWED) ||
+         clock.clock_id!=current.clock_id || clock.clock_authority!=current.clock_authority ||
+         clock.clock_sequence<=current.heartbeat_clock_sequence || clock.observed_at<current.heartbeat_at ||
+         current.heartbeat_sequence==18446744073709551615 || row.logical_revision==18446744073709551615 ||
+         clock.clock_sequence>18446744073709551615-(ulong)lease_seconds ||
+         (long)clock.observed_at>9223372036854775807-(long)lease_seconds) return false;
+      renewed=current; renewed.status=SWV5_LOCK_RENEWED; renewed.heartbeat_sequence++;
+      renewed.heartbeat_clock_sequence=clock.clock_sequence; renewed.heartbeat_at=clock.observed_at;
+      renewed.expires_at=clock.observed_at+(datetime)lease_seconds;
+      renewed.expiry_clock_sequence=clock.clock_sequence+(ulong)lease_seconds;
+      string body,part;
+      if(!SWV5S5_CanonicalString("lifecycle_write","SAME_FENCE_ATTENDED_HEARTBEAT",body) ||
+         !SWV5S5_CanonicalOwnershipKey("ownership_namespace",renewed.fence.ownership_namespace,part)) return false;
+      body+=part;
+      if(!SWV5S5_CanonicalString("fencing_token_digest",renewed.fence.fencing_token_digest,part)) return false; body+=part;
+      if(!SWV5S5_CanonicalUInt("heartbeat_sequence",renewed.heartbeat_sequence,part)) return false; body+=part;
+      if(!SWV5S5_CanonicalUInt("clock_sequence",clock.clock_sequence,part)) return false; body+=part;
+      if(!SWV5S5_CanonicalDatetime("heartbeat_at",clock.observed_at,part)) return false; body+=part;
+      if(!SWV5S5_DomainDigest(SWV5S5_MVP_LEASE_RECORD_REVISION_DOMAIN,body,renewed.store_revision)) return false;
+      SWV5S5_LeaseLivenessAuthorityView view; view.lease=renewed; string payload;
+      if(!SWV5S5_DeriveLeaseProjection(view) || !SWV5S5_MvpEncodeOwnershipLeasePhysical(renewed,payload) ||
+         !m_store.CompareAndSet(SWV5S5_MVP_DOMAIN_OWNERSHIP,SWV5S5_MVP_OWNERSHIP_KEY,
+            row.logical_revision,row.store_revision,row.payload_digest,row.state,row.logical_revision+1,
+            (int)SWV5_LOCK_RENEWED,view.projection_digest,payload,clock.observed_at,committed)) return false;
+      SWV5_InstanceLease verified; SWV5S5_MvpAuthorityRow readback;
+      return LoadCurrent(renewed.fence.ownership_namespace,renewed.fence,verified,readback) &&
+         SWV5S5_MvpLeaseExact(renewed,verified) && readback.store_revision==committed.store_revision &&
+         readback.payload==payload;
    }
 
    bool AcquireInitial(const SWV5_OwnerIdentity &claimant,const uint lease_duration_seconds,

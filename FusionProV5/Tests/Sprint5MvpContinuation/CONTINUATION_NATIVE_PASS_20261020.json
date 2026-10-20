@@ -1,0 +1,1406 @@
+{
+  "classification": "ACTUAL_NATIVE_EXECUTED_EVIDENCE_READ_ONLY_VALIDATION_NO_RERUN",
+  "checks": {
+    "native_assertions_223": true,
+    "native_summary": true,
+    "native_complete": true,
+    "preset_selected": true,
+    "released_revision_exact": true,
+    "released_store_revision_exact": true,
+    "released_digest_exact": true,
+    "A1_preserved": true,
+    "complete_bundle_unchanged": true,
+    "A2_only_activation": true,
+    "later_T2": true,
+    "final_INACTIVE": true,
+    "zero_submission": true,
+    "later_preflight": true,
+    "physical_digests_CAS": true,
+    "original_db_unchanged": true
+  },
+  "raw_journal": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Logs\\20261020.log",
+    "bytes": 266096,
+    "sha256": "0FBC81BB6B60D1E40451DB916B104F7669C36FEC8F432736D23A90557CC806A2"
+  },
+  "selected_preset_ready_line": "GR\t0\t20:16:22.124\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_NATIVE_COPY|READY|TEST_ONLY|WAIT_FOR_FRESH_A|copy=TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite|sha256=bec62e7435d29d5511a41bf85c74ae443994c5804b3a9574af90d861fe674ef6",
+  "summary": "CONTINUATION_SUMMARY|passed=223|failed=0|skipped=0|total=223",
+  "complete": "CONTINUATION_NATIVE_COPY|COMPLETE|original_unchanged=true|original_sha256=bec62e7435d29d5511a41bf85c74ae443994c5804b3a9574af90d861fe674ef6|forbidden_transport_calls=0|NO_REAL_DEPLOYMENT_AUTHORIZATION",
+  "assertions": [
+    {
+      "test_id": "COPY_REAL_DB_AND_LOAD_EXACT_OWNER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_COPY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_EXPIRED_ORDINARY_LOAD_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_REFRESH_PROFILE_MISMATCH_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_HISTORICAL_TIME_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_CALLER_SEQUENCE_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_REOPENED_NOT_EVENT_FRESH",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_EXACT_ACCEPTED_EVENT_REFRESH_DISTINCT_CAS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_COPY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_EXPIRED_ORDINARY_LOAD_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_REFRESH_PROFILE_MISMATCH_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_HISTORICAL_TIME_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_CALLER_SEQUENCE_REJECTED_UNCHANGED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_REOPENED_NOT_EVENT_FRESH",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_CLOCK_EXACT_ACCEPTED_EVENT_REFRESH_ALIASED_CAS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_SAME_SECOND_VALID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "MC_OPERATOR_EXACT_SECOND_REVERSION_DETECTED_BY_LATER_VALIDATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_PLUS_THREE_VALID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_LAST_SECOND_VALID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_BEFORE_AUTH_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_HORIZON_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_BEYOND_HORIZON_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_WRONG_ROLE_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATOR_WINDOW_MISSING_REFERENCE_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_REFRESH_CORRUPT_ROW_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_REFRESH_CAPABILITY_COERCION_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOV_REFRESH_POLICY_VERSION_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_ID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_ID/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_ID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_BROKER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_BROKER/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_BROKER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_SERVER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_SERVER/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_SERVER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_ACCOUNT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_ACCOUNT/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_ACCOUNT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_SYMBOL",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_SYMBOL/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_SYMBOL",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_AUTHORITY/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_MALFORMED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_MALFORMED/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_MALFORMED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_DIGEST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_DIGEST/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_DIGEST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_STORE_REVISION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_STORE_REVISION/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_STORE_REVISION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_ZERO_SEQUENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_ZERO_SEQUENCE/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_ZERO_SEQUENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_BACKWARD_SEQUENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_BACKWARD_SEQUENCE/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_BACKWARD_SEQUENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_BACKWARD_TIME",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_BACKWARD_TIME",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_DUPLICATE_OBSERVATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_DUPLICATE_OBSERVATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_FUTURE_TIME",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_FUTURE_TIME_NO_PUBLICATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_DIAG_EQUIVALENT_POSITIVE_ZERO_TIME",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_ZERO_TIME_CAS_COMMITTED_VALID_METADATA_INVALID_PAYLOAD",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_NEGATIVE_ZERO_TIME/",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_ZERO_TIME_REJECTED_BY_TIME_VALIDATOR_NOT_CAS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "STORED_CLOCK_STRUCTURAL_NEGATIVE_ZERO_TIME",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_INSTANCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_PROCESS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_STARTED_AT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_OWNER_KEY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_FENCE_TOKEN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_LEASE_VERSION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_TAKEOVER_GENERATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_NONATTENDED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_ALTER_PRIOR_ROW_CAS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "HB_ALTERED_CURRENT_LEASE_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_REQUEST_SEQUENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_INGRESS_LEDGER",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_MARGIN_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_BASKET_RISK_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_SUBMISSION_PERMIT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_ADMISSION_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_ATTEMPT_RECONCILIATION_PIN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_RECONCILIATION_PUBLICATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_INVOCATION_CLAIM",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_SUBMISSION_AUTHORITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_BROKER_SYNC_EVIDENCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OPERATIONAL_ROW_REJECTED_MVP_RECOVERY_METADATA",
+      "result": "PASS"
+    },
+    {
+      "test_id": "EXPIRED_COPY_NATIVE_PREFLIGHT_FAILS_CLOSED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-1",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-2",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-3",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-4",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-5",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-6",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-7",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-8",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-9",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-10",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-11",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_NOT_HIDDEN_AFTER_ACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-12",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-13",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-14",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-15",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-16",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-17",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEGATIVE-18",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_CLOCK",
+      "result": "PASS"
+    },
+    {
+      "test_id": "CLOCK_PARTIAL_ONLY_CLOCK_ADVANCED_ALL_OTHER_ROWS_EXACT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_CLOCK_COLD_STRUCTURAL_PASS_NO_FRESHNESS_RECONSTRUCTION_NO_GRANT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_CLOCK_OLD_EVENT_CANNOT_MUTATE_MC_EVENT_FRESHNESS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_CLOCK_NO_NEW_ACK_ZERO_PUBLICATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_HEARTBEAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_HEARTBEAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_TRUST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_TRUST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_GOVERNANCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_GOVERNANCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_ACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_ACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_NO_FINAL_CLOCK/GENUINE_PREPARED_INVOCATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_WRONG_OPERATOR/GENUINE_PREPARED_INVOCATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_WRONG_REFERENCE/GENUINE_PREPARED_INVOCATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_COLD_RESTART/GENUINE_PREPARED_INVOCATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "LATER_PREFLIGHT_STORE_SNAPSHOT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_PERIODIC",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PERIODIC_EPOCH_1_ACTUAL_CONTINUATION_COMPLETE_ZERO_SUBMISSION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PERIODIC_EPOCH_2_EXPIRED_STRUCTURAL_NO_GRANT_NO_RECONSTRUCTED_FRESHNESS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PERIODIC_EPOCH_2_NEW_EVENT_REQUIRED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PERIODIC_EPOCH_2_MAY_BEGIN_MODEL_ONLY_NO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_BOUND_ACTIVE_CONTROL",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTERRUPT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTENDED_STAGE_AND_FRESH_BINDING_PROVEN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_PARTIAL_PREFLIGHT_DENIED_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_EXPECTED_LATER_RELEASE_ABSENT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_CONTROL_ACTUAL_INVOCATION_ACCEPTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_BOUND_ACTIVE_MUTATED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTERRUPT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTENDED_STAGE_AND_FRESH_BINDING_PROVEN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_PARTIAL_PREFLIGHT_DENIED_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_EXPECTED_LATER_RELEASE_ABSENT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_STALE_AUTHORITY_NOT_GOVERNANCE_INVALIDITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_MUTATED_ACTUAL_INVOCATION_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "ATOMIC_COMPLETE_SNAPSHOT_GUARD_REJECTS_STALE_ROWS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOVERNANCE_PENDING_DIFFERENTIAL_BOTH_CASES_REQUIRED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_BOUND_PENDING_CONTROL",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTERRUPT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTENDED_STAGE_AND_FRESH_BINDING_PROVEN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_PARTIAL_PREFLIGHT_DENIED_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_EXPECTED_LATER_RELEASE_ABSENT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_CONTROL_ACTUAL_INVOCATION_ACCEPTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_BOUND_PENDING_MUTATED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTERRUPT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_INTENDED_STAGE_AND_FRESH_BINDING_PROVEN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_PARTIAL_PREFLIGHT_DENIED_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_EXPECTED_LATER_RELEASE_ABSENT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_STALE_AUTHORITY_NOT_GOVERNANCE_INVALIDITY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "BOUNDARY_MUTATED_ACTUAL_INVOCATION_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "ATOMIC_COMPLETE_SNAPSHOT_GUARD_REJECTS_STALE_ROWS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "GOVERNANCE_RELEASE_DIFFERENTIAL_BOTH_CASES_REQUIRED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_MAIN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_SQLITE_CONTINUATION_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "MONOTONIC_GENERATIONS",
+      "result": "PASS"
+    },
+    {
+      "test_id": "TWO_BROKER_OBSERVATIONS_ZERO_SUBMISSION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "COMPLETED_REPLAY_READBACK_ONLY",
+      "result": "PASS"
+    },
+    {
+      "test_id": "MAIN_COMPLETED_LATER_PREFLIGHT_STORE_SNAPSHOT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "FLAT_REAL_TIME_POSITIVE_CONTROL",
+      "result": "PASS"
+    },
+    {
+      "test_id": "FLAT_REAL_T0_T1_T2_CHAIN",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OBSERVATION_BEFORE_A_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "OBSERVATION_AFTER_FINAL_CLOCK_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PERSISTENCE_AFTER_FINAL_CLOCK_REJECTED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_HEARTBEAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_TRUST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_GOVERNANCE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_ACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_FIRST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FLAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_FLAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_FIRST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_PENDING",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_PENDING",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_FIRST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_RELEASED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_A1_HISTORICAL_BUNDLE_PHYSICALLY_VALID",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_CANONICAL_ENVELOPE_IS_NOT_TYPED_CODEC",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_RESTART_A1_NOT_RECONSTRUCTED_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_FAIL_CLOSED_RELEASED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_FIRST",
+      "result": "PASS"
+    },
+    {
+      "test_id": "PARTIAL_INACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_INACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_NO_FINAL_CLOCK/EXACT_REJECTION_ZERO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_WRONG_OPERATOR/EXACT_REJECTION_ZERO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_WRONG_REFERENCE/EXACT_REJECTION_ZERO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "NEG_COLD_RESTART/EXACT_REJECTION_ZERO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_CLOCK_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_CLOCK_NEW_ACK_LATER_TICK_NEW_CLOCK_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_FLAT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_PENDING",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_AFTER_A2_AND_T2_BYTES_DIGEST_REVISION_EXACT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_A2_DISTINCT_FRESH_INVOCATION_AFTER_A1_RELEASE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_RESTART_RECONSTRUCTS_NEITHER_A1_NOR_A2_ZERO_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "REAL_LATER_FINAL_CLOCK_NO_RECAPTURE_RESUME_COMPLETE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RESUME_RELEASED",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_A1_COMPLETE_BUNDLE_UNREWRITTEN_AFTER_INACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_A1_HISTORY_A2_ACTIVATION_ONLY_REAL_LATER_T2_INACTIVE",
+      "result": "PASS"
+    },
+    {
+      "test_id": "RELEASED_A1_A2_ZERO_SUBMISSION_AND_TRANSPORT",
+      "result": "PASS"
+    },
+    {
+      "test_id": "LATER_NATIVE_TICK_PREFLIGHT_COMPLETE_ZERO_SUBMISSION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "LATER_NATIVE_PREFLIGHT_ZERO_AUTHORITY_MUTATION",
+      "result": "PASS"
+    },
+    {
+      "test_id": "COMPILED_TRANSPORT_TRAP_NEVER_REACHED",
+      "result": "PASS"
+    }
+  ],
+  "focused_lines": [
+    "RM\t0\t20:20:23.036\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_A1_HISTORICAL_BUNDLE_PHYSICALLY_VALID|PASS",
+    "LO\t0\t20:20:23.036\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_CANONICAL_ENVELOPE_IS_NOT_TYPED_CODEC|PASS",
+    "DG\t0\t20:20:25.703\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_RESTART_A1_NOT_RECONSTRUCTED_ZERO_MUTATION|PASS",
+    "MQ\t0\t20:20:25.703\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RELEASED_BEFOREIMAGE|revision=7|store_revision=9918c5dc87197e99809b6482ad48027d685e3a98200a88a2ed88185658c31ca4|digest=084dc79b8550e30bccb27f575e4d9acfb3c44447a90844bc4fd0460b090c80f0|updated_at=1792502409|A1=1792502227|bundle_digest=9d7bb6b09a6cf4c47c66d1a74240b8649cc7c2f52cf0e5d599c68d5558ac3b01",
+    "FI\t0\t20:24:43.591\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_AFTER_A2_AND_T2_BYTES_DIGEST_REVISION_EXACT|PASS",
+    "FD\t0\t20:24:43.591\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_A2_DISTINCT_FRESH_INVOCATION_AFTER_A1_RELEASE|PASS",
+    "HP\t0\t20:24:48.964\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_RESTART_RECONSTRUCTS_NEITHER_A1_NOR_A2_ZERO_MUTATION|PASS",
+    "HG\t0\t20:24:54.735\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|RELEASED|FINAL_INACTIVE|ATTENDED_CONTINUATION_COMPLETE_ZERO_SUBMISSION",
+    "FM\t0\t20:24:54.742\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_A1_COMPLETE_BUNDLE_UNREWRITTEN_AFTER_INACTIVE|PASS",
+    "RM\t0\t20:24:54.746\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_A1_HISTORY_A2_ACTIVATION_ONLY_REAL_LATER_T2_INACTIVE|PASS",
+    "LJ\t0\t20:24:54.746\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RELEASED_A1_A2_ZERO_SUBMISSION_AND_TRANSPORT|PASS",
+    "DO\t0\t20:24:54.854\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_NATIVE_LATER_TICK|T0=1792502325|T1=1792502695|reason=PREFLIGHT_COMPLETE_ZERO_SUBMISSION"
+  ],
+  "physical_result": {
+    "copy": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite.RETEST.RESUME_RELEASED.sqlite",
+      "bytes": 196608,
+      "sha256": "14523DC9A30F525D7E62AD3C3F91CE722A863A57A45894B6021E22AFE0E129E4"
+    },
+    "current_revision": 8,
+    "current_digest": "f01eae84bfa92141f4a8c5f5c2a32ccac06c044c5df5865a385f548401b29bb4",
+    "current_store_revision": "f87c8db094a722a07daa2810ec42e63fb198d2eb8fe47a32c83ec4f940cf28f2",
+    "released_beforeimage": {
+      "revision": "7",
+      "store_revision": "9918c5dc87197e99809b6482ad48027d685e3a98200a88a2ed88185658c31ca4",
+      "digest": "084dc79b8550e30bccb27f575e4d9acfb3c44447a90844bc4fd0460b090c80f0",
+      "updated_at": "1792502409",
+      "A1": "1792502227",
+      "bundle_digest": "9d7bb6b09a6cf4c47c66d1a74240b8649cc7c2f52cf0e5d599c68d5558ac3b01"
+    },
+    "history_digest": "edf328a6f6b20a23e0fe6206606b7fc20c1fa634f59af80789979185118e63a0",
+    "release_bundle_digest": "9d7bb6b09a6cf4c47c66d1a74240b8649cc7c2f52cf0e5d599c68d5558ac3b01",
+    "A1": {
+      "operator_id": "FUSION_DEMO_ATTENDED_OPERATOR_01",
+      "authority_role": "FUSION_DEMO_MVP_OPERATOR",
+      "authentication_reference": "TEST_ONLY_FRESH_A",
+      "authenticated_at": 1792502227
+    },
+    "A2": {
+      "operator_id": "FUSION_DEMO_ATTENDED_OPERATOR_01",
+      "authority_role": "FUSION_DEMO_MVP_OPERATOR",
+      "authentication_reference": "TEST_ONLY_FRESH_A",
+      "authenticated_at": 1792502428
+    },
+    "approved_at": 1792502409,
+    "released_at": 1792502409,
+    "final_activated_at": 1792502682
+  },
+  "accepted_ex5_sha256": "5BB5EC5EC4B10A5F92193AF66B1244FBCD347DCF4F4FFE1049FB424DF3A622DC",
+  "accepted_preset": "TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite.set",
+  "accepted_preset_sha256": "950B08E02D2F8E6E3B96E642EB6B236DD5D311DF18863D7D533212398A8E18C3",
+  "compiled_source_digest": "72175faf558ecf79dae6d063edca4cce89bca02aeb5021e8feed825f425c663e",
+  "compiled_source_manifest": [
+    {
+      "path": "FusionProV5/Adapters/SW_V5_LegacyEngineAdapter.mqh",
+      "sha256": "EF657778B7721244B7ACEEE325177927C06038902D3A9FC78A800990C37BD113",
+      "git_normalized_blob_oid": "e6b7a21310aabcc87bacabbfb7d1b5f276bf6c3e"
+    },
+    {
+      "path": "FusionProV5/Configuration/SW_V5_RuntimeIdentityProfile.mqh",
+      "sha256": "E84F287A6C138A837E7929F62EEA20F9BCEE363C80FDD481730767F1CCB93776",
+      "git_normalized_blob_oid": "0de9a74316884435a4d4de77ba9dda328aca73a2"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_Interfaces.mqh",
+      "sha256": "57903F81B1780C49581FC7ED0B3564EB651FA7BDDF13165F094A9568C019484B",
+      "git_normalized_blob_oid": "6021d510a389ac5d23a8f4361e41bdb05346d92b"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_ResultValidator.mqh",
+      "sha256": "D890253AD80F61804854F10DB37499DE5777A398A8795D527BD9B8E587CDE35C",
+      "git_normalized_blob_oid": "06280a57aa25e3bcf122f55515586eb165ec7436"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_Types.mqh",
+      "sha256": "CFC894CE9774DD98EFB2F380FEEB736ABA046F499328D365546494F5249378C4",
+      "git_normalized_blob_oid": "498daaccca79755410849481c250ec814972db1c"
+    },
+    {
+      "path": "FusionProV5/Decision/SW_V5_DecisionEngine.mqh",
+      "sha256": "75DF76A1DC3E78039D20A42C3C8B9608A8A6B381C7FE790E2458DC1729065E03",
+      "git_normalized_blob_oid": "a329fb451beda68bc0fa36d10d91f6c574d1a6ff"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_MomentumEngine.mqh",
+      "sha256": "0E2B9F899A57899B3AFF1EA34CB9D96E6E34F02BB054B35CF2B3591CF2B60456",
+      "git_normalized_blob_oid": "346df422fce6a22d230ad2b03619339ace55d450"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_PriceActionEngine.mqh",
+      "sha256": "5E0F94D6D7FF426E914DDB16F61ECA837D91B80259E223C889547ED66A92CE70",
+      "git_normalized_blob_oid": "be0b0f917a8698eb8d4295016cf4c8251f14fe7d"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_TrendEngine.mqh",
+      "sha256": "17865AFE4B36E6EC6E5C1C57DB1BE895B1360E28172E6A54765AF365FA0D35D4",
+      "git_normalized_blob_oid": "d1714ed96ca00382b604a2b6622c1ad747007be0"
+    },
+    {
+      "path": "FusionProV5/Execution/SW_V5_ExecutionPolicy.mqh",
+      "sha256": "BD8E52C0AFD58D733F14A48767BCD35C74893531C44747D52E1C9973D6B77F85",
+      "git_normalized_blob_oid": "3f39b8a2639c3cc783aedafc0a1c73c0979ae3fa"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapter.mqh",
+      "sha256": "949C50A185DEB0DDE80624E496784A060FF136475C5B4FC357CCB75A5C386975",
+      "git_normalized_blob_oid": "3528f8bfeb9c76216e0f67eed755296144fa1913"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapterCore.mqh",
+      "sha256": "7C39FBA4A5BF12F155843FA7657EC4D1F019EE2CDBDBE3EAB97E23A01D612FFB",
+      "git_normalized_blob_oid": "704c18eba80cd6b862fcf5407544248c794fa20a"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapterTypes.mqh",
+      "sha256": "BE1A3EF06A2391217C977ACA6673D1338471AB132EC69D776A864EED0F312691",
+      "git_normalized_blob_oid": "681b96007ff807633045581dcfec9789678bbf01"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+      "sha256": "AAED492EF0197B28D1B6D2F7481C986FC3B063A227FBF15100E12916F374339B",
+      "git_normalized_blob_oid": "3150f910543df240f3119b891a212d48b72b4501"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerReconciliationIntegration.mqh",
+      "sha256": "46EF2733EA4D9C3058EE114866CD55C7CB05E5C24A8A83CBF1873264DD360A42",
+      "git_normalized_blob_oid": "a1237531985aefdc031cebd1a4e9f118d8bd79cd"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_AdmissionContract.mqh",
+      "sha256": "157B727D1643AAB90F89D3901C5211EE3E0D10CE623A300C51CB8BF49580B7C1",
+      "git_normalized_blob_oid": "38b1000580df0e924d6ef585c646074240927496"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_AdmissionSnapshotContract.mqh",
+      "sha256": "97BB433651E596A2864FF629721FBEE4A6BBFCD69FC8CD9AC9C23882F90E16F9",
+      "git_normalized_blob_oid": "91e491e0bbfc2433d481369ab7a1eeff36aa729b"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Canonical.mqh",
+      "sha256": "FA6123FA08F349C2BAE145DC9B7DFC0BA2AFC81169B93CB180874FD5BBC62847",
+      "git_normalized_blob_oid": "efb028e3789f6bbaed887963456a074bec84053e"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Common.mqh",
+      "sha256": "FD8B03B6C3DC8268EE115E579F91FA7DEA744E2635EF3F74D925538294AE9A5C",
+      "git_normalized_blob_oid": "4e92fd8cf5deff3a3d360fb707254c7541bfe968"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Contracts.mqh",
+      "sha256": "6F0F96E1E3EE70733D14D39AB953E6464E60B1C1DB3BE188AAF3A2E6C467FE8C",
+      "git_normalized_blob_oid": "074e392e66b5cf99856683175e2a680b53ff1bcf"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_IngressContract.mqh",
+      "sha256": "927158931E530588417E66D6D849EA0F0CAF920F8C7694168BE59D5F5AD1F863",
+      "git_normalized_blob_oid": "0fe7271acf70324bca7862576a9e7ebbde96ccea"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_IngressLedgerContract.mqh",
+      "sha256": "F508CAF7D1DF7F3523E739882A7358D940ADE5643BF5C1BA06AD26E0C1FD346F",
+      "git_normalized_blob_oid": "ef30cc284f6ee8fdc63e20193dcb2fce674b79b0"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_InvocationClaimContract.mqh",
+      "sha256": "3A0A60BA4965FF6A49015A43482585C79F6ED51CDE763B7356ECA4B7CDD3072B",
+      "git_normalized_blob_oid": "ad86b1a925b6be8fd96eafbf478dc4e09538f2c7"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_OrchestrationContract.mqh",
+      "sha256": "551B5ABC04605FA1FD244339836E707489AFFCED3C1540630F62F72792991A37",
+      "git_normalized_blob_oid": "681742269cb86796c1600abd2bec63db815c1473"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_ProducerTrustContract.mqh",
+      "sha256": "699B2B6F180EC63575DBF8429AB040D28672839547E9D82DD0AD2EF8742AA57F",
+      "git_normalized_blob_oid": "6db8929551566a832f3c590d025584cd047d8a01"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_ReconciliationEvidenceContract.mqh",
+      "sha256": "2086EC300B70F7AA66BC404F42DEE4FBBF9469C63BB46E69F2CBB64A0AD0D7E8",
+      "git_normalized_blob_oid": "ac6a6d960bf0b83195456251d8c3c1e72926ca00"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RequestBindingContract.mqh",
+      "sha256": "255D7AC30C89A23040BCD59B2E09D3605B88208C6D08AD317315CA158CE05345",
+      "git_normalized_blob_oid": "50283f34088f6c0f631ed1fb2c95e7079c2fdbbc"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RequestSequenceContract.mqh",
+      "sha256": "8AA038A047FA0014289618C1EF2215244B41A96E5A113CA20A2C5073C93D9B52",
+      "git_normalized_blob_oid": "33e152363d6c48be8588b3ea368c9d538175830c"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RuntimePublicationContract.mqh",
+      "sha256": "429309E83DDA6287381D9FB3D67F18A60CF8A7D98968DC7EECED29749B88099E",
+      "git_normalized_blob_oid": "88347d7dd6df254e9d348e625a55b5e2313ca838"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_SubmissionAuthorityContract.mqh",
+      "sha256": "DC7DD071D40FC10597803EDBF72F33B5350E3B1DB0095F3D39469D2A46A111B7",
+      "git_normalized_blob_oid": "70a2dd6ef9592ac54598b71228863681d2368e3f"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_SubmissionRecordContract.mqh",
+      "sha256": "7D3AC6170F81D81066A959F6570DAACA7A38DD816A928EC795270AFDA8292AEC",
+      "git_normalized_blob_oid": "b1a3f468fcffb3291d108f158a39a8c0a47476b3"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedAuthoritySeed.mqh",
+      "sha256": "97E9177CE5C954C7F2986118E935A3BE7D6F6793CC3E2A2E40C9780FC158AB4E",
+      "git_normalized_blob_oid": "b8654f42159ee97fa14c5c47efb38e93e22a61e6"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedLaunch.mqh",
+      "sha256": "4A679BA0B8803B1F9D95BCBCE0E1AD7F1A77C79FEF172492856965F6FC1ADEE2",
+      "git_normalized_blob_oid": "2ca93dd66f260ab19750d497c55d7c6c2f8ba894"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedLaunchGate.mqh",
+      "sha256": "C8D2953A4CEEB6A8841DE80D9F44E1C6108469DB61598E3E6DD996FE4B59D1FA",
+      "git_normalized_blob_oid": "28a67a688a497332be1db55842276a73f4b18165"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpControlledDemoAuthorityPort.mqh",
+      "sha256": "474644010B3D404F7724D79E5ACD034210FC80A5F7F0C3831DFCB726602E4D95",
+      "git_normalized_blob_oid": "6ef31ca537f31224d469aff8f43a77654b2fe53e"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpControlledDemoRunner.mqh",
+      "sha256": "9CAD85B620E8F360378F3C89A3631B53FC1C9486C25150F21500D309A2A31ED1",
+      "git_normalized_blob_oid": "7d49b19ac1d451ea8a9d454d5b48442768a3779e"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpManualDemoSetup.mqh",
+      "sha256": "989286717CFE729CF554EDB87CD8F3C2A0894F8DC8797F5A45DEEF94595F920C",
+      "git_normalized_blob_oid": "07464754a0069f0b01f81db6d78a6fab62e5bb9d"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpSignalIngressAdapter.mqh",
+      "sha256": "522A6F2D4B4ACFC2464C76940537EFAB77CA07213B251C8D763633DE8C81B0B0",
+      "git_normalized_blob_oid": "321ab336728f70f4a5a19d3c2e3981cb9ddc8b44"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Coordinator/SW_V5_S5_CoordinatorCommon.mqh",
+      "sha256": "4822694D9E5692F0617F6EDD8E3DA63B8813F0AF4C4E45E0DA276CF6C8412B9F",
+      "git_normalized_blob_oid": "47438366ed30db1c64f22685db7f3a77069e02c9"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Coordinator/SW_V5_S5_DeterministicCoordinator.mqh",
+      "sha256": "C6647D21D7C3B7AD42EBB961592801242EF0F2B9FB60ADF2DC9902C5DFA231E2",
+      "git_normalized_blob_oid": "9456ee21c9be24af37025d7f0cc72f7373e5d712"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountObservationProducer.mqh",
+      "sha256": "C155B6253CC9F493BC688EF8ACCC059F64662B6D48CAED6133B1A3E778BF7614",
+      "git_normalized_blob_oid": "785d24f4e8e7bcc2b436065fa1b100ade804fc26"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountRiskAuthority.mqh",
+      "sha256": "2AD197C3C1C601A0A1E4ADC90D65A5405D607A2C82355CD6C3D1989B5D86E6C2",
+      "git_normalized_blob_oid": "db120d715c1613e5dbb2c55c9b8f59e85f1ee60c"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountRiskRecordCodec.mqh",
+      "sha256": "AC0E31212FD0A28CAD19049162C7EAD086B04B60B742F33C1B62B46E9819DF52",
+      "git_normalized_blob_oid": "4928ad52ea50e137b0d791bee857dca17373e7e2"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedAdministration.mqh",
+      "sha256": "3AFA01C13F99AC9E40C1D0D73ECB31A8DFAE1F43DBBD70D01B74209B77E7972C",
+      "git_normalized_blob_oid": "06d213dabd75fbc0483a171a676771dbd17adbc0"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedContinuation.mqh",
+      "sha256": "AD56215C3EA8B56418CB659E6DEBDD7EAC3A8A4D8BD972246320CE74134763E7",
+      "git_normalized_blob_oid": "cd71fdfe6d9d427ed20c1b80b03aea7777f5eef1"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAuthorityRecordCodec.mqh",
+      "sha256": "00125EE8429AB44FAF8E123494E8FAD461CBF54AF74AB035430A2CB0CA96951A",
+      "git_normalized_blob_oid": "dea8a1e8e976d1cabe4429c8b4921c07f0dde148"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketIntegrity.mqh",
+      "sha256": "0A6C96F77CF4813B1CA691CBD82E4F2268EF6C2C4E2BAF7D85F843A5660A8150",
+      "git_normalized_blob_oid": "4596ec4b1850a6847d5a9772f5b93fbe6804fd92"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketLifecycleAuthority.mqh",
+      "sha256": "7233E2CB75DD61DC417454DDDA2D5D4B0FBFC91480F51D3BFD1F23E78D9DFEE5",
+      "git_normalized_blob_oid": "454fea4cd4f9a05ac1ed34d7d5af7f706f3455b8"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketStateMachine.mqh",
+      "sha256": "91AEF87F3FE06CBF97D7748DDE3E1C52B636B16DEC0BCB25C90537CD2B5F5A94",
+      "git_normalized_blob_oid": "d62dd028d037467c790eef7ba39d228b8b979f81"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh",
+      "sha256": "5945C6C716655ACE1AE84C2BDB1A31622B1F6FC6F5AC366D7D2A2134651A3204",
+      "git_normalized_blob_oid": "26762ddbe9480dcb1d22c789b008dbe4feda0865"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationActivation.mqh",
+      "sha256": "C2ECBFB29B0873EC1836EFA156B9029F8EBFB254EDB3316EA0ED0803D8032CDB",
+      "git_normalized_blob_oid": "388fc120b64630adfcb88476eb59eeb90bad5526"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationFlatAuthority.mqh",
+      "sha256": "CE1784751A247B8C188536D6E172A2AAE2C2A5F80C383C6E1B3C5383CC1C567E",
+      "git_normalized_blob_oid": "a6db931919f22d9f10c82b3eecdd5d4d61453c91"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationLineage.mqh",
+      "sha256": "0BEB4C3563C08650F67B01530FFB45C170C64124E2933A929BD04FEA69040207",
+      "git_normalized_blob_oid": "beaf258c380cbe01cdd9fd85994df0e9de3b34ff"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationPhysicalCodec.mqh",
+      "sha256": "DC0D4507B8AD7F2B802A3135A453C3288B78D35D33AD3A73B47550B9C8C6F114",
+      "git_normalized_blob_oid": "e0e8712fa84a6cdb523ea8deefeee357962f3c24"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDemoAuthorityProviders.mqh",
+      "sha256": "2F1DE51E2C905B9BDD405E7F12BF29E6E63D77FC64DD662B7F5A13F2BF69AEDA",
+      "git_normalized_blob_oid": "b911eb51aac4b5f63a4acf36d6bb1c7976d773b3"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDeploymentProfile.mqh",
+      "sha256": "D7CAA5A7D11A21418058807C90F2962C763D02BA7FAAA7535B7AA90CA5D1E8F3",
+      "git_normalized_blob_oid": "5e4daac9c1218a96ef44afb54c2b2734346f0195"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh",
+      "sha256": "B9726B3886777464005BA33D803EEC2CBE5672CEFEB1B2FABA2B9DD4F39FC3AE",
+      "git_normalized_blob_oid": "5ac9548cea10559e427d438ac97b54afebd02445"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpHardKillActivationAuthority.mqh",
+      "sha256": "0B3716481742037B2B9E027D48A6FB963BBF1CE8181263A6D75D09C22F186BE5",
+      "git_normalized_blob_oid": "2c406b063f0d80c55d44a2de163e9875195159d4"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpHardKillReleasePhysical.mqh",
+      "sha256": "EAC8F2C0FC255E435EEB3763D7251CA6DC1CD3734820FA5FBF293450D5258DE5",
+      "git_normalized_blob_oid": "14644cbfb654f81e4cd854442dab1128d726998d"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpIngressRequestAuthorities.mqh",
+      "sha256": "560D21171F028230B70517BEC4DB066B20168E8B57C5B520078D3030B3DD958D",
+      "git_normalized_blob_oid": "42bc8224836426a191ef7147605daba8ff103582"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpManualProvisioningAuthorities.mqh",
+      "sha256": "EC374818FCF786C7C4003D3971293028A392136C64B524B25286B548F719E78B",
+      "git_normalized_blob_oid": "ad98f5ca9538978d2854b7e79fc7816af4a1eb04"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh",
+      "sha256": "E44AB0428BE758D9DAA2450676FB4916BB7292878D3EC09AFDEF6166F2312AF4",
+      "git_normalized_blob_oid": "19f3b0869e50671422c752524f25ddb595c1d2a5"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpPermitClaimAuthorities.mqh",
+      "sha256": "627DB81C0C4E8517DA1CF2AE2CBE284EB799816F395B2A30AE0D979AF06CCCFB",
+      "git_normalized_blob_oid": "135acee4a094299cbaf2176813d7486c9f56fb97"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReadOnlyPlatform.mqh",
+      "sha256": "DAEAFA7F366ABE7E4C1E483A94E19E011A3B542E447644E7D8669DEC92EC172F",
+      "git_normalized_blob_oid": "53269aac31a086066d886a464bcd635d683354ff"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh",
+      "sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+      "git_normalized_blob_oid": "0b46f36865b25bb33d16ca32983800394d9c15f0"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpRequestMaterializationAuthorities.mqh",
+      "sha256": "FE050C541B6B5504AF863599BD9EDB762A3F0E369213C9094E20CC628635DC6F",
+      "git_normalized_blob_oid": "a183a0e7e2ba9005c50311e9ab132bfff1668da7"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpSqliteAuthorityStore.mqh",
+      "sha256": "0AD7D085CF9FCDD01F13286E0914CEC33CEF3F10B6197C53218E027ABD8BD87A",
+      "git_normalized_blob_oid": "71725b1535d23f35a16cf39caae0da50b420a588"
+    },
+    {
+      "path": "FusionProV5/Indicators/SW_V5_IndicatorCache.mqh",
+      "sha256": "ABC9DC5077EF283C4B6A6869F9117364661FCD1FF1C967E00C807DAC4CFE29F7",
+      "git_normalized_blob_oid": "7fcecdc818605eb77b507ec5cbbdd3cddcca3fec"
+    },
+    {
+      "path": "FusionProV5/Orchestration/SW_V5_Orchestrator.mqh",
+      "sha256": "3DD2ED0CF3CC4F801B0D44528EAA5B3BE6497115130BDE6C29A36E6032A1FF37",
+      "git_normalized_blob_oid": "79b8ab75d9ac3cd51cc53eb910280ff67b3de0c5"
+    },
+    {
+      "path": "FusionProV5/Platform/SW_V5_PlatformAdapter.mqh",
+      "sha256": "D59AA1020FDC0AF81A5911B588DD54C52B4860CB2F1D7ACB4B09685739311CB4",
+      "git_normalized_blob_oid": "5c17a3995082dce7fe57958fdaf9ae0d95627e94"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_BasketContract.mqh",
+      "sha256": "DADD581E75C9F5AC2034F84F2AB1AD69CD85976D181B4535D2D1B3595335D64A",
+      "git_normalized_blob_oid": "c477122735561ff6b28ba1fbb4c82b3ec1185dd9"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_BasketStateContract.mqh",
+      "sha256": "BA22862812F694E439506DFCA0E8455DF8FC75AC214FB70E1936C158E1DF2FEA",
+      "git_normalized_blob_oid": "f29f23b8245dac53b552987b9de5212eb33c3320"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ExecutionContract.mqh",
+      "sha256": "CC8C1AF7D9657CE5FFA63E6F0DE0EFDF271D1E90F04E9C21831B85E721B76675",
+      "git_normalized_blob_oid": "ce10525935c3bdaca4d56034c7631b0053c35c5e"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_InstanceOwnershipContract.mqh",
+      "sha256": "B03BD635C478C72D768DDE18C4B79A02D87DEF004B0D4808EE76A58126AFBE80",
+      "git_normalized_blob_oid": "6268c4acf44936421b93118f351ef0839811c96c"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_PersistenceContract.mqh",
+      "sha256": "C64EBF909BC1329E6434C9F3AE476E879D3EA1D84B436241F3BB172BFC7383E3",
+      "git_normalized_blob_oid": "402190602624347468aaebece767a0119ddb9f99"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ProductionCommon.mqh",
+      "sha256": "00C65A4FDB18EDDC2F9C693FDC24EFB3FEB58D729F4AF0187D270C65332B67EF",
+      "git_normalized_blob_oid": "4fab29920e6ca11b673d708b6d8d96ee9a0ce265"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ProductionContracts.mqh",
+      "sha256": "FB7771DE8CCD0A4934343EB99F1B78FF3F11743875FCC10DB3D9BB3E8F70E1CB",
+      "git_normalized_blob_oid": "023501e00f77f9782a9e24b7cf7904122251b4b0"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_RiskContract.mqh",
+      "sha256": "A1C0E76098DA427F1DD4A6DE513693D61904A0667AD2B9F9F0CDEA519758ED38",
+      "git_normalized_blob_oid": "b82ce825110a55c4b88a5a7dab69c2c8dea73157"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_StatisticsContract.mqh",
+      "sha256": "361855E143CC04BEFA2228E61E916970EA50D2D53F9CE60605ED46774927B8FF",
+      "git_normalized_blob_oid": "7b75d29ed072c9f6bc10fe069b1c3035346de839"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_UnitSystemContract.mqh",
+      "sha256": "5FF1F93DA02108F61A2F8F2C64A5A891C21394A28096126D3586D32E7F5E4E49",
+      "git_normalized_blob_oid": "e18fd8723982b6ae45aa057cceaa2313f7429bb8"
+    },
+    {
+      "path": "FusionProV5/Regression/SW_V5_MomentumRegression.mqh",
+      "sha256": "2E342C1F7C107AE2DC63A95C17EE56D068E45F95B90BC3A30502ED127B249BF0",
+      "git_normalized_blob_oid": "821db6f5d700bafdbf99abd183fc6d5f01a3bcb7"
+    },
+    {
+      "path": "FusionProV5/Regression/SW_V5_TrendRegression.mqh",
+      "sha256": "FB0A689286D4FDA3BC5310783A66ACDABD7651070E75C6CBFAA639BDEC0B33E4",
+      "git_normalized_blob_oid": "56d20d0d6f27e55f4b9d34db9890e759c6233574"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.mq5",
+      "sha256": "507F778D15C092C34EC669D39CA81100CF062B123F46CB91BD29BB2117D06A10",
+      "git_normalized_blob_oid": "451f2e43506afda8f8e988f7968263698253e5c9"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MvpContinuationAssertions.mqh",
+      "sha256": "7B6141303172844188FF1D7F07E394476CE3DDB3B95D83D0A0A4DFDBBE5FE22F",
+      "git_normalized_blob_oid": "4cb07db1ea8c708ebe79451d6b795db3fa576969"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MvpContinuationTestIsolation.mqh",
+      "sha256": "D4F189B668E6E05410BC9180A8AC4F07F8F524D9D1E54F213B440CC9CC3CCA24",
+      "git_normalized_blob_oid": "e5badb1ce79f306b413ab35a8c3dd7fb17bf94b7"
+    }
+  ],
+  "source_parent": "d926f2e6b1aa4ea7b4b0936293d2fa47a2ce7ba8",
+  "gate_status": "CONTINUATION NATIVE GATE CLOSED / PASS",
+  "scope": "Operator-executed TEST_ONLY continuation; no controlled Demo started by this closure."
+}

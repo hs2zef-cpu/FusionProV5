@@ -1,0 +1,342 @@
+{
+  "classification": "DIAGNOSTIC_PREPARATION_ONLY_ROOT_CAUSE_STILL_UNPROVEN",
+  "verifier_sha256": "D4D18ABBD34408175846B09948E0CA78B23AC4076838B8892BA5D103ADDA2C02",
+  "checks": [
+    {
+      "id": "clock/ordinary-body-unchanged/CurrentFreshObservation",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-body-unchanged/LoadVerified",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-body-unchanged/ObserveAcceptedEvent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-body-unchanged/ObserveFromCurrentSymbolOnTick",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/diagnostic-no-write-or-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "source-extracted-clock/valid",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/cold",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/missing",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/read-failure",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/id",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/broker",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/server",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/account",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/symbol",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/authority",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/zero-sequence",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/zero-time",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/event-sequence",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/event-id",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/malformed",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/digest",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/revision",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "source-extracted-clock/state",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PREDICATE_FIXTURE_NOT_MQL_OR_RESUME_REPRODUCTION"
+    },
+    {
+      "id": "boundary/invocation-injection-and-differential-guard",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC"
+    },
+    {
+      "id": "MC-BOUND-INVOKED-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_COMPILED_MUTANT"
+    },
+    {
+      "id": "MC-BOUND-INJECTION-FIRED-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_COMPILED_MUTANT"
+    },
+    {
+      "id": "MC-BOUND-CONTROL-CREDIT-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_COMPILED_MUTANT"
+    },
+    {
+      "id": "MC-BOUND-MUTATION-TIME-INVALIDATES-GOVERNANCE",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_COMPILED_MUTANT"
+    },
+    {
+      "id": "governance/alias-and-expiry-preserved",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_COMPILED_MUTANT"
+    },
+    {
+      "id": "architecture/no-clock-checkpoint-or-intent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "architecture/profile-event-equality-not-relaxed",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "mql/clock-negative-table-present",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC"
+    },
+    {
+      "id": "mql/future-and-monotonic-publication-guards",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "native/old-install-untouched",
+      "passed": true,
+      "evidence_class": "READ_ONLY_BINARY_HASH"
+    },
+    {
+      "id": "db/original-and-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    }
+  ],
+  "diagnostic_fixture_results": [
+    {
+      "case": "valid",
+      "accepted": true,
+      "reason": "",
+      "ordinary_reference_accepts": true
+    },
+    {
+      "case": "cold",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_EVENT_LOCAL_FRESHNESS_MISSING",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "missing",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_MISSING",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "read-failure",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_READ_FAILED",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "id",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_ID_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "broker",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_ID_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "server",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_ID_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "account",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_ID_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "symbol",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_PROFILE_FIELDS_INVALID",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "authority",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_AUTHORITY_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "zero-sequence",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_SEQUENCE_INVALID",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "zero-time",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_TIME_INVALID",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "event-sequence",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_EVENT_SEQUENCE_CHANGED",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "event-id",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_EVENT_OBSERVATION_CHANGED",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "malformed",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_PAYLOAD_MALFORMED",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "digest",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_PAYLOAD_DIGEST_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "revision",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_STORE_REVISION_MISMATCH",
+      "ordinary_reference_accepts": false
+    },
+    {
+      "case": "state",
+      "accepted": false,
+      "reason": "PRESTATE_CLOCK_PHYSICAL_INVALID",
+      "ordinary_reference_accepts": false
+    }
+  ],
+  "summary": {
+    "total": 39,
+    "passed": 39,
+    "failed": 0,
+    "MQL_executions": 0
+  },
+  "actual_resume_clock_predicate": null,
+  "option_R_implemented": false,
+  "checkpoint_implemented": false,
+  "fresh_native_reproduction_clone_created": false,
+  "compiles": {
+    "SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION": {
+      "result": "Result: 0 errors, 0 warnings, 1165 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "F09B47E7FD25FD10D85D40AD9BCB8DE626523599E2AF2A0F59E0D11E37B8E31D"
+    },
+    "SW_V5_S5_MVP_CONTINUATION_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 27340 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "96DBDC3897756DD4624893E4C98236D4A960ABC0DA8F147156A64125F131D18C"
+    }
+  },
+  "installed_native_sha256": "B70132E9D5BA2CF2882971FBAD5DA1DD2D752A9FF83E1529FD00891DE1557C09",
+  "original_and_donor_sha256": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "source_hashes": {
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpOwnershipAuthority.mqh": "592F85F0ED4D1F7A9DEE7C40246221638461094B8868CC911ACA2F7CD87EEE97",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh": "CE14CE2767B4309F2AAF89DC89D374E21B3DCD1C0400C786467A35A472673885",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpContinuationFlatAuthority.mqh": "1182BD2B70C6B7F10DADE0EC89903EA95738A0422C808215A518787D3106D969",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationAssertions.mqh": "DA727EEDA1D4BAC9EA822C446C49988B4CE05D6EBAF3851F16288A7CC6EEE5D1"
+  }
+}

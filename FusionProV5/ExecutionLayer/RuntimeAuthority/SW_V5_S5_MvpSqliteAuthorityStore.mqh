@@ -520,6 +520,32 @@ public:
       return CompareAndSetPairInternal(first,second,true,guard_expected,first_committed,second_committed,0);
    }
 
+   // Continuation release boundary: complete namespace snapshot guard inside
+   // the SAME transaction as the lifecycle CAS. Existing CAS APIs are unchanged.
+   bool CompareAndSetWithExactSnapshot(const SWV5S5_MvpAuthorityMutation &first,
+                                       const bool has_second,const SWV5S5_MvpAuthorityMutation &second,
+                                       const SWV5S5_MvpAuthorityRow &expected_rows[],
+                                       SWV5S5_MvpAuthorityRow &first_committed,SWV5S5_MvpAuthorityRow &second_committed)
+   {
+      ZeroMemory(first_committed);ZeroMemory(second_committed);
+      if(!VerifyMetadata() || !MutationValid(first) || ArraySize(expected_rows)==0 ||
+         (has_second && (!MutationValid(second) || (first.domain_key==second.domain_key && first.record_key==second.record_key))) ||
+         !DatabaseTransactionBegin(m_database))return false;
+      SWV5S5_MvpAuthorityRow actual[],a,b,pa,pb,readback;bool af=false,bf=false,found=false;
+      bool ok=ReadAllRows(actual) && ArraySize(actual)==ArraySize(expected_rows);
+      for(int i=0;ok && i<ArraySize(actual);i++)ok=RowEqual(actual[i],expected_rows[i]);
+      if(ok)ok=ReadRowInternal(first.domain_key,first.record_key,a,af) && CurrentMatchesMutation(first,a,af) && ProposedMutationRow(first,pa);
+      if(ok && has_second)ok=ReadRowInternal(second.domain_key,second.record_key,b,bf) && CurrentMatchesMutation(second,b,bf) && ProposedMutationRow(second,pb);
+      if(ok)ok=ApplyMutation(first,pa);
+      if(ok && has_second)ok=ApplyMutation(second,pb);
+      if(ok)ok=ReadRowInternal(first.domain_key,first.record_key,readback,found) && found && RowEqual(readback,pa);
+      if(ok && has_second)ok=ReadRowInternal(second.domain_key,second.record_key,readback,found) && found && RowEqual(readback,pb);
+      if(!ok){DatabaseTransactionRollback(m_database);return false;}
+      if(!DatabaseTransactionCommit(m_database)){DatabaseTransactionRollback(m_database);return false;}
+      if(!ReadRowInternal(first.domain_key,first.record_key,first_committed,found) || !found || !RowEqual(first_committed,pa))return false;
+      return !has_second || (ReadRowInternal(second.domain_key,second.record_key,second_committed,found) && found && RowEqual(second_committed,pb));
+   }
+
    // TEST ONLY / NOT FOR PRODUCTION / NO BROKER ACCESS.
    // Exercises the exact guarded pair-CAS transaction with deterministic
    // failure before row one or between rows one and two, then proves by

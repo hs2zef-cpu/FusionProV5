@@ -1,0 +1,1429 @@
+{
+  "classification": "FULL_POST_FIX_PRE_RUN_ONLY_NOT_EXECUTED",
+  "time_bangkok": "2026-10-14T18:56:57.893144+07:00",
+  "checks": [
+    {
+      "id": "DB/original-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "DB/donor-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "DB/fresh-readonly-seed-identical",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "DB/original-seed-no-sidecars",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "DB/donor-no-uncheckpointed-wal",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "RUN/new-guid-and-seed-name",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "PRESET/exact-new-run-inputs",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PRESET"
+    },
+    {
+      "id": "PRESET/installed-identical",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "PROVENANCE/compiled-not-older-than-includes",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_REFUSAL_AND_ISOLATION_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "STORE/namespace",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "STORE/schema",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_ACCOUNT_RISK_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BROKER_CALLBACK_INDEX/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BROKER_SYNC_EVIDENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_CANONICAL_BASKET/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_EXECUTION_PENDING_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_EXECUTION_PENDING_STATE/REQUEST_SET",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_ACTIVATION_HISTORY/INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_COMPLETE_RELEASE/MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_RELEASE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_STATE/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_INGRESS_LEDGER/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_NAMESPACE_GENESIS/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OPERATOR_PROVISIONING_REFERENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/CURRENT_LEASE",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/LEASE_CLOCK_CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_PRODUCER_TRUST/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_PRODUCER_TRUST/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECONCILIATION_GOVERNANCE_BUNDLE/CURRENT",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECONCILIATION_PUBLICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECOVERY_METADATA/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_REQUEST_SEQUENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_SUBMISSION_AUTHORITY/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_SYMBOL_SPECIFICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "STORE/production-derived-canonical-namespace",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/ownership-expired",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/trust-expired",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/governance-expired",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/release-expired",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/hard-kill-row-digest",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/history-digest",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/complete-release-preserved",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/inactive-lineage",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/requestset-empty",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/basket-idle-v1",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "PRESTATE/no-operational-or-unknown-rows",
+      "passed": true,
+      "evidence_class": "READ_ONLY_IMMUTABLE_SEED"
+    },
+    {
+      "id": "COMPILE/x64-regular-zero-errors-warnings",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "BINARY/compiled-installed-exact",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "BINARY/different-from-old-executed",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "BINARY/compiled-after-manifest",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "COVERAGE/alias-and-distinct-in-entry",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "COVERAGE/boundary-control-and-mutation-in-entry",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "COVERAGE/periodic-and-stored-clock-in-entry",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "COVERAGE/all-existing-partial-stages",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "COVERAGE/later-clock-new-attempt-and-preflight",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "COVERAGE/zero-transport-at-completion",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "ORIGIN/every-clone-fixed-hash-seed",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "ORIGIN/preset-seed-configured-before-suite",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "TARGET/never-overwrite-existing-clones",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "TARGET/fresh-runtime-target-family-absent",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "TARGET/current-source-runtime-unique-prefix",
+      "passed": true,
+      "evidence_class": "STATIC_PRE_RUN_NOT_EXECUTION"
+    },
+    {
+      "id": "TARGET/no-old-seed-target/.MAIN.sqlite",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "TARGET/no-old-seed-target/.PERIODIC.sqlite",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "TARGET/no-old-seed-target/.RESUME_CLOCK.sqlite",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "TARGET/no-old-seed-target/.BOUND_ACTIVE.sqlite",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "TARGET/no-old-seed-target/.BOUND_PENDING.sqlite",
+      "passed": true,
+      "evidence_class": "READ_ONLY_METADATA"
+    },
+    {
+      "id": "SOURCE/no-MQL-change/SW_V5_S5_MvpAttendedContinuation.mqh",
+      "passed": true,
+      "evidence_class": "READ_ONLY_SOURCE_HASH"
+    },
+    {
+      "id": "SOURCE/no-MQL-change/SW_V5_S5_MvpOwnershipAuthority.mqh",
+      "passed": true,
+      "evidence_class": "READ_ONLY_SOURCE_HASH"
+    },
+    {
+      "id": "SOURCE/no-MQL-change/SW_V5_S5_MvpContinuationAssertions.mqh",
+      "passed": true,
+      "evidence_class": "READ_ONLY_SOURCE_HASH"
+    },
+    {
+      "id": "SOURCE/no-MQL-change/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION.mq5",
+      "passed": true,
+      "evidence_class": "READ_ONLY_SOURCE_HASH"
+    },
+    {
+      "id": "REGRESSION/structure/verified-stored-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/no-event-freshness-or-ack",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/read-only-and-no-grant",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/profile-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/clock-physical-target-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/ownership-clock-monotonic",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/authority-predicates-retained",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/native-diagnostic-time-not-rewritten-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/structure/complete-readset-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/history/clock-only-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/history/no-fixed-deployment-baseline",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/event/current-fresh-before-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/MC-CONT-EVENT-FRESHNESS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/MC-CONT-NEW-ACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/MC-CONT-PROFILE-EVENT-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/MC-CONT-CLOCK-PAYLOAD-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/fixtures/old-event-negative-detects-ready-hook",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/fixtures/clock-restart-lifecycle",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/fixtures/periodic-not-fabricated-live-time",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/fixtures/clock-negative-cold-classifier",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/fixtures/boundary-differential-preserved",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/clock/ordinary-unchanged/LoadVerified",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/clock/ordinary-unchanged/CurrentFreshObservation",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/clock/ordinary-unchanged/ObserveAcceptedEvent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/clock/ordinary-unchanged/ObserveFromCurrentSymbolOnTick",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/wrapper/actual-A-consumed-before-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/wrapper/structure-then-new-event-binding",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/architecture/no-checkpoint-or-R-plus",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/native-diagnostic/clock-only-snapshots",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "REGRESSION/native-diagnostic/sequence-plus-one",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "REGRESSION/native-diagnostic/exact-cold-failure",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_LOG_NOT_POST_FIX_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/valid-cold",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-id",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-broker",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-server",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-account",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-symbol",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-authority",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/zero-sequence",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/zero-time",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/malformed",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-digest",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-store-revision",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/python-clock-oracle/wrong-sequence-relation",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixture/immutable-and-original-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixture/no-uncheckpointed-wal",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/static/private-structural-single-refresh-caller-and-ordinary-unchanged",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/MC-GOV-STRUCTURAL-PUBLIC",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/MC-GOV-PRIOR-ALIAS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/MC-GOV-CAS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/MC-GOV-READBACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/alias/old-output-clear-destroys-prior-CAS",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "REGRESSION/governance-regression/alias/copied-prior-survives-output-clear",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/expired-prior-structural-read",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/ordinary-expired-ineligible",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/corrupt-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/capability-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/policy-version-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/profile-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/new-finite-bundle-valid",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/exact-prior-CAS-and-readback",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/stale-prior-CAS-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/boundary-valid-row-mutation",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/oracle/stale-complete-snapshot-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/native/preserved-60-pass-19-fail-summary",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/native/direct-expired-refresh-passed-before-fix",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixtures/boundary-must-reach-exact-stage",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixtures/no-delete-or-overwrite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixtures/all-mutable-paths-use-fresh-prefix",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixtures/new-alias-and-corrupt-capability-tests",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "REGRESSION/governance-regression/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/governance-regression/git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "REGRESSION/governance-regression/fixture/original-and-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "REGRESSION/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/db/original-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "REGRESSION/git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "PROVENANCE/formerly-stale-native-gate-now-pass",
+      "passed": true,
+      "evidence_class": "CURRENT_SOURCE_PROVENANCE"
+    },
+    {
+      "id": "REGRESSION/governance-all-54-pass",
+      "passed": true,
+      "evidence_class": "STATIC_AND_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "DB/all-before-after-identical",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "GIT/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "GIT/canonical-branch-head",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "GIT/main-unchanged",
+      "passed": true,
+      "evidence_class": "GIT"
+    }
+  ],
+  "summary": {
+    "total": 201,
+    "passed": 201,
+    "failed": 0,
+    "post_fix_native_executions": 0
+  },
+  "run_id": "18ca78330eee422ba9751e6dca5e562e",
+  "fixture_inputs": {
+    "explicit_test_only_marker": "TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT",
+    "initial_copy_relative_path": "TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite",
+    "expected_initial_copy_sha256": "bec62e7435d29d5511a41bf85c74ae443994c5804b3a9574af90d861fe674ef6",
+    "execute_test_copy_once": "true",
+    "operator_confirmed_test_copy": "true"
+  },
+  "preset": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Presets\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite.set",
+    "bytes": 315,
+    "sha256": "E159B771FB709AC3CBA0DD897F62DB250A78C81B8B34AC1D6806D475518F6F05"
+  },
+  "seed": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite",
+    "bytes": 81920,
+    "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "mutable_target_pattern": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_RETEST_<native_time>_<counter>.MAIN.sqlite",
+  "mutable_target_family_existing_files": [],
+  "mutable_target_name_note": "Exact runtime name emitted by CONTINUATION_COPY_PATH after A; seed is read-only.",
+  "source": {
+    "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.mq5",
+    "bytes": 5129,
+    "sha256": "507F778D15C092C34EC669D39CA81100CF062B123F46CB91BD29BB2117D06A10"
+  },
+  "compiled": {
+    "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.ex5",
+    "bytes": 1138064,
+    "sha256": "67C32333E865D1FD7BF6DC577F0ED14DF2AF6A27CD401F1C58E49D18D8105C8B"
+  },
+  "installed": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Experts\\FusionProV5Tests\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.ex5",
+    "bytes": 1138064,
+    "sha256": "67C32333E865D1FD7BF6DC577F0ED14DF2AF6A27CD401F1C58E49D18D8105C8B"
+  },
+  "compile_result": "Result: 0 errors, 0 warnings, 42933 ms elapsed, cpu='X64 Regular'",
+  "prestate": {
+    "sqlite_open_mode": "mode=ro&immutable=1;query_only=ON",
+    "metadata": {
+      "singleton_id": 1,
+      "schema_id": "SWV5-S5-STORE-SCHEMA-V1",
+      "schema_version": 1,
+      "minimum_compatible_version": 1,
+      "namespace_digest": "58408af3c3381470aa50161762e4f1102eec5d214448495a79d732cd31d90d8c"
+    },
+    "derived_namespace": "58408af3c3381470aa50161762e4f1102eec5d214448495a79d732cd31d90d8c",
+    "row_count": 26,
+    "expiry_assessment_utc_epoch": 1791979015,
+    "expiry_context": "READBACK_WALL_CLOCK_NOT_A_NATIVE_MT5_TICK",
+    "ownership_expires_at": 1791814957,
+    "trust_valid_until": 1791814957,
+    "governance_valid_until": 1791817607,
+    "hard_kill_release_expires_at": 1791816401,
+    "governance_row_state": 1,
+    "governance_authority_sequence": 3,
+    "hard_kill_state": 0,
+    "hard_kill_latch_generation": 2,
+    "request_count": 0,
+    "basket_state": 0,
+    "basket_state_version": 1,
+    "operational_rows": [],
+    "live_broker_positions_orders": "NOT_OBSERVED_NOT_INFERRED_FROM_SQLITE",
+    "inventory": [
+      {
+        "domain_key": "MVP_ACCOUNT_RISK_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "ca6d9ad2a40c9f444ec6833b377ebec08c367676e3b1e52100db17c48278730f",
+        "store_revision": "ec4306d5ec8859569ee6e7fd64b540f186c698537952d2ace0e3f5bb741eba0f"
+      },
+      {
+        "domain_key": "MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+        "store_revision": "6e5cf35e0f3800d5d8c77b1e7cb77a78541196ad2e04fba4cfef2c25210f5e01"
+      },
+      {
+        "domain_key": "MVP_BROKER_CALLBACK_INDEX",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "b00576fd74f9d513fcfaa0fecf9fffcaac3103c5fa271df08d21c3ea5075b3fd",
+        "store_revision": "6b7759f8752fea91fb22dbe42c039a91771a4294e2de3121a2b4364fc779a6a3"
+      },
+      {
+        "domain_key": "MVP_BROKER_SYNC_EVIDENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "4de40b7a8cc78a23a0f48af84eff05aae9f1b30cc956b2172f2b2fb768201ad4",
+        "store_revision": "e10aae3517060854b856c2f165589b0e5493995cf9d682290d9ffccbe7f8fa86"
+      },
+      {
+        "domain_key": "MVP_CANONICAL_BASKET",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "ce4fecf972400cc77e91fc1411dcd1ecbd929c2cb67e4b0fe0454220b66ef4d9",
+        "store_revision": "28ab83dd6d3b4ff015bc416ec225dddd7b0ad7209294cc8df5da3b31eee8c53d"
+      },
+      {
+        "domain_key": "MVP_EXECUTION_PENDING_STATE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "ee2bfcc8bca6010e6bd7ce16aef3ed6286225ceb1ab64c98c2a624c941331dc3",
+        "store_revision": "4ee9d4af8096d405e7c58da06d41ab3c25eb26fe57ca65f2570f9ef7dfe38a26"
+      },
+      {
+        "domain_key": "MVP_EXECUTION_PENDING_STATE",
+        "record_key": "REQUEST_SET",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "bc0a62e6c34538113e7f76ea25c0500b02550506b83e254d39b1e9485a6f253d",
+        "store_revision": "1f821d80ced400f502f18293616953d43b57723724c013ac4f3405453ef8176a"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_ACTIVATION_HISTORY",
+        "record_key": "INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+        "logical_revision": 1,
+        "state": 3,
+        "payload_digest": "8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+        "store_revision": "7afd8d88639fb164dadea7e57877d26a1f0f43dc99f34384f0fe5e5fc714fbcb"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_COMPLETE_RELEASE",
+        "record_key": "MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+        "logical_revision": 1,
+        "state": 3,
+        "payload_digest": "d0475a7534c33e1af240f6b7868b12ee934ff6c1d78e7a4a9d98e9f65cc294df",
+        "store_revision": "bb713a9f7f4b23a4d877d934f1c844870db2efd869c1dd76025309488858eb05"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_RELEASE_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "bb8c4917d9b04ca4fceaa56d01a41582a1572a48ed547100aaeb1088ca05d08b",
+        "store_revision": "0563458e57c4a8e3a08ce45079fbdfb63724342e4a5eab18a56ec5b80e83e2c2"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_STATE",
+        "record_key": "CURRENT",
+        "logical_revision": 4,
+        "state": 0,
+        "payload_digest": "026c3f99dea700d79b69ba8fa3146fd4c43b5c215b06e33ad37ff9de4708cac9",
+        "store_revision": "13f71024fca9e1cf93fe7716bc98bc530608797ecb7c8e1a909899bc9769d3d8"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_STATE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "403e9b25f6ea5e10039099822e0fe4359c990e8ea44a9e4a2aa83557fe13eae2",
+        "store_revision": "b88fa57eddafb273932f1833d3db4e9aa914ae4e09d229ec556474f2fc35c426"
+      },
+      {
+        "domain_key": "MVP_INGRESS_LEDGER",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "a489897ad4185bff04a646ab46eabc71cf080f045e53288293dcf7f5eba97c04",
+        "store_revision": "89d859870c3461470e4afde04dd9fedad413d5ed5f84794389b164d4fe2021dd"
+      },
+      {
+        "domain_key": "MVP_NAMESPACE_GENESIS",
+        "record_key": "GENESIS",
+        "logical_revision": 2,
+        "state": 2,
+        "payload_digest": "8b0125a6798a423a608c3c428a6e7fec123027f2e6bbf4554e9a3d2ccfa2bfb7",
+        "store_revision": "99a4efa74433d6699a037e247538002d0ea1c7e64587151b151f1aa53127e6c8"
+      },
+      {
+        "domain_key": "MVP_OPERATOR_PROVISIONING_REFERENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "3fa6d3fc75f53fd204fb1a535cb35e22472cbc5c8d93274d46468ef1c8af82a4",
+        "store_revision": "a48f08a406c3473b10fa0b04f5f6fd401fc0080eef897761d1afea25656864b7"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "CURRENT_LEASE",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "36530188d27f0696c795cc9fca652a008f40f83f9ce49c309867f34a26ab61f1",
+        "store_revision": "bb7ad2052e916c8079a2f202c7d31061be0c44bdd76d0e4dbe132ab00c86cacd"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "9adf4ca68e386c62bafbb16223e5b9656fae7d23073aba8d59a9785c8d73d4b7",
+        "store_revision": "339795697aed3d48fd8722100ac737ad31f42b69d977dab9f25704ee79710bf9"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "LEASE_CLOCK_CURRENT",
+        "logical_revision": 3,
+        "state": 1,
+        "payload_digest": "30560b51028eb5f59b280cad023fe10ec39a3136f7c244566d5d49e99bb9eb07",
+        "store_revision": "0988c66cde3b64364afaba372d12942bb0bb142856d1e8ac1ac89e2fae000364"
+      },
+      {
+        "domain_key": "MVP_PRODUCER_TRUST",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "05af6557c9d106e54c76174bd03a7c78f0dcdccf7114c19b34bea776c5886c96",
+        "store_revision": "fa6048974ba18a5daf5a80f1a854b03938bb80db47b54a3519958561c139931f"
+      },
+      {
+        "domain_key": "MVP_PRODUCER_TRUST",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "4a98c99afd4e90d6c0d8742f03dc9d670b9343bfe1ae416eaa5d76147cb92dc4",
+        "store_revision": "69d9d0709d6446bcaf4184ee659a943dec72c702faf43fceca7a8906885f88d3"
+      },
+      {
+        "domain_key": "MVP_RECONCILIATION_GOVERNANCE_BUNDLE",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "3da92dfb4918a7f16688236978e7e48b86bb3513ba5e8972b900680817cb6aec",
+        "store_revision": "40260a95f4233e631ea338a9c15a51b23aa94fdfb20e83d91d39550048962fb4"
+      },
+      {
+        "domain_key": "MVP_RECONCILIATION_PUBLICATION",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "eb8217b9db2720cc008c9c1b83c314bcd033cca7b071e90d70a2fb5776e6e9ee",
+        "store_revision": "12f7ebf9465a191bacfcba993726686a7171030986e5254a1ed37d8e2bc08340"
+      },
+      {
+        "domain_key": "MVP_RECOVERY_METADATA",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "024d78de68ab59c60cbe8ae7114aed77452f8ef8cb1d01bd0c5f123bb4895038",
+        "store_revision": "93e206d1b0dcbb19b3adad66163b23a8adf46729d2771273a2aaf59f54f6f1cb"
+      },
+      {
+        "domain_key": "MVP_REQUEST_SEQUENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "91ab5eab29f1d0e0772c4ac0e2934fe9c319bdf6b32a52955a15fbc0aeac0608",
+        "store_revision": "7b13369cbcdcb3e468274af7f1c663a3b2be4f0961108c083e11654c521298de"
+      },
+      {
+        "domain_key": "MVP_SUBMISSION_AUTHORITY",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "1dcd0d82033db2f94effeadb5771c86f355098413ff692108dd8f84300e4ac9d",
+        "store_revision": "c6ff263fd98f73316dc1683944f2673caa399b2bfee912829b6881052f96f9a9"
+      },
+      {
+        "domain_key": "MVP_SYMBOL_SPECIFICATION",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "57b8b7b65ac6a7c0bfb32fcdb5bfe2963a4f24c7a203bbff19a7e815b2ed38d8",
+        "store_revision": "a84ad37cb41e139890cd43b150c6eee032217ba1e11ece7016514340882ab077"
+      }
+    ]
+  },
+  "refusal": {
+    "classification": "ISOLATED_SOURCE_EXTRACTED_PYTHON_GUARD_NOT_MQL_RUNTIME",
+    "source_predicate": "explicit_test_only_marker!=\"TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT\" || !execute_test_copy_once || !operator_confirmed_test_copy ||\n      expected_initial_copy_sha256!=expected_copy_sha || StringFind(initial_copy_relative_path,\"TEST_ONLY_MVP_CONTINUATION_\")!=0 ||\n      StringFind(initial_copy_relative_path,\"..\")>=0 || StringFind(initial_copy_relative_path,\"/\")>=0 || StringFind(initial_copy_relative_path,\"\\\\\")>=0 ||\n      _Symbol!=\"XAUUSD\" || _Period!=PERIOD_M15 || MQLInfoInteger(MQL_TESTER) ||\n      !SWV5S5_TestContinuationFileSha(initial_copy_relative_path,digest) || digest!=expected_copy_sha ||\n      !SWV5S5_TestContinuationFileSha(\"fusion_v5_mvp_demo_authority.sqlite\",digest) || digest!=expected_copy_sha ||\n      FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-wal\",FILE_COMMON) || FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-shm\",FILE_COMMON)",
+    "cases": [
+      {
+        "case": "production-filename",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "missing-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "invalid-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "absolute-production-path",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "traversal",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "subdirectory",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      }
+    ]
+  },
+  "isolation": {
+    "classification": "STATIC_FIXED_MODE_CALL_PATH_AND_PREPROCESSOR_ISOLATION_NOT_LIVE_EXECUTION",
+    "production_OrderSend_sites": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+        "line": 275
+      }
+    ],
+    "production_Heartbeat_callers": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+        "line": 456
+      }
+    ],
+    "reachable_entry_chain": [
+      "OnTick + A",
+      "test_suite.Start",
+      "continuation administrative functions",
+      "NativePreflight MODE_PREFLIGHT",
+      "runner early return"
+    ],
+    "unreachable_execution_methods": [
+      "PrepareD1AuthorityPath",
+      "PreparePermitSemantics",
+      "CommitPermitPhysical",
+      "CollectAdmissionSameEvent",
+      "ClaimPhysicalNow",
+      "SubmitExactlyOnce"
+    ],
+    "one_shot_scope": "One EA attachment; reinitialization resets the in-memory latch. No durable across-reattach lock is claimed.",
+    "operational_negative_fixtures": "Synthetic invalid row-presence fixtures in separate TEST_ONLY clones; not D1/Ledger/Permit/Admission/Claim issuers.",
+    "include_count": 85,
+    "source_digest": "8b78389089271ef34211eaf0d1f13ba4aebedcd69472a38bee058facc100ed4c"
+  },
+  "database_before": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": false,
+      "shm_present": false
+    },
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": true,
+      "shm_present": true
+    },
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_18ca78330eee422ba9751e6dca5e562e.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": false,
+      "shm_present": false
+    }
+  },
+  "regressions": {
+    "active_layering_checks": 101,
+    "governance": {
+      "total": 54,
+      "passed": 54,
+      "failed": 0,
+      "post_fix_MQL_executions": 0,
+      "unresolved_prior_failures": 3
+    },
+    "formerly_stale_gate": [
+      {
+        "id": "PROVENANCE/compiled-not-older-than-includes",
+        "passed": true,
+        "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+      }
+    ],
+    "superseded_old_hold": [
+      {
+        "id": "native-full/old-install-held",
+        "passed": false,
+        "evidence_class": "READ_ONLY_FILE_HASH",
+        "reason": "Fusion now explicitly requires new matching installed EX5, checked above."
+      }
+    ]
+  },
+  "git": {
+    "branch": "sprint5-phase-f-entry-contract",
+    "HEAD": "d926f2e6b1aa4ea7b4b0936293d2fa47a2ce7ba8",
+    "tree": "46c09cfbed423df9c93b7f63aaf4b901af5b83fd",
+    "main": "32b79ca71ffc331e15e48a57c52be1352e3dbe7e",
+    "status": "M FusionProV5/Docs/Architecture/ADRs/ADR-006_HARD_KILL_GOVERNANCE.md\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpSqliteAuthorityStore.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedContinuation.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationActivation.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationFlatAuthority.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationLineage.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationPhysicalCodec.mqh\n?? FusionProV5/Tests/Sprint5MvpContinuation/"
+  },
+  "verifier_sha256": "8E758451F0ACDE2207753337F03A363B657680080AA128810AEE965D729CE65D"
+}

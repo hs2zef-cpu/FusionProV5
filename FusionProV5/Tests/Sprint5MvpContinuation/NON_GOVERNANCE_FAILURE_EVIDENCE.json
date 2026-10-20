@@ -1,0 +1,502 @@
+{
+  "evidence_class": "NON_NATIVE_TRIAGE_ONLY_NO_MQL_EXECUTION_NO_NATIVE_INSTALL",
+  "verifier_sha256": "EB5A1F9F598230579D0719EC2568BFA51DBA66B94F8FB983BFD16884D751D554",
+  "checks": [
+    {
+      "id": "preserve/governance-alias-and-ordinary-expiry",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "mql/alias-and-distinct-regressions-present",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/partial-stage-is-exact-not-any-failure",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/clock-other-rows-exact",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/clock-load-readonly-physical-proof",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/boundary-exact-intended-interruption",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/boundary-binding-valid-before-mutation",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/boundary-validity-not-destroyed",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/boundary-only-one-valid-row-changes",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "mql/boundary-reason-is-stale-binding",
+      "passed": true,
+      "evidence_class": "STATIC_MQL_TEST_LOGIC_NOT_EXECUTION"
+    },
+    {
+      "id": "runtime/no-profile-clock-tolerance-added",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "runtime/exact-first-prestate-boundary-reported",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "physical/.RESUME_CLOCK.sqlite/only-clock-valid-advancement",
+      "passed": true,
+      "evidence_class": "READ_ONLY_EXISTING_NATIVE_SQLITE"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_ACCOUNT_RISK_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_BROKER_CALLBACK_INDEX/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_BROKER_SYNC_EVIDENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_CANONICAL_BASKET/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_EXECUTION_PENDING_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_EXECUTION_PENDING_STATE/REQUEST_SET",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_HARD_KILL_ACTIVATION_HISTORY/INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_HARD_KILL_COMPLETE_RELEASE/MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_HARD_KILL_RELEASE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_HARD_KILL_STATE/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_HARD_KILL_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_INGRESS_LEDGER/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_NAMESPACE_GENESIS/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_OPERATOR_PROVISIONING_REFERENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_OWNERSHIP_LEASE/CURRENT_LEASE",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_OWNERSHIP_LEASE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_PRODUCER_TRUST/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_PRODUCER_TRUST/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_RECONCILIATION_GOVERNANCE_BUNDLE/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_RECONCILIATION_PUBLICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_RECOVERY_METADATA/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_REQUEST_SEQUENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_SUBMISSION_AUTHORITY/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/additional-mutation-rejected/MVP_SYMBOL_SPECIFICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/nonmonotonic-sequence-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/nonmonotonic-time-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/foreign-server-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.RESUME_CLOCK.sqlite/foreign-symbol-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "physical/.BOUND_PENDING.sqlite/only-clock-valid-advancement",
+      "passed": true,
+      "evidence_class": "READ_ONLY_EXISTING_NATIVE_SQLITE"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_ACCOUNT_RISK_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_BROKER_CALLBACK_INDEX/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_BROKER_SYNC_EVIDENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_CANONICAL_BASKET/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_EXECUTION_PENDING_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_EXECUTION_PENDING_STATE/REQUEST_SET",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_HARD_KILL_ACTIVATION_HISTORY/INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_HARD_KILL_COMPLETE_RELEASE/MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_HARD_KILL_RELEASE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_HARD_KILL_STATE/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_HARD_KILL_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_INGRESS_LEDGER/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_NAMESPACE_GENESIS/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_OPERATOR_PROVISIONING_REFERENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_OWNERSHIP_LEASE/CURRENT_LEASE",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_OWNERSHIP_LEASE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_PRODUCER_TRUST/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_PRODUCER_TRUST/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_RECONCILIATION_GOVERNANCE_BUNDLE/CURRENT",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_RECONCILIATION_PUBLICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_RECOVERY_METADATA/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_REQUEST_SEQUENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_SUBMISSION_AUTHORITY/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/additional-mutation-rejected/MVP_SYMBOL_SPECIFICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/nonmonotonic-sequence-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/nonmonotonic-time-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/foreign-server-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/.BOUND_PENDING.sqlite/foreign-symbol-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "triage/clock-hook-has-no-durable-stage-record",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE_GAP_CONFIRMED_NOT_A_PASS_FOR_RESUME"
+    },
+    {
+      "id": "triage/resume-previously-published-second-clock",
+      "passed": true,
+      "evidence_class": "READ_ONLY_EXISTING_NATIVE_SQLITE"
+    },
+    {
+      "id": "event/fresh-A-consumed-before-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "event/new-operator-time-bound-to-new-accepted-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "hold/installed-native-binary-not-replaced",
+      "passed": true,
+      "evidence_class": "READ_ONLY_BINARY_PROVENANCE"
+    },
+    {
+      "id": "plan/new-target-absent",
+      "passed": true,
+      "evidence_class": "PLANNED_ONLY_NOT_CREATED"
+    },
+    {
+      "id": "preserve/original-and-donor-exact",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    }
+  ],
+  "core_source_sha256": "CBF35E578A629E5103B916B6E7CE1610EDC6DFA439288C8799EAE660313B1CD4",
+  "assertion_source_sha256": "FF8B8802A7656D7D1179891790B9883C5AC2AB93D1DFD1832F085032795E8B01",
+  "governance_source_sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+  "current_include_source_digest": "09bc36d026d56c3bde1a39515c8e20605401cd11936e37b9e9d2c4b6f5df4aba",
+  "summary": {
+    "total": 82,
+    "passed": 82,
+    "failed": 0,
+    "MQL_executions": 0
+  },
+  "physical_clock_only_evidence": [
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.RESUME_CLOCK.sqlite",
+      "sha256": "9B08300BEC67577BABC6180EBB30B12CEE40F0F389C075AA0795E89ECCC997A8",
+      "rows": 26,
+      "changed_keys": [
+        [
+          "MVP_OWNERSHIP_LEASE",
+          "LEASE_CLOCK_CURRENT"
+        ]
+      ],
+      "previous_clock_sequence": 3,
+      "clock_sequence": 5,
+      "previous_observed_at": 1791814007,
+      "observed_at": 1791882923,
+      "all_other_authority_rows_exact": true,
+      "account_binding_unchanged": true
+    },
+    {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.BOUND_PENDING.sqlite",
+      "sha256": "864D27E527961D9FBAD929311FE7E7AEEC5053FD24082EA7C7700241C959DD4F",
+      "rows": 26,
+      "changed_keys": [
+        [
+          "MVP_OWNERSHIP_LEASE",
+          "LEASE_CLOCK_CURRENT"
+        ]
+      ],
+      "previous_clock_sequence": 3,
+      "clock_sequence": 4,
+      "previous_observed_at": 1791814007,
+      "observed_at": 1791882920,
+      "all_other_authority_rows_exact": true,
+      "account_binding_unchanged": true
+    }
+  ],
+  "previous_offline_summary": {
+    "total": 54,
+    "passed": 53,
+    "failed": 1,
+    "post_fix_MQL_executions": 0,
+    "unresolved_prior_failures": 3
+  },
+  "previous_offline_pending": [
+    "PROVENANCE/compiled-not-older-than-includes"
+  ],
+  "non_native_compile": {
+    "SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION": {
+      "result": "Result: 0 errors, 0 warnings, 1072 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "8B32905AE55A757F3B0E469C0BB5F8EC6C3A160F05A20928EBCD935087631B61"
+    },
+    "SW_V5_S5_MVP_CONTINUATION_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 28037 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "C75D193ECE44B405D82AB930CF51E0942D1E472CAFDF2A80D79A81EF5342674D"
+    }
+  },
+  "installed_native_sha256": "B70132E9D5BA2CF2882971FBAD5DA1DD2D752A9FF83E1529FD00891DE1557C09",
+  "repository_native_sha256": "845E2764B0A9E229E282B41132782D6928E1D744DA1F2C30D281771BEB10769F",
+  "native_build_current": false,
+  "native_install_authorized": false,
+  "original_and_donor_sha256": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "new_target_plan": {
+    "run_id": "695684156024459685b689f9d0c38955",
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_695684156024459685b689f9d0c38955.sqlite",
+    "created": false,
+    "preset_created": false
+  },
+  "open_gates": [
+    "Exact original PRE_STATE failing predicate was not logged; diagnostics now preserve and report it.",
+    "No durable CLOCK partial-stage record or preserved complete prior snapshot exists in the deployed draft.",
+    "Real MQL CLOCK resume / ACTIVE-to-PENDING / PENDING-release assertions have not executed after correction.",
+    "Native rebuild/install/full pre-run gate are intentionally held until sections 1-6 are green."
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpRuntime\\SW_V5_S5_MvpRuntimeAssertions.mqh",
+    "Hash": "1DA2BE93E235D4F88172F3B2BCF16C96DD3611600166C7C22773759EE8F5C044"
+  },
+  {
+    "Path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpRuntime\\verify_mvp_runtime.py",
+    "Hash": "16BBA261F17A951482ECB6792B008A65DAF4780C260B2252C06174AB9A04853C"
+  },
+  {
+    "Path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpRuntime\\verify_mvp_mutation_controls.py",
+    "Hash": "88923627D4581A9D9EBDDF983FB8D53CCA0F6B5376302B39AE127E3ADB6CAC89"
+  }
+]

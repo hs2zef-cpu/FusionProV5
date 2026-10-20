@@ -32,6 +32,9 @@ def main() -> int:
         ("MUT-HARD-KILL-STALE-OWNER", hard_kill_transition("RELEASE_PENDING", True, True, False, True) != "RELEASED"),
         ("MUT-HARD-KILL-NO-ZERO-STATE", hard_kill_transition("RELEASE_PENDING", True, True, True, False) != "RELEASED"),
     ]
+    # Exact-second reversion disagrees with the adjudicated delayed positive.
+    rows.append(("MUT-OPERATOR-EXACT-SECOND", operator_valid(Operator(), now=101)
+                 and Operator().authenticated_at != 101))
     for test_id, passed in rows:
         print(f"MVP_MUTATION|{test_id}|{'KILLED' if passed else 'SURVIVED'}")
     killed = sum(ok for _, ok in rows)

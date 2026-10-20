@@ -167,8 +167,10 @@ void SWV5S5_RunMvpRuntimeAssertions(SWV5S5_MvpTestCollector &c)
    SWV5S5_MvpRecord(c,"OPERATOR-ROLE-WRONG",!SWV5S5_MvpOperatorInvocationValid(changed_op,context.clock_time));
    changed_op=op; changed_op.authentication_reference="";
    SWV5S5_MvpRecord(c,"OPERATOR-AUTH-BLANK",!SWV5S5_MvpOperatorInvocationValid(changed_op,context.clock_time));
-   changed_op=op; changed_op.authenticated_at--;
-   SWV5S5_MvpRecord(c,"OPERATOR-CLOCK-MISMATCH",!SWV5S5_MvpOperatorInvocationValid(changed_op,context.clock_time));
+   changed_op=op; changed_op.authenticated_at++;
+   SWV5S5_MvpRecord(c,"OPERATOR-BEFORE-AUTH",!SWV5S5_MvpOperatorInvocationValid(changed_op,context.clock_time));
+   SWV5S5_MvpRecord(c,"OPERATOR-LATER-VALID",SWV5S5_MvpOperatorInvocationValid(op,context.clock_time+1));
+   SWV5S5_MvpRecord(c,"OPERATOR-WINDOW-EXPIRED",!SWV5S5_MvpOperatorInvocationValid(op,context.clock_time+3600));
 
    SWV5_RiskLimits limits; SWV5S5_MvpLoadRiskLimits(limits);
    SWV5S5_MvpRecord(c,"RISK-LIMITS-EXACT",SWV5S5_MvpRiskLimitsExact(limits));

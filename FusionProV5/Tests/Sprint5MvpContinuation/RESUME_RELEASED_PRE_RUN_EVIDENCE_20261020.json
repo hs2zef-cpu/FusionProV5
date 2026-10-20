@@ -1,0 +1,1997 @@
+{
+  "classification": "RESUME_RELEASED_PRE_RUN_ONLY_POST_FIX_NATIVE_EXECUTION_PENDING",
+  "summary": {
+    "total": 297,
+    "passed": 297,
+    "failed": 0,
+    "post_fix_MQL_executions": 0
+  },
+  "checks": [
+    {
+      "id": "SCOPE/exactly-two-preexisting-files-changed",
+      "passed": true,
+      "evidence_class": "PRE_PATCH_HASH_BASELINE_737_FILES"
+    },
+    {
+      "id": "DB/real-donor-seed-exact",
+      "passed": true,
+      "evidence_class": "FILE_HASH_ONLY_REAL_DB"
+    },
+    {
+      "id": "DB/real-and-seed-no-sidecars",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "TARGET/fresh-mutable-family-absent",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "PRESET/exact-new-run",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "PRESET/installed-identical",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "PROVENANCE/compiled-not-older-than-includes",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "ISOLATED_REFUSAL_STATIC_NOT_NATIVE"
+    },
+    {
+      "id": "STORE/namespace",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "STORE/schema",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_ACCOUNT_RISK_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BROKER_CALLBACK_INDEX/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_BROKER_SYNC_EVIDENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_CANONICAL_BASKET/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_EXECUTION_PENDING_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_EXECUTION_PENDING_STATE/REQUEST_SET",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_ACTIVATION_HISTORY/INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_COMPLETE_RELEASE/MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_RELEASE_AUTHORITY/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_STATE/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_HARD_KILL_STATE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_INGRESS_LEDGER/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_NAMESPACE_GENESIS/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OPERATOR_PROVISIONING_REFERENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/CURRENT_LEASE",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_OWNERSHIP_LEASE/LEASE_CLOCK_CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_PRODUCER_TRUST/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_PRODUCER_TRUST/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECONCILIATION_GOVERNANCE_BUNDLE/CURRENT",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECONCILIATION_PUBLICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_RECOVERY_METADATA/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_REQUEST_SEQUENCE/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_SUBMISSION_AUTHORITY/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "ROW_CAS/MVP_SYMBOL_SPECIFICATION/GENESIS",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "STORE/production-derived-canonical-namespace",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/ownership-expired",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/trust-expired",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/governance-expired",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/release-expired",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/hard-kill-row-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/history-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/complete-release-preserved",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/inactive-lineage",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/requestset-empty",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/basket-idle-v1",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "PRESTATE/no-operational-or-unknown-rows",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_TEST_SEED"
+    },
+    {
+      "id": "FORENSIC/current-payload-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/current-CAS-revision",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/complete-payload-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/complete-CAS-revision",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/typed-bundle-projects-byte-exact-CURRENT",
+      "passed": true,
+      "evidence_class": "SOURCE_SERIALIZER_PYTHON_REAL_ROW"
+    },
+    {
+      "id": "FORENSIC/first-reader-prefix-mismatch",
+      "passed": true,
+      "evidence_class": "SOURCE_READER_PYTHON_REAL_ROW"
+    },
+    {
+      "id": "FORENSIC/actual-latest-native-baseline",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_JOURNAL"
+    },
+    {
+      "id": "BUNDLE_GUARD/positive",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/issue",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/read",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/revision",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/state",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/complete_integrity",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/current_integrity",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/decode",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/found",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/record_id",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/canonical",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/current_payload",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/history",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "MC_RELEASED/missing-row",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/revision",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/state",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/complete-integrity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/current-integrity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/decode",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/record-id",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/canonical-equality",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/historical-validity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "RELEASED/no-current-codec-or-A2-rebind",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "RELEASED/read-only-load-no-historical-write",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "RELEASED/activation-continues-through-existing-guards",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/same",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/later-1",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/later-3",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/last-second",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/before-A",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/horizon",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/after-horizon",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/invalid-operator_id",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/invalid-authority_role",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/invalid-authentication_reference",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/OPERATOR/invalid-authenticated_at",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_PYTHON_GUARD"
+    },
+    {
+      "id": "REGRESSION/POLICY/existing-3600-seconds",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/PROFILE/account-profile-validator-unchanged",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/PROFILE/only-invocation-validity-body-changed",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REGRESSION/MC/actual-operator-exact-second-reversion-killed",
+      "passed": true,
+      "evidence_class": "SOURCE_MUTATION_PYTHON_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "REGRESSION/BROKER/later-real-zero-valid",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/same-real-zero-valid",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-observed_at-0",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-observed_at-1",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-observed_at-2",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-positions_query_succeeded-3",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-active_orders_query_succeeded-4",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-enumeration_complete-5",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-row_failures-6",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-total_positions-7",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-total_active_orders-8",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-total_exposure_volume-9",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-total_exposure_volume-10",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/negative-snapshot_digest-11",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/wrong-broker_identity",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/wrong-server",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/wrong-account_login",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/wrong-symbol",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/BROKER/capture-failure",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_DIGEST_NOT_NATIVE"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/real-later-accepted",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/no-fresh",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/read-failure",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/missing",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/wrong-payload",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/old-sequence",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/skipped-sequence",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/same-time",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/before-observation",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/wrong-id",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/wrong-authority",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/FINAL_CLOCK/expired-A",
+      "passed": true,
+      "evidence_class": "SOURCE_GUARD_STUBBED_READ_ONLY_IO_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/T0-T1-T2",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/evidence-at-T2",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/observation-before-A",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/observation-after-T2",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/persistence-after-T2",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/exposure-after-T2",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/approval-after-release",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/release-after-context",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/expiry-at-context",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "REGRESSION/SHARED_RELEASE_CHRONOLOGY/old-T0-context",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_TEMPORAL_GUARD_NOT_MQL"
+    },
+    {
+      "id": "LAYER/structure/verified-stored-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/no-event-freshness-or-ack",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/read-only-and-no-grant",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/profile-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/clock-physical-target-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/ownership-clock-monotonic",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/authority-predicates-retained",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/native-diagnostic-time-not-rewritten-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/structure/complete-readset-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/history/clock-only-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/history/no-fixed-deployment-baseline",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/event/current-fresh-before-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/MC-CONT-EVENT-FRESHNESS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/MC-CONT-NEW-ACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/MC-CONT-PROFILE-EVENT-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/MC-CONT-CLOCK-PAYLOAD-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/fixtures/old-event-negative-detects-ready-hook",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/fixtures/clock-restart-lifecycle",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/fixtures/periodic-not-fabricated-live-time",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/fixtures/clock-negative-cold-classifier",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/fixtures/boundary-differential-preserved",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/LoadVerified",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/CurrentFreshObservation",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/ObserveAcceptedEvent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/ObserveFromCurrentSymbolOnTick",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/wrapper/actual-A-consumed-before-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/wrapper/structure-then-new-event-binding",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/architecture/no-checkpoint-or-R-plus",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/native-diagnostic/clock-only-snapshots",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "LAYER/native-diagnostic/sequence-plus-one",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "LAYER/native-diagnostic/exact-cold-failure",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_LOG_NOT_POST_FIX_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/valid-cold",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-id",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-broker",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-server",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-account",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-symbol",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-authority",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/zero-sequence",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/zero-time",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/malformed",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-digest",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-store-revision",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-sequence-relation",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/immutable-and-original-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/no-uncheckpointed-wal",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/static/private-structural-single-refresh-caller-and-ordinary-unchanged",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-STRUCTURAL-PUBLIC",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-PRIOR-ALIAS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-CAS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-READBACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/alias/old-output-clear-destroys-prior-CAS",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "LAYER/governance-regression/alias/copied-prior-survives-output-clear",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/expired-prior-structural-read",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/ordinary-expired-ineligible",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/corrupt-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/capability-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/policy-version-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/profile-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/new-finite-bundle-valid",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/exact-prior-CAS-and-readback",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/stale-prior-CAS-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/boundary-valid-row-mutation",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/stale-complete-snapshot-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/native/preserved-60-pass-19-fail-summary",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "LAYER/governance-regression/native/direct-expired-refresh-passed-before-fix",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/boundary-must-reach-exact-stage",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/no-delete-or-overwrite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/all-mutable-paths-use-fresh-prefix",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/new-alias-and-corrupt-capability-tests",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "LAYER/governance-regression/git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/original-and-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "LAYER/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "LAYER/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "LAYER/native-full/installed-current-binary",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "LAYER/db/original-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "LAYER/git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "BUILD/include-and-installed-current",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_RESTART_A1_NOT_RECONSTRUCTED_ZERO_MUTATION",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_A1_HISTORICAL_BUNDLE_PHYSICALLY_VALID",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_CANONICAL_ENVELOPE_IS_NOT_TYPED_CODEC",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_RESTART_RECONSTRUCTS_NEITHER_A1_NOR_A2_ZERO_MUTATION",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_AFTER_A2_AND_T2_BYTES_DIGEST_REVISION_EXACT",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_A2_DISTINCT_FRESH_INVOCATION_AFTER_A1_RELEASE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_A1_COMPLETE_BUNDLE_UNREWRITTEN_AFTER_INACTIVE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_A1_HISTORY_A2_ACTIVATION_ONLY_REAL_LATER_T2_INACTIVE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE_TEST_PRESENT/RELEASED_A1_A2_ZERO_SUBMISSION_AND_TRANSPORT",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/regression-wired-after-interrupt-and-before-A2",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/beforeimage-checked-before-finalization",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/actual-completion-proof-checked",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/cold-restart-uses-real-A2-not-synthetic",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-job-family-preserved/RESUME_FIRST",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-job-family-preserved/RESUME_COMPLETE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-job-family-preserved/CLOCK_COMPLETE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-job-family-preserved/BOUND_",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-job-family-preserved/NEG_COLD_RESTART",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/CLOCK",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/HEARTBEAT",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/TRUST",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/GOVERNANCE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/ACTIVE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/FLAT",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/PENDING",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/RELEASED",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "NATIVE/existing-resume-scheduled/INACTIVE",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "RUNTIME/verify_mvp_runtime.py",
+      "passed": true,
+      "evidence_class": "PYTHON_NOT_MQL"
+    },
+    {
+      "id": "RUNTIME/verify_mvp_mutation_controls.py",
+      "passed": true,
+      "evidence_class": "PYTHON_NOT_MQL"
+    },
+    {
+      "id": "COMPILE/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "COMPILE/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "COMPILE/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "COMPILE/SOMWANG_XAU_M15_FUSION_PRO_V5_MVP_RUNTIME_TESTS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "EX5/new-and-installed",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "GIT/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "GIT/unchanged-base-main",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "DB/before-after-identical",
+      "passed": true,
+      "evidence_class": "FILE_HASH_METADATA"
+    },
+    {
+      "id": "DB/all-old-copies-and-donor-preserved",
+      "passed": true,
+      "evidence_class": "PRE_PATCH_OLD_COPY_HASHES"
+    }
+  ],
+  "forensic": {
+    "copy": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_4de6f69b8813436a8f272d895b8e2cf0.sqlite.RETEST.RESUME_RELEASED.sqlite",
+      "bytes": 184320,
+      "sha256": "2DDDF76781874CF351D562CBE7532DE0A801592F41ED75661D646B7559363791"
+    },
+    "current": {
+      "domain_key": "MVP_HARD_KILL_STATE",
+      "record_key": "CURRENT",
+      "logical_revision": 7,
+      "store_revision": "bea7851c300bbd4cd5d8d584d10f0bb470b27ccca65c316ff924e87a5918e9c2",
+      "state": 3,
+      "payload_digest": "f4c5b36bedf500ace21b6ec09bf28f20de941692afeb6a1bf4060376a0fe9018",
+      "updated_at": 1791992123
+    },
+    "complete": {
+      "domain_key": "MVP_HARD_KILL_COMPLETE_RELEASE",
+      "record_key": "MVP-CONTINUATION-RISK-AUTH-8bbe2395db83e6f3916989ca941e3776a34786576523183d608380ab52a20b8f",
+      "logical_revision": 1,
+      "store_revision": "835ab619e97dbd8b2c495f0e0543bf7f2129e337eb06b01c5f252921268521db",
+      "state": 3,
+      "payload_digest": "a565ffbf5c58dd2cc2eaeae9ad1f52f33a5f575ae75f979fd4e9ae457fade2fe",
+      "updated_at": 1791992123
+    },
+    "first_failing_predicate": "reader.ReadNested(\"contract_version\",nested)",
+    "expected_prefix": "contract_version:x:",
+    "actual_prefix": "hard_kill:x:5364:version:x:119:cont",
+    "source_decoder": "SW_V5_S5_MvpAuthorityRecordCodec.mqh:1254",
+    "category": "payload codec/envelope mismatch, NOT corruption or A1/A2 binding",
+    "A1": {
+      "operator_id": "FUSION_DEMO_ATTENDED_OPERATOR_01",
+      "authority_role": "FUSION_DEMO_MVP_OPERATOR",
+      "authentication_reference": "TEST_ONLY_FRESH_A",
+      "authenticated_at": 1791991926
+    },
+    "approved_at": 1791992123,
+    "released_at": 1791992123,
+    "raw_journal": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Logs\\20261014.log",
+      "bytes": 506194,
+      "sha256": "C92F753C9C68F08DD11EA56FDB5F510CCAB1268AB77E003DDB32F43D35BCEEC9"
+    },
+    "historical_counts": {
+      "passed": 213,
+      "failed": 1,
+      "skipped": 0,
+      "total": 214
+    },
+    "beforeimage_limit": "Old native run did not export an INTERRUPT_AFTER_RELEASED physical beforeimage. Current row/complete bundle are internally byte-exact, digest/CAS-valid; timestamp/revision match the original release. No retrospective two-snapshot claim. New native regression captures the exact beforeimage and activation proof.",
+    "release_timestamps": {
+      "current": 1791992123,
+      "complete": 1791992123,
+      "original_release": 1791992123
+    }
+  },
+  "released_guards": {
+    "rejection_condition": "!SWV5S5_MvpIssueContinuationRelease(flat,evidence,expected) ||\n            !store.ReadRow(SWV5S5_MVP_DOMAIN_RELEASE_COMPLETE,expected.authority_record_id,complete,found) || !found ||\n            complete.logical_revision!=1 || complete.state!=SWV5_HARD_KILL_RELEASED ||\n            !SWV5S5_MvpContinuationRowValid(store,complete) || !SWV5S5_MvpContinuationRowValid(store,current) ||\n            !SWV5S5_MvpDecodeReleaseBundle(complete.payload,released,record) ||\n            record.authority_record_id!=expected.authority_record_id ||\n            !SWV5S5_CanonicalHardKillState(\"hard_kill\",released,payload) || payload!=current.payload ||\n            !SWV5S5_MvpCompleteReleaseValid(context,released,record)",
+    "mutation_controls": 9,
+    "limitations": "I/O and historical validation calls are stubbed for predicate isolation, not claimed as executed MQL."
+  },
+  "operator_guards": {
+    "operator_expression": "invocation.operator_id!=\"\" && invocation.authority_role==SWV5S5_MVP_OPERATOR_ROLE &&\n      invocation.authentication_reference!=\"\" && invocation.authenticated_at>0 &&\n      now>=invocation.authenticated_at &&\n      now-invocation.authenticated_at<(datetime)SWV5S5_MVP_MANUAL_AUTHORITY_LIFETIME_SECONDS",
+    "finite_lifetime": 3600,
+    "broker_expression": "captured && SWV5S5_MvpProfileMatches(observed.profile,ACCOUNT_TRADE_MODE_DEMO) &&\n      observed.profile.broker_identity==account.broker_identity && observed.profile.server==account.server &&\n      observed.profile.account_login==account.account_login && observed.observed_at>=at &&\n      observed.observed_at>=capture_started && observed.observed_at<=TimeCurrent() &&\n      observed.positions_query_succeeded && observed.active_orders_query_succeeded && observed.enumeration_complete &&\n      observed.row_failures==0 && observed.total_positions==0 && observed.total_active_orders==0 &&\n      MathIsValidNumber(observed.total_exposure_volume) && observed.total_exposure_volume==0.0 &&\n      SWV5S5_MvpBootstrapBrokerDigest(observed,digest) && digest==observed.snapshot_digest",
+    "final_clock_rejection": "!clock_authority.CurrentFreshObservation(final_clock) || !clock_authority.LoadStored(stored,clock_row,found) || !found ||\n         !SWV5S5_MvpLeaseClockPayload(final_clock,a,digest) || !SWV5S5_MvpLeaseClockPayload(stored,b,digest) || a!=b ||\n         final_clock.clock_id!=m_prepared_flat.clock_id || final_clock.clock_authority!=m_prepared_flat.clock_authority ||\n         final_clock.clock_sequence!=m_initial_event_sequence+1 || final_clock.observed_at<=m_initial_event_time ||\n         final_clock.observed_at<m_observation_horizon || !SWV5S5_MvpOperatorInvocationValid(op,final_clock.observed_at)"
+  },
+  "runtime": {
+    "verify_mvp_runtime.py": {
+      "exit_code": 0,
+      "stdout": "MVP_ORACLE|SYMBOL-VALID|PASS\nMVP_ORACLE|SYMBOL-WRONG|PASS\nMVP_ORACLE|SYMBOL-DIGITS|PASS\nMVP_ORACLE|SYMBOL-POINT|PASS\nMVP_ORACLE|SYMBOL-INCOMPLETE|PASS\nMVP_ORACLE|SYMBOL-EXPIRED|PASS\nMVP_ORACLE|SYMBOL-SEQUENCE-ZERO|PASS\nMVP_ORACLE|SYMBOL-PIP|PASS\nMVP_ORACLE|SYMBOL-REFRESH-SEQUENCE|PASS\nMVP_ORACLE|SYMBOL-OPERATION-PINNED|PASS\nMVP_ORACLE|RISK-VALID|PASS\nMVP_ORACLE|RISK-EQUITY|PASS\nMVP_ORACLE|RISK-DAILY-LOSS|PASS\nMVP_ORACLE|RISK-MARGIN|PASS\nMVP_ORACLE|RISK-BASKET-LOSS|PASS\nMVP_ORACLE|RISK-VOLUME|PASS\nMVP_ORACLE|RISK-NOTIONAL|PASS\nMVP_ORACLE|RISK-SECOND-BASKET|PASS\nMVP_ORACLE|RISK-STALE|PASS\nMVP_ORACLE|RISK-INCOMPLETE-HISTORY|PASS\nMVP_ORACLE|RISK-NON-USD|PASS\nMVP_ORACLE|RISK-NON-HEDGING|PASS\nMVP_ORACLE|RISK-NON-DEMO|PASS\nMVP_ORACLE|RISK-LATCH-ACTIVE|PASS\nMVP_ORACLE|RISK-UNRESOLVED|PASS\nMVP_ORACLE|MARGIN-VALID|PASS\nMVP_ORACLE|MARGIN-NON-FLAT|PASS\nMVP_ORACLE|MARGIN-ACTIVE-ORDER|PASS\nMVP_ORACLE|MARGIN-CURRENT|PASS\nMVP_ORACLE|MARGIN-CALC-FAIL|PASS\nMVP_ORACLE|MARGIN-NEGATIVE|PASS\nMVP_ORACLE|MARGIN-NONFINITE|PASS\nMVP_ORACLE|BASKET-RISK-VALID|PASS\nMVP_ORACLE|BASKET-MISSING-SL|PASS\nMVP_ORACLE|BASKET-WRONG-SIDE-SL|PASS\nMVP_ORACLE|BASKET-CALC-FAIL|PASS\nMVP_ORACLE|BASKET-NONLOSS|PASS\nMVP_ORACLE|BASKET-OVER-LIMIT|PASS\nMVP_ORACLE|BASKET-EXISTING-POSITION|PASS\nMVP_ORACLE|BASKET-ROLLOVER|PASS\nMVP_ORACLE|BASKET-FIXED-RESERVE|PASS\nMVP_ORACLE|TRUST-OPERATOR-VALID|PASS\nMVP_ORACLE|TRUST-BLANK-ID|PASS\nMVP_ORACLE|TRUST-BLANK-ROLE|PASS\nMVP_ORACLE|TRUST-WRONG-ROLE|PASS\nMVP_ORACLE|TRUST-BLANK-AUTH|PASS\nMVP_ORACLE|TRUST-BEFORE-AUTH|PASS\nMVP_ORACLE|OPERATOR-LATER-VALID|PASS\nMVP_ORACLE|OPERATOR-WINDOW-EXPIRED|PASS\nMVP_ORACLE|TRUST-MAX-LIFETIME|PASS\nMVP_ORACLE|TRUST-EXPIRED|PASS\nMVP_ORACLE|GENESIS-PARTIAL-DISABLED|PASS\nMVP_ORACLE|RELEASE-BEFORE-ZERO-REJECTED|PASS\nMVP_ORACLE|RESTART-NO-AUTO-ENABLE|PASS\nMVP_ORACLE|CALLBACK-EXACT-ORDER|PASS\nMVP_ORACLE|CALLBACK-EXACT-REQUEST|PASS\nMVP_ORACLE|CALLBACK-MAGIC-ONLY-DENIED|PASS\nMVP_ORACLE|CALLBACK-CONFLICT-DENIED|PASS\nMVP_ORACLE|EXECUTION-MATERIALIZED-COUNT|PASS\nMVP_ORACLE|EXECUTION-ROW-FAILURES|PASS\nMVP_ORACLE|EXECUTION-INCOMPLETE-CLOSED|PASS\nMVP_ORACLE|EXECUTION-FAILED-OP-INCOMPLETE|PASS\nMVP_ORACLE|HARD-KILL-RELEASE-PENDING|PASS\nMVP_ORACLE|HARD-KILL-RELEASED|PASS\nMVP_ORACLE|HARD-KILL-NO-AUTHORITY|PASS\nMVP_ORACLE|HARD-KILL-STALE-OWNER|PASS\nMVP_ORACLE|HARD-KILL-NO-ZERO-STATE|PASS\nMVP_ORACLE|STORE-CAS-INSERT|PASS\nMVP_ORACLE|STORE-STALE-PERMIT|PASS\nMVP_ORACLE|STORE-ONE-CLAIM-WINNER|PASS\nMVP_ORACLE|STORE-CLAIM-DURABLE|PASS\nMVP_ORACLE|STORE-CLAIM-GRANT-EPHEMERAL|PASS\nMVP_ORACLE|STORE-REOPEN|PASS\nMVP_ORACLE|STORE-NAMESPACE-MISMATCH|PASS\nMVP_ORACLE|STORE-ROLLBACK|PASS\nMVP_ORACLE|STORE-INCOMPLETE-RESTART|PASS\nMVP_ORACLE|STORE-TERMINAL-RESTART|PASS\nMVP_ORACLE|RECOVERY-CLAIMED-ZERO-SUBMIT|PASS\nMVP_ORACLE|RECOVERY-POSITIVE-ZERO-SUBMIT|PASS\nMVP_ORACLE|RECOVERY-BLOCKED-STICKY|PASS\nMVP_ORACLE|RECOVERY-INCOMPLETE-UNRESOLVED|PASS\nMVP_ORACLE|RECOVERY-INDEPENDENT-EVIDENCE|PASS\nMVP_ORACLE|RECOVERY-STALE-PUBLICATION-CAS|PASS\nMVP_ORACLE|SOURCE-PROFILE-ID|PASS\nMVP_ORACLE|SOURCE-RISK-ID|PASS\nMVP_ORACLE|SOURCE-SYMBOL-LIVE|PASS\nMVP_ORACLE|SOURCE-MARGIN-PRIMITIVE|PASS\nMVP_ORACLE|SOURCE-PROFIT-PRIMITIVE|PASS\nMVP_ORACLE|SOURCE-DAILY-HISTORY|PASS\nMVP_ORACLE|SOURCE-NO-ORDERSEND|PASS\nMVP_ORACLE|SOURCE-NO-CTRADE|PASS\nMVP_ORACLE|SOURCE-OFFLINE-ZERO-SUBMISSION|PASS\nMVP_ORACLE|SOURCE-COMMON-FILENAME-ONLY|PASS\nMVP_ORACLE|SOURCE-ONE-PRODUCTION-ORDERSEND|PASS\nMVP_ORACLE_SUMMARY|total=94|passed=94|failed=0|skipped=0|signature=d0ab19417fc5783ccac8901792f7d0656773e7c5c30eae3cc3cc144d752b97e5|broker_submission_calls=0\n",
+      "stderr": ""
+    },
+    "verify_mvp_mutation_controls.py": {
+      "exit_code": 0,
+      "stdout": "MVP_MUTATION|MUT-SYMBOL|KILLED\nMVP_MUTATION|MUT-DIGITS|KILLED\nMVP_MUTATION|MUT-EXPIRY|KILLED\nMVP_MUTATION|MUT-DEMO|KILLED\nMVP_MUTATION|MUT-CURRENCY|KILLED\nMVP_MUTATION|MUT-MARGIN|KILLED\nMVP_MUTATION|MUT-VOLUME|KILLED\nMVP_MUTATION|MUT-NOTIONAL|KILLED\nMVP_MUTATION|MUT-ORDER|KILLED\nMVP_MUTATION|MUT-CALC-MARGIN|KILLED\nMVP_MUTATION|MUT-STOP-SIDE|KILLED\nMVP_MUTATION|MUT-COST-RESERVE|KILLED\nMVP_MUTATION|MUT-OPERATOR-ROLE|KILLED\nMVP_MUTATION|MUT-OPERATOR-AUTH|KILLED\nMVP_MUTATION|MUT-CALLBACK-CONFLICT|KILLED\nMVP_MUTATION|MUT-EXECUTION-ROW-OMISSION|KILLED\nMVP_MUTATION|MUT-HARD-KILL-SKIP-PENDING|KILLED\nMVP_MUTATION|MUT-HARD-KILL-STALE-OWNER|KILLED\nMVP_MUTATION|MUT-HARD-KILL-NO-ZERO-STATE|KILLED\nMVP_MUTATION|MUT-OPERATOR-EXACT-SECOND|KILLED\nMVP_MUTATION_SUMMARY|total=20|killed=20|survived=0\n",
+      "stderr": ""
+    }
+  },
+  "layering": {
+    "total": 102,
+    "passed": 102,
+    "failed": 0,
+    "post_fix_MQL_executions": 0
+  },
+  "governance": {
+    "total": 54,
+    "passed": 54,
+    "failed": 0,
+    "post_fix_MQL_executions": 0,
+    "unresolved_prior_failures": 3
+  },
+  "governance_metadata_note": "unresolved_prior_failures in the imported legacy summary describes its archived 60/19 native baseline only; the latest actual baseline is 213/1 with RESUME_RELEASED alone. It is not a new post-fix execution result.",
+  "compile": {
+    "SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION": {
+      "result": "Result: 0 errors, 0 warnings, 9492 ms elapsed, cpu='X64 Regular'",
+      "artifact": {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION.ex5",
+        "bytes": 381574,
+        "sha256": "852040E53C06C55F7FD105774B100E2E387591E3FE8DB6904520507ECC06CF3D"
+      }
+    },
+    "SW_V5_S5_MVP_CONTINUATION_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 30456 ms elapsed, cpu='X64 Regular'",
+      "artifact": {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_ASSERTIONS.ex5",
+        "bytes": 1201608,
+        "sha256": "E33C83B682BE82CC2B323C57B7F3C4A3D6A0DD2C417109359A1EC29C379F74C5"
+      }
+    },
+    "SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 41584 ms elapsed, cpu='X64 Regular'",
+      "artifact": {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.ex5",
+        "bytes": 1207126,
+        "sha256": "5BB5EC5EC4B10A5F92193AF66B1244FBCD347DCF4F4FFE1049FB424DF3A622DC"
+      }
+    },
+    "SOMWANG_XAU_M15_FUSION_PRO_V5_MVP_RUNTIME_TESTS": {
+      "result": "Result: 0 errors, 0 warnings, 16240 ms elapsed, cpu='X64 Regular'",
+      "artifact": {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpRuntime\\SOMWANG_XAU_M15_FUSION_PRO_V5_MVP_RUNTIME_TESTS.ex5",
+        "bytes": 510022,
+        "sha256": "4C5F8F29372A4D1864DA38756751EC4274C9C00ADE664EA74F153A7982E0E936"
+      }
+    }
+  },
+  "refusal": {
+    "classification": "ISOLATED_SOURCE_EXTRACTED_PYTHON_GUARD_NOT_MQL_RUNTIME",
+    "source_predicate": "explicit_test_only_marker!=\"TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT\" || !execute_test_copy_once || !operator_confirmed_test_copy ||\n      expected_initial_copy_sha256!=expected_copy_sha || StringFind(initial_copy_relative_path,\"TEST_ONLY_MVP_CONTINUATION_\")!=0 ||\n      StringFind(initial_copy_relative_path,\"..\")>=0 || StringFind(initial_copy_relative_path,\"/\")>=0 || StringFind(initial_copy_relative_path,\"\\\\\")>=0 ||\n      _Symbol!=\"XAUUSD\" || _Period!=PERIOD_M15 || MQLInfoInteger(MQL_TESTER) ||\n      !SWV5S5_TestContinuationFileSha(initial_copy_relative_path,digest) || digest!=expected_copy_sha ||\n      !SWV5S5_TestContinuationFileSha(\"fusion_v5_mvp_demo_authority.sqlite\",digest) || digest!=expected_copy_sha ||\n      FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-wal\",FILE_COMMON) || FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-shm\",FILE_COMMON)",
+    "cases": [
+      {
+        "case": "production-filename",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "missing-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "invalid-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "absolute-production-path",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "traversal",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "subdirectory",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      }
+    ]
+  },
+  "isolation": {
+    "classification": "STATIC_FIXED_MODE_CALL_PATH_AND_PREPROCESSOR_ISOLATION_NOT_LIVE_EXECUTION",
+    "production_OrderSend_sites": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+        "line": 275
+      }
+    ],
+    "production_Heartbeat_callers": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+        "line": 647
+      }
+    ],
+    "reachable_entry_chain": [
+      "OnTick + A",
+      "test_suite.Start",
+      "continuation administrative functions",
+      "NativePreflight MODE_PREFLIGHT",
+      "runner early return"
+    ],
+    "unreachable_execution_methods": [
+      "PrepareD1AuthorityPath",
+      "PreparePermitSemantics",
+      "CommitPermitPhysical",
+      "CollectAdmissionSameEvent",
+      "ClaimPhysicalNow",
+      "SubmitExactlyOnce"
+    ],
+    "one_shot_scope": "One EA attachment; reinitialization resets the in-memory latch. No durable across-reattach lock is claimed.",
+    "operational_negative_fixtures": "Synthetic invalid row-presence fixtures in separate TEST_ONLY clones; not D1/Ledger/Permit/Admission/Claim issuers.",
+    "include_count": 85,
+    "source_digest": "72175faf558ecf79dae6d063edca4cce89bca02aeb5021e8feed825f425c663e"
+  },
+  "prestate": {
+    "sqlite_open_mode": "mode=ro&immutable=1;query_only=ON",
+    "metadata": {
+      "singleton_id": 1,
+      "schema_id": "SWV5-S5-STORE-SCHEMA-V1",
+      "schema_version": 1,
+      "minimum_compatible_version": 1,
+      "namespace_digest": "58408af3c3381470aa50161762e4f1102eec5d214448495a79d732cd31d90d8c"
+    },
+    "derived_namespace": "58408af3c3381470aa50161762e4f1102eec5d214448495a79d732cd31d90d8c",
+    "row_count": 26,
+    "expiry_assessment_utc_epoch": 1792499742,
+    "expiry_context": "READBACK_WALL_CLOCK_NOT_A_NATIVE_MT5_TICK",
+    "ownership_expires_at": 1791814957,
+    "trust_valid_until": 1791814957,
+    "governance_valid_until": 1791817607,
+    "hard_kill_release_expires_at": 1791816401,
+    "governance_row_state": 1,
+    "governance_authority_sequence": 3,
+    "hard_kill_state": 0,
+    "hard_kill_latch_generation": 2,
+    "request_count": 0,
+    "basket_state": 0,
+    "basket_state_version": 1,
+    "operational_rows": [],
+    "live_broker_positions_orders": "NOT_OBSERVED_NOT_INFERRED_FROM_SQLITE",
+    "inventory": [
+      {
+        "domain_key": "MVP_ACCOUNT_RISK_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "ca6d9ad2a40c9f444ec6833b377ebec08c367676e3b1e52100db17c48278730f",
+        "store_revision": "ec4306d5ec8859569ee6e7fd64b540f186c698537952d2ace0e3f5bb741eba0f"
+      },
+      {
+        "domain_key": "MVP_BOOTSTRAP_ZERO_STATE_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+        "store_revision": "6e5cf35e0f3800d5d8c77b1e7cb77a78541196ad2e04fba4cfef2c25210f5e01"
+      },
+      {
+        "domain_key": "MVP_BROKER_CALLBACK_INDEX",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "b00576fd74f9d513fcfaa0fecf9fffcaac3103c5fa271df08d21c3ea5075b3fd",
+        "store_revision": "6b7759f8752fea91fb22dbe42c039a91771a4294e2de3121a2b4364fc779a6a3"
+      },
+      {
+        "domain_key": "MVP_BROKER_SYNC_EVIDENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "4de40b7a8cc78a23a0f48af84eff05aae9f1b30cc956b2172f2b2fb768201ad4",
+        "store_revision": "e10aae3517060854b856c2f165589b0e5493995cf9d682290d9ffccbe7f8fa86"
+      },
+      {
+        "domain_key": "MVP_CANONICAL_BASKET",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "ce4fecf972400cc77e91fc1411dcd1ecbd929c2cb67e4b0fe0454220b66ef4d9",
+        "store_revision": "28ab83dd6d3b4ff015bc416ec225dddd7b0ad7209294cc8df5da3b31eee8c53d"
+      },
+      {
+        "domain_key": "MVP_EXECUTION_PENDING_STATE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "ee2bfcc8bca6010e6bd7ce16aef3ed6286225ceb1ab64c98c2a624c941331dc3",
+        "store_revision": "4ee9d4af8096d405e7c58da06d41ab3c25eb26fe57ca65f2570f9ef7dfe38a26"
+      },
+      {
+        "domain_key": "MVP_EXECUTION_PENDING_STATE",
+        "record_key": "REQUEST_SET",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "bc0a62e6c34538113e7f76ea25c0500b02550506b83e254d39b1e9485a6f253d",
+        "store_revision": "1f821d80ced400f502f18293616953d43b57723724c013ac4f3405453ef8176a"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_ACTIVATION_HISTORY",
+        "record_key": "INACTIVE/8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+        "logical_revision": 1,
+        "state": 3,
+        "payload_digest": "8fb441c0e2c2e49e238c20a861a6dab41cf9a6f3cb9b94e2d0d641fb2c751197",
+        "store_revision": "7afd8d88639fb164dadea7e57877d26a1f0f43dc99f34384f0fe5e5fc714fbcb"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_COMPLETE_RELEASE",
+        "record_key": "MVP-HK-RISK-AUTH-62da37f09e7e04c4de09a1879962f3b2821a34163272136bec005283830ddf55",
+        "logical_revision": 1,
+        "state": 3,
+        "payload_digest": "d0475a7534c33e1af240f6b7868b12ee934ff6c1d78e7a4a9d98e9f65cc294df",
+        "store_revision": "bb713a9f7f4b23a4d877d934f1c844870db2efd869c1dd76025309488858eb05"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_RELEASE_AUTHORITY",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "bb8c4917d9b04ca4fceaa56d01a41582a1572a48ed547100aaeb1088ca05d08b",
+        "store_revision": "0563458e57c4a8e3a08ce45079fbdfb63724342e4a5eab18a56ec5b80e83e2c2"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_STATE",
+        "record_key": "CURRENT",
+        "logical_revision": 4,
+        "state": 0,
+        "payload_digest": "026c3f99dea700d79b69ba8fa3146fd4c43b5c215b06e33ad37ff9de4708cac9",
+        "store_revision": "13f71024fca9e1cf93fe7716bc98bc530608797ecb7c8e1a909899bc9769d3d8"
+      },
+      {
+        "domain_key": "MVP_HARD_KILL_STATE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "403e9b25f6ea5e10039099822e0fe4359c990e8ea44a9e4a2aa83557fe13eae2",
+        "store_revision": "b88fa57eddafb273932f1833d3db4e9aa914ae4e09d229ec556474f2fc35c426"
+      },
+      {
+        "domain_key": "MVP_INGRESS_LEDGER",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "a489897ad4185bff04a646ab46eabc71cf080f045e53288293dcf7f5eba97c04",
+        "store_revision": "89d859870c3461470e4afde04dd9fedad413d5ed5f84794389b164d4fe2021dd"
+      },
+      {
+        "domain_key": "MVP_NAMESPACE_GENESIS",
+        "record_key": "GENESIS",
+        "logical_revision": 2,
+        "state": 2,
+        "payload_digest": "8b0125a6798a423a608c3c428a6e7fec123027f2e6bbf4554e9a3d2ccfa2bfb7",
+        "store_revision": "99a4efa74433d6699a037e247538002d0ea1c7e64587151b151f1aa53127e6c8"
+      },
+      {
+        "domain_key": "MVP_OPERATOR_PROVISIONING_REFERENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "3fa6d3fc75f53fd204fb1a535cb35e22472cbc5c8d93274d46468ef1c8af82a4",
+        "store_revision": "a48f08a406c3473b10fa0b04f5f6fd401fc0080eef897761d1afea25656864b7"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "CURRENT_LEASE",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "36530188d27f0696c795cc9fca652a008f40f83f9ce49c309867f34a26ab61f1",
+        "store_revision": "bb7ad2052e916c8079a2f202c7d31061be0c44bdd76d0e4dbe132ab00c86cacd"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "9adf4ca68e386c62bafbb16223e5b9656fae7d23073aba8d59a9785c8d73d4b7",
+        "store_revision": "339795697aed3d48fd8722100ac737ad31f42b69d977dab9f25704ee79710bf9"
+      },
+      {
+        "domain_key": "MVP_OWNERSHIP_LEASE",
+        "record_key": "LEASE_CLOCK_CURRENT",
+        "logical_revision": 3,
+        "state": 1,
+        "payload_digest": "30560b51028eb5f59b280cad023fe10ec39a3136f7c244566d5d49e99bb9eb07",
+        "store_revision": "0988c66cde3b64364afaba372d12942bb0bb142856d1e8ac1ac89e2fae000364"
+      },
+      {
+        "domain_key": "MVP_PRODUCER_TRUST",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "05af6557c9d106e54c76174bd03a7c78f0dcdccf7114c19b34bea776c5886c96",
+        "store_revision": "fa6048974ba18a5daf5a80f1a854b03938bb80db47b54a3519958561c139931f"
+      },
+      {
+        "domain_key": "MVP_PRODUCER_TRUST",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "4a98c99afd4e90d6c0d8742f03dc9d670b9343bfe1ae416eaa5d76147cb92dc4",
+        "store_revision": "69d9d0709d6446bcaf4184ee659a943dec72c702faf43fceca7a8906885f88d3"
+      },
+      {
+        "domain_key": "MVP_RECONCILIATION_GOVERNANCE_BUNDLE",
+        "record_key": "CURRENT",
+        "logical_revision": 1,
+        "state": 1,
+        "payload_digest": "3da92dfb4918a7f16688236978e7e48b86bb3513ba5e8972b900680817cb6aec",
+        "store_revision": "40260a95f4233e631ea338a9c15a51b23aa94fdfb20e83d91d39550048962fb4"
+      },
+      {
+        "domain_key": "MVP_RECONCILIATION_PUBLICATION",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "eb8217b9db2720cc008c9c1b83c314bcd033cca7b071e90d70a2fb5776e6e9ee",
+        "store_revision": "12f7ebf9465a191bacfcba993726686a7171030986e5254a1ed37d8e2bc08340"
+      },
+      {
+        "domain_key": "MVP_RECOVERY_METADATA",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "024d78de68ab59c60cbe8ae7114aed77452f8ef8cb1d01bd0c5f123bb4895038",
+        "store_revision": "93e206d1b0dcbb19b3adad66163b23a8adf46729d2771273a2aaf59f54f6f1cb"
+      },
+      {
+        "domain_key": "MVP_REQUEST_SEQUENCE",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "91ab5eab29f1d0e0772c4ac0e2934fe9c319bdf6b32a52955a15fbc0aeac0608",
+        "store_revision": "7b13369cbcdcb3e468274af7f1c663a3b2be4f0961108c083e11654c521298de"
+      },
+      {
+        "domain_key": "MVP_SUBMISSION_AUTHORITY",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "1dcd0d82033db2f94effeadb5771c86f355098413ff692108dd8f84300e4ac9d",
+        "store_revision": "c6ff263fd98f73316dc1683944f2673caa399b2bfee912829b6881052f96f9a9"
+      },
+      {
+        "domain_key": "MVP_SYMBOL_SPECIFICATION",
+        "record_key": "GENESIS",
+        "logical_revision": 1,
+        "state": 0,
+        "payload_digest": "57b8b7b65ac6a7c0bfb32fcdb5bfe2963a4f24c7a203bbff19a7e815b2ed38d8",
+        "store_revision": "a84ad37cb41e139890cd43b150c6eee032217ba1e11ece7016514340882ab077"
+      }
+    ]
+  },
+  "files_changed_this_patch": [
+    "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+    "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationAssertions.mqh"
+  ],
+  "original_donor_seed": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": false,
+      "shm_present": false
+    },
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": true,
+      "shm_present": true
+    },
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite": {
+      "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite",
+      "bytes": 81920,
+      "sha256": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+      "wal_present": false,
+      "shm_present": false
+    }
+  },
+  "preset": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Presets\\TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite.set",
+    "bytes": 315,
+    "sha256": "950B08E02D2F8E6E3B96E642EB6B236DD5D311DF18863D7D533212398A8E18C3"
+  },
+  "inputs": {
+    "explicit_test_only_marker": "TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT",
+    "initial_copy_relative_path": "TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite",
+    "expected_initial_copy_sha256": "bec62e7435d29d5511a41bf85c74ae443994c5804b3a9574af90d861fe674ef6",
+    "execute_test_copy_once": "true",
+    "operator_confirmed_test_copy": "true"
+  },
+  "installed": {
+    "path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Experts\\FusionProV5Tests\\SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.ex5",
+    "bytes": 1207126,
+    "sha256": "5BB5EC5EC4B10A5F92193AF66B1244FBCD347DCF4F4FFE1049FB424DF3A622DC"
+  },
+  "run_target": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_8cfbfa37749b4a35ac95d274fa0da791.sqlite.RETEST.MAIN.sqlite",
+  "git": {
+    "branch": "sprint5-phase-f-entry-contract",
+    "HEAD": "d926f2e6b1aa4ea7b4b0936293d2fa47a2ce7ba8",
+    "tree": "46c09cfbed423df9c93b7f63aaf4b901af5b83fd",
+    "main": "32b79ca71ffc331e15e48a57c52be1352e3dbe7e",
+    "status": "M FusionProV5/Docs/Architecture/ADRs/ADR-006_HARD_KILL_GOVERNANCE.md\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDeploymentProfile.mqh\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh\n M FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpSqliteAuthorityStore.mqh\n M FusionProV5/Tests/Sprint5MvpRuntime/SW_V5_S5_MvpRuntimeAssertions.mqh\n M FusionProV5/Tests/Sprint5MvpRuntime/verify_mvp_mutation_controls.py\n M FusionProV5/Tests/Sprint5MvpRuntime/verify_mvp_runtime.py\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedContinuation.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationActivation.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationFlatAuthority.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationLineage.mqh\n?? FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationPhysicalCodec.mqh\n?? FusionProV5/Tests/Sprint5MvpContinuation/"
+  },
+  "verifier_sha256": "6D9CC6CE9473A4944FA4082A5DC076C5E5658ABB3DBEC788639D34994E92CB41",
+  "revalidation_date": "2026-10-20",
+  "revalidation_timezone": "Asia/Bangkok",
+  "revalidation_note": "Existing MQL patch preserved without source edits; all four manifests rebuilt; fresh preset/seed/run family installed; no MT5 launch or suite execution."
+}

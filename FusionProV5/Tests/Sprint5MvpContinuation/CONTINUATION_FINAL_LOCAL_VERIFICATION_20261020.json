@@ -1,0 +1,1395 @@
+{
+  "classification": "FINAL_LOCAL_STATIC_ONLY_NO_NATIVE_RERUN",
+  "summary": {
+    "total": 221,
+    "passed": 221,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "id": "FORENSIC/current-payload-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/current-CAS-revision",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/complete-payload-digest",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/complete-CAS-revision",
+      "passed": true,
+      "evidence_class": "IMMUTABLE_RO_PHYSICAL"
+    },
+    {
+      "id": "FORENSIC/typed-bundle-projects-byte-exact-CURRENT",
+      "passed": true,
+      "evidence_class": "SOURCE_SERIALIZER_PYTHON_REAL_ROW"
+    },
+    {
+      "id": "FORENSIC/first-reader-prefix-mismatch",
+      "passed": true,
+      "evidence_class": "SOURCE_READER_PYTHON_REAL_ROW"
+    },
+    {
+      "id": "FORENSIC/actual-latest-native-baseline",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_JOURNAL"
+    },
+    {
+      "id": "BUNDLE_GUARD/positive",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/issue",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/read",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/revision",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/state",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/complete_integrity",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/current_integrity",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/decode",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/found",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/record_id",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/canonical",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/current_payload",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "BUNDLE_GUARD/history",
+      "passed": true,
+      "evidence_class": "SOURCE_EXTRACTED_GUARD_STUBBED_IO_AND_VALIDATORS"
+    },
+    {
+      "id": "MC_RELEASED/missing-row",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/revision",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/state",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/complete-integrity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/current-integrity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/decode",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/record-id",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/canonical-equality",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "MC_RELEASED/historical-validity",
+      "passed": true,
+      "evidence_class": "PYTHON_SOURCE_GUARD_MUTATION_NOT_MQL_MUTANT"
+    },
+    {
+      "id": "RELEASED/no-current-codec-or-A2-rebind",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "RELEASED/read-only-load-no-historical-write",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "RELEASED/activation-continues-through-existing-guards",
+      "passed": true,
+      "evidence_class": "STATIC_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "OPERATOR/OPERATOR/same",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/later-1",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/later-3",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/last-second",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/before-A",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/horizon",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/after-horizon",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/invalid-operator_id",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/invalid-authority_role",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/invalid-authentication_reference",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/OPERATOR/invalid-authenticated_at",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/POLICY/existing-3600-seconds",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/PROFILE/account-profile-validator-unchanged",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/PROFILE/only-invocation-validity-body-changed",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/MC/actual-operator-exact-second-reversion-killed",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/later-real-zero-valid",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/same-real-zero-valid",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-observed_at-0",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-observed_at-1",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-observed_at-2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-positions_query_succeeded-3",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-active_orders_query_succeeded-4",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-enumeration_complete-5",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-row_failures-6",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-total_positions-7",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-total_active_orders-8",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-total_exposure_volume-9",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-total_exposure_volume-10",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/negative-snapshot_digest-11",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/wrong-broker_identity",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/wrong-server",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/wrong-account_login",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/wrong-symbol",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/BROKER/capture-failure",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/real-later-accepted",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/no-fresh",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/read-failure",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/missing",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/wrong-payload",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/old-sequence",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/skipped-sequence",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/same-time",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/before-observation",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/wrong-id",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/wrong-authority",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/FINAL_CLOCK/expired-A",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/T0-T1-T2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/evidence-at-T2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/observation-before-A",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/observation-after-T2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/persistence-after-T2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/exposure-after-T2",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/approval-after-release",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/release-after-context",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/expiry-at-context",
+      "passed": true
+    },
+    {
+      "id": "OPERATOR/SHARED_RELEASE_CHRONOLOGY/old-T0-context",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/production-filename",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/missing-marker",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/invalid-marker",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/absolute-production-path",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/traversal",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/REFUSAL/subdirectory",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/constant-preflight-mode",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/submission-flags-false",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/preflight-return-dominates-execution",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/preflight-host-clock-readonly",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/continuation-no-execution-issuers",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/native-transport-compile-trap",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/exactly-one-production-OrderSend",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/production-send-site-unchanged",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ONESHOT/attach-and-preset-readonly",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ONESHOT/ack-required-before-start",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ONESHOT/consume-before-first-test-write",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ONESHOT/no-reset-or-retry",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ONESHOT/isolated-first-A-only",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/PROVENANCE/compiled-not-older-than-includes",
+      "passed": true
+    },
+    {
+      "id": "ISOLATION/ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/verified-stored-clock",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/no-event-freshness-or-ack",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/read-only-and-no-grant",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/profile-exact",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/clock-physical-target-exact",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/ownership-clock-monotonic",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/authority-predicates-retained",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/native-diagnostic-time-not-rewritten-clock",
+      "passed": true
+    },
+    {
+      "id": "LAYER/structure/complete-readset-exact",
+      "passed": true
+    },
+    {
+      "id": "LAYER/history/clock-only-exact",
+      "passed": true
+    },
+    {
+      "id": "LAYER/history/no-fixed-deployment-baseline",
+      "passed": true
+    },
+    {
+      "id": "LAYER/event/current-fresh-before-write",
+      "passed": true
+    },
+    {
+      "id": "LAYER/MC-CONT-EVENT-FRESHNESS-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/MC-CONT-NEW-ACK-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/MC-CONT-PROFILE-EVENT-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/MC-CONT-CLOCK-PAYLOAD-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/fixtures/old-event-negative-detects-ready-hook",
+      "passed": true
+    },
+    {
+      "id": "LAYER/fixtures/clock-restart-lifecycle",
+      "passed": true
+    },
+    {
+      "id": "LAYER/fixtures/periodic-not-fabricated-live-time",
+      "passed": true
+    },
+    {
+      "id": "LAYER/fixtures/clock-negative-cold-classifier",
+      "passed": true
+    },
+    {
+      "id": "LAYER/fixtures/boundary-differential-preserved",
+      "passed": true
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/LoadVerified",
+      "passed": true
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/CurrentFreshObservation",
+      "passed": true
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/ObserveAcceptedEvent",
+      "passed": true
+    },
+    {
+      "id": "LAYER/clock/ordinary-unchanged/ObserveFromCurrentSymbolOnTick",
+      "passed": true
+    },
+    {
+      "id": "LAYER/wrapper/actual-A-consumed-before-publication",
+      "passed": true
+    },
+    {
+      "id": "LAYER/wrapper/structure-then-new-event-binding",
+      "passed": true
+    },
+    {
+      "id": "LAYER/architecture/no-checkpoint-or-R-plus",
+      "passed": true
+    },
+    {
+      "id": "LAYER/native-diagnostic/clock-only-snapshots",
+      "passed": true
+    },
+    {
+      "id": "LAYER/native-diagnostic/sequence-plus-one",
+      "passed": true
+    },
+    {
+      "id": "LAYER/native-diagnostic/exact-cold-failure",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/valid-cold",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-id",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-broker",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-server",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-account",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-symbol",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-authority",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/zero-sequence",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/zero-time",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/malformed",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-digest",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-store-revision",
+      "passed": true
+    },
+    {
+      "id": "LAYER/python-clock-oracle/wrong-sequence-relation",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/immutable-and-original-hash",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/no-uncheckpointed-wal",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/production-filename",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/missing-marker",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/invalid-marker",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/absolute-production-path",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/traversal",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/REFUSAL/subdirectory",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/constant-preflight-mode",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/submission-flags-false",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/preflight-return-dominates-execution",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/preflight-host-clock-readonly",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/continuation-no-execution-issuers",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/native-transport-compile-trap",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/exactly-one-production-OrderSend",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/production-send-site-unchanged",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/attach-and-preset-readonly",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/ack-required-before-start",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/consume-before-first-test-write",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/no-reset-or-retry",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ONESHOT/isolated-first-A-only",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/static/private-structural-single-refresh-caller-and-ordinary-unchanged",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-STRUCTURAL-PUBLIC",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-PRIOR-ALIAS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-CAS-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/MC-GOV-READBACK-BYPASS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/alias/old-output-clear-destroys-prior-CAS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/alias/copied-prior-survives-output-clear",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/expired-prior-structural-read",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/ordinary-expired-ineligible",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/corrupt-rejects",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/capability-rejects",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/policy-version-rejects",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/profile-rejects",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/new-finite-bundle-valid",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/exact-prior-CAS-and-readback",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/stale-prior-CAS-rejected",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/boundary-valid-row-mutation",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/oracle/stale-complete-snapshot-rejected",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/native/preserved-60-pass-19-fail-summary",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/native/direct-expired-refresh-passed-before-fix",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/boundary-must-reach-exact-stage",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/no-delete-or-overwrite",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/all-mutable-paths-use-fresh-prefix",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixtures/new-alias-and-corrupt-capability-tests",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/git/diff-check",
+      "passed": true
+    },
+    {
+      "id": "LAYER/governance-regression/fixture/original-and-donor-unchanged",
+      "passed": true
+    },
+    {
+      "id": "LAYER/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true
+    },
+    {
+      "id": "LAYER/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true
+    },
+    {
+      "id": "LAYER/native-full/installed-current-binary",
+      "passed": true
+    },
+    {
+      "id": "LAYER/db/original-donor-unchanged",
+      "passed": true
+    },
+    {
+      "id": "LAYER/git/diff-check",
+      "passed": true
+    },
+    {
+      "id": "RUNTIME/verify_mvp_runtime.py",
+      "passed": true
+    },
+    {
+      "id": "RUNTIME/verify_mvp_mutation_controls.py",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/source-digest-matches-tested-prerun",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/ex5-built-and-installed-exact",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/preset-exact",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/original-donor-unchanged",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/known-source-scope-only",
+      "passed": true
+    },
+    {
+      "id": "PROVENANCE/only-expected-external-diagnostic-updated",
+      "passed": true
+    },
+    {
+      "id": "GIT/diff-check",
+      "passed": true
+    }
+  ],
+  "include_digest": "72175faf558ecf79dae6d063edca4cce89bca02aeb5021e8feed825f425c663e",
+  "include_files": [
+    {
+      "path": "FusionProV5/Adapters/SW_V5_LegacyEngineAdapter.mqh",
+      "sha256": "EF657778B7721244B7ACEEE325177927C06038902D3A9FC78A800990C37BD113"
+    },
+    {
+      "path": "FusionProV5/Configuration/SW_V5_RuntimeIdentityProfile.mqh",
+      "sha256": "E84F287A6C138A837E7929F62EEA20F9BCEE363C80FDD481730767F1CCB93776"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_Interfaces.mqh",
+      "sha256": "57903F81B1780C49581FC7ED0B3564EB651FA7BDDF13165F094A9568C019484B"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_ResultValidator.mqh",
+      "sha256": "D890253AD80F61804854F10DB37499DE5777A398A8795D527BD9B8E587CDE35C"
+    },
+    {
+      "path": "FusionProV5/Core/SW_V5_Types.mqh",
+      "sha256": "CFC894CE9774DD98EFB2F380FEEB736ABA046F499328D365546494F5249378C4"
+    },
+    {
+      "path": "FusionProV5/Decision/SW_V5_DecisionEngine.mqh",
+      "sha256": "75DF76A1DC3E78039D20A42C3C8B9608A8A6B381C7FE790E2458DC1729065E03"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_MomentumEngine.mqh",
+      "sha256": "0E2B9F899A57899B3AFF1EA34CB9D96E6E34F02BB054B35CF2B3591CF2B60456"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_PriceActionEngine.mqh",
+      "sha256": "5E0F94D6D7FF426E914DDB16F61ECA837D91B80259E223C889547ED66A92CE70"
+    },
+    {
+      "path": "FusionProV5/Engines/SW_V5_TrendEngine.mqh",
+      "sha256": "17865AFE4B36E6EC6E5C1C57DB1BE895B1360E28172E6A54765AF365FA0D35D4"
+    },
+    {
+      "path": "FusionProV5/Execution/SW_V5_ExecutionPolicy.mqh",
+      "sha256": "BD8E52C0AFD58D733F14A48767BCD35C74893531C44747D52E1C9973D6B77F85"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapter.mqh",
+      "sha256": "949C50A185DEB0DDE80624E496784A060FF136475C5B4FC357CCB75A5C386975"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapterCore.mqh",
+      "sha256": "7C39FBA4A5BF12F155843FA7657EC4D1F019EE2CDBDBE3EAB97E23A01D612FFB"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerAdapterTypes.mqh",
+      "sha256": "BE1A3EF06A2391217C977ACA6673D1338471AB132EC69D776A864EED0F312691"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+      "sha256": "AAED492EF0197B28D1B6D2F7481C986FC3B063A227FBF15100E12916F374339B"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/BrokerAdapter/SW_V5_S5_F_BrokerReconciliationIntegration.mqh",
+      "sha256": "46EF2733EA4D9C3058EE114866CD55C7CB05E5C24A8A83CBF1873264DD360A42"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_AdmissionContract.mqh",
+      "sha256": "157B727D1643AAB90F89D3901C5211EE3E0D10CE623A300C51CB8BF49580B7C1"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_AdmissionSnapshotContract.mqh",
+      "sha256": "97BB433651E596A2864FF629721FBEE4A6BBFCD69FC8CD9AC9C23882F90E16F9"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Canonical.mqh",
+      "sha256": "FA6123FA08F349C2BAE145DC9B7DFC0BA2AFC81169B93CB180874FD5BBC62847"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Common.mqh",
+      "sha256": "FD8B03B6C3DC8268EE115E579F91FA7DEA744E2635EF3F74D925538294AE9A5C"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_Contracts.mqh",
+      "sha256": "6F0F96E1E3EE70733D14D39AB953E6464E60B1C1DB3BE188AAF3A2E6C467FE8C"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_IngressContract.mqh",
+      "sha256": "927158931E530588417E66D6D849EA0F0CAF920F8C7694168BE59D5F5AD1F863"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_IngressLedgerContract.mqh",
+      "sha256": "F508CAF7D1DF7F3523E739882A7358D940ADE5643BF5C1BA06AD26E0C1FD346F"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_InvocationClaimContract.mqh",
+      "sha256": "3A0A60BA4965FF6A49015A43482585C79F6ED51CDE763B7356ECA4B7CDD3072B"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_OrchestrationContract.mqh",
+      "sha256": "551B5ABC04605FA1FD244339836E707489AFFCED3C1540630F62F72792991A37"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_ProducerTrustContract.mqh",
+      "sha256": "699B2B6F180EC63575DBF8429AB040D28672839547E9D82DD0AD2EF8742AA57F"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_ReconciliationEvidenceContract.mqh",
+      "sha256": "2086EC300B70F7AA66BC404F42DEE4FBBF9469C63BB46E69F2CBB64A0AD0D7E8"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RequestBindingContract.mqh",
+      "sha256": "255D7AC30C89A23040BCD59B2E09D3605B88208C6D08AD317315CA158CE05345"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RequestSequenceContract.mqh",
+      "sha256": "8AA038A047FA0014289618C1EF2215244B41A96E5A113CA20A2C5073C93D9B52"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_RuntimePublicationContract.mqh",
+      "sha256": "429309E83DDA6287381D9FB3D67F18A60CF8A7D98968DC7EECED29749B88099E"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_SubmissionAuthorityContract.mqh",
+      "sha256": "DC7DD071D40FC10597803EDBF72F33B5350E3B1DB0095F3D39469D2A46A111B7"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Contracts/SW_V5_S5_SubmissionRecordContract.mqh",
+      "sha256": "7D3AC6170F81D81066A959F6570DAACA7A38DD816A928EC795270AFDA8292AEC"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedAuthoritySeed.mqh",
+      "sha256": "97E9177CE5C954C7F2986118E935A3BE7D6F6793CC3E2A2E40C9780FC158AB4E"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedLaunch.mqh",
+      "sha256": "4A679BA0B8803B1F9D95BCBCE0E1AD7F1A77C79FEF172492856965F6FC1ADEE2"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpAttendedLaunchGate.mqh",
+      "sha256": "C8D2953A4CEEB6A8841DE80D9F44E1C6108469DB61598E3E6DD996FE4B59D1FA"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpControlledDemoAuthorityPort.mqh",
+      "sha256": "474644010B3D404F7724D79E5ACD034210FC80A5F7F0C3831DFCB726602E4D95"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpControlledDemoRunner.mqh",
+      "sha256": "9CAD85B620E8F360378F3C89A3631B53FC1C9486C25150F21500D309A2A31ED1"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpManualDemoSetup.mqh",
+      "sha256": "989286717CFE729CF554EDB87CD8F3C2A0894F8DC8797F5A45DEEF94595F920C"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/ControlledDemo/SW_V5_S5_MvpSignalIngressAdapter.mqh",
+      "sha256": "522A6F2D4B4ACFC2464C76940537EFAB77CA07213B251C8D763633DE8C81B0B0"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Coordinator/SW_V5_S5_CoordinatorCommon.mqh",
+      "sha256": "4822694D9E5692F0617F6EDD8E3DA63B8813F0AF4C4E45E0DA276CF6C8412B9F"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/Coordinator/SW_V5_S5_DeterministicCoordinator.mqh",
+      "sha256": "C6647D21D7C3B7AD42EBB961592801242EF0F2B9FB60ADF2DC9902C5DFA231E2"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountObservationProducer.mqh",
+      "sha256": "C155B6253CC9F493BC688EF8ACCC059F64662B6D48CAED6133B1A3E778BF7614"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountRiskAuthority.mqh",
+      "sha256": "2AD197C3C1C601A0A1E4ADC90D65A5405D607A2C82355CD6C3D1989B5D86E6C2"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAccountRiskRecordCodec.mqh",
+      "sha256": "AC0E31212FD0A28CAD19049162C7EAD086B04B60B742F33C1B62B46E9819DF52"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedAdministration.mqh",
+      "sha256": "3AFA01C13F99AC9E40C1D0D73ECB31A8DFAE1F43DBBD70D01B74209B77E7972C"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAttendedContinuation.mqh",
+      "sha256": "AD56215C3EA8B56418CB659E6DEBDD7EAC3A8A4D8BD972246320CE74134763E7"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpAuthorityRecordCodec.mqh",
+      "sha256": "00125EE8429AB44FAF8E123494E8FAD461CBF54AF74AB035430A2CB0CA96951A"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketIntegrity.mqh",
+      "sha256": "0A6C96F77CF4813B1CA691CBD82E4F2268EF6C2C4E2BAF7D85F843A5660A8150"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketLifecycleAuthority.mqh",
+      "sha256": "7233E2CB75DD61DC417454DDDA2D5D4B0FBFC91480F51D3BFD1F23E78D9DFEE5"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBasketStateMachine.mqh",
+      "sha256": "91AEF87F3FE06CBF97D7748DDE3E1C52B636B16DEC0BCB25C90537CD2B5F5A94"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpBootstrapSafetyAuthorities.mqh",
+      "sha256": "5945C6C716655ACE1AE84C2BDB1A31622B1F6FC6F5AC366D7D2A2134651A3204"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationActivation.mqh",
+      "sha256": "C2ECBFB29B0873EC1836EFA156B9029F8EBFB254EDB3316EA0ED0803D8032CDB"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationFlatAuthority.mqh",
+      "sha256": "CE1784751A247B8C188536D6E172A2AAE2C2A5F80C383C6E1B3C5383CC1C567E"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationLineage.mqh",
+      "sha256": "0BEB4C3563C08650F67B01530FFB45C170C64124E2933A929BD04FEA69040207"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpContinuationPhysicalCodec.mqh",
+      "sha256": "DC0D4507B8AD7F2B802A3135A453C3288B78D35D33AD3A73B47550B9C8C6F114"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDemoAuthorityProviders.mqh",
+      "sha256": "2F1DE51E2C905B9BDD405E7F12BF29E6E63D77FC64DD662B7F5A13F2BF69AEDA"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpDeploymentProfile.mqh",
+      "sha256": "D7CAA5A7D11A21418058807C90F2962C763D02BA7FAAA7535B7AA90CA5D1E8F3"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpEvidenceRecoveryAuthorities.mqh",
+      "sha256": "B9726B3886777464005BA33D803EEC2CBE5672CEFEB1B2FABA2B9DD4F39FC3AE"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpHardKillActivationAuthority.mqh",
+      "sha256": "0B3716481742037B2B9E027D48A6FB963BBF1CE8181263A6D75D09C22F186BE5"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpHardKillReleasePhysical.mqh",
+      "sha256": "EAC8F2C0FC255E435EEB3763D7251CA6DC1CD3734820FA5FBF293450D5258DE5"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpIngressRequestAuthorities.mqh",
+      "sha256": "560D21171F028230B70517BEC4DB066B20168E8B57C5B520078D3030B3DD958D"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpManualProvisioningAuthorities.mqh",
+      "sha256": "EC374818FCF786C7C4003D3971293028A392136C64B524B25286B548F719E78B"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpOwnershipAuthority.mqh",
+      "sha256": "E44AB0428BE758D9DAA2450676FB4916BB7292878D3EC09AFDEF6166F2312AF4"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpPermitClaimAuthorities.mqh",
+      "sha256": "627DB81C0C4E8517DA1CF2AE2CBE284EB799816F395B2A30AE0D979AF06CCCFB"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReadOnlyPlatform.mqh",
+      "sha256": "DAEAFA7F366ABE7E4C1E483A94E19E011A3B542E447644E7D8669DEC92EC172F"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpReconciliationGovernanceAuthorities.mqh",
+      "sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpRequestMaterializationAuthorities.mqh",
+      "sha256": "FE050C541B6B5504AF863599BD9EDB762A3F0E369213C9094E20CC628635DC6F"
+    },
+    {
+      "path": "FusionProV5/ExecutionLayer/RuntimeAuthority/SW_V5_S5_MvpSqliteAuthorityStore.mqh",
+      "sha256": "0AD7D085CF9FCDD01F13286E0914CEC33CEF3F10B6197C53218E027ABD8BD87A"
+    },
+    {
+      "path": "FusionProV5/Indicators/SW_V5_IndicatorCache.mqh",
+      "sha256": "ABC9DC5077EF283C4B6A6869F9117364661FCD1FF1C967E00C807DAC4CFE29F7"
+    },
+    {
+      "path": "FusionProV5/Orchestration/SW_V5_Orchestrator.mqh",
+      "sha256": "3DD2ED0CF3CC4F801B0D44528EAA5B3BE6497115130BDE6C29A36E6032A1FF37"
+    },
+    {
+      "path": "FusionProV5/Platform/SW_V5_PlatformAdapter.mqh",
+      "sha256": "D59AA1020FDC0AF81A5911B588DD54C52B4860CB2F1D7ACB4B09685739311CB4"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_BasketContract.mqh",
+      "sha256": "DADD581E75C9F5AC2034F84F2AB1AD69CD85976D181B4535D2D1B3595335D64A"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_BasketStateContract.mqh",
+      "sha256": "BA22862812F694E439506DFCA0E8455DF8FC75AC214FB70E1936C158E1DF2FEA"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ExecutionContract.mqh",
+      "sha256": "CC8C1AF7D9657CE5FFA63E6F0DE0EFDF271D1E90F04E9C21831B85E721B76675"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_InstanceOwnershipContract.mqh",
+      "sha256": "B03BD635C478C72D768DDE18C4B79A02D87DEF004B0D4808EE76A58126AFBE80"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_PersistenceContract.mqh",
+      "sha256": "C64EBF909BC1329E6434C9F3AE476E879D3EA1D84B436241F3BB172BFC7383E3"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ProductionCommon.mqh",
+      "sha256": "00C65A4FDB18EDDC2F9C693FDC24EFB3FEB58D729F4AF0187D270C65332B67EF"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_ProductionContracts.mqh",
+      "sha256": "FB7771DE8CCD0A4934343EB99F1B78FF3F11743875FCC10DB3D9BB3E8F70E1CB"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_RiskContract.mqh",
+      "sha256": "A1C0E76098DA427F1DD4A6DE513693D61904A0667AD2B9F9F0CDEA519758ED38"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_StatisticsContract.mqh",
+      "sha256": "361855E143CC04BEFA2228E61E916970EA50D2D53F9CE60605ED46774927B8FF"
+    },
+    {
+      "path": "FusionProV5/ProductionArchitecture/SW_V5_UnitSystemContract.mqh",
+      "sha256": "5FF1F93DA02108F61A2F8F2C64A5A891C21394A28096126D3586D32E7F5E4E49"
+    },
+    {
+      "path": "FusionProV5/Regression/SW_V5_MomentumRegression.mqh",
+      "sha256": "2E342C1F7C107AE2DC63A95C17EE56D068E45F95B90BC3A30502ED127B249BF0"
+    },
+    {
+      "path": "FusionProV5/Regression/SW_V5_TrendRegression.mqh",
+      "sha256": "FB0A689286D4FDA3BC5310783A66ACDABD7651070E75C6CBFAA639BDEC0B33E4"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS.mq5",
+      "sha256": "507F778D15C092C34EC669D39CA81100CF062B123F46CB91BD29BB2117D06A10"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MvpContinuationAssertions.mqh",
+      "sha256": "7B6141303172844188FF1D7F07E394476CE3DDB3B95D83D0A0A4DFDBBE5FE22F"
+    },
+    {
+      "path": "FusionProV5/Tests/Sprint5MvpContinuation/SW_V5_S5_MvpContinuationTestIsolation.mqh",
+      "sha256": "D4F189B668E6E05410BC9180A8AC4F07F8F524D9D1E54F213B440CC9CC3CCA24"
+    }
+  ],
+  "isolation": {
+    "classification": "STATIC_FIXED_MODE_CALL_PATH_AND_PREPROCESSOR_ISOLATION_NOT_LIVE_EXECUTION",
+    "production_OrderSend_sites": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+        "line": 275
+      }
+    ],
+    "production_Heartbeat_callers": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+        "line": 647
+      }
+    ],
+    "reachable_entry_chain": [
+      "OnTick + A",
+      "test_suite.Start",
+      "continuation administrative functions",
+      "NativePreflight MODE_PREFLIGHT",
+      "runner early return"
+    ],
+    "unreachable_execution_methods": [
+      "PrepareD1AuthorityPath",
+      "PreparePermitSemantics",
+      "CommitPermitPhysical",
+      "CollectAdmissionSameEvent",
+      "ClaimPhysicalNow",
+      "SubmitExactlyOnce"
+    ],
+    "one_shot_scope": "One EA attachment; reinitialization resets the in-memory latch. No durable across-reattach lock is claimed.",
+    "operational_negative_fixtures": "Synthetic invalid row-presence fixtures in separate TEST_ONLY clones; not D1/Ledger/Permit/Admission/Claim issuers.",
+    "include_count": 85,
+    "source_digest": "72175faf558ecf79dae6d063edca4cce89bca02aeb5021e8feed825f425c663e"
+  },
+  "refusal": {
+    "classification": "ISOLATED_SOURCE_EXTRACTED_PYTHON_GUARD_NOT_MQL_RUNTIME",
+    "source_predicate": "explicit_test_only_marker!=\"TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT\" || !execute_test_copy_once || !operator_confirmed_test_copy ||\n      expected_initial_copy_sha256!=expected_copy_sha || StringFind(initial_copy_relative_path,\"TEST_ONLY_MVP_CONTINUATION_\")!=0 ||\n      StringFind(initial_copy_relative_path,\"..\")>=0 || StringFind(initial_copy_relative_path,\"/\")>=0 || StringFind(initial_copy_relative_path,\"\\\\\")>=0 ||\n      _Symbol!=\"XAUUSD\" || _Period!=PERIOD_M15 || MQLInfoInteger(MQL_TESTER) ||\n      !SWV5S5_TestContinuationFileSha(initial_copy_relative_path,digest) || digest!=expected_copy_sha ||\n      !SWV5S5_TestContinuationFileSha(\"fusion_v5_mvp_demo_authority.sqlite\",digest) || digest!=expected_copy_sha ||\n      FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-wal\",FILE_COMMON) || FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-shm\",FILE_COMMON)",
+    "cases": [
+      {
+        "case": "production-filename",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "missing-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "invalid-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "absolute-production-path",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "traversal",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "subdirectory",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      }
+    ]
+  },
+  "layering": {
+    "total": 102,
+    "passed": 102,
+    "failed": 0,
+    "post_fix_MQL_executions": 0
+  },
+  "runtime": {
+    "verify_mvp_runtime.py": {
+      "exit_code": 0,
+      "stdout": "MVP_ORACLE|SYMBOL-VALID|PASS\nMVP_ORACLE|SYMBOL-WRONG|PASS\nMVP_ORACLE|SYMBOL-DIGITS|PASS\nMVP_ORACLE|SYMBOL-POINT|PASS\nMVP_ORACLE|SYMBOL-INCOMPLETE|PASS\nMVP_ORACLE|SYMBOL-EXPIRED|PASS\nMVP_ORACLE|SYMBOL-SEQUENCE-ZERO|PASS\nMVP_ORACLE|SYMBOL-PIP|PASS\nMVP_ORACLE|SYMBOL-REFRESH-SEQUENCE|PASS\nMVP_ORACLE|SYMBOL-OPERATION-PINNED|PASS\nMVP_ORACLE|RISK-VALID|PASS\nMVP_ORACLE|RISK-EQUITY|PASS\nMVP_ORACLE|RISK-DAILY-LOSS|PASS\nMVP_ORACLE|RISK-MARGIN|PASS\nMVP_ORACLE|RISK-BASKET-LOSS|PASS\nMVP_ORACLE|RISK-VOLUME|PASS\nMVP_ORACLE|RISK-NOTIONAL|PASS\nMVP_ORACLE|RISK-SECOND-BASKET|PASS\nMVP_ORACLE|RISK-STALE|PASS\nMVP_ORACLE|RISK-INCOMPLETE-HISTORY|PASS\nMVP_ORACLE|RISK-NON-USD|PASS\nMVP_ORACLE|RISK-NON-HEDGING|PASS\nMVP_ORACLE|RISK-NON-DEMO|PASS\nMVP_ORACLE|RISK-LATCH-ACTIVE|PASS\nMVP_ORACLE|RISK-UNRESOLVED|PASS\nMVP_ORACLE|MARGIN-VALID|PASS\nMVP_ORACLE|MARGIN-NON-FLAT|PASS\nMVP_ORACLE|MARGIN-ACTIVE-ORDER|PASS\nMVP_ORACLE|MARGIN-CURRENT|PASS\nMVP_ORACLE|MARGIN-CALC-FAIL|PASS\nMVP_ORACLE|MARGIN-NEGATIVE|PASS\nMVP_ORACLE|MARGIN-NONFINITE|PASS\nMVP_ORACLE|BASKET-RISK-VALID|PASS\nMVP_ORACLE|BASKET-MISSING-SL|PASS\nMVP_ORACLE|BASKET-WRONG-SIDE-SL|PASS\nMVP_ORACLE|BASKET-CALC-FAIL|PASS\nMVP_ORACLE|BASKET-NONLOSS|PASS\nMVP_ORACLE|BASKET-OVER-LIMIT|PASS\nMVP_ORACLE|BASKET-EXISTING-POSITION|PASS\nMVP_ORACLE|BASKET-ROLLOVER|PASS\nMVP_ORACLE|BASKET-FIXED-RESERVE|PASS\nMVP_ORACLE|TRUST-OPERATOR-VALID|PASS\nMVP_ORACLE|TRUST-BLANK-ID|PASS\nMVP_ORACLE|TRUST-BLANK-ROLE|PASS\nMVP_ORACLE|TRUST-WRONG-ROLE|PASS\nMVP_ORACLE|TRUST-BLANK-AUTH|PASS\nMVP_ORACLE|TRUST-BEFORE-AUTH|PASS\nMVP_ORACLE|OPERATOR-LATER-VALID|PASS\nMVP_ORACLE|OPERATOR-WINDOW-EXPIRED|PASS\nMVP_ORACLE|TRUST-MAX-LIFETIME|PASS\nMVP_ORACLE|TRUST-EXPIRED|PASS\nMVP_ORACLE|GENESIS-PARTIAL-DISABLED|PASS\nMVP_ORACLE|RELEASE-BEFORE-ZERO-REJECTED|PASS\nMVP_ORACLE|RESTART-NO-AUTO-ENABLE|PASS\nMVP_ORACLE|CALLBACK-EXACT-ORDER|PASS\nMVP_ORACLE|CALLBACK-EXACT-REQUEST|PASS\nMVP_ORACLE|CALLBACK-MAGIC-ONLY-DENIED|PASS\nMVP_ORACLE|CALLBACK-CONFLICT-DENIED|PASS\nMVP_ORACLE|EXECUTION-MATERIALIZED-COUNT|PASS\nMVP_ORACLE|EXECUTION-ROW-FAILURES|PASS\nMVP_ORACLE|EXECUTION-INCOMPLETE-CLOSED|PASS\nMVP_ORACLE|EXECUTION-FAILED-OP-INCOMPLETE|PASS\nMVP_ORACLE|HARD-KILL-RELEASE-PENDING|PASS\nMVP_ORACLE|HARD-KILL-RELEASED|PASS\nMVP_ORACLE|HARD-KILL-NO-AUTHORITY|PASS\nMVP_ORACLE|HARD-KILL-STALE-OWNER|PASS\nMVP_ORACLE|HARD-KILL-NO-ZERO-STATE|PASS\nMVP_ORACLE|STORE-CAS-INSERT|PASS\nMVP_ORACLE|STORE-STALE-PERMIT|PASS\nMVP_ORACLE|STORE-ONE-CLAIM-WINNER|PASS\nMVP_ORACLE|STORE-CLAIM-DURABLE|PASS\nMVP_ORACLE|STORE-CLAIM-GRANT-EPHEMERAL|PASS\nMVP_ORACLE|STORE-REOPEN|PASS\nMVP_ORACLE|STORE-NAMESPACE-MISMATCH|PASS\nMVP_ORACLE|STORE-ROLLBACK|PASS\nMVP_ORACLE|STORE-INCOMPLETE-RESTART|PASS\nMVP_ORACLE|STORE-TERMINAL-RESTART|PASS\nMVP_ORACLE|RECOVERY-CLAIMED-ZERO-SUBMIT|PASS\nMVP_ORACLE|RECOVERY-POSITIVE-ZERO-SUBMIT|PASS\nMVP_ORACLE|RECOVERY-BLOCKED-STICKY|PASS\nMVP_ORACLE|RECOVERY-INCOMPLETE-UNRESOLVED|PASS\nMVP_ORACLE|RECOVERY-INDEPENDENT-EVIDENCE|PASS\nMVP_ORACLE|RECOVERY-STALE-PUBLICATION-CAS|PASS\nMVP_ORACLE|SOURCE-PROFILE-ID|PASS\nMVP_ORACLE|SOURCE-RISK-ID|PASS\nMVP_ORACLE|SOURCE-SYMBOL-LIVE|PASS\nMVP_ORACLE|SOURCE-MARGIN-PRIMITIVE|PASS\nMVP_ORACLE|SOURCE-PROFIT-PRIMITIVE|PASS\nMVP_ORACLE|SOURCE-DAILY-HISTORY|PASS\nMVP_ORACLE|SOURCE-NO-ORDERSEND|PASS\nMVP_ORACLE|SOURCE-NO-CTRADE|PASS\nMVP_ORACLE|SOURCE-OFFLINE-ZERO-SUBMISSION|PASS\nMVP_ORACLE|SOURCE-COMMON-FILENAME-ONLY|PASS\nMVP_ORACLE|SOURCE-ONE-PRODUCTION-ORDERSEND|PASS\nMVP_ORACLE_SUMMARY|total=94|passed=94|failed=0|skipped=0|signature=d0ab19417fc5783ccac8901792f7d0656773e7c5c30eae3cc3cc144d752b97e5|broker_submission_calls=0\n",
+      "stderr": ""
+    },
+    "verify_mvp_mutation_controls.py": {
+      "exit_code": 0,
+      "stdout": "MVP_MUTATION|MUT-SYMBOL|KILLED\nMVP_MUTATION|MUT-DIGITS|KILLED\nMVP_MUTATION|MUT-EXPIRY|KILLED\nMVP_MUTATION|MUT-DEMO|KILLED\nMVP_MUTATION|MUT-CURRENCY|KILLED\nMVP_MUTATION|MUT-MARGIN|KILLED\nMVP_MUTATION|MUT-VOLUME|KILLED\nMVP_MUTATION|MUT-NOTIONAL|KILLED\nMVP_MUTATION|MUT-ORDER|KILLED\nMVP_MUTATION|MUT-CALC-MARGIN|KILLED\nMVP_MUTATION|MUT-STOP-SIDE|KILLED\nMVP_MUTATION|MUT-COST-RESERVE|KILLED\nMVP_MUTATION|MUT-OPERATOR-ROLE|KILLED\nMVP_MUTATION|MUT-OPERATOR-AUTH|KILLED\nMVP_MUTATION|MUT-CALLBACK-CONFLICT|KILLED\nMVP_MUTATION|MUT-EXECUTION-ROW-OMISSION|KILLED\nMVP_MUTATION|MUT-HARD-KILL-SKIP-PENDING|KILLED\nMVP_MUTATION|MUT-HARD-KILL-STALE-OWNER|KILLED\nMVP_MUTATION|MUT-HARD-KILL-NO-ZERO-STATE|KILLED\nMVP_MUTATION|MUT-OPERATOR-EXACT-SECOND|KILLED\nMVP_MUTATION_SUMMARY|total=20|killed=20|survived=0\n",
+      "stderr": ""
+    }
+  },
+  "preexisting_patch_scope": [
+    "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+    "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationAssertions.mqh",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_PREFLIGHT.log"
+  ],
+  "note": "Post-run checks use completed-run evidence, not the pre-run absence gate. The shared external PREFLIGHT diagnostic log changed as expected during the operator run. After local checks, excess EOF blank lines were trimmed from two historical Markdown reports solely for staged git diff --check. No MQL/verifier source changed.",
+  "staged_source_provenance": {
+    "source_files_checked": 85,
+    "mismatch": [],
+    "line_ending_only_normalizations": [
+      "FusionProV5/ProductionArchitecture/SW_V5_BasketContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_BasketStateContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_ExecutionContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_InstanceOwnershipContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_PersistenceContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_ProductionCommon.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_RiskContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_StatisticsContract.mqh",
+      "FusionProV5/ProductionArchitecture/SW_V5_UnitSystemContract.mqh"
+    ],
+    "staged_count": 66,
+    "unexpected": [],
+    "generated_artifacts_staged": [],
+    "unstaged": [],
+    "untracked": []
+  }
+}

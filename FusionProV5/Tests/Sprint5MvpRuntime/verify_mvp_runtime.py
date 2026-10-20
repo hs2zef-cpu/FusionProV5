@@ -159,7 +159,8 @@ class Operator:
 
 
 def operator_valid(x: Operator, now: int = 100) -> bool:
-    return bool(x.operator_id and x.auth and x.role == "FUSION_DEMO_MVP_OPERATOR" and x.authenticated_at == now)
+    return bool(x.operator_id and x.auth and x.role == "FUSION_DEMO_MVP_OPERATOR"
+                and 0 < x.authenticated_at <= now < x.authenticated_at + 3600)
 
 
 def callback_matches_submission(
@@ -334,9 +335,11 @@ def main() -> int:
         ("TRUST-BLANK-ROLE", replace(base_op, role="")),
         ("TRUST-WRONG-ROLE", replace(base_op, role="ADMIN")),
         ("TRUST-BLANK-AUTH", replace(base_op, auth="")),
-        ("TRUST-CLOCK-MISMATCH", replace(base_op, authenticated_at=99)),
+        ("TRUST-BEFORE-AUTH", replace(base_op, authenticated_at=101)),
     ]:
         r.check(test_id, not operator_valid(changed))
+    r.check("OPERATOR-LATER-VALID", operator_valid(base_op, now=101))
+    r.check("OPERATOR-WINDOW-EXPIRED", not operator_valid(base_op, now=3700))
     r.check("TRUST-MAX-LIFETIME", 100 + 3600 - 100 == 3600)
     r.check("TRUST-EXPIRED", not (100 <= 3700 < 3700))
     r.check("GENESIS-PARTIAL-DISABLED", "PROVISIONING" != "READY_FOR_RECONCILIATION")

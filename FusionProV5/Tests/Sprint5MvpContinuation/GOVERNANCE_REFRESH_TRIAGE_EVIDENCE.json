@@ -1,0 +1,506 @@
+{
+  "evidence_class": "POST_FIX_STATIC_AND_PYTHON_ORACLE_ONLY_NATIVE_RETEST_NOT_EXECUTED",
+  "verifier_sha256": "AB2DA0CCDCC9581889316BBB0CBFE4AA6A53E1DB3D9D31CD50F8858D334227FC",
+  "root_cause": "Prior expected_row/committed reference alias; output ZeroMemory erased prior CAS, not old expiry rejection.",
+  "original_and_donor": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "source_sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+  "native_experts_path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\MQL5\\Logs\\20261013.log",
+  "native_experts_sha256": "C112BF285FCBFC7EC0687A341ABE4B3D443D218AEA13929607AE726694B6F93E",
+  "native_journal_path": "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\D0E8209F77C8CF37AD8BF550E51FF075\\logs\\20261013.log",
+  "native_journal_sha256": "9E1247D79DFC0394D96A9EDB2A50F9F382B46044AEE44C87FA143DF7F1A6BD18",
+  "preserved_native_run": "CONTINUATION_NATIVE_COPY|START|native_time=1791882917|tick_time_msc=1791882917552|terminal_build=6230|mql_build=6230|TEST_ONLY\nLI\t0\t16:15:17.399\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|COPY_REAL_DB_AND_LOAD_EXACT_OWNER|PASS\nMG\t0\t16:15:17.401\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|GOV_CLOCK_COPY|PASS\nDF\t0\t16:15:17.558\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|GOV_CLOCK_HISTORICAL_TIME_REJECTED_UNCHANGED|PASS\nDQ\t0\t16:15:17.559\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|GOV_CLOCK_CALLER_SEQUENCE_REJECTED_UNCHANGED|PASS\nLS\t0\t16:15:17.560\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|GOV_CLOCK_REOPENED_NOT_EVENT_FRESH|PASS\nJM\t0\t16:15:17.625\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|GOV_CLOCK_EXACT_ACCEPTED_EVENT_REFRESH|PASS\nMS\t0\t16:15:17.819\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_INSTANCE|PASS\nRN\t0\t16:15:17.821\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_PROCESS|PASS\nNQ\t0\t16:15:17.823\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_STARTED_AT|PASS\nOL\t0\t16:15:17.826\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_OWNER_KEY|PASS\nNR\t0\t16:15:17.829\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_FENCE_TOKEN|PASS\nNS\t0\t16:15:17.832\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_LEASE_VERSION|PASS\nPQ\t0\t16:15:17.835\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_TAKEOVER_GENERATION|PASS\nOQ\t0\t16:15:17.836\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_NONATTENDED|PASS\nJQ\t0\t16:15:17.855\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_ALTER_PRIOR_ROW_CAS|PASS\nJL\t0\t16:15:17.856\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|HB_ALTERED_CURRENT_LEASE_REJECTED|PASS\nNO\t0\t16:15:18.280\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_REQUEST_SEQUENCE|PASS\nNP\t0\t16:15:18.608\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_INGRESS_LEDGER|PASS\nME\t0\t16:15:18.860\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_MARGIN_AUTHORITY|PASS\nOJ\t0\t16:15:19.122\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_BASKET_RISK_AUTHORITY|PASS\nHF\t0\t16:15:19.381\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_SUBMISSION_PERMIT|PASS\nDQ\t0\t16:15:19.708\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_ADMISSION_AUTHORITY|PASS\nPP\t0\t16:15:20.058\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_ATTEMPT_RECONCILIATION_PIN|PASS\nQE\t0\t16:15:20.289\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_RECONCILIATION_PUBLICATION|PASS\nRH\t0\t16:15:20.528\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_INVOCATION_CLAIM|PASS\nML\t0\t16:15:20.801\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_SUBMISSION_AUTHORITY|PASS\nRQ\t0\t16:15:21.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_BROKER_SYNC_EVIDENCE|PASS\nNN\t0\t16:15:21.248\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|OPERATIONAL_ROW_REJECTED_MVP_RECOVERY_METADATA|PASS\nIK\t0\t16:15:21.524\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|BOUNDARY_INTERRUPT|PASS\nNK\t0\t16:15:21.526\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW|FAIL\nGD\t0\t16:15:21.648\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|BOUNDARY_INTERRUPT|FAIL\nCJ\t0\t16:15:21.651\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW|FAIL\nRG\t0\t16:15:21.661\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|SEED_CURRENT_OWNERSHIP_MISSING_OR_STALE|broker_submission_calls=0\nMR\t0\t16:15:21.661\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|EXPIRED_COPY_NATIVE_PREFLIGHT_FAILS_CLOSED|PASS\nIN\t0\t16:15:21.661\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_EXPIRED_COPY_PREFLIGHT|reason=SEED_CURRENT_OWNERSHIP_MISSING_OR_STALE|accepted=false\nKK\t0\t16:15:22.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_COPY_PATH|TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite.MAIN.sqlite\nNO\t0\t16:15:22.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_DETAIL|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED|T0=1791882921\nGS\t0\t16:15:22.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|REAL_SQLITE_CONTINUATION_COMPLETE|FAIL\nLD\t0\t16:15:22.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|MONOTONIC_GENERATIONS|FAIL\nND\t0\t16:15:22.015\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|TWO_BROKER_OBSERVATIONS_ZERO_SUBMISSION|FAIL\nFK\t0\t16:15:22.022\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|COMPLETED_REPLAY_READBACK_ONLY|FAIL\nGD\t0\t16:15:22.119\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-1|PASS\nKK\t0\t16:15:22.286\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-2|PASS\nOI\t0\t16:15:22.412\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-3|PASS\nHH\t0\t16:15:22.571\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-4|PASS\nGO\t0\t16:15:22.720\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-5|PASS\nRM\t0\t16:15:22.722\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-6|PASS\nRL\t0\t16:15:22.967\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-7|PASS\nHR\t0\t16:15:23.125\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-8|PASS\nLQ\t0\t16:15:23.368\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-9|PASS\nDS\t0\t16:15:23.610\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-10|PASS\nRE\t0\t16:15:23.859\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|NEGATIVE-11|PASS\nEI\t0\t16:15:23.859\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_NOT_HIDDEN_AFTER_ACTIVE|FAIL\nNK\t0\t16:15:23.947\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_CLOCK|PASS\nPG\t0\t16:15:23.982\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|SEED_CURRENT_OWNERSHIP_MISSING_OR_STALE|broker_submission_calls=0\nQN\t0\t16:15:23.984\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_CLOCK|PASS\nPP\t0\t16:15:24.137\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|CLOCK|PRE_STATE|CONTINUATION_PRE_STATE_INVALID\nIN\t0\t16:15:24.137\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_CLOCK|FAIL\nNQ\t0\t16:15:24.366\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_HEARTBEAT|PASS\nPO\t0\t16:15:24.381\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_TRUST_EXPIRED_OR_NOT_AUTHORIZED|broker_submission_calls=0\nFD\t0\t16:15:24.382\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_HEARTBEAT|PASS\nOK\t0\t16:15:24.633\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|HEARTBEAT|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nHQ\t0\t16:15:24.633\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_HEARTBEAT|FAIL\nHK\t0\t16:15:25.109\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_TRUST|PASS\nOD\t0\t16:15:25.135\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nRN\t0\t16:15:25.136\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_TRUST|PASS\nQM\t0\t16:15:25.409\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|TRUST|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nRH\t0\t16:15:25.409\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_TRUST|FAIL\nDI\t0\t16:15:25.651\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_GOVERNANCE|PASS\nOJ\t0\t16:15:25.669\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nFE\t0\t16:15:25.671\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_GOVERNANCE|PASS\nHJ\t0\t16:15:25.985\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|GOVERNANCE|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nEQ\t0\t16:15:25.985\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_GOVERNANCE|FAIL\nGM\t0\t16:15:26.301\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_ACTIVE|PASS\nNQ\t0\t16:15:26.320\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nQI\t0\t16:15:26.321\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_ACTIVE|PASS\nPE\t0\t16:15:26.584\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|ACTIVE|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nMK\t0\t16:15:26.584\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_ACTIVE|FAIL\nDF\t0\t16:15:26.899\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FLAT|PASS\nLG\t0\t16:15:26.920\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nOS\t0\t16:15:26.922\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_FLAT|PASS\nEO\t0\t16:15:27.257\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|FLAT|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nDE\t0\t16:15:27.257\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_FLAT|FAIL\nMR\t0\t16:15:27.476\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_PENDING|FAIL\nGL\t0\t16:15:27.488\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|SEED_CURRENT_OWNERSHIP_MISSING_OR_STALE|broker_submission_calls=0\nFG\t0\t16:15:27.489\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_PENDING|PASS\nOJ\t0\t16:15:27.776\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|PENDING|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nDP\t0\t16:15:27.776\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_PENDING|FAIL\nEQ\t0\t16:15:28.025\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_RELEASED|PASS\nIE\t0\t16:15:28.064\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nEM\t0\t16:15:28.065\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_FAIL_CLOSED_RELEASED|PASS\nHQ\t0\t16:15:28.318\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|RELEASED|GOVERNANCE_REFRESH|PARTIAL_CONTINUATION/GOVERNANCE_FAILED\nQG\t0\t16:15:28.318\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_RELEASED|FAIL\nFJ\t0\t16:15:28.576\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|PARTIAL_INACTIVE|PASS\nMH\t0\t16:15:28.582\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_RESUME_DETAIL|INACTIVE||\nHE\t0\t16:15:28.582\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|RESUME_INACTIVE|FAIL\nOH\t0\t16:15:28.584\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|LATER_PREFLIGHT_STORE_SNAPSHOT|PASS\nGK\t0\t16:15:29.625\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tATTENDED_LAUNCH|PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED|broker_submission_calls=0\nHG\t0\t16:15:29.625\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|LATER_NATIVE_TICK_PREFLIGHT_COMPLETE_ZERO_SUBMISSION|FAIL\nMN\t0\t16:15:29.625\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_NATIVE_LATER_TICK|T0=1791882921|T1=1791882929|reason=PREFLIGHT_GOVERNANCE_MISSING_INVALID_OR_EXPIRED\nNJ\t0\t16:15:29.627\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|LATER_NATIVE_PREFLIGHT_ZERO_AUTHORITY_MUTATION|PASS\nFJ\t0\t16:15:29.627\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_ASSERT|COMPILED_TRANSPORT_TRAP_NEVER_REACHED|PASS\nMO\t0\t16:15:29.627\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_SUMMARY|passed=60|failed=19|skipped=0|total=79\nRL\t0\t16:15:29.627\tSW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS (XAUUSD,M15)\tCONTINUATION_NATIVE_COPY|COMPLETE|original_unchanged=true|original_sha256=bec62e7435d29d5511a41bf85c74ae443994c5804b3a9574af90d861fe674ef6|forbidden_transport_calls=0|NO_REAL_DEPLOYMENT_AUTHORIZATION",
+  "prior_failures": [
+    {
+      "ordinal": 1,
+      "test_id": "BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 2,
+      "test_id": "BOUNDARY_INTERRUPT",
+      "category": "UNRESOLVED",
+      "reason": "Stopped before Governance refresh (PRE_STATE/no lease renewal). Raw evidence lacks exact failed predicate; do not invent a causal classification."
+    },
+    {
+      "ordinal": 3,
+      "test_id": "BOUNDARY_MUTATE_VALID_GOVERNANCE_ROW",
+      "category": "UNRESOLVED",
+      "reason": "PENDING fixture never renewed Ownership/Trust; failure precedes Governance refresh, not proven to be its cascade."
+    },
+    {
+      "ordinal": 4,
+      "test_id": "REAL_SQLITE_CONTINUATION_COMPLETE",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 5,
+      "test_id": "MONOTONIC_GENERATIONS",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 6,
+      "test_id": "TWO_BROKER_OBSERVATIONS_ZERO_SUBMISSION",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 7,
+      "test_id": "COMPLETED_REPLAY_READBACK_ONLY",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 8,
+      "test_id": "PARTIAL_NOT_HIDDEN_AFTER_ACTIVE",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 9,
+      "test_id": "RESUME_CLOCK",
+      "category": "UNRESOLVED",
+      "reason": "Stopped before Governance refresh (PRE_STATE/no lease renewal). Raw evidence lacks exact failed predicate; do not invent a causal classification."
+    },
+    {
+      "ordinal": 10,
+      "test_id": "RESUME_HEARTBEAT",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 11,
+      "test_id": "RESUME_TRUST",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 12,
+      "test_id": "RESUME_GOVERNANCE",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 13,
+      "test_id": "RESUME_ACTIVE",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 14,
+      "test_id": "RESUME_FLAT",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 15,
+      "test_id": "PARTIAL_PENDING",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 16,
+      "test_id": "RESUME_PENDING",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 17,
+      "test_id": "RESUME_RELEASED",
+      "category": "A",
+      "reason": "Run detail stops at GOVERNANCE_REFRESH / GOVERNANCE_FAILED; alias destroys prior row before CAS validation."
+    },
+    {
+      "ordinal": 18,
+      "test_id": "RESUME_INACTIVE",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    },
+    {
+      "ordinal": 19,
+      "test_id": "LATER_NATIVE_TICK_PREFLIGHT_COMPLETE_ZERO_SUBMISSION",
+      "category": "B",
+      "reason": "Downstream: continuation never obtained refreshed Governance/ACTIVE/flat release authority."
+    }
+  ],
+  "compile": {
+    "SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION": {
+      "result": "Result: 0 errors, 0 warnings, 2350 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "58606926B28D91A2508F5C31CAEFA8660527E2FDA26C3D1873EEED4255EBE9F0"
+    },
+    "SW_V5_S5_MVP_CONTINUATION_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 28066 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "0EC746E07ADB14730707E61B122554CBEF3155890C483636B0D418017EB33FB6"
+    },
+    "SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 26983 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "845E2764B0A9E229E282B41132782D6928E1D744DA1F2C30D281771BEB10769F"
+    }
+  },
+  "checks": [
+    {
+      "id": "fixture/immutable-and-original-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "fixture/no-uncheckpointed-wal",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "PROVENANCE/compiled-not-older-than-includes",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "static/private-structural-single-refresh-caller-and-ordinary-unchanged",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "MC-GOV-STRUCTURAL-PUBLIC",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "MC-GOV-PRIOR-ALIAS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "MC-GOV-CAS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "MC-GOV-READBACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "alias/old-output-clear-destroys-prior-CAS",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "alias/copied-prior-survives-output-clear",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "oracle/expired-prior-structural-read",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/ordinary-expired-ineligible",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/corrupt-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/capability-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/policy-version-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/profile-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/new-finite-bundle-valid",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/exact-prior-CAS-and-readback",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/stale-prior-CAS-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/boundary-valid-row-mutation",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "oracle/stale-complete-snapshot-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "native/preserved-60-pass-19-fail-summary",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "native/direct-expired-refresh-passed-before-fix",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "fixtures/boundary-must-reach-exact-stage",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/no-delete-or-overwrite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/all-mutable-paths-use-fresh-prefix",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/new-alias-and-corrupt-capability-tests",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "fixture/original-and-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    }
+  ],
+  "source_isolation": {
+    "classification": "STATIC_FIXED_MODE_CALL_PATH_AND_PREPROCESSOR_ISOLATION_NOT_LIVE_EXECUTION",
+    "production_OrderSend_sites": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\BrokerAdapter\\SW_V5_S5_F_BrokerPlatformBoundary.mqh",
+        "line": 275
+      }
+    ],
+    "production_Heartbeat_callers": [
+      {
+        "path": "C:\\Users\\Nutthakrit\\Documents\\FusionProV5\\FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh",
+        "line": 334
+      }
+    ],
+    "reachable_entry_chain": [
+      "OnTick + A",
+      "test_suite.Start",
+      "continuation administrative functions",
+      "NativePreflight MODE_PREFLIGHT",
+      "runner early return"
+    ],
+    "unreachable_execution_methods": [
+      "PrepareD1AuthorityPath",
+      "PreparePermitSemantics",
+      "CommitPermitPhysical",
+      "CollectAdmissionSameEvent",
+      "ClaimPhysicalNow",
+      "SubmitExactlyOnce"
+    ],
+    "one_shot_scope": "One EA attachment; reinitialization resets the in-memory latch. No durable across-reattach lock is claimed.",
+    "operational_negative_fixtures": "Synthetic invalid row-presence fixtures in separate TEST_ONLY clones; not D1/Ledger/Permit/Admission/Claim issuers.",
+    "include_count": 85,
+    "source_digest": "2913a97a1196a626cb277ca06e1fd21a265be98bab8f6c187d20b05b044bc8c9"
+  },
+  "early_refusal": {
+    "classification": "ISOLATED_SOURCE_EXTRACTED_PYTHON_GUARD_NOT_MQL_RUNTIME",
+    "source_predicate": "explicit_test_only_marker!=\"TEST_ONLY_AUTHORIZED_UNCOMMITTED_DRAFT\" || !execute_test_copy_once || !operator_confirmed_test_copy ||\n      expected_initial_copy_sha256!=expected_copy_sha || StringFind(initial_copy_relative_path,\"TEST_ONLY_MVP_CONTINUATION_\")!=0 ||\n      StringFind(initial_copy_relative_path,\"..\")>=0 || StringFind(initial_copy_relative_path,\"/\")>=0 || StringFind(initial_copy_relative_path,\"\\\\\")>=0 ||\n      _Symbol!=\"XAUUSD\" || _Period!=PERIOD_M15 || MQLInfoInteger(MQL_TESTER) ||\n      !SWV5S5_TestContinuationFileSha(initial_copy_relative_path,digest) || digest!=expected_copy_sha ||\n      !SWV5S5_TestContinuationFileSha(\"fusion_v5_mvp_demo_authority.sqlite\",digest) || digest!=expected_copy_sha ||\n      FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-wal\",FILE_COMMON) || FileIsExist(\"fusion_v5_mvp_demo_authority.sqlite-shm\",FILE_COMMON)",
+    "cases": [
+      {
+        "case": "production-filename",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "missing-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "invalid-marker",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "absolute-production-path",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "traversal",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      },
+      {
+        "case": "subdirectory",
+        "rejected_by_actual_source_predicate": true,
+        "io_attempts": 0,
+        "durable_writes": 0,
+        "passed": true
+      }
+    ]
+  },
+  "summary": {
+    "total": 54,
+    "passed": 54,
+    "failed": 0,
+    "post_fix_MQL_executions": 0,
+    "unresolved_prior_failures": 3
+  }
+}

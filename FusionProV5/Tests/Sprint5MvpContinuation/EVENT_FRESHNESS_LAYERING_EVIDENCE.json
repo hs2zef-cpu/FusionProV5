@@ -1,0 +1,580 @@
+{
+  "classification": "SOURCE_FIX_COMPILED_EXECUTION_GATES_OPEN",
+  "checks": [
+    {
+      "id": "structure/verified-stored-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/no-event-freshness-or-ack",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/read-only-and-no-grant",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/profile-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/clock-physical-target-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/ownership-clock-monotonic",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/authority-predicates-retained",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/native-diagnostic-time-not-rewritten-clock",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "structure/complete-readset-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "history/clock-only-exact",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "history/no-fixed-deployment-baseline",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "event/current-fresh-before-write",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "MC-CONT-EVENT-FRESHNESS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "MC-CONT-NEW-ACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "MC-CONT-PROFILE-EVENT-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "MC-CONT-CLOCK-PAYLOAD-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "fixtures/old-event-negative-detects-ready-hook",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/clock-restart-lifecycle",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/periodic-not-fabricated-live-time",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/clock-negative-cold-classifier",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "fixtures/boundary-differential-preserved",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-unchanged/LoadVerified",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-unchanged/CurrentFreshObservation",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-unchanged/ObserveAcceptedEvent",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "clock/ordinary-unchanged/ObserveFromCurrentSymbolOnTick",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "wrapper/actual-A-consumed-before-publication",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "wrapper/structure-then-new-event-binding",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "architecture/no-checkpoint-or-R-plus",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "native-diagnostic/clock-only-snapshots",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "native-diagnostic/sequence-plus-one",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_SNAPSHOT"
+    },
+    {
+      "id": "native-diagnostic/exact-cold-failure",
+      "passed": true,
+      "evidence_class": "ACTUAL_PRIOR_NATIVE_LOG_NOT_POST_FIX_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/valid-cold",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-id",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-broker",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-server",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-account",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-symbol",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-authority",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/zero-sequence",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/zero-time",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/malformed",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-digest",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-store-revision",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "python-clock-oracle/wrong-sequence-relation",
+      "passed": true,
+      "evidence_class": "INDEPENDENT_PYTHON_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/fixture/immutable-and-original-hash",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "governance-regression/fixture/no-uncheckpointed-wal",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "governance-regression/REFUSAL/production-filename",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/REFUSAL/missing-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/REFUSAL/invalid-marker",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/REFUSAL/absolute-production-path",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/REFUSAL/traversal",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/REFUSAL/subdirectory",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/constant-preflight-mode",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/submission-flags-false",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/preflight-return-dominates-execution",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/preflight-host-clock-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/continuation-no-execution-issuers",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/native-transport-compile-trap",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/exactly-one-production-OrderSend",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/production-send-site-unchanged",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/exactly-one-attended-heartbeat-caller",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ONESHOT/attach-and-preset-readonly",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ONESHOT/ack-required-before-start",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ONESHOT/consume-before-first-test-write",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ONESHOT/no-reset-or-retry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ONESHOT/isolated-first-A-only",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/ISOLATION/no-native-callback-or-timer-entry",
+      "passed": true,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/static/private-structural-single-refresh-caller-and-ordinary-unchanged",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "governance-regression/MC-GOV-EXPIRED-ELIGIBILITY-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/MC-GOV-STRUCTURAL-PUBLIC",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/MC-GOV-PRIOR-ALIAS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/MC-GOV-CAS-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/MC-GOV-READBACK-BYPASS",
+      "passed": true,
+      "evidence_class": "STATIC_MUTATION_CONTROL_NOT_MQL_MUTANT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/alias/old-output-clear-destroys-prior-CAS",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "governance-regression/alias/copied-prior-survives-output-clear",
+      "passed": true,
+      "evidence_class": "REFERENCE_ALIAS_MODEL"
+    },
+    {
+      "id": "governance-regression/oracle/expired-prior-structural-read",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/ordinary-expired-ineligible",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/corrupt-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/capability-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/policy-version-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/profile-rejects",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/new-finite-bundle-valid",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/exact-prior-CAS-and-readback",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/stale-prior-CAS-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/boundary-valid-row-mutation",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/oracle/stale-complete-snapshot-rejected",
+      "passed": true,
+      "evidence_class": "PYTHON_SQLITE_ORACLE_NOT_MQL_EXECUTION"
+    },
+    {
+      "id": "governance-regression/native/preserved-60-pass-19-fail-summary",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "governance-regression/native/direct-expired-refresh-passed-before-fix",
+      "passed": true,
+      "evidence_class": "PRE_FIX_NATIVE_EVIDENCE"
+    },
+    {
+      "id": "governance-regression/fixtures/boundary-must-reach-exact-stage",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "governance-regression/fixtures/no-delete-or-overwrite",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "governance-regression/fixtures/all-mutable-paths-use-fresh-prefix",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "governance-regression/fixtures/new-alias-and-corrupt-capability-tests",
+      "passed": true,
+      "evidence_class": "STATIC_SOURCE"
+    },
+    {
+      "id": "governance-regression/compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/compile/SW_V5_S5_MVP_CONTINUATION_NATIVE_COPY_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "governance-regression/git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    },
+    {
+      "id": "governance-regression/fixture/original-and-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_PHYSICAL"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "compile/SW_V5_S5_MVP_CONTINUATION_ASSERTIONS",
+      "passed": true,
+      "evidence_class": "METAEDITOR_COMPILE_NOT_EXECUTION"
+    },
+    {
+      "id": "native-full/old-install-held",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "db/original-donor-unchanged",
+      "passed": true,
+      "evidence_class": "READ_ONLY_FILE_HASH"
+    },
+    {
+      "id": "git/diff-check",
+      "passed": true,
+      "evidence_class": "GIT"
+    }
+  ],
+  "summary": {
+    "total": 102,
+    "passed": 102,
+    "failed": 0,
+    "post_fix_MQL_executions": 0
+  },
+  "historical_native_diagnostic": {
+    "clock_before": 3,
+    "clock_after": 4,
+    "changed_domains": [
+      "MVP_OWNERSHIP_LEASE"
+    ],
+    "before_sha256": "D89828B11E4D9C4F55EEF4462C4329F22BD56FF81A62FF3CEBF5F017ADD39A45",
+    "after_sha256": "43974C3DA76C048E2262BFE458C426225B29A4D3CACB4B3529F8701DD5286054",
+    "classified_sha256": "43974C3DA76C048E2262BFE458C426225B29A4D3CACB4B3529F8701DD5286054",
+    "raw_experts_sha256": "40AF31461D2C031861ACB3BEB2DFD76DCC9FB4D6EB11802DEA48CAEAAA5ECAB7",
+    "predicate": "PRESTATE_CLOCK_EVENT_LOCAL_FRESHNESS_MISSING"
+  },
+  "full_governance_regression_summary": {
+    "total": 54,
+    "passed": 53,
+    "failed": 1,
+    "post_fix_MQL_executions": 0,
+    "unresolved_prior_failures": 3
+  },
+  "held_full_native_build_gates": [
+    {
+      "id": "PROVENANCE/compiled-not-older-than-includes",
+      "passed": false,
+      "evidence_class": "SOURCE_ISOLATION_AND_EXTRACTED_GUARD_NOT_MQL_EXECUTION"
+    }
+  ],
+  "compiles": {
+    "SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION": {
+      "result": "Result: 0 errors, 0 warnings, 1215 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "6613F81C26CF0F39FFEEBE361FF653595552A90929BFF5D5C42F424464C4A2EA"
+    },
+    "SW_V5_S5_MVP_CONTINUATION_ASSERTIONS": {
+      "result": "Result: 0 errors, 0 warnings, 28991 ms elapsed, cpu='X64 Regular'",
+      "ex5_sha256": "2840AA2278AD3C9C3760FCCA0F112315771C93B1329EF4ABD975B6236F9384C4"
+    }
+  },
+  "original_donor_sha256": {
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\fusion_v5_mvp_demo_authority.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6",
+    "C:\\Users\\Nutthakrit\\AppData\\Roaming\\MetaQuotes\\Terminal\\Common\\Files\\TEST_ONLY_MVP_CONTINUATION_3f39a13e0c314df2bcd8452ae9de5e4c.sqlite": "BEC62E7435D29D5511A41BF85C74AE443994C5804B3A9574AF90D861FE674EF6"
+  },
+  "governance_source_sha256": "5C0FB4E933A833BB0C4DADD43E84B1683D57A163D5F532276C2E060D378E642A",
+  "current_sources": {
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpAttendedContinuation.mqh": "3A96F29F89623A5DD6FB9BA21885FA91264638ECE0986040271430BB521058E8",
+    "FusionProV5\\ExecutionLayer\\RuntimeAuthority\\SW_V5_S5_MvpOwnershipAuthority.mqh": "E44AB0428BE758D9DAA2450676FB4916BB7292878D3EC09AFDEF6166F2312AF4",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MvpContinuationAssertions.mqh": "30BC6A856376CC6CC50BEE4937A1F1DB72EA8BB9ED5E46DA8BBE12FDDF32B833",
+    "FusionProV5\\Tests\\Sprint5MvpContinuation\\SW_V5_S5_MVP_ATTENDED_AUTHORITY_CONTINUATION.mq5": "46650F5BAF87C2B3E35B17F5A9BB68AF72D0088E2794425B2C420AAFC1B96904"
+  },
+  "verifier_sha256": "0350113CA8E0FB6B2CC3E21E4A404A416881735752D30971787A93D4959F34B1",
+  "native_rebuild_install": false,
+  "option_R_baseline_relaxation": false,
+  "open_gates": [
+    "Expanded RESUME_CLOCK MQL lifecycle",
+    "Boundary exact interruption + actual differential",
+    "Governance alias MQL regressions",
+    "Periodic MQL structural fixture",
+    "Clock-negative MQL execution",
+    "Full continuation execution",
+    "Full-native rebuild/install/new preset/pre-run gate"
+  ]
+}
